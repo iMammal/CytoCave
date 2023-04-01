@@ -44,7 +44,7 @@ function Model(side) {
     var graph;
 
     var metricValues = [];
-    
+
     var metricQuantileScale;
 
     var clusters = {};                  // PLACE clusters, assumed level 4: clusters from 1 to 16
