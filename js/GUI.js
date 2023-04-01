@@ -350,10 +350,21 @@ var changeModality = function (modality) {
 /* Edges legend */
 // create legend panel containing different groups
 // the state of each group can be either: active, transparent or inactive
-var createLegend = function(model) {
-    var legendMenu = document.getElementById("legend");
+var createLegend = function(model,side) {
+    //var legendMenu = document.getElementById("legend");
+    var legendMenu;
 
-    while(legendMenu.hasChildNodes()){
+    if (side === "Left") {
+        legendMenu = document.getElementById("legendLeft");
+    } else {
+        legendMenu = document.getElementById("legend");
+    }
+
+    //if (model && modelLeft) { legendMenu = (model.getName() === "Left") ? document.getElementById("legendLeft") : document.getElementById("legend"); }
+
+    console.log(side, legendMenu, model.getName())
+
+    while (legendMenu.hasChildNodes()) {
         legendMenu.removeChild(legendMenu.childNodes[0]);
     }
 
