@@ -36,6 +36,8 @@ import {
     getVisibleNodesLength,
     setVisibleNodes,
     getEnableEB,
+    getEnableIpsi,
+    getEnableContra,
     getThresholdModality,
     vr,
     activeVR,
@@ -1582,7 +1584,20 @@ function PreviewArea(canvas_, model_, name_) {
     // draw the top n edges connected to a specific node
     this.drawTopNEdgesByNode = function (nodeIndex, n) {
 
-        var row = model.getTopConnectionsByNode(nodeIndex, n);
+	var row = [];
+	if(!getEnableContra() && !getEnableIpsi()) {
+		row = model.getTopConnectionsByNode(nodeIndex, n );
+	} else {
+		if(getEnableContra()) {
+			row = row.concat(model.getTopContraLateralConnectionsByNode(nodeIndex, n ));
+		} 
+		if (getEnableIpsi()) {
+			row = row.concat(model.getTopIpsiLateralConnectionsByNode(nodeIndex, n ));
+		}
+	}	
+	    console.log("contra"+getEnableContra());
+	    console.log("ipsi"+getEnableIpsi());
+
         var edges = model.getActiveEdges();
         var edgeIdx = model.getEdgesIndeces();
         if (getEnableEB()) {
@@ -1600,6 +1615,7 @@ function PreviewArea(canvas_, model_, name_) {
     // draw edges given a node following edge threshold
     this.drawEdgesGivenNode = function (indexNode) {
 
+        var dataset = model.getDataset();
         var row = model.getConnectionMatrixRow(indexNode);
         var edges = model.getActiveEdges();
         var edgeIdx = model.getEdgesIndeces();
@@ -1608,7 +1624,10 @@ function PreviewArea(canvas_, model_, name_) {
         }
 
         for (var i = 0; i < row.length; i++) {
-            if ((i != indexNode) && Math.abs(row[i]) > model.getThreshold() && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i)) {
+            if ((i != indexNode) && Math.abs(row[i]) > model.getThreshold() && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i) &&
+		    ( (getEnableIpsi() && (dataset[indexNode].hemisphere === dataset[i].hemisphere)) || 
+		      (getEnableContra() && (dataset[indexNode].hemisphere !== dataset[i].hemisphere)) || 
+	    		(!getEnableIpsi() && !getEnableContra()) )  ) {
                 displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
             }
         }
