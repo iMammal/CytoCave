@@ -1413,7 +1413,7 @@ function PreviewArea(canvas_, model_, name_) {
         var material, geometry;
 
         for (var i = 0; i < dataset.length; i++) {
-            geometry = getNormalGeometry(dataset[i].hemisphere);
+            geometry = getNormalGeometry(dataset[i].hemisphere,name);
             material = getNormalMaterial(model, dataset[i].group);
             glyphs[i] = new THREE.Mesh(geometry, material);
             brain.add(glyphs[i]);

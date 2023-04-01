@@ -13,7 +13,7 @@ var thresholdMultiplier = 1.0; // 100.0 for fMRI data of values (-1.0->1.0) and 
 import {getDataFile,setDataFile,atlas} from "./globals.js";
 import {changeSceneToSubject, changeActiveGeometry, changeColorGroup, updateScenes, redrawEdges, updateOpacity, updateNodesVisiblity, getSpt, previewAreaLeft, previewAreaRight, setThresholdModality} from './drawing'
 import {modelLeft,modelRight} from './model'
-import {setDimensionFactorLeft,setDimensionFactorRight} from './graphicsUtils.js'
+import {setDimensionFactorLeftSphere,setDimensionFactorRightSphere,setDimensionFactorLeftBox,setDimensionFactorRightBox} from './graphicsUtils.js'
 import {scaleColorGroup} from "./utils/scale";
 
 var initSubjectMenu = function (side) {
@@ -41,49 +41,76 @@ var initSubjectMenu = function (side) {
 };
 
 /* Node stuff at nodeInfoPanel */
-// adds a slider to control glyphs size
-var addDimensionFactorSliderLeft = function () {
+// adds a slider to control Left of Right Sphere glyphs size
+var addDimensionFactorSliderLeft = function (side) {
     var panel = d3.select("#nodeInfoPanel");
 
-    panel.append("input")
+    if(side == 'Left') {
+      panel.append("input")
         .attr("type", "range")
         .attr("value", "1")
-        .attr("id", "dimensionSliderLeft")
+        .attr("id", "dimensionSliderLeft"+side)
         .attr("min","0.2")
         .attr("max", "4")
         .attr("step","0.1")
         .on("change", function () {
-            setDimensionFactorLeft(this.value);
+            setDimensionFactorLeftSphere(this.value);
         });
+    } else {
+      panel.append("input")
+        .attr("type", "range")
+        .attr("value", "1")
+        .attr("id", "dimensionSliderLeft"+side)
+        .attr("min","0.2")
+        .attr("max", "4")
+        .attr("step","0.1")
+        .on("change", function () {
+            setDimensionFactorRightSphere(this.value);
+        });
+    }
 
     panel.append("label")
         .attr("for", "dimensionSlider")
-        .attr("id", "dimensionSliderLabel")
-        .text("Left Glyph Size");
+        .attr("id", "dimensionSliderLabel"+side)
+        .text(side+" Sphere Size");
 
     panel.append("br");
 };
 
 /* Node stuff at nodeInfoPanel */
-// adds a slider to control Right glyphs size
-var addDimensionFactorSliderRight = function () {
+// adds a slider to control Left or Right Box glyphs size
+var addDimensionFactorSliderRight = function (side) {
     var panel = d3.select("#nodeInfoPanel");
 
-    panel.append("input")
+	
+    if(side == 'Left') {
+      panel.append("input")
         .attr("type", "range")
         .attr("value", "1")
-        .attr("id", "dimensionSliderRight")
+        .attr("id", "dimensionSliderRight"+side)
         .attr("min","0.2")
         .attr("max", "4")
         .attr("step","0.1")
         .on("change", function () {
-            setDimensionFactorRight(this.value);
+            setDimensionFactorLeftBox(this.value);
         });
+    } else {
+      panel.append("input")
+        .attr("type", "range")
+        .attr("value", "1")
+        .attr("id", "dimensionSliderRight"+side)
+        .attr("min","0.2")
+        .attr("max", "4")
+        .attr("step","0.1")
+        .on("change", function () {
+            setDimensionFactorRightBox(this.value);
+        });
+    }
 
     panel.append("label")
         .attr("for", "dimensionSlider")
-        .attr("id", "dimensionSliderLabel")
-        .text("Right Glyph Size");
+        .attr("id", "dimensionSliderLabel"+side)
+        .text(side+" Box Size");
 
     panel.append("br");
 };

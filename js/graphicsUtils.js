@@ -10,8 +10,10 @@ import {scaleColorGroup} from './utils/scale'
 var shpereRadius = 3.0;             // normal sphere radius
 var sphereResolution = 12;
 var dimensionFactor = 1;
-var dimensionFactorLeft = 1;
-var dimensionFactorRight = 1;
+var dimensionFactorLeftSphere = 1;
+var dimensionFactorRightSphere = 1;
+var dimensionFactorLeftBox = 1;
+var dimensionFactorRightBox = 1;
 
 function getSphereResolution(){
     return sphereResolution;
@@ -23,6 +25,10 @@ function setSphereResolution(value) {
 
 var sphereNormal = new THREE.SphereGeometry( shpereRadius, sphereResolution, sphereResolution);
 var boxNormal = new THREE.BoxGeometry( 1.5*shpereRadius, 1.5*shpereRadius, 1.5*shpereRadius);
+var leftSphereNormal = new THREE.SphereGeometry( shpereRadius, sphereResolution, sphereResolution);
+var leftBoxNormal = new THREE.BoxGeometry( 1.5*shpereRadius, 1.5*shpereRadius, 1.5*shpereRadius);
+var rightSphereNormal = new THREE.SphereGeometry( shpereRadius, sphereResolution, sphereResolution);
+var rightBoxNormal = new THREE.BoxGeometry( 1.5*shpereRadius, 1.5*shpereRadius, 1.5*shpereRadius);
 
 // create normal edge geometry: sphere or cube
 var getNormalGeometry = function(hemisphere) {
@@ -30,6 +36,23 @@ var getNormalGeometry = function(hemisphere) {
         return sphereNormal;
     } else if(hemisphere == "right"){
         return boxNormal;
+    }
+};
+
+// create normal edge geometry: sphere or cube
+var getNormalGeometry = function(hemisphere,side) {
+    if(hemisphere == "left"){
+	    if(side == "Left"){
+		    return leftSphereNormal;
+	    } else {
+        return rightSphereNormal;
+	    }
+    } else if(hemisphere == "right"){
+	    if(side == "Left"){
+		    return leftBoxNormal;
+	    } else {
+        return rightBoxNormal;
+	    }
     }
 };
 
@@ -44,23 +67,44 @@ var setDimensionFactor = function(value){
 };
 
 // scaling the glyphs
-var setDimensionFactorLeft = function(value){
+var setDimensionFactorLeftSphere = function(value){
 
-    var val = 1/dimensionFactorLeft*value;
-    sphereNormal.scale(val, val, val);
+    var val = 1/dimensionFactorLeftSphere*value;
+    leftSphereNormal.scale(val, val, val);
     //boxNormal.scale(val, val, val);
 
-    dimensionFactorLeft = value;
+    dimensionFactorLeftSphere = value;
 };
 
 // scaling the glyphs
-var setDimensionFactorRight = function(value){
+var setDimensionFactorRightSphere = function(value){
 
-    var val = 1/dimensionFactorRight*value;
+    var val = 1/dimensionFactorRightSphere*value;
+    rightSphereNormal.scale(val, val, val);
+    //boxNormal.scale(val, val, val);
+
+    dimensionFactorRightSphere = value;
+};
+
+
+// scaling the glyphs
+var setDimensionFactorLeftBox = function(value){
+
+    var val = 1/dimensionFactorLeftBox*value;
     //sphereNormal.scale(val, val, val);
-    boxNormal.scale(val, val, val);
+    leftBoxNormal.scale(val, val, val);
 
-    dimensionFactorRight = value;
+    dimensionFactorLeftBox = value;
+};
+
+// scaling the glyphs
+var setDimensionFactorRightBox = function(value){
+
+    var val = 1/dimensionFactorRightBox*value;
+    //sphereNormal.scale(val, val, val);
+    rightBoxNormal.scale(val, val, val);
+
+    dimensionFactorRightBox = value;
 };
 
 // return the material for a node (vertex) according to its state: active or transparent
@@ -116,4 +160,4 @@ var sunflower = function(n, R, c, v1, v2) {
     return math.transpose(points);
 };
 
-export {sphereResolution,getSphereResolution,setSphereResolution,sunflower,setDimensionFactorLeft,setDimensionFactorRight,getNormalGeometry,getNormalMaterial}
+export {sphereResolution,getSphereResolution,setSphereResolution,sunflower, setDimensionFactorLeftSphere, setDimensionFactorRightSphere, setDimensionFactorLeftBox,setDimensionFactorRightBox, setDimensionFactor,getNormalGeometry,getNormalMaterial}

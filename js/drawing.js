@@ -330,9 +330,10 @@ var initControls = function () {
 
     // addSkyboxButton();
     //addDimensionFactorSlider();
-    addDimensionFactorSliderLeft();
-    addDimensionFactorSliderRight();
-
+    addDimensionFactorSliderLeft('Left');
+    addDimensionFactorSliderRight('Left');
+    addDimensionFactorSliderLeft('Right');
+    addDimensionFactorSliderRight('Right');
     // addFslRadioButton();
     // addSearchPanel();
 
