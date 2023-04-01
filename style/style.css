@@ -142,6 +142,24 @@ button > input[type="checkbox"] {
     z-index: 3;
 }
 
+#colorCodingLeft {
+    position: absolute;
+    width: 175px;
+    height: 25px;
+    top: 400px;
+    left: 35%;
+    z-index: 3;
+}
+
+#colorCodingLeft {
+    position: absolute;
+    width: 175px;
+    height: 25px;
+    top: 400px;
+    left: 35%;
+    z-index: 3;
+}
+
 #viewLeft {
     position: absolute;
     height: 100px;

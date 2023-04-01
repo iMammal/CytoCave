@@ -18,8 +18,8 @@ var root;                           // the index of the root node = start point 
 
 var thresholdModality = true;
 var enableEB = false;
-var enableIpsi = false;
-var enableContra = false;
+var enableIpsi = true;
+var enableContra = true;
 
 var vr = false;                     // enable VR
 var spt = false;                    // enabling shortest path
