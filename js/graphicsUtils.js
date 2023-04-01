@@ -10,6 +10,8 @@ import {scaleColorGroup} from './utils/scale'
 var shpereRadius = 3.0;             // normal sphere radius
 var sphereResolution = 12;
 var dimensionFactor = 1;
+var dimensionFactorLeft = 1;
+var dimensionFactorRight = 1;
 
 function getSphereResolution(){
     return sphereResolution;
@@ -39,6 +41,26 @@ var setDimensionFactor = function(value){
     boxNormal.scale(val, val, val);
 
     dimensionFactor = value;
+};
+
+// scaling the glyphs
+var setDimensionFactorLeft = function(value){
+
+    var val = 1/dimensionFactorLeft*value;
+    sphereNormal.scale(val, val, val);
+    //boxNormal.scale(val, val, val);
+
+    dimensionFactorLeft = value;
+};
+
+// scaling the glyphs
+var setDimensionFactorRight = function(value){
+
+    var val = 1/dimensionFactorRight*value;
+    //sphereNormal.scale(val, val, val);
+    boxNormal.scale(val, val, val);
+
+    dimensionFactorRight = value;
 };
 
 // return the material for a node (vertex) according to its state: active or transparent
@@ -94,4 +116,4 @@ var sunflower = function(n, R, c, v1, v2) {
     return math.transpose(points);
 };
 
-export {sphereResolution,getSphereResolution,setSphereResolution,sunflower,setDimensionFactor,getNormalGeometry,getNormalMaterial}
+export {sphereResolution,getSphereResolution,setSphereResolution,sunflower,setDimensionFactorLeft,setDimensionFactorRight,getNormalGeometry,getNormalMaterial}

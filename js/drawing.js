@@ -41,6 +41,8 @@ import {
     addShortestPathHopsSlider,
     enableShortestPathFilterButton,
     addDimensionFactorSlider,
+    addDimensionFactorSliderLeft,
+    addDimensionFactorSliderRight,
     createLegend,
     //hideVRMaximizeButtons,
     toggleMenus
@@ -327,7 +329,10 @@ var initControls = function () {
     enableShortestPathFilterButton(false);
 
     // addSkyboxButton();
-    addDimensionFactorSlider();
+    //addDimensionFactorSlider();
+    addDimensionFactorSliderLeft();
+    addDimensionFactorSliderRight();
+
     // addFslRadioButton();
     // addSearchPanel();
 

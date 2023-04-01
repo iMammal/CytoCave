@@ -13,7 +13,7 @@ var thresholdMultiplier = 1.0; // 100.0 for fMRI data of values (-1.0->1.0) and 
 import {getDataFile,setDataFile,atlas} from "./globals.js";
 import {changeSceneToSubject, changeActiveGeometry, changeColorGroup, updateScenes, redrawEdges, updateOpacity, updateNodesVisiblity, getSpt, previewAreaLeft, previewAreaRight, setThresholdModality} from './drawing'
 import {modelLeft,modelRight} from './model'
-import {setDimensionFactor} from './graphicsUtils.js'
+import {setDimensionFactorLeft,setDimensionFactorRight} from './graphicsUtils.js'
 import {scaleColorGroup} from "./utils/scale";
 
 var initSubjectMenu = function (side) {
@@ -42,24 +42,48 @@ var initSubjectMenu = function (side) {
 
 /* Node stuff at nodeInfoPanel */
 // adds a slider to control glyphs size
-var addDimensionFactorSlider = function () {
+var addDimensionFactorSliderLeft = function () {
     var panel = d3.select("#nodeInfoPanel");
 
     panel.append("input")
         .attr("type", "range")
         .attr("value", "1")
-        .attr("id", "dimensionSlider")
+        .attr("id", "dimensionSliderLeft")
         .attr("min","0.2")
         .attr("max", "4")
         .attr("step","0.1")
         .on("change", function () {
-            setDimensionFactor(this.value);
+            setDimensionFactorLeft(this.value);
         });
 
     panel.append("label")
         .attr("for", "dimensionSlider")
         .attr("id", "dimensionSliderLabel")
-        .text("Glyph Size");
+        .text("Left Glyph Size");
+
+    panel.append("br");
+};
+
+/* Node stuff at nodeInfoPanel */
+// adds a slider to control Right glyphs size
+var addDimensionFactorSliderRight = function () {
+    var panel = d3.select("#nodeInfoPanel");
+
+    panel.append("input")
+        .attr("type", "range")
+        .attr("value", "1")
+        .attr("id", "dimensionSliderRight")
+        .attr("min","0.2")
+        .attr("max", "4")
+        .attr("step","0.1")
+        .on("change", function () {
+            setDimensionFactorRight(this.value);
+        });
+
+    panel.append("label")
+        .attr("for", "dimensionSlider")
+        .attr("id", "dimensionSliderLabel")
+        .text("Right Glyph Size");
 
     panel.append("br");
 };
@@ -781,4 +805,4 @@ var toggleMenus = function (e) {
 
 var getShortestPathVisMethod = function () { return shortestPathVisMethod }
 
-export {toggleMenus,initSubjectMenu,removeGeometryButtons,addOpacitySlider,addModalityButton,addThresholdSlider,addColorGroupList,addTopologyMenu,addShortestPathFilterButton,addDistanceSlider,addShortestPathHopsSlider,enableShortestPathFilterButton,addDimensionFactorSlider, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons
+export {toggleMenus,initSubjectMenu,removeGeometryButtons,addOpacitySlider,addModalityButton,addThresholdSlider,addColorGroupList,addTopologyMenu,addShortestPathFilterButton,addDistanceSlider,addShortestPathHopsSlider,enableShortestPathFilterButton,addDimensionFactorSliderLeft, addDimensionFactorSliderRight, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons
