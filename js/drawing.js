@@ -396,11 +396,17 @@ var initCanvas = function () {
 };
 
 // set the threshold for both models
-var setThreshold = function(value) {
+var setThreshold = function (value) {
     modelLeft.setThreshold(value);
     modelRight.setThreshold(value);
 };
 
+
+// set the threshold for both models
+var setConThreshold = function (value) {
+    modelLeft.setConThreshold(value);
+    modelRight.setConThreshold(value);
+};
 
 //enable Ipsilaterality
 var enableIpsilaterality = function (enable) {
@@ -438,7 +444,8 @@ var enableContralaterality = function (enable) {
 
 //enable Ipsilaterality
 var enableIpsilaterality = function (enable) {
-	enableIpsi = enable;
+    //if (!enableIpsi && enable) {}
+    enableIpsi = enable;
 
 	console.log("IPSI:"+enable);
 
