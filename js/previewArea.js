@@ -55,7 +55,7 @@ import { XRControllerModelFactory } from "three/examples/jsm/webxr/XRControllerM
 import {timerDelta} from "three/examples/jsm/nodes/shadernode/ShaderNodeElements";
 import {WebXRManager} from "three/src/renderers/webxr/WebXRManager";
 import {abs,sign} from "mathjs";
-
+import { NODE_STREAM_INPUT } from "papaparse";
 
 function PreviewArea(canvas_, model_, name_) {
     var name = name_;
@@ -1619,7 +1619,7 @@ function PreviewArea(canvas_, model_, name_) {
         var row = model.getConnectionMatrixRow(indexNode);
         var edges = model.getActiveEdges();
         var edgeIdx = model.getEdgesIndeces();
-        if (getEnableEB) {
+        if (getEnableEB( )) {
             model.performEBOnNode(indexNode);
         }
 
@@ -1906,7 +1906,17 @@ function PreviewArea(canvas_, model_, name_) {
         camera.zoom = cam.zoom;
     };
 
+    this.getGlyph = function (nodeIndex) {
+        if (nodeIndex) {
+            return glyphs[nodeIndex];
+        } else {
+            return null;
+        }
+    }
 
+    this.getGlyphCount = function () {
+            return glyphs.length;
+    }
 
     // PreviewArea construction
     this.createCanvas();
@@ -1914,4 +1924,4 @@ function PreviewArea(canvas_, model_, name_) {
     this.drawRegions();
 }
 
-export {PreviewArea}
+export { PreviewArea }

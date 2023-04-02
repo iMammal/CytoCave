@@ -55,7 +55,7 @@ import {scanFolder, loadLookUpTable, loadSubjectNetwork, loadSubjectTopology} fr
 import {modelLeft,modelRight} from './model';
 import {PreviewArea} from "./previewArea";
 import {setUpdateNeeded} from './utils/Dijkstra';
-import {setNodeInfoPanel, enableThresholdControls} from './GUI'
+import { setNodeInfoPanel, enableThresholdControls, addSearchPanel } from './GUI'
 import {setColorGroupScale} from './utils/scale'
 
 // callback on mouse moving, expected action: node beneath pointer are drawn bigger
@@ -319,7 +319,7 @@ function onKeyPress(event) {
 var initControls = function () {
     // add controls
     addOpacitySlider();
-    //addEdgeBundlingCheck();
+    // addEdgeBundlingCheck();
     addModalityButton();
     addThresholdSlider();
 	addLateralityCheck();
@@ -340,7 +340,7 @@ var initControls = function () {
     addDimensionFactorSliderLeft('Right');
     addDimensionFactorSliderRight('Right');
     // addFslRadioButton();
-    // addSearchPanel();
+    addSearchPanel();
 
     modelLeft.setAllRegionsActivated();
     modelRight.setAllRegionsActivated();
