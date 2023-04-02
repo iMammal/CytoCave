@@ -296,7 +296,7 @@ button > input[type="checkbox"] {
 
 #nodeInfoPanelRight {
     position: absolute;
-    width: 300px;
+    width: 360px;
     height: 160px;
     bottom: 10px;
     right: 30%;
