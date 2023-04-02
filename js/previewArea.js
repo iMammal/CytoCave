@@ -56,6 +56,7 @@ import {timerDelta} from "three/examples/jsm/nodes/shadernode/ShaderNodeElements
 import {WebXRManager} from "three/src/renderers/webxr/WebXRManager";
 import {abs,sign} from "mathjs";
 import { NODE_STREAM_INPUT } from "papaparse";
+//import * as d3 from '../external-libraries/d3'
 
 function PreviewArea(canvas_, model_, name_) {
     var name = name_;
@@ -1250,6 +1251,7 @@ function PreviewArea(canvas_, model_, name_) {
     // update node scale according to selection status
     this.updateNodeGeometry = function (nodeIndex, status) {
         var scale = 1.0;
+        var delta = clock.getDelta();
         var dataset = model.getDataset();
         switch (status) {
             case 'normal':
@@ -1258,13 +1260,14 @@ function PreviewArea(canvas_, model_, name_) {
                 break;
             case 'mouseover':
                 scale = 1.72;
-                var delta = clock.getDelta();
                 glyphs[nodeIndex].material.color = new THREE.Color( (delta * 10.0 ), (1.0-delta * 10.0 ), (0.5 + delta * 5.0 )  );
                 //console.log("Delta:" + (delta * 10.0 )) + " " + (1.0-delta * 10.0 ) + " " + (0.5 + delta * 5.0 );
                 break;
             case 'selected':
                 scale = (8 / 3);
                 glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
+                //glyphs[nodeIndex].material.color = new THREE.Color( scaleColorGroup(model, dataset[nodeIndex].group)*0.75  + delta * 12,    );
+                //glyphs[nodeIndex].material.color = new THREE.Color( scaleColorGroup(model, dataset[nodeIndex].group) + delta );
                 break;
             case 'root':
                 scale = (10 / 3);
@@ -1272,6 +1275,35 @@ function PreviewArea(canvas_, model_, name_) {
                 break;
         }
         glyphs[nodeIndex].scale.set(scale, scale, scale);
+    };
+
+    // update node scale according to selection status
+    var animateNodeShimmer = function () { //nodeIndex, status) {
+        //var clock = new THREE.Clock();
+       // Set up an oscillating size animation
+        const amplitude =0.75;
+        const frequency = 0.5;
+        var delta = clock.getDelta();
+        var elapsedTime = clock.getElapsedTime();
+        var dataset = model.getDataset()
+
+        //this.drawConnections
+
+        var nodeIdx;
+        for (var i = 0; i < getNodesSelected().length; i++) {
+            nodeIdx = getNodesSelected()[i];
+            // draw only edges belonging to active nodes
+            if ((nodeIdx >= 0) && model.isRegionActive(model.getGroupNameByNodeIndex(nodeIdx))) {
+                // two ways to draw edges
+                //glyphs[nodeIdx].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
+                var baseColor = new THREE.Color(scaleColorGroup(model, dataset[nodeIdx].group));
+                var deltaColor = new THREE.Color(  amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime),0,0 );      //delta * 180, delta * 10, delta * 10);
+                var tempColor = new THREE.Color();
+                tempColor.lerpColors(baseColor, deltaColor, 0.5);
+                glyphs[nodeIdx].material.color = tempColor; //new THREE.Color(baseColor[0] + delta * 12, baseColor[1]+delta * 2, baseColor[2]+delta * 5);
+                console.log(elapsedTime, baseColor, deltaColor, tempColor)
+            }
+        }
     };
 
     this.updateNodesColor = function () {
@@ -1336,10 +1368,7 @@ function PreviewArea(canvas_, model_, name_) {
         // } else {
         //calculate delta for controls
 
-
-        //var clock = new THREE.Clock();
         var delta = clock.getDelta();
-
 
         //update controls
         if (controlMode !== 'transform') {
@@ -1348,6 +1377,7 @@ function PreviewArea(canvas_, model_, name_) {
             controls.update();
         }
 
+       animateNodeShimmer();
 
 
         //update camera position
@@ -1371,6 +1401,8 @@ function PreviewArea(canvas_, model_, name_) {
     this.requestAnimate = function () {
         //effect.requestAnimationFrame(animatePV); //effect no longer has this function. Maybe it is no longer required
         //window.requestAnimationFrame(animatePV);
+
+
         animatePV();
         // controls.update()
         // renderer.render(scene, camera);
