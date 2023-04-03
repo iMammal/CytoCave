@@ -1277,8 +1277,40 @@ function PreviewArea(canvas_, model_, name_) {
         glyphs[nodeIndex].scale.set(scale, scale, scale);
     };
 
-    // update node scale according to selection status
-    var animateNodeShimmer = function () { //nodeIndex, status) {
+    var animateNodeBreathing  = function (nodeList) {
+
+        const amplitude =0.015;
+        const frequency = 0.5;
+        var delta = clock.getDelta();
+        var elapsedTime = clock.getElapsedTime();
+        var dataset = model.getDataset()
+
+        //this.drawConnections
+
+        var nodeIdx;
+        for (var i = 0; i < nodeList.length; i++) {
+            nodeIdx = nodeList[i];
+            // draw only edges belonging to active nodes
+            if ((nodeIdx >= 0) && model.isRegionActive(model.getGroupNameByNodeIndex(nodeIdx))) {
+                // two ways to draw edges
+                //glyphs[nodeIdx].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
+
+                var glyphscale = glyphs[nodeIdx].scale.toArray();//.get();
+                var newscale0 = glyphscale[0] + amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime);
+                var newscale1 = glyphscale[1] + amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime);
+                var newscale2 = glyphscale[2] + amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime);
+
+                console.log(glyphscale);
+
+                //glyphs[nodeIdx].scale.fromArray(newscale);
+                glyphs[nodeIdx].scale.set(newscale0,newscale1,newscale2);
+            }
+        }
+    }
+
+
+        // update node scale according to selection status
+    var animateNodeShimmer = function (nodeList) { //nodeIndex, status) {
         //var clock = new THREE.Clock();
        // Set up an oscillating size animation
         const amplitude =0.75;
@@ -1290,8 +1322,8 @@ function PreviewArea(canvas_, model_, name_) {
         //this.drawConnections
 
         var nodeIdx;
-        for (var i = 0; i < getNodesSelected().length; i++) {
-            nodeIdx = getNodesSelected()[i];
+        for (var i = 0; i < nodeList.length; i++) {
+            nodeIdx = nodeList[i];
             // draw only edges belonging to active nodes
             if ((nodeIdx >= 0) && model.isRegionActive(model.getGroupNameByNodeIndex(nodeIdx))) {
                 // two ways to draw edges
@@ -1301,7 +1333,7 @@ function PreviewArea(canvas_, model_, name_) {
                 var tempColor = new THREE.Color();
                 tempColor.lerpColors(baseColor, deltaColor, 0.5);
                 glyphs[nodeIdx].material.color = tempColor; //new THREE.Color(baseColor[0] + delta * 12, baseColor[1]+delta * 2, baseColor[2]+delta * 5);
-                console.log(elapsedTime, baseColor, deltaColor, tempColor)
+                //console.log(elapsedTime, baseColor, deltaColor, tempColor)
             }
         }
     };
@@ -1377,7 +1409,8 @@ function PreviewArea(canvas_, model_, name_) {
             controls.update();
         }
 
-       animateNodeShimmer();
+        animateNodeShimmer(getNodesSelected());
+        animateNodeBreathing(getNodesSelected());
 
 
         //update camera position
