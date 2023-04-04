@@ -32,6 +32,9 @@ import {
     getNodesSelected,
     clrNodesSelected,
     setNodesSelected,
+    getNodesFocused,
+    clrNodesFocused,
+    setNodesFocused,
     getVisibleNodes,
     getVisibleNodesLength,
     setVisibleNodes,
@@ -93,6 +96,10 @@ function PreviewArea(canvas_, model_, name_) {
     var shortestPathEdges = [];
 
     var edgeOpacity = 1.0;
+
+    // animation settings
+    var amplitude =  0.0015;
+    var frequency =  0.5;
 
     this.initXR = function () {
         //init VR //todo: this is stub now
@@ -1257,11 +1264,13 @@ function PreviewArea(canvas_, model_, name_) {
             case 'normal':
                 scale = 1.0;
                 glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
+                clrNodesFocused();//nodeIndex);
                 break;
             case 'mouseover':
                 scale = 1.72;
                 glyphs[nodeIndex].material.color = new THREE.Color( (delta * 10.0 ), (1.0-delta * 10.0 ), (0.5 + delta * 5.0 )  );
                 //console.log("Delta:" + (delta * 10.0 )) + " " + (1.0-delta * 10.0 ) + " " + (0.5 + delta * 5.0 );
+                setNodesFocused(getNodesFocused().length, nodeIndex);
                 break;
             case 'selected':
                 scale = (8 / 3);
@@ -1279,8 +1288,9 @@ function PreviewArea(canvas_, model_, name_) {
 
     var animateNodeBreathing  = function (nodeList) {
 
-        const amplitude =0.015;
-        const frequency = 0.5;
+        //const amplitude =  0.015;
+        var scaleFrequency = frequency; //0.5;
+        var scaleAmplitude = amplitude;
         var delta = clock.getDelta();
         var elapsedTime = clock.getElapsedTime();
         var dataset = model.getDataset()
@@ -1296,11 +1306,11 @@ function PreviewArea(canvas_, model_, name_) {
                 //glyphs[nodeIdx].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
 
                 var glyphscale = glyphs[nodeIdx].scale.toArray();//.get();
-                var newscale0 = glyphscale[0] + amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime);
-                var newscale1 = glyphscale[1] + amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime);
-                var newscale2 = glyphscale[2] + amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime);
+                var newscale0 = glyphscale[0] + scaleAmplitude * Math.sin(2 * Math.PI * scaleFrequency * elapsedTime);
+                var newscale1 = glyphscale[1] + scaleAmplitude * Math.sin(2 * Math.PI * scaleFrequency * elapsedTime);
+                var newscale2 = glyphscale[2] + scaleAmplitude * Math.sin(2 * Math.PI * scaleFrequency * elapsedTime);
 
-                console.log(glyphscale);
+                //console.log(glyphscale);
 
                 //glyphs[nodeIdx].scale.fromArray(newscale);
                 glyphs[nodeIdx].scale.set(newscale0,newscale1,newscale2);
@@ -1310,11 +1320,11 @@ function PreviewArea(canvas_, model_, name_) {
 
 
         // update node scale according to selection status
-    var animateNodeShimmer = function (nodeList) { //nodeIndex, status) {
+    var animateNodeShimmer = function (nodeList, freq = 0.5, color) { //nodeIndex, status) {
         //var clock = new THREE.Clock();
        // Set up an oscillating size animation
-        const amplitude =0.75;
-        const frequency = 0.5;
+        var colorAmplitude = amplitude * 500; // 0.75;
+        var colorFrequency  = frequency * freq / 0.5;
         var delta = clock.getDelta();
         var elapsedTime = clock.getElapsedTime();
         var dataset = model.getDataset()
@@ -1329,9 +1339,13 @@ function PreviewArea(canvas_, model_, name_) {
                 // two ways to draw edges
                 //glyphs[nodeIdx].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
                 var baseColor = new THREE.Color(scaleColorGroup(model, dataset[nodeIdx].group));
-                var deltaColor = new THREE.Color(  amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime),0,0 );      //delta * 180, delta * 10, delta * 10);
+                var deltaColor = new THREE.Color(  colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime),0,0 );      //delta * 180, delta * 10, delta * 10);
                 var tempColor = new THREE.Color();
                 tempColor.lerpColors(baseColor, deltaColor, 0.5);
+                if(color){
+                    var newColor = new THREE.Color(color);
+                    tempColor.lerpColors(tempColor, newColor, colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime));
+                }
                 glyphs[nodeIdx].material.color = tempColor; //new THREE.Color(baseColor[0] + delta * 12, baseColor[1]+delta * 2, baseColor[2]+delta * 5);
                 //console.log(elapsedTime, baseColor, deltaColor, tempColor)
             }
@@ -1409,9 +1423,11 @@ function PreviewArea(canvas_, model_, name_) {
             controls.update();
         }
 
-        animateNodeShimmer(getNodesSelected());
+        animateNodeShimmer(getNodesSelected(), 0.5);
+        animateNodeShimmer(getNodesFocused(),4);//, "#ffffff")
         animateNodeBreathing(getNodesSelected());
-
+        shimmerEdgeNodeColors();
+        updateNodesColor();
 
         //update camera position
         camera.updateProjectionMatrix();
@@ -1585,6 +1601,53 @@ function PreviewArea(canvas_, model_, name_) {
             c1 = glyphs[edge.nodes[0]].material.color;
             c2 = glyphs[edge.nodes[1]].material.color;
             edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
+        }
+    };
+
+    var updateNodesColor = function () {
+        const elapsedTime = clock.getElapsedTime();
+        var dataset = model.getDataset();
+
+        if((elapsedTime % 30) < 29.8) { return; }
+
+        console.log(getNodesFocused());
+        clrNodesFocused();
+
+        for (var i = 0; i < glyphs.length; ++i) {
+            glyphs[i].material.color = new THREE.Color(scaleColorGroup(model, dataset[i].group));
+        }
+    };
+``
+    // set the color of displayed edges
+    var shimmerEdgeNodeColors = function () {
+        var dataset = model.getDataset();
+        var colorAmplitude = amplitude * 16.6;  // 0.25;
+        var colorFrequency = 3*frequency;
+        const elapsedTime = clock.getElapsedTime();
+        const deltaRadius = colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime);
+        var edge, c1, c2, tempColor = new THREE.Color();
+        for (var i = 0; i < displayedEdges.length; i++) {
+            edge = displayedEdges[i];
+            c1 = edge.nodes[0]; //.material.color;
+            c2 = edge.nodes[1]; //.material.color;
+            var baseColor = new THREE.Color(scaleColorGroup(model, dataset[c2].group));
+            var deltaColor = new THREE.Color(scaleColorGroup(model, dataset[c1].group)); //1,0.6,0.3);
+                //amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime),0,0 );      //delta * 180, delta * 10, delta * 10);
+            var tempColor = new THREE.Color();
+            tempColor.lerpColors(baseColor, deltaColor, 0.5*deltaRadius);
+            var targetColor = tempColor.offsetHSL(0, 0.5*deltaRadius, deltaRadius);  //new THREE.Color();
+            //0.5*deltaRadius+0.5);
+            //edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
+            //tempColor.lerpHSL(targetColor, 0.5*deltaRadius+0.5);
+            glyphs[edge.nodes[1]].material.color = targetColor;
+        }
+
+        for (i = 0; i < shortestPathEdges.length; i++) {
+            edge = displayedEdges[i];
+            c1 = glyphs[edge.nodes[0]].material.color;
+            c2 = glyphs[edge.nodes[1]].material.color;
+            //edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
+
         }
     };
 
@@ -2000,6 +2063,14 @@ function PreviewArea(canvas_, model_, name_) {
 
     this.getGlyphCount = function () {
             return glyphs.length;
+    }
+
+    this.setAnimation = function(amp) {
+        amplitude = amp;
+    }
+
+    this.setFlahRate = function (freq) {
+        frequency = freq;
     }
 
     // PreviewArea construction

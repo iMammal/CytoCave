@@ -18,7 +18,27 @@ var leftSearching = false;
 
 // initialize subject selection drop down menus
 import {getDataFile,setDataFile,atlas} from "./globals.js";
-import { changeSceneToSubject, changeActiveGeometry, changeColorGroup, updateScenes, redrawEdges, updateOpacity, updateNodesVisiblity, getSpt, getNodesSelected, previewAreaLeft, previewAreaRight, setThresholdModality, getEnableIpsi, getEnableContra, enableIpsilaterality, enableContralaterality, enableEdgeBundling } from './drawing'
+import {
+    changeSceneToSubject,
+    changeActiveGeometry,
+    changeColorGroup,
+    updateScenes,
+    redrawEdges,
+    updateOpacity,
+    updateNodesVisiblity,
+    getSpt,
+    getNodesSelected,
+    previewAreaLeft,
+    previewAreaRight,
+    setThresholdModality,
+    getEnableIpsi,
+    getEnableContra,
+    enableIpsilaterality,
+    enableContralaterality,
+    enableEdgeBundling,
+    setNodesFocused,
+    getNodesFocused
+} from './drawing'
 import {modelLeft,modelRight} from './model'
 import {setDimensionFactorLeftSphere,setDimensionFactorRightSphere,setDimensionFactorLeftBox,setDimensionFactorRightBox} from './graphicsUtils.js'
 import { scaleColorGroup } from "./utils/scale";
@@ -213,6 +233,53 @@ var addDimensionFactorSliderRight = function (side) {
         .on("change", (side == 'Left') ? function () { enableLeftDimLock = this.checked } : function () { enableRightDimLock = this.checked });
     panel.append("br");
 };
+
+
+// add Animation slider 0 to 1
+var addAnimationSlider = function () {
+    var menu = d3.select("#nodeInfoPanelRight");
+    menu.append("label")
+        .attr("for", "animationSlider")
+        .attr("id", "animationSliderLabel")
+        .text("Animation @ " + 1.);
+    menu.append("input")
+        .attr("type", "range")
+        .attr("value", 10)
+        .attr("id", "animationSlider")
+        .attr("min", 0)
+        .attr("max", 100)
+        .attr("step",1)
+        .on("change", function () {
+            previewAreaLeft.setAnimation(Math.floor(this.value)/10000);
+            previewAreaRight.setAnimation(Math.floor(this.value)/10000);
+            document.getElementById("animationSliderLabel").innerHTML = "Animation @ " + this.value/1.00;
+        });
+    menu.append("br");
+
+};
+
+
+// add Animation slider 0 to 1
+var addFlashRateSlider = function () {
+    var menu = d3.select("#nodeInfoPanelRight");
+    menu.append("label")
+        .attr("for", "flashRateSlider")
+        .attr("id", "flashRateSliderLabel")
+        .text("Flash rate @ " + 0.5);
+    menu.append("input")
+        .attr("type", "range")
+        .attr("value", 50)
+        .attr("id", "flashRateSlider")
+        .attr("min", 0)
+        .attr("max", 100)
+        .attr("step",1)
+        .on("change", function () {
+            previewAreaLeft.setFlahRate(Math.floor(this.value)/100);
+            previewAreaRight.setFlahRate(Math.floor(this.value)/100);
+            document.getElementById("flashRateSliderLabel").innerHTML = "Flash rate @ " + this.value/100.00;
+        });
+};
+
 
 // adds a button to toggle skybox visibility
 var addSkyboxButton = function () {
@@ -1238,9 +1305,12 @@ var searchElement = function(intext,side) {
             alert("Node not found");
     }
 
+    setNodesFocused(getNodesFocused().length,index);
+
     //drawSelectedNode(index, glyphs[index]);
     if (side !== 'Right' || leftSearching) {
         previewAreaLeft.drawSelectedNode(index, previewAreaLeft.getGlyph[index]);
+
     }
     if (side !== 'Left' || rightSearching) {
         previewAreaRight.drawSelectedNode(index, previewAreaRight.getGlyph[index]);
@@ -1269,4 +1339,4 @@ var toggleMenus = function (e) {
 
 var getShortestPathVisMethod = function () { return shortestPathVisMethod }
 
-export { toggleMenus, initSubjectMenu, removeGeometryButtons, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons
+export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons

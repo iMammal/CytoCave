@@ -10,6 +10,8 @@ var glyphNodeDictionary ={};        /// Object that stores uuid of left and righ
 var activeVR = 'left';
 
 var nodesSelected = [];
+var nodesFocused = [];
+
 var visibleNodes =[];               // boolean array storing nodes visibility
 
 var pointedNodeIdx = -1;            // index of node under the mouse
@@ -47,6 +49,8 @@ import {
     addDimensionFactorSliderLeft,
     addDimensionFactorSliderRight,
     createLegend,
+    addAnimationSlider,
+    addFlashRateSlider,
     //hideVRMaximizeButtons,
     toggleMenus
 } from './GUI.js';
@@ -341,6 +345,8 @@ var initControls = function () {
     addDimensionFactorSliderRight('Right');
     // addFslRadioButton();
     addSearchPanel();
+    addAnimationSlider();
+    addFlashRateSlider();
 
     modelLeft.setAllRegionsActivated();
     modelRight.setAllRegionsActivated();
@@ -684,6 +690,23 @@ var setNodesSelected = function (arrIndex, newNodeVal) {
     nodesSelected[arrIndex] = newNodeVal;
 }
 
+var getNodesFocused = function () {
+    return nodesFocused;
+}
+
+var clrNodesFocused = function () {
+    console.log(nodesFocused);
+    nodesFocused = [];
+}
+
+var setNodesFocused = function (arrIndex, newNodeVal) {
+    if(true || newNodeVal) {
+        nodesFocused[arrIndex] = newNodeVal;
+    } else {
+        nodesFocused[nodesFocused.length] = arrIndex;
+    }
+}
+
 var getEnableEB = function () { return enableEB };
 
 var getEnableIpsi = function () { return enableIpsi };
@@ -700,4 +723,4 @@ var getThresholdModality = function () { return thresholdModality }
 
 var setThresholdModality = function (modality) { thresholdModality = modality }
 
-export {changeSceneToSubject, initControls, initCanvas, changeActiveGeometry, changeColorGroup, setRoot, getRoot, getSpt, updateScenes, updateNodesVisiblity, redrawEdges, updateOpacity, glyphNodeDictionary, previewAreaLeft, previewAreaRight, getNodesSelected, setNodesSelected, clrNodesSelected, getVisibleNodes, getVisibleNodesLength, setVisibleNodes, getEnableEB, getEnableIpsi, getEnableContra, enableIpsilaterality, enableContralaterality, getThresholdModality, setThresholdModality, updateNodeSelection, updateNodeMoveOver };
+export {changeSceneToSubject, initControls, initCanvas, changeActiveGeometry, changeColorGroup, setRoot, getRoot, getSpt, updateScenes, updateNodesVisiblity, redrawEdges, updateOpacity, glyphNodeDictionary, previewAreaLeft, previewAreaRight, getNodesSelected, setNodesSelected, clrNodesSelected, getNodesFocused, setNodesFocused, clrNodesFocused, getVisibleNodes, getVisibleNodesLength, setVisibleNodes, getEnableEB, getEnableIpsi, getEnableContra, enableIpsilaterality, enableContralaterality, getThresholdModality, setThresholdModality, updateNodeSelection, updateNodeMoveOver };
