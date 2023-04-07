@@ -52,13 +52,14 @@ import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS} from './GUI'
 import {scaleColorGroup} from './utils/scale'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
-import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
+import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
 //import { XRControllerModelFactory } from './external-libraries/vr/XRControllerModelFactory.js';
-import { XRControllerModelFactory } from "three/examples/jsm/webxr/XRControllerModelFactory.js";
+import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory.js";
 import {timerDelta} from "three/examples/jsm/nodes/shadernode/ShaderNodeElements";
 import {WebXRManager} from "three/src/renderers/webxr/WebXRManager";
-import {abs,sign} from "mathjs";
-import { NODE_STREAM_INPUT } from "papaparse";
+import {abs, sign} from "mathjs";
+import {NODE_STREAM_INPUT} from "papaparse";
+
 //import * as d3 from '../external-libraries/d3'
 
 function PreviewArea(canvas_, model_, name_) {
@@ -214,8 +215,8 @@ function PreviewArea(canvas_, model_, name_) {
 
 
     // animation settings
-    var amplitude =  0.0015;
-    var frequency =  0.5;
+    var amplitude = 0.0015;
+    var frequency = 0.5;
 
     this.initXR = function () {
         //init VR //todo: this is stub now
@@ -244,31 +245,31 @@ function PreviewArea(canvas_, model_, name_) {
         var v3Origin = new THREE.Vector3(0, 0, 0);
         var v3UnitUp = new THREE.Vector3(0, 0, -100);
 
-        controllerLeft = renderer.xr.getController( 0 );
-        controllerLeft.addEventListener( 'selectstart', onSelectStart );
-        controllerLeft.addEventListener( 'selectend', onSelectEnd );
-        controllerLeft.addEventListener( 'connected', function ( event ) {
+        controllerLeft = renderer.xr.getController(0);
+        controllerLeft.addEventListener('selectstart', onSelectStart);
+        controllerLeft.addEventListener('selectend', onSelectEnd);
+        controllerLeft.addEventListener('connected', function (event) {
             controllerLeft.gamepad = event.data.gamepad;
             console.log("Left controller connected");
             console.log("event data: ");
             console.log(event.data);
             xrInputLeft = event.data;
             //  this.add( buildController( event.data ) );
-            this.add( drawPointer(v3Origin, v3UnitUp) );
+            this.add(drawPointer(v3Origin, v3UnitUp));
 
-        } );
+        });
 
-        controllerLeft.addEventListener( 'disconnected', function () {
+        controllerLeft.addEventListener('disconnected', function () {
 
-            this.remove( this.children[ 0 ] );
+            this.remove(this.children[0]);
 
-        } );
-        scene.add( controllerLeft );
+        });
+        scene.add(controllerLeft);
 
-        controllerRight = renderer.xr.getController( 1 );
-        controllerRight.addEventListener( 'selectstart', onSelectStart );
-        controllerRight.addEventListener( 'selectend', onSelectEnd );
-        controllerRight.addEventListener( 'connected', function ( event ) {
+        controllerRight = renderer.xr.getController(1);
+        controllerRight.addEventListener('selectstart', onSelectStart);
+        controllerRight.addEventListener('selectend', onSelectEnd);
+        controllerRight.addEventListener('connected', function (event) {
             controllerRight.gamepad = event.data.gamepad;
             //this.add( buildController( event.data ) );
             console.log("Right controller connected: ");
@@ -276,28 +277,28 @@ function PreviewArea(canvas_, model_, name_) {
             xrInputRight = event.data;
             console.log(event.data);
 
-            this.add( drawPointer(v3Origin, v3UnitUp) );//
-        } );
-        controllerRight.addEventListener( 'disconnected', function () {
+            this.add(drawPointer(v3Origin, v3UnitUp));//
+        });
+        controllerRight.addEventListener('disconnected', function () {
 
-            this.remove( this.children[ 0 ] );
+            this.remove(this.children[0]);
 
-        } );
-        scene.add( controllerRight );
+        });
+        scene.add(controllerRight);
 
         const controllerModelFactory = new XRControllerModelFactory();
 
-        controllerGripLeft = renderer.xr.getControllerGrip( 0 );
-        controllerGripLeft.add( controllerModelFactory.createControllerModel( controllerGripLeft ) );
-        scene.add( controllerGripLeft );
+        controllerGripLeft = renderer.xr.getControllerGrip(0);
+        controllerGripLeft.add(controllerModelFactory.createControllerModel(controllerGripLeft));
+        scene.add(controllerGripLeft);
 
-        controllerGripRight = renderer.xr.getControllerGrip( 1 );
-        controllerGripRight.add( controllerModelFactory.createControllerModel( controllerGripRight ) );
-        scene.add( controllerGripRight );
+        controllerGripRight = renderer.xr.getControllerGrip(1);
+        controllerGripRight.add(controllerModelFactory.createControllerModel(controllerGripRight));
+        scene.add(controllerGripRight);
 
 
         //document.body
-        document.getElementById('vrButton' + name).appendChild( VRButton.createButton( renderer ) );
+        document.getElementById('vrButton' + name).appendChild(VRButton.createButton(renderer));
 
     }
 
@@ -348,339 +349,339 @@ function PreviewArea(canvas_, model_, name_) {
     // };
 
 
- /*   // Called when the user selects a device to present to. In response we
-    // will request an exclusive session from that device.
-    function onRequestSession() {
-        return navigator.xr.requestSession('immersive-vr').then((session) => { // onSessionStarted);
-            xrButton.setSession(session);
-            // Set a flag on the session so we can differentiate it from the
-            // inline session.
-            session.isImmersive = true;
-            onSessionStarted(session);
-        });
-    }
+    /*   // Called when the user selects a device to present to. In response we
+       // will request an exclusive session from that device.
+       function onRequestSession() {
+           return navigator.xr.requestSession('immersive-vr').then((session) => { // onSessionStarted);
+               xrButton.setSession(session);
+               // Set a flag on the session so we can differentiate it from the
+               // inline session.
+               session.isImmersive = true;
+               onSessionStarted(session);
+           });
+       }
 
-    // Called either when the user has explicitly ended the session (like in
-    // onEndSession()) or when the UA has ended the session for any reason.
-    // At this point the session object is no longer usable and should be
-    // discarded.
-    function onSessionEnded(event) {
-        xrButton.setSession(null);
+       // Called either when the user has explicitly ended the session (like in
+       // onEndSession()) or when the UA has ended the session for any reason.
+       // At this point the session object is no longer usable and should be
+       // discarded.
+       function onSessionEnded(event) {
+           xrButton.setSession(null);
 
-        // In this simple case discard the WebGL context too, since we're not
-        // rendering anything else to the screen with it.
-        // renderer = null;
-    }
-
-
-    // Called when the user clicks the 'Exit XR' button. In response we end
-    // the session.
-    function onEndSession(session) {
-        session.end();
-    }
-
-    // Creates a WebGL context and initializes it with some common default state.
-    function createWebGLContext(glAttribs) {
-        glAttribs = glAttribs || {alpha: false};
-
-        let webglCanvas = document.createElement('canvas'); //
-                            //document.getElementById('mycanvas' + name); // document.createElement('canvas');
-        console.log("Canvas: " + webglCanvas);
-        let contextTypes = glAttribs.webgl2 ? ['webgl2'] : ['webgl', 'experimental-webgl'];
-        let context = null;
-
-        for (let contextType of contextTypes) {
-            context = webglCanvas.getContext(contextType, glAttribs);
-            if (context) {
-                break;
-            }
-        }
-
-        if (!context) {
-            let webglType = (glAttribs.webgl2 ? 'WebGL 2' : 'WebGL');
-            console.error('This browser does not support ' + webglType + '.');
-            return null;
-        }
-
-        return context;
-    }
-
-       // init Oculus Rift
-    this.initXR = function () {
-           //init VR //todo: this is stub now
-
-        console.log("Init XR for PV: " + name);
-        enableVR = true;
-        activateVR = false;
-
-        xrButton = new WebXRButton({
-            onRequestSession: onRequestSession,
-            onEndSession: onEndSession
-        });
-        // document.querySelector('header').appendChild(xrButton.domElement);
-        document.getElementById('vrButton' + name).appendChild(xrButton.domElement);
+           // In this simple case discard the WebGL context too, since we're not
+           // rendering anything else to the screen with it.
+           // renderer = null;
+       }
 
 
-        // init VR
-        vrButton = document.getElementById('vrButton' + name);
-        console.log("vrButton: " + vrButton);
+       // Called when the user clicks the 'Exit XR' button. In response we end
+       // the session.
+       function onEndSession(session) {
+           session.end();
+       }
 
-        //vrButton.addEventListener('click', function () {
-        //vrButton.style.display = 'none';
-        //vrButton.innerHTML = 'Enter VR';
-        //  console.log("Click On VR Button: " + name);
-        //effect.requestPresent();
-        //}, false);
+       // Creates a WebGL context and initializes it with some common default state.
+       function createWebGLContext(glAttribs) {
+           glAttribs = glAttribs || {alpha: false};
 
-        // Is WebXR available on this UA?
-        if (navigator.xr) {
-            // If the device allows creation of exclusive sessions set it as the
-            // target of the 'Enter XR' button.
-            navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
-                xrButton.enabled = supported;
-            });
+           let webglCanvas = document.createElement('canvas'); //
+                               //document.getElementById('mycanvas' + name); // document.createElement('canvas');
+           console.log("Canvas: " + webglCanvas);
+           let contextTypes = glAttribs.webgl2 ? ['webgl2'] : ['webgl', 'experimental-webgl'];
+           let context = null;
 
-            // Start up an inline session, which should always be supported on
-            // browsers that support WebXR regardless of the available hardware.
-            navigator.xr.requestSession('inline').then((session) => {
-                inlineSession = session;
-                onSessionStarted(session);
-                //updateFov(); //todo: make an FoV slider
-            });
-        }
+           for (let contextType of contextTypes) {
+               context = webglCanvas.getContext(contextType, glAttribs);
+               if (context) {
+                   break;
+               }
+           }
 
-    } //this.initRXR
+           if (!context) {
+               let webglType = (glAttribs.webgl2 ? 'WebGL 2' : 'WebGL');
+               console.error('This browser does not support ' + webglType + '.');
+               return null;
+           }
 
+           return context;
+       }
 
+          // init Oculus Rift
+       this.initXR = function () {
+              //init VR //todo: this is stub now
 
-            // Called when we've successfully acquired a XRSession. In response we
-            // will set up the necessary session state and kick off the frame loop.
-            function onSessionStarted(session) {
-                // THis line is left over from the immersive VR example:
-                // This informs the 'Enter XR' button that the session has started and
-                // that it should display 'Exit XR' instead.
-                //xrButton.setSession(session) // So, this is needed in "inline" mode.... not sure why.
-                // It actually breaks the "Enter VR" buttons - makes them start immersive mode on initXR
+           console.log("Init XR for PV: " + name);
+           enableVR = true;
+           activateVR = false;
 
-
-                // Listen for the sessions 'end' event so we can respond if the user
-                // or UA ends the session for any reason.
-                session.addEventListener('end', onSessionEnded);
-
-                // Create a WebGL context to render with, initialized to be compatible
-                // with the XRDisplay we're presenting to.
-                if (!gl) {
-                    gl = createWebGLContext({
-                        xrCompatible: true
-                    });
-
-                    // In order for an inline session to be used we must attach the WebGL
-                    // canvas to the document, which will serve as the output surface for
-                    // the results of the inline session's rendering.
-                    document.getElementById('canvas' + name).appendChild(gl.canvas);
-
-                    // The canvas is synced with the window size via CSS, but we still
-                    // need to update the width and height attributes in order to keep
-                    // the default framebuffer resolution in-sync.
-                    function onResize() {
-                        gl.canvas.width = gl.canvas.clientWidth * window.devicePixelRatio;
-                        gl.canvas.height = gl.canvas.clientHeight * window.devicePixelRatio;
-                    }
-
-                    window.addEventListener('resize', onResize);
-                    onResize();
-
-                    // Installs the listeners necessary to allow users to look around with
-                    // inline sessions using the mouse or touch.
-                    addInlineViewListeners(gl.canvas);
+           xrButton = new WebXRButton({
+               onRequestSession: onRequestSession,
+               onEndSession: onEndSession
+           });
+           // document.querySelector('header').appendChild(xrButton.domElement);
+           document.getElementById('vrButton' + name).appendChild(xrButton.domElement);
 
 
-                } //if (!gl)
+           // init VR
+           vrButton = document.getElementById('vrButton' + name);
+           console.log("vrButton: " + vrButton);
 
+           //vrButton.addEventListener('click', function () {
+           //vrButton.style.display = 'none';
+           //vrButton.innerHTML = 'Enter VR';
+           //  console.log("Click On VR Button: " + name);
+           //effect.requestPresent();
+           //}, false);
 
-                // WebGL layers for inline sessions won't allocate their own framebuffer,
-                // which causes gl commands to naturally execute against the default
-                // framebuffer while still using the canvas dimensions to compute
-                // viewports and projection matrices.
-                let glLayer = new XRWebGLLayer(session, gl);
+           // Is WebXR available on this UA?
+           if (navigator.xr) {
+               // If the device allows creation of exclusive sessions set it as the
+               // target of the 'Enter XR' button.
+               navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+                   xrButton.enabled = supported;
+               });
 
-                session.updateRenderState({
-                    baseLayer: glLayer
-                });
+               // Start up an inline session, which should always be supported on
+               // browsers that support WebXR regardless of the available hardware.
+               navigator.xr.requestSession('inline').then((session) => {
+                   inlineSession = session;
+                   onSessionStarted(session);
+                   //updateFov(); //todo: make an FoV slider
+               });
+           }
 
-                // Get a frame of reference, which is required for querying poses. In
-                // this case an 'local' frame of reference means that all poses will
-                // be relative to the location where the XRDevice was first detected.
-                let refSpaceType = session.isImmersive ? 'local' : 'viewer';
-                session.requestReferenceSpace(refSpaceType).then((refSpace) => {
-                    // Since we're dealing with multiple sessions now we need to track
-                    // which XRReferenceSpace is associated with which XRSession.
-                    if (session.isImmersive) {
-                        xrImmersiveRefSpace = refSpace;
-                    } else {
-                        xrInlineRefSpace = refSpace;
-                    }
-                    session.requestAnimationFrame(onXRFrame);
-                });
-
-            } //onSessionStarted
-
-    // Make the canvas listen for mouse and touch events so that we can
-    // adjust the viewer pose accordingly in inline sessions.
-    function addInlineViewListeners(canvas) {
-        canvas.addEventListener('mousemove', (event) => {
-            // Only rotate when the right button is pressed
-            if (event.buttons && 2) {
-                rotateView(event.movementX, event.movementY);
-            }
-        });
-
-        // Keep track of touch-related state so that users can touch and drag on
-        // the canvas to adjust the viewer pose in an inline session.
-        let primaryTouch = undefined;
-        let prevTouchX = undefined;
-        let prevTouchY = undefined;
-
-        // Keep track of all active touches, but only use the first touch to
-        // adjust the viewer pose.
-        canvas.addEventListener("touchstart", (event) => {
-            if (primaryTouch == undefined) {
-                let touch = event.changedTouches[0];
-                primaryTouch = touch.identifier;
-                prevTouchX = touch.pageX;
-                prevTouchY = touch.pageY;
-            }
-        });
-
-        // Update the set of active touches now that one or more touches
-        // finished. If the primary touch just finished, update the viewer pose
-        // based on the final touch movement.
-        canvas.addEventListener("touchend", (event) => {
-            for (let touch of event.changedTouches) {
-                if (primaryTouch == touch.identifier) {
-                    primaryTouch = undefined;
-                    rotateView(touch.pageX - prevTouchX, touch.pageY - prevTouchY);
-                }
-            }
-        });
-
-        // Update the set of active touches now that one or more touches was
-        // cancelled. Don't update the viewer pose when the primary touch was
-        // cancelled.
-        canvas.addEventListener("touchcancel", (event) => {
-            for (let touch of event.changedTouches) {
-                if (primaryTouch == touch.identifier) {
-                    primaryTouch = undefined;
-                }
-            }
-        });
-
-        // Only use the delta between the most recent and previous events for
-        // the primary touch. Ignore the other touches.
-        canvas.addEventListener("touchmove", (event) => {
-            for (let touch of event.changedTouches) {
-                if (primaryTouch == touch.identifier) {
-                    rotateView(touch.pageX - prevTouchX, touch.pageY - prevTouchY);
-                    prevTouchX = touch.pageX;
-                    prevTouchY = touch.pageY;
-                }
-            }
-        });
-    } //addInlineViewListeners
-
-        // Called every time the XRSession requests that a new frame be drawn.
-    function onXRFrame(t, frame) {
-        let session = frame.session;
-        // Ensure that we're using the right frame of reference for the session.
-        let refSpace = session.isImmersive ?
-            xrImmersiveRefSpace :
-            xrInlineRefSpace;
-
-        // Account for the click-and-drag mouse movement or touch movement when
-        // calculating the viewer pose for inline sessions.
-        if (!session.isImmersive) {
-            refSpace = getAdjustedRefSpace(refSpace);
-        }
+       } //this.initRXR
 
 
 
-        // Get the XRDevice pose relative to the Frame of Reference we created
-        // earlier.
-        let pose = frame.getViewerPose(refSpace);
+               // Called when we've successfully acquired a XRSession. In response we
+               // will set up the necessary session state and kick off the frame loop.
+               function onSessionStarted(session) {
+                   // THis line is left over from the immersive VR example:
+                   // This informs the 'Enter XR' button that the session has started and
+                   // that it should display 'Exit XR' instead.
+                   //xrButton.setSession(session) // So, this is needed in "inline" mode.... not sure why.
+                   // It actually breaks the "Enter VR" buttons - makes them start immersive mode on initXR
 
-        // Inform the session that we're ready for the next frame.
-        session.requestAnimationFrame(onXRFrame);
 
-        // Getting the pose may fail if, for example, tracking is lost. So we
-        // have to check to make sure that we got a valid pose before attempting
-        // to render with it. If not in this case we'll just leave the
-        // framebuffer cleared, so tracking loss means the scene will simply
-        // disappear.
-        if (pose) {
-            let glLayer = session.renderState.baseLayer;
+                   // Listen for the sessions 'end' event so we can respond if the user
+                   // or UA ends the session for any reason.
+                   session.addEventListener('end', onSessionEnded);
 
-            // If we do have a valid pose, bind the WebGL layer's framebuffer,
-            // which is where any content to be displayed on the XRDevice must be
-            // rendered.
-            gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
+                   // Create a WebGL context to render with, initialized to be compatible
+                   // with the XRDisplay we're presenting to.
+                   if (!gl) {
+                       gl = createWebGLContext({
+                           xrCompatible: true
+                       });
 
-            // Clear the framebuffer
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                       // In order for an inline session to be used we must attach the WebGL
+                       // canvas to the document, which will serve as the output surface for
+                       // the results of the inline session's rendering.
+                       document.getElementById('canvas' + name).appendChild(gl.canvas);
 
-            // Loop through each of the views reported by the frame and draw them
-            // into the corresponding viewport.
-            for (let view of pose.views) {
-                let viewport = glLayer.getViewport(view);
-                gl.viewport(viewport.x, viewport.y,
-                    viewport.width, viewport.height);
+                       // The canvas is synced with the window size via CSS, but we still
+                       // need to update the width and height attributes in order to keep
+                       // the default framebuffer resolution in-sync.
+                       function onResize() {
+                           gl.canvas.width = gl.canvas.clientWidth * window.devicePixelRatio;
+                           gl.canvas.height = gl.canvas.clientHeight * window.devicePixelRatio;
+                       }
 
-                // Draw this view of the scene. What happens in this function really
-                // isn't all that important. What is important is that it renders
-                // into the XRWebGLLayer's framebuffer, using the viewport into that
-                // framebuffer reported by the current view, and using the
-                // projection matrix and view transform from the current view.
-                // We bound the framebuffer and viewport up above, and are passing
-                // in the appropriate matrices here to be used when rendering.
-                //scene.draw(view.projectionMatrix, view.transform);
-                console.log("Draw Scene: " + view.transform.matrix + view.projectionMatrix);
-            }
+                       window.addEventListener('resize', onResize);
+                       onResize();
 
-        } //if pose
-    } //onXRFrame
+                       // Installs the listeners necessary to allow users to look around with
+                       // inline sessions using the mouse or touch.
+                       addInlineViewListeners(gl.canvas);
 
-    // Inline view adjustment code
-    // Allow the user to click and drag the mouse (or touch and drag the
-    // screen on handheld devices) to adjust the viewer pose for inline
-    // sessions. Samples after this one will hide this logic with a utility
-    // class (InlineViewerHelper).
-    let lookYaw = 0;
-    let lookPitch = 0;
-    const LOOK_SPEED = 0.0025;
 
-    // XRReferenceSpace offset is immutable, so return a new reference space
-    // that has an updated orientation.
-    function getAdjustedRefSpace(refSpace) {
-        // Represent the rotational component of the reference space as a
-        // quaternion.
-        let invOrientation = quat.create();
-        quat.rotateX(invOrientation, invOrientation, -lookPitch);
-        quat.rotateY(invOrientation, invOrientation, -lookYaw);
-        let xform = new XRRigidTransform(
-            {x: 0, y: 0, z: 0},
-            {x: invOrientation[0], y: invOrientation[1], z: invOrientation[2], w: invOrientation[3]});
-        return refSpace.getOffsetReferenceSpace(xform);
-    }
-*/
+                   } //if (!gl)
+
+
+                   // WebGL layers for inline sessions won't allocate their own framebuffer,
+                   // which causes gl commands to naturally execute against the default
+                   // framebuffer while still using the canvas dimensions to compute
+                   // viewports and projection matrices.
+                   let glLayer = new XRWebGLLayer(session, gl);
+
+                   session.updateRenderState({
+                       baseLayer: glLayer
+                   });
+
+                   // Get a frame of reference, which is required for querying poses. In
+                   // this case an 'local' frame of reference means that all poses will
+                   // be relative to the location where the XRDevice was first detected.
+                   let refSpaceType = session.isImmersive ? 'local' : 'viewer';
+                   session.requestReferenceSpace(refSpaceType).then((refSpace) => {
+                       // Since we're dealing with multiple sessions now we need to track
+                       // which XRReferenceSpace is associated with which XRSession.
+                       if (session.isImmersive) {
+                           xrImmersiveRefSpace = refSpace;
+                       } else {
+                           xrInlineRefSpace = refSpace;
+                       }
+                       session.requestAnimationFrame(onXRFrame);
+                   });
+
+               } //onSessionStarted
+
+       // Make the canvas listen for mouse and touch events so that we can
+       // adjust the viewer pose accordingly in inline sessions.
+       function addInlineViewListeners(canvas) {
+           canvas.addEventListener('mousemove', (event) => {
+               // Only rotate when the right button is pressed
+               if (event.buttons && 2) {
+                   rotateView(event.movementX, event.movementY);
+               }
+           });
+
+           // Keep track of touch-related state so that users can touch and drag on
+           // the canvas to adjust the viewer pose in an inline session.
+           let primaryTouch = undefined;
+           let prevTouchX = undefined;
+           let prevTouchY = undefined;
+
+           // Keep track of all active touches, but only use the first touch to
+           // adjust the viewer pose.
+           canvas.addEventListener("touchstart", (event) => {
+               if (primaryTouch == undefined) {
+                   let touch = event.changedTouches[0];
+                   primaryTouch = touch.identifier;
+                   prevTouchX = touch.pageX;
+                   prevTouchY = touch.pageY;
+               }
+           });
+
+           // Update the set of active touches now that one or more touches
+           // finished. If the primary touch just finished, update the viewer pose
+           // based on the final touch movement.
+           canvas.addEventListener("touchend", (event) => {
+               for (let touch of event.changedTouches) {
+                   if (primaryTouch == touch.identifier) {
+                       primaryTouch = undefined;
+                       rotateView(touch.pageX - prevTouchX, touch.pageY - prevTouchY);
+                   }
+               }
+           });
+
+           // Update the set of active touches now that one or more touches was
+           // cancelled. Don't update the viewer pose when the primary touch was
+           // cancelled.
+           canvas.addEventListener("touchcancel", (event) => {
+               for (let touch of event.changedTouches) {
+                   if (primaryTouch == touch.identifier) {
+                       primaryTouch = undefined;
+                   }
+               }
+           });
+
+           // Only use the delta between the most recent and previous events for
+           // the primary touch. Ignore the other touches.
+           canvas.addEventListener("touchmove", (event) => {
+               for (let touch of event.changedTouches) {
+                   if (primaryTouch == touch.identifier) {
+                       rotateView(touch.pageX - prevTouchX, touch.pageY - prevTouchY);
+                       prevTouchX = touch.pageX;
+                       prevTouchY = touch.pageY;
+                   }
+               }
+           });
+       } //addInlineViewListeners
+
+           // Called every time the XRSession requests that a new frame be drawn.
+       function onXRFrame(t, frame) {
+           let session = frame.session;
+           // Ensure that we're using the right frame of reference for the session.
+           let refSpace = session.isImmersive ?
+               xrImmersiveRefSpace :
+               xrInlineRefSpace;
+
+           // Account for the click-and-drag mouse movement or touch movement when
+           // calculating the viewer pose for inline sessions.
+           if (!session.isImmersive) {
+               refSpace = getAdjustedRefSpace(refSpace);
+           }
+
+
+
+           // Get the XRDevice pose relative to the Frame of Reference we created
+           // earlier.
+           let pose = frame.getViewerPose(refSpace);
+
+           // Inform the session that we're ready for the next frame.
+           session.requestAnimationFrame(onXRFrame);
+
+           // Getting the pose may fail if, for example, tracking is lost. So we
+           // have to check to make sure that we got a valid pose before attempting
+           // to render with it. If not in this case we'll just leave the
+           // framebuffer cleared, so tracking loss means the scene will simply
+           // disappear.
+           if (pose) {
+               let glLayer = session.renderState.baseLayer;
+
+               // If we do have a valid pose, bind the WebGL layer's framebuffer,
+               // which is where any content to be displayed on the XRDevice must be
+               // rendered.
+               gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
+
+               // Clear the framebuffer
+               gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+               // Loop through each of the views reported by the frame and draw them
+               // into the corresponding viewport.
+               for (let view of pose.views) {
+                   let viewport = glLayer.getViewport(view);
+                   gl.viewport(viewport.x, viewport.y,
+                       viewport.width, viewport.height);
+
+                   // Draw this view of the scene. What happens in this function really
+                   // isn't all that important. What is important is that it renders
+                   // into the XRWebGLLayer's framebuffer, using the viewport into that
+                   // framebuffer reported by the current view, and using the
+                   // projection matrix and view transform from the current view.
+                   // We bound the framebuffer and viewport up above, and are passing
+                   // in the appropriate matrices here to be used when rendering.
+                   //scene.draw(view.projectionMatrix, view.transform);
+                   console.log("Draw Scene: " + view.transform.matrix + view.projectionMatrix);
+               }
+
+           } //if pose
+       } //onXRFrame
+
+       // Inline view adjustment code
+       // Allow the user to click and drag the mouse (or touch and drag the
+       // screen on handheld devices) to adjust the viewer pose for inline
+       // sessions. Samples after this one will hide this logic with a utility
+       // class (InlineViewerHelper).
+       let lookYaw = 0;
+       let lookPitch = 0;
+       const LOOK_SPEED = 0.0025;
+
+       // XRReferenceSpace offset is immutable, so return a new reference space
+       // that has an updated orientation.
+       function getAdjustedRefSpace(refSpace) {
+           // Represent the rotational component of the reference space as a
+           // quaternion.
+           let invOrientation = quat.create();
+           quat.rotateX(invOrientation, invOrientation, -lookPitch);
+           quat.rotateY(invOrientation, invOrientation, -lookYaw);
+           let xform = new XRRigidTransform(
+               {x: 0, y: 0, z: 0},
+               {x: invOrientation[0], y: invOrientation[1], z: invOrientation[2], w: invOrientation[3]});
+           return refSpace.getOffsetReferenceSpace(xform);
+       }
+   */
     // vrButton.addEventListener('mouseover', function () {
-        //         //vrButton.style.display = 'none';
-        //         //vrButton.innerHTML = 'Enter VR NOW';
-        //         console.log("Mouse Over VR Button: " + name);
-        //         //effect.requestPresent();
-        //     }, false);
-                 //effect.requestPresent();
-        // I found some VR button HTML in the visualization.html file and tried to light them up
-        // with OnClicks but they didn't seem to want to do anything so I tried that example class
-        // and it worked a bit better.
+    //         //vrButton.style.display = 'none';
+    //         //vrButton.innerHTML = 'Enter VR NOW';
+    //         console.log("Mouse Over VR Button: " + name);
+    //         //effect.requestPresent();
+    //     }, false);
+    //effect.requestPresent();
+    // I found some VR button HTML in the visualization.html file and tried to light them up
+    // with OnClicks but they didn't seem to want to do anything so I tried that example class
+    // and it worked a bit better.
 
 
     // OLD InitVR Code Here:
@@ -890,8 +891,6 @@ function PreviewArea(canvas_, model_, name_) {
     }
 
 
-
-
     // scan the Oculus Touch for controls
 
     var xrDolly = new THREE.Object3D();
@@ -899,9 +898,9 @@ function PreviewArea(canvas_, model_, name_) {
     var scanOculusTouch = function () {
 
         //exit if no controllers
-        if(!controllerLeft || !controllerRight) return;
+        if (!controllerLeft || !controllerRight) return;
         //exit if no brain
-        if(!brain) return;
+        if (!brain) return;
 
 
         //check if in VR mode
@@ -946,7 +945,7 @@ function PreviewArea(canvas_, model_, name_) {
             var currentRotationSpeed = new THREE.Vector3(0, 0, 0);
             let delta = clock.getDelta();
             //get value of left thumbstick x axis
-            if(xrInputLeft.gamepad.axes.length > 0) {
+            if (xrInputLeft.gamepad.axes.length > 0) {
                 var leftThumbstickX = controllerLeft.gamepad.axes[2];
                 var leftThumbstickY = controllerLeft.gamepad.axes[3];
                 //multiply by max increment
@@ -972,7 +971,7 @@ function PreviewArea(canvas_, model_, name_) {
 
             }
             //get value of right thumbstick x axis
-            if(xrInputRight.gamepad.axes.length > 0) {
+            if (xrInputRight.gamepad.axes.length > 0) {
                 //use to rotate left right up or down
                 var rightThumbstickX = controllerRight.gamepad.axes[3];
                 var rightThumbstickY = controllerRight.gamepad.axes[2];
@@ -1008,8 +1007,6 @@ function PreviewArea(canvas_, model_, name_) {
             // var newCameraQuaternion = new THREE.Quaternion(cameraQuaternion.x, cameraQuaternion.y, cameraQuaternion.z, cameraQuaternion.w);
 
 
-
-
             //decay the translation speed using the decay value and delta time
             currentTranslationSpeed.x -= currentTranslationSpeed.x * translationDecay * delta;
             currentTranslationSpeed.y -= currentTranslationSpeed.y * translationDecay * delta;
@@ -1019,23 +1016,23 @@ function PreviewArea(canvas_, model_, name_) {
             currentRotationSpeed.y -= currentRotationSpeed.y * rotationDecay * delta;
             currentRotationSpeed.z -= currentRotationSpeed.z * rotationDecay * delta;
 
-            if(Math.abs(currentTranslationSpeed.x) < 0.001) {
+            if (Math.abs(currentTranslationSpeed.x) < 0.001) {
                 //if so, set it to 0
                 currentTranslationSpeed.x = 0;
             }
             //check if the translation speed is less than 0.001
-            if(Math.abs(currentTranslationSpeed.y) < 0.001) {
+            if (Math.abs(currentTranslationSpeed.y) < 0.001) {
                 //if so, set it to 0
                 currentTranslationSpeed.y = 0;
             }
 
             //check if the rotation speed is less than 0.001
-            if(Math.abs(currentRotationSpeed.x) < 0.001) {
+            if (Math.abs(currentRotationSpeed.x) < 0.001) {
                 //if so, set it to 0
                 currentRotationSpeed.x = 0;
             }
             //check if the rotation speed is less than 0.001
-            if(Math.abs(currentRotationSpeed.y) < 0.001) {
+            if (Math.abs(currentRotationSpeed.y) < 0.001) {
                 //if so, set it to 0
                 currentRotationSpeed.y = 0;
             }
@@ -1069,22 +1066,18 @@ function PreviewArea(canvas_, model_, name_) {
         }
 
 
-
-
-
-
         //     var boostRotationSpeed = controllerLeft.getButtonState('grips') ? 0.1 : 0.02;
         //     var boostMoveSpeed = controllerRight.getButtonState('grips') ? 5.0 : 1.0;
         //     var angleX = null, angleY = null;
-    //     var gamePadLeft = controllerLeft? controllerLeft.getGamepad() : nulll;
-    //     var gamePadRight = controllerRight? controllerRight.getGamepad() : null;
+        //     var gamePadLeft = controllerLeft? controllerLeft.getGamepad() : nulll;
+        //     var gamePadRight = controllerRight? controllerRight.getGamepad() : null;
         //     if (gamePadLeft) {
         //         angleX = gamePadLeft.axes[0];
         //         angleY = gamePadLeft.axes[1];
         //         brain.rotateX(boostRotationSpeed * angleX);
         //         brain.rotateZ(boostRotationSpeed * angleY);
         //         brain.matrixWorldNeedsUpdate = true;
-    //         console.log("Left controller: " + angleX + ", " + angleY);
+        //         console.log("Left controller: " + angleX + ", " + angleY);
         //     }
         //
         //     if (gamePadRight) {
@@ -1103,19 +1096,19 @@ function PreviewArea(canvas_, model_, name_) {
         //     var v3UnitUp = new THREE.Vector3(0, 0, -100.0);
         //     // var v3UnitFwd = new THREE.Vector3(0,0,1);
 
-    var nearLeft=getNearestNodes(controllerLeft);
-    var nearRight=getNearestNodes(controllerRight);
-    var closestNodeIndexLeft = nearLeft.closestNodeIndex;
-    var closestNodeDistanceLeft = nearLeft.closestNodeDistance;
-    var closestNodeIndexRight = nearRight.closestNodeIndex;
-    var closestNodeDistanceRight = nearRight.closestNodeDistance;
+        var nearLeft = getNearestNodes(controllerLeft);
+        var nearRight = getNearestNodes(controllerRight);
+        var closestNodeIndexLeft = nearLeft.closestNodeIndex;
+        var closestNodeDistanceLeft = nearLeft.closestNodeDistance;
+        var closestNodeIndexRight = nearRight.closestNodeIndex;
+        var closestNodeDistanceRight = nearRight.closestNodeDistance;
 
-    //console.log("Left: " + closestNodeIndexLeft + ", " + closestNodeDistanceLeft);
-    //console.log("Right: " + closestNodeIndexRight + ", " + closestNodeDistanceRight);
+        //console.log("Left: " + closestNodeIndexLeft + ", " + closestNodeDistanceLeft);
+        //console.log("Right: " + closestNodeIndexRight + ", " + closestNodeDistanceRight);
 
+        // changed the always on true statement here because it was causing the nodes to be selected when the user was not touching the controller
 
-        if (true ||  VRButton.xrSessionIsGranted) {
-
+        if (VRButton.xrSessionIsGranted) {
             if (controllerLeftSelectState && !controllerLeft.userData.isSelecting) {  //release Left Trigger
                 var isLeft = true;
                 var pointedObject = getPointedObject(controllerLeft);
@@ -1153,7 +1146,6 @@ function PreviewArea(canvas_, model_, name_) {
             }
 
         }
-
 
 
         controllerLeftSelectState = controllerLeft.userData.isSelecting;
@@ -1198,11 +1190,11 @@ function PreviewArea(canvas_, model_, name_) {
         //         pointerLeft = null;
         //     }
         //
-         if (controllerRight.userData.isSelecting) {  //getButtonState('trigger')) {
+        if (controllerRight.userData.isSelecting) {  //getButtonState('trigger')) {
             //         pointedNodeIdx = (closestNodeDistanceRight < 2.0) ? closestNodeIndexRight : -1;
 
-             //
-             console.log("Right controller Trigger: " + controllerRight.userData.isSelecting);
+            //
+            console.log("Right controller Trigger: " + controllerRight.userData.isSelecting);
             //         if (pointerRight) {
             //             // Touch Controller pointer already on! scan for selection
             //             if (controllerRight.getButtonState('grips')) {
@@ -1213,12 +1205,12 @@ function PreviewArea(canvas_, model_, name_) {
             //             controllerRight.add(pointerRight);
             //         }
             //         updateNodeMoveOver(model, getPointedObject(controllerRight));
-         } else {
+        } else {
             //         if (pointerRight) {
             //             controllerRight.remove(pointerRight);
             //         }
-             pointerRight = null;
-         }
+            pointerRight = null;
+        }
     }; // scanOculusTouch
 
     // draw a pointing line
@@ -1285,7 +1277,8 @@ function PreviewArea(canvas_, model_, name_) {
         scene = new THREE.Scene();
         renderer = new THREE.WebGLRenderer({
             antialias: true,
-            context: gl
+            context: gl,
+            alpha: true
         });
         camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / window.innerHeight, 0.1, 3000);
         initScene();
@@ -1374,7 +1367,7 @@ function PreviewArea(canvas_, model_, name_) {
         var scale = 1.0;
         var delta = clock.getDelta();
         var dataset = model.getDataset();
-        let matrix= new THREE.Matrix4();
+        let matrix = new THREE.Matrix4();
         switch (status) {
             case 'normal':
                 console.log("normal")
@@ -1388,19 +1381,19 @@ function PreviewArea(canvas_, model_, name_) {
                 // set matrix back to instantiated object
                 instance.setMatrixAt(instanceId, matrix);
                 // update instance matrix
-                instance.instanceMatrix.needsUpdate = true;
+
                 //glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
                 break;
             case 'mouseover':
                 console.log("mouseover");
                 scale = 1.72;
-                var delta = clock.getDelta();
+
                 //glyphs[nodeIndex].material.color = new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0));
                 // set color of the instantiated object to random color
                 instance.setColorAt(instanceId, new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0)));
                 //console.log("Delta:" + (delta * 10.0 )) + " " + (1.0-delta * 10.0 ) + " " + (0.5 + delta * 5.0 );
                 // update instance matrix
-                instance.instanceMatrix.needsUpdate = true;
+
                 break;
             case 'selected':
                 console.log("selected");
@@ -1416,7 +1409,7 @@ function PreviewArea(canvas_, model_, name_) {
                 instance.setColorAt(instanceId, new THREE.Color(scaleColorGroup(model, group)));
                 // todo scalecolorgroup should return a previously defined color object instead of creating a new one
                 // update instance matrix
-                instance.instanceMatrix.needsUpdate = true;
+
                 //glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
                 break;
             case 'root':
@@ -1432,7 +1425,7 @@ function PreviewArea(canvas_, model_, name_) {
                 // set color of the instantiated object to color from scaleColorGroup
                 instance.setColorAt(instanceId, new THREE.Color(scaleColorGroup(model, group)));
                 // update instance matrix
-                instance.instanceMatrix.needsUpdate = true;
+
                 //glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
                 break;
             default:
@@ -1440,9 +1433,10 @@ function PreviewArea(canvas_, model_, name_) {
                 console.log("status: " + status);
         }
         //glyphs[nodeIndex].scale.set(scale, scale, scale);
+        instance.instanceMatrix.needsUpdate = true;
     };
 
-    var animateNodeBreathing  = function (nodeList) {
+    var animateNodeBreathing = function (nodeList) {
 
         //const amplitude =  0.015;
         var scaleFrequency = frequency; //0.5;
@@ -1469,18 +1463,18 @@ function PreviewArea(canvas_, model_, name_) {
                 //console.log(glyphscale);
 
                 //glyphs[nodeIdx].scale.fromArray(newscale);
-                glyphs[nodeIdx].scale.set(newscale0,newscale1,newscale2);
+                glyphs[nodeIdx].scale.set(newscale0, newscale1, newscale2);
             }
         }
     }
 
 
-        // update node scale according to selection status
+    // update node scale according to selection status
     var animateNodeShimmer = function (nodeList, freq = 0.5, color) { //nodeIndex, status) {
         //var clock = new THREE.Clock();
-       // Set up an oscillating size animation
+        // Set up an oscillating size animation
         var colorAmplitude = amplitude * 500; // 0.75;
-        var colorFrequency  = frequency * freq / 0.5;
+        var colorFrequency = frequency * freq / 0.5;
         var delta = clock.getDelta();
         var elapsedTime = clock.getElapsedTime();
         var dataset = model.getDataset()
@@ -1495,10 +1489,10 @@ function PreviewArea(canvas_, model_, name_) {
                 // two ways to draw edges
                 //glyphs[nodeIdx].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
                 var baseColor = new THREE.Color(scaleColorGroup(model, dataset[nodeIdx].group));
-                var deltaColor = new THREE.Color(  colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime),0,0 );      //delta * 180, delta * 10, delta * 10);
+                var deltaColor = new THREE.Color(colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime), 0, 0);      //delta * 180, delta * 10, delta * 10);
                 var tempColor = new THREE.Color();
                 tempColor.lerpColors(baseColor, deltaColor, 0.5);
-                if(color){
+                if (color) {
                     var newColor = new THREE.Color(color);
                     tempColor.lerpColors(tempColor, newColor, colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime));
                 }
@@ -1539,7 +1533,7 @@ function PreviewArea(canvas_, model_, name_) {
         shortestPathEdges = [];
     };
     var lastTime = 0;
- //   var fps = 240;
+    //   var fps = 240;
     //todo: add fps slider
     var animatePV = function () {
         //limit this function to (fps)fps)
@@ -1553,8 +1547,8 @@ function PreviewArea(canvas_, model_, name_) {
         //     // if (oculusTouchExist) { //todo: Change old WebVR code to WebXR
         //     //     controllerLeft.update();
         //     //     controllerRight.update();
-                  scanOculusTouch();
-             //     console.log("scanOculusTouch");
+        scanOculusTouch();
+        //     console.log("scanOculusTouch");
         //     // }
         //     //vrControl.update(); //todo: Change old WebVR code to WebXR
         //     console.log("vrControl.update()");
@@ -1579,7 +1573,7 @@ function PreviewArea(canvas_, model_, name_) {
         }
 
         animateNodeShimmer(getNodesSelected(), 0.5);
-        animateNodeShimmer(getNodesFocused(),4);//, "#ffffff")
+        animateNodeShimmer(getNodesFocused(), 4);//, "#ffffff")
         animateNodeBreathing(getNodesSelected());
         shimmerEdgeNodeColors();
         updateNodesColor();
@@ -1588,7 +1582,6 @@ function PreviewArea(canvas_, model_, name_) {
         camera.updateProjectionMatrix();
 
         //console.log("controls.update() called");
-
 
 
         if (enableRender)
@@ -1763,10 +1756,18 @@ function PreviewArea(canvas_, model_, name_) {
 
     // update the nodes positions according to the latest in the model
     var updateNodesPositions = function () {
+        //todo:
         var dataset = model.getDataset();
+        var instance = null;
+        var index = null;
         for (var i = 0; i < dataset.length; i++) {
-            glyphs[i].position.set(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z);
+            instance = instances[dataset[i].group][dataset[i].hemisphere];
+            index = instance.userData.nodeIndex;
+            instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z));
         }
+        // for (var i = 0; i < dataset.length; i++) {
+        //     glyphs[i].position.set(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z);
+        // }
     };
 
     this.updateNodesVisibility = function () {
@@ -1792,11 +1793,30 @@ function PreviewArea(canvas_, model_, name_) {
             } else {
                 opacity = 0.0;
             }
-            glyphs[i].material.opacity = opacity;
+            instances[dataset[i].group][dataset[i].hemisphere].material.opacity = opacity;
+            //glyphs[i].material.opacity = opacity;
         }
     };
 
+    this.getNodesSelected = function () {
+        // check all instances and return the nodeIndex of ones flagged as selected
+        var selectedNodes = [];
+        var groups = this.listGroups();
+        for (let i = 0; i < groups.length; i++) {
+            for (let j = 0; j < instances[groups[i]].left.count; j++) {
+                if (instances[groups[i]].left.userData.selected) {
+                    selectedNodes.push(instances[groups[i]].left.userData.nodeIndex);
+                }
+            }
+            for (let j = 0; j < instances[groups[i]].right.count; j++) {
+                if (instances[groups[i]].right.userData.selected) {
+                    selectedNodes.push(instances[groups[i]].right.userData.nodeIndex);
+                }
+            }
+        }
+        return selectedNodes;
 
+    }
     // draw all connections between the selected nodes, needs the connection matrix.
     // don't draw edges belonging to inactive nodes
     this.drawConnections = function () {
@@ -1863,21 +1883,24 @@ function PreviewArea(canvas_, model_, name_) {
         const elapsedTime = clock.getElapsedTime();
         var dataset = model.getDataset();
 
-        if((elapsedTime % 30) < 29.8) { return; }
+        if ((elapsedTime % 30) < 29.8) {
+            return;
+        }
 
-        console.log(getNodesFocused());
+        // todo: getNodesFocused() is not working correctly at the moment.
+        //console.log(getNodesFocused());
         clrNodesFocused();
 
         for (var i = 0; i < glyphs.length; ++i) {
             glyphs[i].material.color = new THREE.Color(scaleColorGroup(model, dataset[i].group));
         }
     };
-``
+    ``
     // set the color of displayed edges
     var shimmerEdgeNodeColors = function () {
         var dataset = model.getDataset();
         var colorAmplitude = amplitude * 16.6;  // 0.25;
-        var colorFrequency = 3*frequency;
+        var colorFrequency = 3 * frequency;
         const elapsedTime = clock.getElapsedTime();
         const deltaRadius = colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime);
         var edge, c1, c2, tempColor = new THREE.Color();
@@ -1887,10 +1910,10 @@ function PreviewArea(canvas_, model_, name_) {
             c2 = edge.nodes[1]; //.material.color;
             var baseColor = new THREE.Color(scaleColorGroup(model, dataset[c2].group));
             var deltaColor = new THREE.Color(scaleColorGroup(model, dataset[c1].group)); //1,0.6,0.3);
-                //amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime),0,0 );      //delta * 180, delta * 10, delta * 10);
+            //amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime),0,0 );      //delta * 180, delta * 10, delta * 10);
             var tempColor = new THREE.Color();
-            tempColor.lerpColors(baseColor, deltaColor, 0.5*deltaRadius);
-            var targetColor = tempColor.offsetHSL(0, 0.5*deltaRadius, deltaRadius);  //new THREE.Color();
+            tempColor.lerpColors(baseColor, deltaColor, 0.5 * deltaRadius);
+            var targetColor = tempColor.offsetHSL(0, 0.5 * deltaRadius, deltaRadius);  //new THREE.Color();
             //0.5*deltaRadius+0.5);
             //edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
             //tempColor.lerpHSL(targetColor, 0.5*deltaRadius+0.5);
@@ -1967,19 +1990,19 @@ function PreviewArea(canvas_, model_, name_) {
     // draw the top n edges connected to a specific node
     this.drawTopNEdgesByNode = function (nodeIndex, n) {
 
-	var row = [];
-	if(!getEnableContra() && !getEnableIpsi()) {
-		row = model.getTopConnectionsByNode(nodeIndex, n );
-	} else {
-		if(getEnableContra()) {
-			row = row.concat(model.getTopContraLateralConnectionsByNode(nodeIndex, n ));
-		}
-		if (getEnableIpsi()) {
-			row = row.concat(model.getTopIpsiLateralConnectionsByNode(nodeIndex, n ));
-		}
-	}
-	    console.log("contra"+getEnableContra());
-	    console.log("ipsi"+getEnableIpsi());
+        var row = [];
+        if (!getEnableContra() && !getEnableIpsi()) {
+            row = model.getTopConnectionsByNode(nodeIndex, n);
+        } else {
+            if (getEnableContra()) {
+                row = row.concat(model.getTopContraLateralConnectionsByNode(nodeIndex, n));
+            }
+            if (getEnableIpsi()) {
+                row = row.concat(model.getTopIpsiLateralConnectionsByNode(nodeIndex, n));
+            }
+        }
+        console.log("contra" + getEnableContra());
+        console.log("ipsi" + getEnableIpsi());
         var edges = model.getActiveEdges();
         var edgeIdx = model.getEdgesIndeces();
         if (getEnableEB()) {
@@ -2001,12 +2024,12 @@ function PreviewArea(canvas_, model_, name_) {
         var row = model.getConnectionMatrixRow(indexNode);
         var edges = model.getActiveEdges();
         var edgeIdx = model.getEdgesIndeces();
-        if (getEnableEB( )) {
+        if (getEnableEB()) {
             model.performEBOnNode(indexNode);
         }
 
         // It can get too cluttered if both ipsi-
-        if (getEnableIpsi() && getEnableContra()) {
+        if (false) { //getEnableIpsi() && getEnableContra()) {
             for (var i = 0; i < row.length; i++) {
 
                 var myThreshold = model.getThreshold();
@@ -2019,9 +2042,9 @@ function PreviewArea(canvas_, model_, name_) {
                     (Math.abs(row[i]) > myThreshold) &&
                     model.isRegionActive(model.getGroupNameByNodeIndex(i)) &&
                     getVisibleNodes(i) &&
-                ((getEnableIpsi() && (dataset[indexNode].hemisphere === dataset[i].hemisphere)) ||
-                    (getEnableContra() && (dataset[indexNode].hemisphere !== dataset[i].hemisphere)) ||
-                    (!getEnableIpsi() && !getEnableContra()))) {
+                    ((getEnableIpsi() && (dataset[indexNode].hemisphere === dataset[i].hemisphere)) ||
+                        (getEnableContra() && (dataset[indexNode].hemisphere !== dataset[i].hemisphere)) ||
+                        (!getEnableIpsi() && !getEnableContra()))) {
                     displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
                 }
             }
@@ -2030,7 +2053,7 @@ function PreviewArea(canvas_, model_, name_) {
                 if ((i != indexNode) && Math.abs(row[i]) > model.getThreshold() && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i) &&
                     ((getEnableIpsi() && (dataset[indexNode].hemisphere === dataset[i].hemisphere)) ||
                         (getEnableContra() && (dataset[indexNode].hemisphere !== dataset[i].hemisphere)) ||
-                        (!getEnableIpsi() && !getEnableContra()) ) ) {
+                        (!getEnableIpsi() && !getEnableContra()))) {
                     displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
                 }
             }
@@ -2082,29 +2105,38 @@ function PreviewArea(canvas_, model_, name_) {
         //create skybox using images
         var skybox = new THREE.CubeTextureLoader().load(images);
         //set the scene background property with the resulting texture
+        skybox.name = "skybox";
         scene.background = skybox;
         //activate background
         scene.background.needsUpdate = true;
-        //
-        var geometry = new THREE.SphereGeometry(5000, 60, 40);
-        geometry.scale(-1, 1, 1);
-        var material = new THREE.MeshBasicMaterial({
-            map: new THREE.TextureLoader().load('./images/' + folder + '/posy.png')
-        });
-        var mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
+        // todo, draw three lines at the center, this is blocking some things.
+        // var geometry = new THREE.SphereGeometry(5000, 60, 40);
+        // geometry.scale(-1, 1, 1);
+        // var material = new THREE.MeshBasicMaterial({
+        //     map: new THREE.TextureLoader().load('./images/' + folder + '/posy.png')
+        // });
+        // var mesh = new THREE.Mesh(geometry, material);
+        // scene.add(mesh);
     }; // end addSkybox
 
 
     // toggle skybox visibility
     this.setSkyboxVisibility = function (visible) {
-        var results = scene.children.filter(function (d) {
-            return d.name === "skybox"
-        });
-        var skybox = results[0];
+        // var results = scene.children.filter(function (d) {
+        //     return d.name === "skybox"
+        // });
+        //var skybox = results[0];
+        var skybox = scene.background; // results[0];
         skybox.visible = visible;
-        console.log("skybox: " );
+        if(skybox.visible){
+            addSkybox();
+        } else {
+            scene.background = null;
+        }
+        console.log("skybox: ");
         console.log(skybox);
+        // mark scene as dirty
+        scene.needsUpdate = true;
     };
 
     // draw a selected node: increase it's size
@@ -2353,10 +2385,10 @@ function PreviewArea(canvas_, model_, name_) {
     }
 
     this.getGlyphCount = function () {
-            return glyphs.length;
+        return glyphs.length;
     }
 
-    this.setAnimation = function(amp) {
+    this.setAnimation = function (amp) {
         amplitude = amp;
     }
 
@@ -2370,4 +2402,4 @@ function PreviewArea(canvas_, model_, name_) {
     this.drawRegions();
 }
 
-export { PreviewArea }
+export {PreviewArea}

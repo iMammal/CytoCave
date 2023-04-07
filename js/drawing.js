@@ -51,6 +51,7 @@ import {
     createLegend,
     addAnimationSlider,
     addFlashRateSlider,
+    addSkyboxButton,
     //hideVRMaximizeButtons,
     toggleMenus
 } from './GUI.js';
@@ -85,6 +86,11 @@ function onDocumentMouseMove(model, event) {
 ///////////////////////////////////////////////////////////////////////////////////////////
 var updateNodeMoveOver = function (model, intersectedObject, mode) {
     var nodeIdx, region, nodeRegion;
+    //console.log("updateNodeMoveOver: ");
+    //console.log(intersectedObject);
+    if(intersectedObject === undefined)
+        return;
+    nodeIdx = intersectedObject.object.userData.nodeIndex;
     if (intersectedObject) {
         nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
         region = model.getRegionByIndex(nodeIdx);
@@ -173,6 +179,10 @@ function onLeftClick(model, event) {
 
     event.preventDefault();
     var objectIntersected = getIntersectedObject(event);
+    console.log("onLeftClick event: ");
+    console.log(event);
+    console.log("onLeftClick objectIntersected: ");
+    console.log(objectIntersected);
     var isLeft = event.clientX < window.innerWidth / 2;
     updateNodeSelection(model, objectIntersected, isLeft);
 }
@@ -187,10 +197,13 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
     const instanceId = objectIntersected.object.instanceId;
     const group = objectIntersected.object.name.group;
     const hemisphere = objectIntersected.object.name.hemisphere;
+    // check if name is blank, if so return undefined, otherwise you'll end up intersecting the skybox.
+    if (objectIntersected.object.name === "") return;
 
     const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
     console.log("previewArea instances: ");
     console.log(previewArea.instances);
+    // if
     const instance = previewArea.instances[group][hemisphere];
     // log instance
     console.log("instance: ")
@@ -202,12 +215,12 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
     if (objectIntersected.object.userData.selected) {
         console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         previewArea.drawSelectedNode(instanceId, group, hemisphere, instance);
-
+        let nodeIndex = instance.userData.nodeIndex;
         if (thresholdModality) {
-            previewArea.drawEdgesGivenNode(instanceId, group, hemisphere, instance);
+            previewArea.drawEdgesGivenNode(nodeIndex);
         } else {
             const n = model.getNumberOfEdges();
-            previewArea.drawTopNEdgesByNode(instanceId, group, hemisphere, instance, n);
+            previewArea.drawTopNEdgesByNode(nodeIndex, n);
         }
 
     } else {
@@ -329,12 +342,11 @@ var initControls = function () {
     addTopologyMenu(modelLeft, 'Left');
     addTopologyMenu(modelRight, 'Right');
 
-    addShortestPathFilterButton();
-    addDistanceSlider();
-    addShortestPathHopsSlider();
-    enableShortestPathFilterButton(false);
+    //addShortestPathFilterButton();
+    //addDistanceSlider();
+    //addShortestPathHopsSlider();
+    //enableShortestPathFilterButton(false);
 
-    // addSkyboxButton();
     //addDimensionFactorSlider();
     addDimensionFactorSliderLeft('Left');
     addDimensionFactorSliderRight('Left');
@@ -344,6 +356,7 @@ var initControls = function () {
     addSearchPanel();
     addAnimationSlider();
     addFlashRateSlider();
+    addSkyboxButton();
 
     modelLeft.setAllRegionsActivated();
     modelRight.setAllRegionsActivated();
@@ -679,6 +692,15 @@ var getSpt = function () {
 }
 
 var getNodesSelected = function () {
+    // use local method for previewArea. This is because the previewAreaLeft and previewAreaRight are not the same object.
+    // even though they are synced. todo: Either share data between previewAreas correctly or use local methods.
+    var nodesRight = previewAreaRight.getNodesSelected();
+    var nodesLeft = previewAreaLeft.getNodesSelected();
+    // combine the two arrays and remove duplicates
+    var nodesSelected = nodesRight.concat(nodesLeft.filter(function (item) {
+        return nodesRight.indexOf(item) < 0;
+    }));
+
     return nodesSelected;
 }
 

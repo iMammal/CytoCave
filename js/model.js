@@ -289,6 +289,8 @@ function Model(side) {
 
     // get a row (one node) from connection matrix
     this.getConnectionMatrixRow = function (index) {
+        console.log("getConnectionMatrixRow index: " + index);
+        console.log("length of connectionMatrix: " + connectionMatrix.length);
         return connectionMatrix[index].slice(0);
     };
 
