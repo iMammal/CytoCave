@@ -2103,6 +2103,8 @@ function PreviewArea(canvas_, model_, name_) {
         });
         var skybox = results[0];
         skybox.visible = visible;
+        console.log("skybox: " );
+        console.log(skybox);
     };
 
     // draw a selected node: increase it's size
