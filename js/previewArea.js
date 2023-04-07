@@ -68,6 +68,10 @@ function PreviewArea(canvas_, model_, name_) {
     var camera = null, renderer = null, controls = null, scene = null, raycaster = null, gl = null;
     var nodeLabelSprite = null, nodeNameMap = null, nspCanvas = null;
     var clock = new THREE.Clock();
+    var instances = {}; //for tracking instanced meshes
+    // make instances public so we can access them from another class
+    this.instances = instances;
+    // will this auto update when instances is updated? I think so
 
     // VR stuff
     var vrControl = null, effect = null;
@@ -96,6 +100,119 @@ function PreviewArea(canvas_, model_, name_) {
     var shortestPathEdges = [];
 
     var edgeOpacity = 1.0;
+
+    this.initXR = function () {
+        //init VR //todo: this is stub now
+
+        document.addEventListener('keypress', this.keyPress.bind(this), false);
+        console.log("Init XR for PV: " + name);
+        enableVR = true;
+        activateVR = false;
+
+        //renderer.outputEncoding = THREE.sRGBEncoding; //The robot says this makes the colors look better in VR but it makes the colors look worse in the browser
+        renderer.xr.enabled = true;
+
+
+        function onSelectStart() {
+
+            this.userData.isSelecting = true;
+            console.log("Select start");
+        }
+
+        function onSelectEnd() {
+
+            this.userData.isSelecting = false;
+            console.log("Select end");
+        }
+
+        var v3Origin = new THREE.Vector3(0, 0, 0);
+        var v3UnitUp = new THREE.Vector3(0, 0, -100);
+
+        controllerLeft = renderer.xr.getController(0);
+        controllerLeft.addEventListener('selectstart', onSelectStart);
+        controllerLeft.addEventListener('selectend', onSelectEnd);
+        controllerLeft.addEventListener('connected', function (event) {
+            controllerLeft.gamepad = event.data.gamepad;
+            console.log("Left controller connected");
+            console.log("event data: ");
+            console.log(event.data);
+            xrInputLeft = event.data;
+            //  this.add( buildController( event.data ) );
+            this.add(drawPointer(v3Origin, v3UnitUp));
+
+        });
+
+        controllerLeft.addEventListener('disconnected', function () {
+
+            this.remove(this.children[0]);
+
+        });
+        scene.add(controllerLeft);
+
+        controllerRight = renderer.xr.getController(1);
+        controllerRight.addEventListener('selectstart', onSelectStart);
+        controllerRight.addEventListener('selectend', onSelectEnd);
+        controllerRight.addEventListener('connected', function (event) {
+            controllerRight.gamepad = event.data.gamepad;
+            //this.add( buildController( event.data ) );
+            console.log("Right controller connected: ");
+            console.log("event data: ");
+            xrInputRight = event.data;
+            console.log(event.data);
+
+            this.add(drawPointer(v3Origin, v3UnitUp));//
+        });
+        controllerRight.addEventListener('disconnected', function () {
+
+            this.remove(this.children[0]);
+
+        });
+        scene.add(controllerRight);
+
+        const controllerModelFactory = new XRControllerModelFactory();
+
+        controllerGripLeft = renderer.xr.getControllerGrip(0);
+        controllerGripLeft.add(controllerModelFactory.createControllerModel(controllerGripLeft));
+        scene.add(controllerGripLeft);
+
+        controllerGripRight = renderer.xr.getControllerGrip(1);
+        controllerGripRight.add(controllerModelFactory.createControllerModel(controllerGripRight));
+        scene.add(controllerGripRight);
+
+
+        //document.body
+        document.getElementById('vrButton' + name).appendChild(VRButton.createButton(renderer));
+
+    }
+
+
+    function buildController(data) {
+
+        let geometry, material;
+
+        switch (data.targetRayMode) {
+
+            case 'tracked-pointer':
+
+                geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, -1], 3));
+                geometry.setAttribute('color', new THREE.Float32BufferAttribute([0.5, 0.5, 0.5, 0, 0, 0], 3));
+
+                material = new THREE.LineBasicMaterial({vertexColors: true, blending: THREE.AdditiveBlending});
+
+                return new THREE.Line(geometry, material);
+
+            case 'gaze':
+
+                geometry = new THREE.RingGeometry(0.02, 0.04, 32).translate(0, 0, -1);
+                material = new THREE.MeshBasicMaterial({opacity: 0.5, transparent: true});
+                return new THREE.Mesh(geometry, material);
+
+        }
+
+
+    }
+
 
     // animation settings
     var amplitude =  0.0015;
@@ -289,9 +406,9 @@ function PreviewArea(canvas_, model_, name_) {
         return context;
     }
 
-    // init Oculus Rift
+       // init Oculus Rift
     this.initXR = function () {
-        //init VR //todo: this is stub now
+           //init VR //todo: this is stub now
 
         console.log("Init XR for PV: " + name);
         enableVR = true;
@@ -567,31 +684,30 @@ function PreviewArea(canvas_, model_, name_) {
         // and it worked a bit better.
 
 
-
     // OLD InitVR Code Here:
-        // if (mobile) {
-        //     console.log("Init VR for PV: " + name);
-        //     enableVR = true;
-        //     activateVR = true;
-        //     // init VR
-        //     vrButton = document.getElementById('vrButton' + name);
-        //     vrButton.addEventListener('click', function () {
-        //         vrButton.style.display = 'none';
-        //         //effect.requestPresent();
-        //     }, false);
-        //     //effect.requestPresent();
-        // } else {
-        //     console.log("Init VR for PV: " + name);
-        //     enableVR = true;
-        //     activateVR = false;
-        //     // init VR
-        //     vrButton = document.getElementById('vrButton' + name);
-        //     vrButton.addEventListener('click', function () {
-        //         vrButton.style.display = 'none';
-        //         //effect.requestPresent();
-        //     }, false);
-        //     //effect.requestPresent();
-        // }
+    // if (mobile) {
+    //     console.log("Init VR for PV: " + name);
+    //     enableVR = true;
+    //     activateVR = true;
+    //     // init VR
+    //     vrButton = document.getElementById('vrButton' + name);
+    //     vrButton.addEventListener('click', function () {
+    //         vrButton.style.display = 'none';
+    //         //effect.requestPresent();
+    //     }, false);
+    //     //effect.requestPresent();
+    // } else {
+    //     console.log("Init VR for PV: " + name);
+    //     enableVR = true;
+    //     activateVR = false;
+    //     // init VR
+    //     vrButton = document.getElementById('vrButton' + name);
+    //     vrButton.addEventListener('click', function () {
+    //         vrButton.style.display = 'none';
+    //         //effect.requestPresent();
+    //     }, false);
+    //     //effect.requestPresent();
+    // }
 //    };
 
     //on resize
@@ -756,10 +872,10 @@ function PreviewArea(canvas_, model_, name_) {
     //     }
     // };
     function getNearestNodes(controller) {
-        if(!controller) return;
-        if(!controller.position) return;
-        if(!brain) return;
-        if(!brain.children) return;
+        if (!controller) return;
+        if (!controller.position) return;
+        if (!brain) return;
+        if (!brain.children) return;
         // Find all nodes within 0.1 distance from given Touch Controller
         var closestNodeIndex = 0, closestNodeDistance = 99999.9;
         for (var i = 0; i < brain.children.length; i++) {
@@ -773,6 +889,10 @@ function PreviewArea(canvas_, model_, name_) {
         return {closestNodeIndex: closestNodeIndex, closestNodeDistance: closestNodeDistance};
 
     }
+
+
+
+
     // scan the Oculus Touch for controls
 
     var xrDolly = new THREE.Object3D();
@@ -954,36 +1074,35 @@ function PreviewArea(canvas_, model_, name_) {
 
 
 
-
-    //     var boostRotationSpeed = controllerLeft.getButtonState('grips') ? 0.1 : 0.02;
-    //     var boostMoveSpeed = controllerRight.getButtonState('grips') ? 5.0 : 1.0;
-    //     var angleX = null, angleY = null;
+        //     var boostRotationSpeed = controllerLeft.getButtonState('grips') ? 0.1 : 0.02;
+        //     var boostMoveSpeed = controllerRight.getButtonState('grips') ? 5.0 : 1.0;
+        //     var angleX = null, angleY = null;
     //     var gamePadLeft = controllerLeft? controllerLeft.getGamepad() : nulll;
     //     var gamePadRight = controllerRight? controllerRight.getGamepad() : null;
-    //     if (gamePadLeft) {
-    //         angleX = gamePadLeft.axes[0];
-    //         angleY = gamePadLeft.axes[1];
-    //         brain.rotateX(boostRotationSpeed * angleX);
-    //         brain.rotateZ(boostRotationSpeed * angleY);
-    //         brain.matrixWorldNeedsUpdate = true;
+        //     if (gamePadLeft) {
+        //         angleX = gamePadLeft.axes[0];
+        //         angleY = gamePadLeft.axes[1];
+        //         brain.rotateX(boostRotationSpeed * angleX);
+        //         brain.rotateZ(boostRotationSpeed * angleY);
+        //         brain.matrixWorldNeedsUpdate = true;
     //         console.log("Left controller: " + angleX + ", " + angleY);
-    //     }
-    //
-    //     if (gamePadRight) {
-    //         angleX = gamePadRight.axes[0];
-    //         angleY = gamePadRight.axes[1];
-    //         if (controllerRight.getButtonState('thumbpad')) {
-    //             brain.position.y += boostMoveSpeed * angleY;
-    //         } else {
-    //             brain.position.z += boostMoveSpeed * angleX;
-    //             brain.position.x += boostMoveSpeed * angleY;
-    //         }
-    //         brain.matrixWorldNeedsUpdate = true;
-    //     }
-    //
-    //     var v3Origin = new THREE.Vector3(0, 0, 0);
-    //     var v3UnitUp = new THREE.Vector3(0, 0, -100.0);
-    //     // var v3UnitFwd = new THREE.Vector3(0,0,1);
+        //     }
+        //
+        //     if (gamePadRight) {
+        //         angleX = gamePadRight.axes[0];
+        //         angleY = gamePadRight.axes[1];
+        //         if (controllerRight.getButtonState('thumbpad')) {
+        //             brain.position.y += boostMoveSpeed * angleY;
+        //         } else {
+        //             brain.position.z += boostMoveSpeed * angleX;
+        //             brain.position.x += boostMoveSpeed * angleY;
+        //         }
+        //         brain.matrixWorldNeedsUpdate = true;
+        //     }
+        //
+        //     var v3Origin = new THREE.Vector3(0, 0, 0);
+        //     var v3UnitUp = new THREE.Vector3(0, 0, -100.0);
+        //     // var v3UnitFwd = new THREE.Vector3(0,0,1);
 
     var nearLeft=getNearestNodes(controllerLeft);
     var nearRight=getNearestNodes(controllerRight);
@@ -1042,64 +1161,63 @@ function PreviewArea(canvas_, model_, name_) {
         controllerRightSelectState = controllerRight.userData.isSelecting;
 
 
-
-    //     // Find all nodes within 0.1 distance from left Touch Controller
-    //     var closestNodeIndexLeft = 0, closestNodeDistanceLeft = 99999.9;
-    //     var closestNodeIndexRight = 0, closestNodeDistanceRight = 99999.9;
-    //     for (var i = 0; i < brain.children.length; i++) {
-    //         var distToNodeILeft = controllerLeft.position.distanceTo(brain.children[i].getWorldPosition());
-    //         if ((distToNodeILeft < closestNodeDistanceLeft)) {
-    //             closestNodeDistanceLeft = distToNodeILeft;
-    //             closestNodeIndexLeft = i;
-    //         }
-    //
-    //         var distToNodeIRight = controllerRight.position.distanceTo(brain.children[i].getWorldPosition());
-    //         if ((distToNodeIRight < closestNodeDistanceRight)) {
-    //             closestNodeDistanceRight = distToNodeIRight;
-    //             closestNodeIndexRight = i;
-    //         }
-    //     }
-    //
-    //     var isLeft = (activateVR == 'left');
-    //     if (controllerLeft.getButtonState('trigger')) {
-    //         pointedNodeIdx = (closestNodeDistanceLeft < 2.0) ? closestNodeIndexLeft : -1;
-    //
-    //         if (pointerLeft) {
-    //             // Touch Controller pointer already on! scan for selection
-    //             if (controllerLeft.getButtonState('grips')) {
-    //                 updateNodeSelection(model, getPointedObject(controllerLeft), isLeft);
-    //             }
-    //         } else {
-    //             pointerLeft = drawPointer(v3Origin, v3UnitUp);
-    //             controllerLeft.add(pointerLeft);
-    //         }
-    //         updateNodeMoveOver(model, getPointedObject(controllerLeft));
-    //     } else {
-    //         if (pointerLeft) {
-    //             controllerLeft.remove(pointerLeft);
-    //         }
-    //         pointerLeft = null;
-    //     }
-    //
+        //     // Find all nodes within 0.1 distance from left Touch Controller
+        //     var closestNodeIndexLeft = 0, closestNodeDistanceLeft = 99999.9;
+        //     var closestNodeIndexRight = 0, closestNodeDistanceRight = 99999.9;
+        //     for (var i = 0; i < brain.children.length; i++) {
+        //         var distToNodeILeft = controllerLeft.position.distanceTo(brain.children[i].getWorldPosition());
+        //         if ((distToNodeILeft < closestNodeDistanceLeft)) {
+        //             closestNodeDistanceLeft = distToNodeILeft;
+        //             closestNodeIndexLeft = i;
+        //         }
+        //
+        //         var distToNodeIRight = controllerRight.position.distanceTo(brain.children[i].getWorldPosition());
+        //         if ((distToNodeIRight < closestNodeDistanceRight)) {
+        //             closestNodeDistanceRight = distToNodeIRight;
+        //             closestNodeIndexRight = i;
+        //         }
+        //     }
+        //
+        //     var isLeft = (activateVR == 'left');
+        //     if (controllerLeft.getButtonState('trigger')) {
+        //         pointedNodeIdx = (closestNodeDistanceLeft < 2.0) ? closestNodeIndexLeft : -1;
+        //
+        //         if (pointerLeft) {
+        //             // Touch Controller pointer already on! scan for selection
+        //             if (controllerLeft.getButtonState('grips')) {
+        //                 updateNodeSelection(model, getPointedObject(controllerLeft), isLeft);
+        //             }
+        //         } else {
+        //             pointerLeft = drawPointer(v3Origin, v3UnitUp);
+        //             controllerLeft.add(pointerLeft);
+        //         }
+        //         updateNodeMoveOver(model, getPointedObject(controllerLeft));
+        //     } else {
+        //         if (pointerLeft) {
+        //             controllerLeft.remove(pointerLeft);
+        //         }
+        //         pointerLeft = null;
+        //     }
+        //
          if (controllerRight.userData.isSelecting) {  //getButtonState('trigger')) {
-    //         pointedNodeIdx = (closestNodeDistanceRight < 2.0) ? closestNodeIndexRight : -1;
+            //         pointedNodeIdx = (closestNodeDistanceRight < 2.0) ? closestNodeIndexRight : -1;
 
              //
              console.log("Right controller Trigger: " + controllerRight.userData.isSelecting);
-    //         if (pointerRight) {
-    //             // Touch Controller pointer already on! scan for selection
-    //             if (controllerRight.getButtonState('grips')) {
-    //                 updateNodeSelection(model, getPointedObject(controllerRight), isLeft);
-    //             }
-    //         } else {
-    //             pointerRight = drawPointer(v3Origin, v3UnitUp);
-    //             controllerRight.add(pointerRight);
-    //         }
-    //         updateNodeMoveOver(model, getPointedObject(controllerRight));
+            //         if (pointerRight) {
+            //             // Touch Controller pointer already on! scan for selection
+            //             if (controllerRight.getButtonState('grips')) {
+            //                 updateNodeSelection(model, getPointedObject(controllerRight), isLeft);
+            //             }
+            //         } else {
+            //             pointerRight = drawPointer(v3Origin, v3UnitUp);
+            //             controllerRight.add(pointerRight);
+            //         }
+            //         updateNodeMoveOver(model, getPointedObject(controllerRight));
          } else {
-    //         if (pointerRight) {
-    //             controllerRight.remove(pointerRight);
-    //         }
+            //         if (pointerRight) {
+            //             controllerRight.remove(pointerRight);
+            //         }
              pointerRight = null;
          }
     }; // scanOculusTouch
@@ -1114,7 +1232,6 @@ function PreviewArea(canvas_, model_, name_) {
         var geometry = new THREE.BufferGeometry().setFromPoints(points);
         return new THREE.Line(geometry, material);
     }
-
 
 
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
@@ -1179,50 +1296,49 @@ function PreviewArea(canvas_, model_, name_) {
     var controlMode = '';
     //toggle between control modes when 'c' is pressed
     this.toggleControlMode = function () {
-        if(controlMode == ''){
+        if (controlMode == '') {
             controls = new OrbitControls(camera, renderer.domElement);
             controlMode = 'orbit';
             console.log("controlMode: " + controlMode);
             return;
         }
 
-        if(controlMode == 'orbit'){
+        if (controlMode == 'orbit') {
             controls = new TrackballControls(camera, renderer.domElement);
             controlMode = 'trackball';
             console.log("controlMode: " + controlMode);
             return;
         }
-        if(controlMode == 'trackball'){
+        if (controlMode == 'trackball') {
             controls = new FlyControls(camera, renderer.domElement);
             controlMode = 'fly';
             console.log("controlMode: " + controlMode);
             return;
         }
-        if(controlMode == 'fly'){
+        if (controlMode == 'fly') {
             controls = new FirstPersonControls(camera, renderer.domElement);
             controlMode = 'firstperson';
             console.log("controlMode: " + controlMode);
             return;
         }
-        if(controlMode == 'firstperson'){
+        if (controlMode == 'firstperson') {
             controls = new ArcballControls(camera, renderer.domElement);
             controlMode = 'arcball';
             console.log("controlMode: " + controlMode);
             return;
         }
-        if(controlMode == 'arcball'){
+        if (controlMode == 'arcball') {
             controls = new TransformControls(camera, renderer.domElement);
             controlMode = 'transform';
             console.log("controlMode: " + controlMode);
             return;
         }
-        if(controlMode == 'transform'){
+        if (controlMode == 'transform') {
             controls = new OrbitControls(camera, renderer.domElement);
             controlMode = 'orbit';
             console.log("controlMode: " + controlMode);
             return;
         }
-
 
 
     }
@@ -1242,7 +1358,6 @@ function PreviewArea(canvas_, model_, name_) {
     }
 
 
-
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
     //todo is this sort of infinite recursion intentional?
     this.setEventListeners = function (onMouseDown, onMouseUp, onDocumentMouseMove) {
@@ -1256,34 +1371,76 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     // update node scale according to selection status
-    this.updateNodeGeometry = function (nodeIndex, status) {
+    this.updateNodeGeometry = function (instanceId, group, hemisphere, instance, status) {
         var scale = 1.0;
         var delta = clock.getDelta();
         var dataset = model.getDataset();
+        let matrix= new THREE.Matrix4();
         switch (status) {
             case 'normal':
+                console.log("normal")
                 scale = 1.0;
-                glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
-                clrNodesFocused();//nodeIndex);
+                // get matrix from instantiated object
+                // get matrix from instantiated object
+                //matrix = new THREE.Matrix4();
+                instance.getMatrixAt(instanceId, matrix);
+                // apply scale to matrix preserve other transformations
+                matrix.scale(new THREE.Vector3(scale, scale, scale));
+                // set matrix back to instantiated object
+                instance.setMatrixAt(instanceId, matrix);
+                // update instance matrix
+                instance.instanceMatrix.needsUpdate = true;
+                //glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
                 break;
             case 'mouseover':
+                console.log("mouseover");
                 scale = 1.72;
-                glyphs[nodeIndex].material.color = new THREE.Color( (delta * 10.0 ), (1.0-delta * 10.0 ), (0.5 + delta * 5.0 )  );
+                var delta = clock.getDelta();
+                //glyphs[nodeIndex].material.color = new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0));
+                // set color of the instantiated object to random color
+                instance.setColorAt(instanceId, new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0)));
                 //console.log("Delta:" + (delta * 10.0 )) + " " + (1.0-delta * 10.0 ) + " " + (0.5 + delta * 5.0 );
-                setNodesFocused(getNodesFocused().length, nodeIndex);
+                // update instance matrix
+                instance.instanceMatrix.needsUpdate = true;
                 break;
             case 'selected':
+                console.log("selected");
+                // get matrix from instantiated object
+                //matrix = new THREE.Matrix4();
+                instance.getMatrixAt(instanceId, matrix);
+                // apply scale to matrix preserve other transformations
                 scale = (8 / 3);
-                glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
-                //glyphs[nodeIndex].material.color = new THREE.Color( scaleColorGroup(model, dataset[nodeIndex].group)*0.75  + delta * 12,    );
-                //glyphs[nodeIndex].material.color = new THREE.Color( scaleColorGroup(model, dataset[nodeIndex].group) + delta );
+                matrix.scale(new THREE.Vector3(scale, scale, scale));
+                // set matrix back to instantiated object
+                instance.setMatrixAt(instanceId, matrix);
+                // set color of the instantiated object to color from scaleColorGroup
+                instance.setColorAt(instanceId, new THREE.Color(scaleColorGroup(model, group)));
+                // todo scalecolorgroup should return a previously defined color object instead of creating a new one
+                // update instance matrix
+                instance.instanceMatrix.needsUpdate = true;
+                //glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
                 break;
             case 'root':
+                console.log("root");
                 scale = (10 / 3);
-                glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
+                // get matrix from instantiated object
+                //matrix = new THREE.Matrix4();
+                instance.getMatrixAt(instanceId, matrix);
+                // apply scale to matrix preserve other transformations
+                matrix.scale(new THREE.Vector3(scale, scale, scale));
+                // set matrix back to instantiated object
+                instance.setMatrixAt(instanceId, matrix);
+                // set color of the instantiated object to color from scaleColorGroup
+                instance.setColorAt(instanceId, new THREE.Color(scaleColorGroup(model, group)));
+                // update instance matrix
+                instance.instanceMatrix.needsUpdate = true;
+                //glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
                 break;
+            default:
+                console.log("default");
+                console.log("status: " + status);
         }
-        glyphs[nodeIndex].scale.set(scale, scale, scale);
+        //glyphs[nodeIndex].scale.set(scale, scale, scale);
     };
 
     var animateNodeBreathing  = function (nodeList) {
@@ -1393,7 +1550,6 @@ function PreviewArea(canvas_, model_, name_) {
         // lastTime = Date.now();
 
 
-
         // if (enableVR && activateVR) {
         //     // if (oculusTouchExist) { //todo: Change old WebVR code to WebXR
         //     //     controllerLeft.update();
@@ -1432,7 +1588,7 @@ function PreviewArea(canvas_, model_, name_) {
         //update camera position
         camera.updateProjectionMatrix();
 
-            //console.log("controls.update() called");
+        //console.log("controls.update() called");
 
 
 
@@ -1444,7 +1600,7 @@ function PreviewArea(canvas_, model_, name_) {
         //effect.requestAnimationFrame(animatePV); //effect no longer has this function. Maybe it is no longer required
 
         //window.requestAnimationFrame(animatePV); // todo: this is the old way of doing it. Consider in WebXR
-        renderer.setAnimationLoop( animatePV ); // todo: this is the new way to do it in WebXR
+        renderer.setAnimationLoop(animatePV); // todo: this is the new way to do it in WebXR
     }
 
     this.requestAnimate = function () {
@@ -1489,21 +1645,120 @@ function PreviewArea(canvas_, model_, name_) {
         this.redrawEdges();
     };
 
+    // list groups in the dataset
+    this.listGroups = function () {
+        var dataset = model.getDataset();
+        var groups = {};
+        for (var i = 0; i < dataset.length; i++) {
+            groups[dataset[i].group] = 1;
+        }
+        return Object.keys(groups);
+    }
+
+    this.countGroupMembers = function (group, hemisphere) {
+        // count the number of members in given group and hemisphere
+        var dataset = model.getDataset();
+        var count = 0;
+        for (var i = 0; i < dataset.length; i++) {
+            if (dataset[i].group == group && dataset[i].hemisphere == hemisphere) {
+                count++;
+            }
+        }
+        return count;
+    }
     // draw the brain regions as glyphs (the nodes)
     // assumes all nodes are visible, nothing is selected
     this.drawRegions = function () {
         var dataset = model.getDataset();
-        var material, geometry;
+        // for each group and hemisphere in the dataset, create an instance mesh
+        var groups = this.listGroups();
 
-        for (var i = 0; i < dataset.length; i++) {
-            geometry = getNormalGeometry(dataset[i].hemisphere,name);
-            material = getNormalMaterial(model, dataset[i].group);
-            glyphs[i] = new THREE.Mesh(geometry, material);
-            brain.add(glyphs[i]);
-            glyphNodeDictionary[glyphs[i].uuid] = i;
-            glyphs[i].position.set(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z);
-            glyphs[i].userData.hemisphere = dataset[i].hemisphere;
+
+
+        for (let i = 0; i < groups.length; i++) {
+            let leftCount = this.countGroupMembers(groups[i], 'left');
+            let rightCount = this.countGroupMembers(groups[i], 'right');
+            instances[groups[i]] = {
+                left: null,
+                right: null
+            };
+            // create instance mesh for each group and hemisphere
+            let geometry = getNormalGeometry('left');
+            let material = getNormalMaterial(model, groups[i]);
+            instances[groups[i]].left = new THREE.InstancedMesh(geometry, material, leftCount);
+            geometry = getNormalGeometry('right');
+            material = getNormalMaterial(model, groups[i]);
+            instances[groups[i]].right = new THREE.InstancedMesh(geometry, material, rightCount);
+            // name the instance with group_hemisphere
+            instances[groups[i]].left.name = {
+                group: groups[i],
+                hemisphere: 'left'
+            };
+            instances[groups[i]].right.name = {
+                group: groups[i],
+                hemisphere: 'right'
+            }
         }
+// populate the instance meshes
+        var topIndexes = {};
+        for (let i = 0; i < dataset.length; i++) {
+            // check if region is already in the topIndexes object
+            if (topIndexes[dataset[i].group] === undefined) {
+                topIndexes[dataset[i].group] = {
+                    left: 0,
+                    right: 0
+                };
+            }
+            // get the index of the instance mesh to add to
+            let index = topIndexes[dataset[i].group][dataset[i].hemisphere];
+            // get the instance mesh to add to
+            let instance = instances[dataset[i].group][dataset[i].hemisphere];
+            // get the position of the region
+            let position = dataset[i].position;
+            // set the position of the instance
+            instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
+            // increment the index
+            topIndexes[dataset[i].group][dataset[i].hemisphere]++;
+        }
+
+
+        // mark instances as dirty
+        for (let i = 0; i < groups.length; i++) {
+            instances[groups[i]].left.instanceMatrix.needsUpdate = true;
+            instances[groups[i]].right.instanceMatrix.needsUpdate = true;
+        }
+        // add the instance meshes to the scene
+        for (let i = 0; i < groups.length; i++) {
+            brain.add(instances[groups[i]].left);
+            brain.add(instances[groups[i]].right);
+        }
+
+        // // print count of instances
+        // for (let i = 0; i < groups.length; i++) {
+        //     console.log(groups[i] + ' left: ' + instances[groups[i]].left.count);
+        //     console.log(groups[i] + ' right: ' + instances[groups[i]].right.count);
+        // }
+        //
+        // // print indexes object
+        // console.log("indexes object");
+        // // for each key in the indexes object (group) print the left and right indexes (number of instances)
+        // for (let i = 0; i < groups.length; i++) {
+        //     console.log(groups[i]);
+        //     console.log(topIndexes[groups[i]]);
+
+
+
+
+        //
+        // for (var i = 0; i < dataset.length; i++) {
+        //     geometry = getNormalGeometry(dataset[i].hemisphere,name);
+        //     material = getNormalMaterial(model, dataset[i].group);
+        //     glyphs[i] = new THREE.Mesh(geometry, material);
+        //     brain.add(glyphs[i]);
+        //     glyphNodeDictionary[glyphs[i].uuid] = i;
+        //     glyphs[i].position.set(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z);
+        //     glyphs[i].userData.hemisphere = dataset[i].hemisphere;
+        // }
     };
 
     // update the nodes positions according to the latest in the model
@@ -1718,14 +1973,13 @@ function PreviewArea(canvas_, model_, name_) {
 	} else {
 		if(getEnableContra()) {
 			row = row.concat(model.getTopContraLateralConnectionsByNode(nodeIndex, n ));
-		} 
+		}
 		if (getEnableIpsi()) {
 			row = row.concat(model.getTopIpsiLateralConnectionsByNode(nodeIndex, n ));
 		}
-	}	
+	}
 	    console.log("contra"+getEnableContra());
 	    console.log("ipsi"+getEnableIpsi());
-
         var edges = model.getActiveEdges();
         var edgeIdx = model.getEdgesIndeces();
         if (getEnableEB()) {
@@ -1749,7 +2003,7 @@ function PreviewArea(canvas_, model_, name_) {
         var edgeIdx = model.getEdgesIndeces();
         if (getEnableEB( )) {
             model.performEBOnNode(indexNode);
-        } 
+        }
 
         // It can get too cluttered if both ipsi-
         if (getEnableIpsi() && getEnableContra()) {
@@ -1764,7 +2018,10 @@ function PreviewArea(canvas_, model_, name_) {
                 if ((i != indexNode) &&
                     (Math.abs(row[i]) > myThreshold) &&
                     model.isRegionActive(model.getGroupNameByNodeIndex(i)) &&
-                    getVisibleNodes(i) ) {
+                    getVisibleNodes(i) &&
+                ((getEnableIpsi() && (dataset[indexNode].hemisphere === dataset[i].hemisphere)) ||
+                    (getEnableContra() && (dataset[indexNode].hemisphere !== dataset[i].hemisphere)) ||
+                    (!getEnableIpsi() && !getEnableContra()))) {
                     displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
                 }
             }
@@ -1807,7 +2064,7 @@ function PreviewArea(canvas_, model_, name_) {
         for (i = 0; i < shortestPathEdges.length; i++) {
             updatedDisplayEdges[updatedDisplayEdges.length] = shortestPathEdges[i];
         }
-        displayedEdges = updatedDisplayEdges;
+        var displayedEdges = updatedDisplayEdges;
     };
 
     // draw skybox from images
@@ -1849,19 +2106,52 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     // draw a selected node: increase it's size
-    this.drawSelectedNode = function (nodeIndex) {
-        if (getNodesSelected().indexOf(nodeIndex) == -1) {
-            setNodesSelected(getNodesSelected().length, nodeIndex);
-        }
-        this.updateNodeGeometry(nodeIndex, 'selected');
+    this.drawSelectedNode = function (instanceId, group, hemisphere, instance) {
+        // todo: check if this is really needed since there is already a toggle for selected in instances
+        // if (getNodesSelected().indexOf(nodeIndex) == -1) {
+        //     setNodesSelected(getNodesSelected().length, nodeIndex);
+        // }
+        this.updateNodeGeometry(instanceId, group, hemisphere, instance, 'selected');
     };
+
+
+    //listen for mouse click on canvas
+    // this.onDocumentMouseDown = function (event) {
+    //     // get mouse position
+    //     var vector = new THREE.Vector2();
+    //     vector.x = (event.clientX / window.innerWidth) * 2 - 1;
+    //     vector.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    //     // get intersected object beneath the mouse pointer
+    //     var intersectedObject = this.getIntersectedObject(vector);
+    //     // if an object was found
+    //     if (intersectedObject) {
+    //         // log the object to the console
+    //         console.log(intersectedObject);
+    //         // get the node index
+    //         var nodeIndex = intersectedObject.object.name;
+    //     } else {
+    //         console.log("No intersected object found");
+    //     }
+    //
+    // };
+    // the above is not working for some reason, so I am using the following instead
+
 
     // get intersected object beneath the mouse pointer
     // detects which scene: left or right
     // return undefined if no object was found
+
     this.getIntersectedObject = function (vector) {
+        // check if raycaster is defined
+        if (!raycaster) {
+            raycaster = new THREE.Raycaster();
+        }
+        // set the raycaster from the camera position and mouse position
         raycaster.setFromCamera(vector, camera);
-        var objectsIntersected = raycaster.intersectObjects(glyphs);
+        // get the list of objects the ray intersected
+        var objectsIntersected = raycaster.intersectObjects(scene.children, true);
+        // return the first object. It's the closest one
+
         return (objectsIntersected[0]) ? objectsIntersected[0] : undefined;
     };
 
@@ -1873,9 +2163,9 @@ function PreviewArea(canvas_, model_, name_) {
         //     renderer.setSize(window.innerWidth, window.innerHeight);
         //     console.log("Resize for Mobile VR");
         // } else {
-            camera.aspect = window.innerWidth / 2.0 / window.innerHeight;
-            renderer.setSize(window.innerWidth / 2.0, window.innerHeight);
-            console.log("Resize");
+        camera.aspect = window.innerWidth / 2.0 / window.innerHeight;
+        renderer.setSize(window.innerWidth / 2.0, window.innerHeight);
+        console.log("Resize");
         //}
         camera.updateProjectionMatrix();
     };
@@ -1982,7 +2272,6 @@ function PreviewArea(canvas_, model_, name_) {
         var raycaster = new THREE.Raycaster(controllerPosition, forwardVector);
         var objectsIntersected = raycaster.intersectObjects(glyphs);
         return (objectsIntersected[0]) ? objectsIntersected[0] : undefined;
-
     }
 
     // // get the object pointed by the controller

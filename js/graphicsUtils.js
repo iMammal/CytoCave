@@ -40,21 +40,22 @@ var getNormalGeometry = function(hemisphere) {
 };
 
 // create normal edge geometry: sphere or cube
-var getNormalGeometry = function(hemisphere,side) {
-    if(hemisphere == "left"){
-	    if(side == "Left"){
-		    return leftSphereNormal;
-	    } else {
-        return rightSphereNormal;
-	    }
-    } else if(hemisphere == "right"){
-	    if(side == "Left"){
-		    return leftBoxNormal;
-	    } else {
-        return rightBoxNormal;
-	    }
-    }
-};
+//commented out since it already exists?
+// var getNormalGeometry = function(hemisphere,side) {
+//     if(hemisphere == "left"){
+// 	    if(side == "Left"){
+// 		    return leftSphereNormal;
+// 	    } else {
+//         return rightSphereNormal;
+// 	    }
+//     } else if(hemisphere == "right"){
+// 	    if(side == "Left"){
+// 		    return leftBoxNormal;
+// 	    } else {
+//         return rightBoxNormal;
+// 	    }
+//     }
+// };
 
 // scaling the glyphs
 var setDimensionFactor = function(value){

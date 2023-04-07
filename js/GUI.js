@@ -143,6 +143,10 @@ var addDimensionFactorSliderLeft = function (side) {
         .attr("for", "dimensionSlider")
         .attr("id", "dimensionSliderLabel"+side)
         .text(side+" Sphere Size");
+    panel.append("label")
+        .attr("for", "dimensionSlider")
+        .attr("id", "dimensionSliderLabel"+side)
+        .text(side+" Box Size");
 
     panel.append("br");
 };
@@ -153,7 +157,7 @@ var addDimensionFactorSliderRight = function (side) {
     var panel = d3.select("#nodeInfoPanel"+side);
 
 	console.log("#nodeInfoPanel"+side);
-	
+
     if(side == 'Left') {
       panel.append("input")
         .attr("type", "range")
@@ -463,6 +467,40 @@ var addLateralityCheck = function () {
             }
             updateScenes();
 
+        });
+    //menu.append("br");
+    //menu.append("label")
+      //  .attr("for", "enableLateralityCheck")
+        //.attr("id", "enableLateralityCheckLabel")
+        //.text("laterality");
+};
+
+// add laterality checkboxes
+var addLateralityCheck = function () {
+    var menu = d3.select("#edgeInfoPanel");
+    menu.append("br");
+    menu.append("label")
+        .attr("for", "enableIpsiCheck")
+        .attr("id", "enableIpsiCheckLabel")
+        .text("Ipsilateral");
+    menu.append("input")
+        .attr("type", "checkbox")
+        .attr("checked", false)
+        .attr("id", "enableIpsiCheck")
+        .on("change", function () {
+            enableIpsilaterality(this.checked);
+        });
+    menu.append("br");
+    menu.append("label")
+        .attr("for", "enableContraCheck")
+        .attr("id", "enableContraCheckLabel")
+        .text("Contralateral");
+    menu.append("input")
+        .attr("type", "checkbox")
+        .attr("checked", false)
+        .attr("id", "enableContraCheck")
+        .on("change", function () {
+            enableContralaterality(this.checked);
         });
     //menu.append("br");
     //menu.append("label")
@@ -1277,12 +1315,12 @@ var searchElement = function(intext,side) {
 
     if ((typeof (parseInt(intext)) != 'number') || isNaN(parseInt(intext))) {
            // alert("The value inserted is not a number");
-        
+
 
         // if search field is text search regions for match and continue with index
         var glyphCountLeft = previewAreaLeft.getGlyphCount();
         var glyphCountRight = previewAreaRight.getGlyphCount();
-                //max(previewAreaLeft.getGlyphCount(), previewAreaRight.getGlyphCount())); 
+                //max(previewAreaLeft.getGlyphCount(), previewAreaRight.getGlyphCount()));
         var glyphCount = ((side === 'Left') ? glyphCountLeft : (side === 'Right') ? glyphCountRight :
             (glyphCountLeft > glyphCountRight) ? glyphCountLeft : glyphCountRight);
                           //math.max((glyphCountLeft, glyphCountRight));
@@ -1300,7 +1338,7 @@ var searchElement = function(intext,side) {
     //if (index < 0 || index > glyphs.length) {
     if (index < 0 || index > glyphCount) {
         //((side === 'Left') ? previewAreaLeft.getGlyphCount() :
-        //(side === 'Right') ? previewAreaRight.getGlyphCount() : 
+        //(side === 'Right') ? previewAreaRight.getGlyphCount() :
         //   max(previewAreaLeft.getGlyphCount() , previewAreaRight.getGlyphCount()) )) {
             alert("Node not found");
     }

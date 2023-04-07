@@ -5,18 +5,18 @@
 
 var previewAreaLeft, previewAreaRight;
 
-var glyphNodeDictionary ={};        /// Object that stores uuid of left and right glyphs
+var glyphNodeDictionary = {};        /// Object that stores uuid of left and right glyphs
 
 var activeVR = 'left';
 
 var nodesSelected = [];
 var nodesFocused = [];
 
-var visibleNodes =[];               // boolean array storing nodes visibility
+var visibleNodes = [];               // boolean array storing nodes visibility
 
 var pointedNodeIdx = -1;            // index of node under the mouse
 var pointedObject;                  // node object under mouse
-var root;                           // the index of the root node = start point of shortest path computation
+var root;                           // the index of the root node = start point of the shortest path computation
 
 var thresholdModality = true;
 var enableEB = false;
@@ -31,7 +31,7 @@ var oldNodeIndex = -1;
 var hoverMode = 0;
 
 import * as THREE from 'three'
-import {isLoaded, dataFiles,mobile} from "./globals";
+import {isLoaded, dataFiles, mobile} from "./globals";
 import {
     addEdgeBundlingCheck,
     addModalityButton,
@@ -45,7 +45,7 @@ import {
     addDistanceSlider,
     addShortestPathHopsSlider,
     enableShortestPathFilterButton,
-    addDimensionFactorSlider,
+    //addDimensionFactorSlider,
     addDimensionFactorSliderLeft,
     addDimensionFactorSliderRight,
     createLegend,
@@ -56,7 +56,7 @@ import {
 } from './GUI.js';
 import {queue} from "./external-libraries/queue";
 import {scanFolder, loadLookUpTable, loadSubjectNetwork, loadSubjectTopology} from "./utils/parsingData";
-import {modelLeft,modelRight} from './model';
+import {modelLeft, modelRight} from './model';
 import {PreviewArea} from "./previewArea";
 import {setUpdateNeeded} from './utils/Dijkstra';
 import { setNodeInfoPanel, enableThresholdControls, addSearchPanel } from './GUI'
@@ -85,7 +85,7 @@ function onDocumentMouseMove(model, event) {
 ///////////////////////////////////////////////////////////////////////////////////////////
 var updateNodeMoveOver = function (model, intersectedObject, mode) {
     var nodeIdx, region, nodeRegion;
-    if ( intersectedObject ) {
+    if (intersectedObject) {
         nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
         region = model.getRegionByIndex(nodeIdx);
         nodeRegion = model.getGroupNameByNodeIndex(nodeIdx);
@@ -93,7 +93,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
 
     var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
     // update node information label
-    if ( nodeExistAndVisible ) {
+    if (nodeExistAndVisible) {
         setNodeInfoPanel(region, nodeIdx);
         // if (vr) {  //todo: this can be used outside of VR to help get node label info next to the node itself, not in the screen corner
              previewAreaLeft.updateNodeLabel(region.name, nodeIdx);
@@ -101,7 +101,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
         // }
     }
 
-    if ( nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1)) { // not selected
+    if (nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1)) { // not selected
         if (hoverTimeout && oldNodeIndex == nodeIdx) {
             // create a selected node (bigger) from the pointed node
             pointedObject = intersectedObject.object;
@@ -112,12 +112,14 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
             hoverTimeout = false;
             hoverMode = hoverMode | mode;  // set the hover mode to the mode that triggered this function
         } else {
-            setTimeout(function () {hoverTimeout = true;}, 500);
+            setTimeout(function () {
+                hoverTimeout = true;
+            }, 500);
             oldNodeIndex = nodeIdx;
 
         }
     } else {
-        if(pointedObject ){
+        if (pointedObject ) {
             nodeIdx = glyphNodeDictionary[pointedObject.uuid];
             if (nodeIdx === undefined)
                 return;
@@ -127,12 +129,11 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
             }
             // only proceed to de-hovering a node if both the mouse and all VR controllers are not hovering over it
             pointedNodeIdx = -1;
-            if(nodeIdx == root) {
+            if (nodeIdx == root) {
                 console.log("Root creation");
                 previewAreaLeft.updateNodeGeometry(nodeIdx, 'root');
                 previewAreaRight.updateNodeGeometry(nodeIdx, 'root');
-            }
-            else {
+            } else {
                 previewAreaLeft.updateNodeGeometry(nodeIdx, 'normal');
                 previewAreaRight.updateNodeGeometry(nodeIdx, 'normal');
             }
@@ -147,7 +148,7 @@ function onMiddleClick(event) {
     event.preventDefault();
 
     var intersectedObject = getIntersectedObject(event);
-    if(intersectedObject) {
+    if (intersectedObject) {
         var nodeIndex = glyphNodeDictionary[intersectedObject.object.uuid];
         if (nodeIndex == undefined || nodeIndex < 0)
             return;
@@ -172,56 +173,49 @@ function onLeftClick(model, event) {
 
     event.preventDefault();
     var objectIntersected = getIntersectedObject(event);
-    var isLeft = event.clientX < window.innerWidth/2;
+    var isLeft = event.clientX < window.innerWidth / 2;
     updateNodeSelection(model, objectIntersected, isLeft);
 }
 
-var updateNodeSelection = function (model, objectIntersected, isLeft) {
-    var nodeIndex;
-    if ( objectIntersected ) {
-        nodeIndex = glyphNodeDictionary[objectIntersected.object.uuid];
-    }
-    if (nodeIndex == undefined)
-        return;
+const updateNodeSelection = (model, objectIntersected, isLeft) => {
+    console.log("model: ", model);
+    console.log("objectIntersected: ", objectIntersected);
+    console.log(`isLeft: ${isLeft}`);
 
-    if (objectIntersected && visibleNodes[nodeIndex]) {
-        if(!spt) {
-            var el = nodesSelected.indexOf(nodeIndex);
-            if (el == -1) {
-                //if the node is not already selected -> draw edges and add in the nodesSelected Array
-                previewAreaLeft.drawSelectedNode(nodeIndex);
-                previewAreaRight.drawSelectedNode(nodeIndex);
+    if (!objectIntersected) return;
 
-                // draw edges in one two ways:
-                if (thresholdModality) {
-                    // 1) all edges from a given node
-                    previewAreaLeft.drawEdgesGivenNode(nodeIndex);
-                    previewAreaRight.drawEdgesGivenNode(nodeIndex);
-                } else {
-                    // 2) strongest n edges from the node
-                    var n = model.getNumberOfEdges();
-                    previewAreaLeft.drawTopNEdgesByNode(nodeIndex, n);
-                    previewAreaRight.drawTopNEdgesByNode(nodeIndex, n);
-                }
+    const instanceId = objectIntersected.object.instanceId;
+    const group = objectIntersected.object.name.group;
+    const hemisphere = objectIntersected.object.name.hemisphere;
 
-                pointedObject = null;
-            } else {
-                //if the node is already selected, remove edges and remove from the nodeSelected Array
-                if (pointedObject) {
-                    previewAreaLeft.updateNodeGeometry(nodeIndex, 'normal');
-                    previewAreaRight.updateNodeGeometry(nodeIndex, 'normal');
-                }
-                nodesSelected.splice(el, 1);
-                removeEdgesGivenNodeFromScenes(nodeIndex);
-            }
+    const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
+    console.log("previewArea instances: ");
+    console.log(previewArea.instances);
+    const instance = previewArea.instances[group][hemisphere];
+    // log instance
+    console.log("instance: ")
+    console.log(instance);
+    if (!group || !hemisphere || !instance) return;
+
+    objectIntersected.object.userData.selected = !objectIntersected.object.userData.selected;
+
+    if (objectIntersected.object.userData.selected) {
+        console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
+        previewArea.drawSelectedNode(instanceId, group, hemisphere, instance);
+
+        if (thresholdModality) {
+            previewArea.drawEdgesGivenNode(instanceId, group, hemisphere, instance);
         } else {
-            if (isLeft)
-                previewAreaLeft.getShortestPathFromRootToNode(nodeIndex);
-            else
-                previewAreaRight.getShortestPathFromRootToNode(nodeIndex);
+            const n = model.getNumberOfEdges();
+            previewArea.drawTopNEdgesByNode(instanceId, group, hemisphere, instance, n);
         }
+
+    } else {
+        console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
+        objectIntersected.object.userData.selected = false;
+        previewArea.updateNodeGeometry(instanceId, group, hemisphere, instance, 'normal');
+        removeEdgesGivenNodeFromScenes(instanceId, group, hemisphere, instance);
     }
-    pointedNodeIdx = -1;
 };
 
 // callback on mouse press
@@ -229,7 +223,9 @@ function onMouseDown(event) {
     click = true;
     switch (event.button) { // middle button
         case 2: // right click -> should be < 200 msec
-            setTimeout(function () {click = false;}, 200);
+            setTimeout(function () {
+                click = false;
+            }, 200);
             break;
     }
 }
@@ -255,26 +251,27 @@ function onMouseUp(model, event) {
 function onKeyPress(event) {
     // todo: this is now a stub. no move keyboard activated VR
 }
-    // if (event.key === 'v' || event.keyCode === 118) {
-    //     if (!previewAreaLeft.isVRAvailable()) {
-    //         alert("No VR Hardware found!!!");
-    //         return;
-    //     }
-    //     updateVRStatus('enable');
-    //     console.log("Enter VR mode");
-    // }
-    // if (vr && (event.key === 's' || event.keyCode === 115)) {
-    //     updateVRStatus('left');
-    //     console.log("VR Active for left preview area");
-    // }
-    // if (vr && (event.key === 'd' || event.keyCode === 100)) {
-    //     updateVRStatus('right');
-    //     console.log("VR Active for right preview area");
-    // }
-    // if (event.key === 'e' || event.keyCode === 101) {
-    //     updateVRStatus('disable');
-    //     console.log("Exit VR mode");
-    // }
+
+// if (event.key === 'v' || event.keyCode === 118) {
+//     if (!previewAreaLeft.isVRAvailable()) {
+//         alert("No VR Hardware found!!!");
+//         return;
+//     }
+//     updateVRStatus('enable');
+//     console.log("Enter VR mode");
+// }
+// if (vr && (event.key === 's' || event.keyCode === 115)) {
+//     updateVRStatus('left');
+//     console.log("VR Active for left preview area");
+// }
+// if (vr && (event.key === 'd' || event.keyCode === 100)) {
+//     updateVRStatus('right');
+//     console.log("VR Active for right preview area");
+// }
+// if (event.key === 'e' || event.keyCode === 101) {
+//     updateVRStatus('disable');
+//     console.log("Exit VR mode");
+// }
 //}
 
 // todo: this is probably not needed in WebXR
@@ -371,10 +368,10 @@ var initCanvas = function () {
     previewAreaRight = new PreviewArea(document.getElementById('canvasRight'), modelRight, 'Right');
 
     // Get the button, and when the user clicks on it, execute myFunction
-    document.getElementById("syncLeft").onclick = function() {
+    document.getElementById("syncLeft").onclick = function () {
         previewAreaLeft.syncCameraWith(previewAreaRight.getCamera());
     };
-    document.getElementById("syncRight").onclick = function() {
+    document.getElementById("syncRight").onclick = function () {
         previewAreaRight.syncCameraWith(previewAreaLeft.getCamera());
     };
     // pass mouse events controllers
@@ -382,7 +379,7 @@ var initCanvas = function () {
     previewAreaRight.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
     window.addEventListener("keypress", onKeyPress, true);
 
-    $(window).resize(function(e){
+    $(window).resize(function (e) {
         //e.preventDefault();
         console.log("on resize event");
         previewAreaLeft.resizeScene();
@@ -535,7 +532,7 @@ var updateOpacity = function (opacity) {
     previewAreaRight.updateEdgeOpacity(opacity);
 };
 
-var removeEdgesGivenNodeFromScenes = function(nodeIndex) {
+var removeEdgesGivenNodeFromScenes = function (nodeIndex) {
     previewAreaLeft.removeEdgesGivenNode(nodeIndex);
     previewAreaRight.removeEdgesGivenNode(nodeIndex);
 
@@ -546,17 +543,20 @@ var removeEdgesGivenNodeFromScenes = function(nodeIndex) {
 // get intersected object beneath the mouse pointer
 // detects which scene: left or right
 // return undefined if no object was found
-var getIntersectedObject = function(event) {
+var getIntersectedObject = function (event) {
 
-    var isLeft = event.clientX < window.innerWidth/2;
+    var isLeft = event.clientX < window.innerWidth / 2;
 
     // mapping coordinates of the viewport to (-1,1), (1,1), (-1,-1), (1,-1)
     // TODO: there is a glitch for the right side
     var vector = new THREE.Vector2(
-        ( event.clientX / window.innerWidth ) * 4 - (isLeft?1:3),
-        - ( event.clientY / window.innerHeight ) * 2 + 1
+        (event.clientX / window.innerWidth) * 4 - (isLeft ? 1 : 3),
+        -(event.clientY / window.innerHeight) * 2 + 1
     );
-    return isLeft ? previewAreaLeft.getIntersectedObject(vector) : previewAreaRight.getIntersectedObject(vector);
+    let iObject = isLeft ? previewAreaLeft.getIntersectedObject(vector) : previewAreaRight.getIntersectedObject(vector);
+    console.log("Intersected object: ");
+    console.log(iObject);
+    return iObject;
 };
 
 // This now only changes the Right color group
@@ -597,7 +597,7 @@ var changeColorGroupLeft = function (name) {
 
 var redrawScene = function (side) {
     setUpdateNeeded(true);
-    switch(side) {
+    switch (side) {
         case 'Left':
         case 'left':
             previewAreaLeft.updateScene();
@@ -645,9 +645,9 @@ var changeSceneToSubject = function (subjectId, model, previewArea, side) {
         .defer(loadSubjectNetwork, fileNames, model)
         .awaitAll(function () {
             queue()
-            // PLACE depends on connection matrix
+                // PLACE depends on connection matrix
                 .defer(loadSubjectTopology, fileNames, model)
-                .awaitAll( function () {
+                .awaitAll(function () {
                     console.log("Loading data done.");
                     var activeGroup = model.getActiveGroupName();
                     var level1 = model.getClusteringLevel();
@@ -699,6 +699,7 @@ var clrNodesFocused = function () {
     nodesFocused = [];
 }
 
+//todo: probably shouldn't always be true. Also it's currently not used for anything.
 var setNodesFocused = function (arrIndex, newNodeVal) {
     if(true || newNodeVal) {
         nodesFocused[arrIndex] = newNodeVal;
@@ -707,20 +708,75 @@ var setNodesFocused = function (arrIndex, newNodeVal) {
     }
 }
 
-var getEnableEB = function () { return enableEB };
+var getEnableEB = function () {
+    return enableEB
+};
 
-var getEnableIpsi = function () { return enableIpsi };
 
-var getEnableContra = function () { return enableContra };
 
-var getVisibleNodesLength = function (arrIndex) { return visibleNodes.length }
+var getVisibleNodesLength = function (arrIndex) {
+    return visibleNodes.length
+}
 
-var getVisibleNodes = function (arrIndex) { return visibleNodes[arrIndex] }
+var getVisibleNodes = function (arrIndex) {
+    return visibleNodes[arrIndex]
+}
 
-var setVisibleNodes = function (arrIndex, arrValue) { visibleNodes[arrIndex] = arrValue }
+var setVisibleNodes = function (arrIndex, arrValue) {
+    visibleNodes[arrIndex] = arrValue
+}
 
-var getThresholdModality = function () { return thresholdModality }
+var getThresholdModality = function () {
+    return thresholdModality
+}
 
-var setThresholdModality = function (modality) { thresholdModality = modality }
+var setThresholdModality = function (modality) {
+    thresholdModality = modality
+}
 
-export {changeSceneToSubject, initControls, initCanvas, changeActiveGeometry, changeColorGroup, setRoot, getRoot, getSpt, updateScenes, updateNodesVisiblity, redrawEdges, updateOpacity, glyphNodeDictionary, previewAreaLeft, previewAreaRight, getNodesSelected, setNodesSelected, clrNodesSelected, getNodesFocused, setNodesFocused, clrNodesFocused, getVisibleNodes, getVisibleNodesLength, setVisibleNodes, getEnableEB, getEnableIpsi, getEnableContra, enableIpsilaterality, enableContralaterality, getThresholdModality, setThresholdModality, updateNodeSelection, updateNodeMoveOver };
+// export {
+//     changeSceneToSubject,
+//     initControls,
+//     initCanvas,
+//     changeActiveGeometry,
+//     changeColorGroup,
+//     setRoot,
+//     getRoot,
+//     getSpt,
+//     updateScenes,
+//     updateNodesVisiblity,
+//     updateNodeMoveOver,
+//     updateNodeSelection, redrawEdges, updateOpacity, glyphNodeDictionary, previewAreaLeft, previewAreaRight, getNodesSelected, setNodesSelected, clrNodesSelected, getNodesFocused, setNodesFocused, clrNodesFocused, getVisibleNodes, getVisibleNodesLength, setVisibleNodes, getEnableEB, getEnableIpsi, getEnableContra, enableIpsilaterality, enableContralaterality, setThresholdModality };
+// removed duplicates
+export {
+    changeSceneToSubject,
+    initControls,
+    initCanvas,
+    changeActiveGeometry,
+    changeColorGroup,
+    setRoot,
+    getRoot,
+    getSpt,
+    updateScenes,
+    updateNodesVisiblity,
+    updateNodeMoveOver,
+    updateNodeSelection,
+    redrawEdges,
+    updateOpacity,
+    glyphNodeDictionary,
+    previewAreaLeft,
+    previewAreaRight,
+    getNodesSelected,
+    setNodesSelected,
+    clrNodesSelected,
+    getNodesFocused,
+    setNodesFocused,
+    clrNodesFocused,
+    getVisibleNodes,
+    getVisibleNodesLength,
+    setVisibleNodes,
+    getEnableEB,
+    // getEnableIpsi, //todo: couldn't find definition
+    // getEnableContra,
+    setThresholdModality
+}
