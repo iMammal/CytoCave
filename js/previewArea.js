@@ -2126,15 +2126,19 @@ function PreviewArea(canvas_, model_, name_) {
         //     return d.name === "skybox"
         // });
         //var skybox = results[0];
-        var skybox = scene.background; // results[0];
-        skybox.visible = visible;
-        if(skybox.visible){
+        //var skybox = scene.background; // results[0];
+        //skybox.visible = visible;
+        // check if scene.background is of type THREE.Color
+        if(scene.background === undefined || scene.background === null || scene.background.isColor){
+
             addSkybox();
         } else {
             scene.background = null;
+            // create blank black background
+            scene.background = new THREE.Color(0x000000);
         }
-        console.log("skybox: ");
-        console.log(skybox);
+        // console.log("skybox: ");
+        // console.log(skybox);
         // mark scene as dirty
         scene.needsUpdate = true;
     };
