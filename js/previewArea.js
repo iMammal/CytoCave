@@ -71,7 +71,6 @@ function PreviewArea(canvas_, model_, name_) {
     var instances = {}; //for tracking instanced meshes
     // make instances public so we can access them from another class
     this.instances = instances;
-    // will this auto update when instances is updated? I think so
 
     // VR stuff
     var vrControl = null, effect = null;
@@ -302,34 +301,34 @@ function PreviewArea(canvas_, model_, name_) {
 
     }
 
-
-    function buildController( data ) {
-
-        let geometry, material;
-
-        switch ( data.targetRayMode ) {
-
-            case 'tracked-pointer':
-
-                geometry = new THREE.BufferGeometry();
-                geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
-                geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
-
-                material = new THREE.LineBasicMaterial( { vertexColors: true, blending: THREE.AdditiveBlending } );
-
-                return new THREE.Line( geometry, material );
-
-            case 'gaze':
-
-                geometry = new THREE.RingGeometry( 0.02, 0.04, 32 ).translate( 0, 0, - 1 );
-                material = new THREE.MeshBasicMaterial( { opacity: 0.5, transparent: true } );
-                return new THREE.Mesh( geometry, material );
-
-        }
-
-
-
-    }
+// duplicate declaration. unused function. todo: remove
+    // function buildController( data ) {
+    //
+    //     let geometry, material;
+    //
+    //     switch ( data.targetRayMode ) {
+    //
+    //         case 'tracked-pointer':
+    //
+    //             geometry = new THREE.BufferGeometry();
+    //             geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
+    //             geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
+    //
+    //             material = new THREE.LineBasicMaterial( { vertexColors: true, blending: THREE.AdditiveBlending } );
+    //
+    //             return new THREE.Line( geometry, material );
+    //
+    //         case 'gaze':
+    //
+    //             geometry = new THREE.RingGeometry( 0.02, 0.04, 32 ).translate( 0, 0, - 1 );
+    //             material = new THREE.MeshBasicMaterial( { opacity: 0.5, transparent: true } );
+    //             return new THREE.Mesh( geometry, material );
+    //
+    //     }
+    //
+    //
+    //
+    // }
 
 
     // request VR activation - desktop case
@@ -1660,7 +1659,7 @@ function PreviewArea(canvas_, model_, name_) {
         var dataset = model.getDataset();
         var count = 0;
         for (var i = 0; i < dataset.length; i++) {
-            if (dataset[i].group == group && dataset[i].hemisphere == hemisphere) {
+            if (dataset[i].group === group && dataset[i].hemisphere === hemisphere) {
                 count++;
             }
         }
@@ -1672,7 +1671,6 @@ function PreviewArea(canvas_, model_, name_) {
         var dataset = model.getDataset();
         // for each group and hemisphere in the dataset, create an instance mesh
         var groups = this.listGroups();
-
 
 
         for (let i = 0; i < groups.length; i++) {
@@ -1713,6 +1711,10 @@ function PreviewArea(canvas_, model_, name_) {
             let index = topIndexes[dataset[i].group][dataset[i].hemisphere];
             // get the instance mesh to add to
             let instance = instances[dataset[i].group][dataset[i].hemisphere];
+            instance.userData = {
+                nodeIndex: i
+            }
+
             // get the position of the region
             let position = dataset[i].position;
             // set the position of the instance
@@ -1745,8 +1747,6 @@ function PreviewArea(canvas_, model_, name_) {
         // for (let i = 0; i < groups.length; i++) {
         //     console.log(groups[i]);
         //     console.log(topIndexes[groups[i]]);
-
-
 
 
         //
@@ -2269,7 +2269,7 @@ function PreviewArea(canvas_, model_, name_) {
         var forwardVector = new THREE.Vector3(0, 0, -1);
         //get object in front of controller
         forwardVector.applyQuaternion(controller.quaternion);
-        var raycaster = new THREE.Raycaster(controllerPosition, forwardVector);
+        raycaster = new THREE.Raycaster(controllerPosition, forwardVector);
         var objectsIntersected = raycaster.intersectObjects(glyphs);
         return (objectsIntersected[0]) ? objectsIntersected[0] : undefined;
     }

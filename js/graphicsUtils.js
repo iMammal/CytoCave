@@ -109,6 +109,7 @@ var setDimensionFactorRightBox = function(value){
 };
 
 // return the material for a node (vertex) according to its state: active or transparent
+//todo: change to static reusable materials
 var getNormalMaterial = function(model, group) {
     var material, opacity = 1.0;
     switch (model.getRegionState(group)){
