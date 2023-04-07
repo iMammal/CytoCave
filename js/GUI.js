@@ -282,22 +282,28 @@ var addFlashRateSlider = function () {
 
 
 // adds a button to toggle skybox visibility
-var addSkyboxButton = function () {
+var addSkyboxButton = function (side) {
 
-    var menu = d3.select("#nodeInfoPanel");
+    var menu = d3.select("#nodeInfoPanelLeft");
     menu.append("button")
         .text("Skybox")
         .attr("id", "skyboxVisibilityBtn")
         .on("click", function () {
-            var input = d3.select("input#skyboxVisibilityInput").node();
-            input.checked = !input.checked;
-            setSkyboxVisibility(input.checked);
+            //var input = d3.select("#skyboxVisibilityBtn").node();
+            var input = $("#skyboxVisibilityBtn");
+            var checked = input.data("checked");
+            input.data("checked", !checked);
+            //if (side !== "Right")
+            previewAreaLeft.setSkyboxVisibility(checked);
+            previewAreaRight.setSkyboxVisibility(checked);
             updateScenes();
         })
-        .append("input")
-        .attr("type","checkbox")
-        .attr("id","skyboxVisibilityInput")
-        .attr("checked", true);
+        // .append("input")
+        // .attr("type","checkbox")
+        // .attr("id","skyboxVisibilityInput")
+        // .attr("checked", true);
+    $('#skyboxVisibilityBtn').data("checked", true);
+
     menu.append("br");
 };
 
@@ -1339,4 +1345,4 @@ var toggleMenus = function (e) {
 
 var getShortestPathVisMethod = function () { return shortestPathVisMethod }
 
-export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons
+export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons

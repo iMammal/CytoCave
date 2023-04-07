@@ -51,6 +51,7 @@ import {
     createLegend,
     addAnimationSlider,
     addFlashRateSlider,
+    addSkyboxButton,
     //hideVRMaximizeButtons,
     toggleMenus
 } from './GUI.js';
@@ -332,12 +333,11 @@ var initControls = function () {
     addTopologyMenu(modelLeft, 'Left');
     addTopologyMenu(modelRight, 'Right');
 
-    addShortestPathFilterButton();
-    addDistanceSlider();
-    addShortestPathHopsSlider();
-    enableShortestPathFilterButton(false);
+    //addShortestPathFilterButton();
+    //addDistanceSlider();
+    //addShortestPathHopsSlider();
+    //enableShortestPathFilterButton(false);
 
-    // addSkyboxButton();
     //addDimensionFactorSlider();
     addDimensionFactorSliderLeft('Left');
     addDimensionFactorSliderRight('Left');
@@ -347,6 +347,7 @@ var initControls = function () {
     addSearchPanel();
     addAnimationSlider();
     addFlashRateSlider();
+    addSkyboxButton();
 
     modelLeft.setAllRegionsActivated();
     modelRight.setAllRegionsActivated();

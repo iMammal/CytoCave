@@ -1825,6 +1825,7 @@ function PreviewArea(canvas_, model_, name_) {
         //create skybox using images
         var skybox = new THREE.CubeTextureLoader().load(images);
         //set the scene background property with the resulting texture
+        skybox.name = "skybox";
         scene.background = skybox;
         //activate background
         scene.background.needsUpdate = true;
@@ -1844,8 +1845,14 @@ function PreviewArea(canvas_, model_, name_) {
         var results = scene.children.filter(function (d) {
             return d.name === "skybox"
         });
-        var skybox = results[0];
+        //var skybox = results[0];
+        var skybox =  scene.background; // results[0];
         skybox.visible = visible;
+        //scene.background.material.transparent = 1.0;
+        //skybox.needsUpdate = true;
+        scene.needsUpdate = true;
+
+        console.log(scene.background);;
     };
 
     // draw a selected node: increase it's size
