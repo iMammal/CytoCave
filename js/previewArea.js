@@ -1842,14 +1842,24 @@ function PreviewArea(canvas_, model_, name_) {
 
     // toggle skybox visibility
     this.setSkyboxVisibility = function (visible) {
-        var results = scene.children.filter(function (d) {
-            return d.name === "skybox"
-        });
+        // var results = scene.children.filter(function (d) {
+        //     return d.name === "skybox"
+        // });
         //var skybox = results[0];
-        var skybox =  scene.background; // results[0];
-        skybox.visible = visible;
-        //scene.background.material.transparent = 1.0;
-        //skybox.needsUpdate = true;
+        //var skybox = scene.background; // results[0];
+        //skybox.visible = visible;
+        // check if scene.background is of type THREE.Color
+        if(scene.background === undefined || scene.background === null || scene.background.isColor){
+
+            addSkybox();
+        } else {
+            scene.background = null;
+            // create blank black background
+            scene.background = new THREE.Color(0x000000);
+        }
+        // console.log("skybox: ");
+        // console.log(skybox);
+        // mark scene as dirty
         scene.needsUpdate = true;
 
         console.log(scene.background);;

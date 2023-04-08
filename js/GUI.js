@@ -278,13 +278,14 @@ var addFlashRateSlider = function () {
             previewAreaRight.setFlahRate(Math.floor(this.value)/100);
             document.getElementById("flashRateSliderLabel").innerHTML = "Flash rate @ " + this.value/100.00;
         });
+    menu.append("br");
 };
 
 
 // adds a button to toggle skybox visibility
 var addSkyboxButton = function (side) {
 
-    var menu = d3.select("#nodeInfoPanelLeft");
+    var menu = d3.select("#nodeInfoPanelRight");
     menu.append("button")
         .text("Skybox")
         .attr("id", "skyboxVisibilityBtn")
