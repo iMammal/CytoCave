@@ -2022,6 +2022,13 @@ function PreviewArea(canvas_, model_, name_) {
     this.updateNodeLabel = function (text, nodeIndex) {
         var context = nspCanvas.getContext('2d');
         context.textAlign = 'left';
+        // Find the length of the text and add enough _s to fill half of the canvas
+        var textLength = context.measureText(text).width;
+        var numUnderscores = Math.ceil((nspCanvas.width/2 - textLength) / context.measureText("_").width);
+        for (var i = 0; i < numUnderscores; i++) {
+            text = text + "_";
+        }
+        //text = text + "___________________________";
         context.clearRect(0, 0, 256 * 4, 256);
         context.fillText(text, 5, 120);
 
