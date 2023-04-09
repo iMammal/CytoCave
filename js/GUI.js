@@ -1173,6 +1173,7 @@ var enableThresholdControls = function (status) {
 };
 
 // todo: this hides the Enter VR buttons I guess but not sure what its for or if required in webXR
+// they are hidden in the css style sheet now
 // var hideVRMaximizeButtons = function () {
 //     document.getElementById("magicWindowLeft").style.visibility = "hidden";
 //     document.getElementById("magicWindowRight").style.visibility = "hidden";

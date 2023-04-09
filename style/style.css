@@ -1,6 +1,6 @@
 body {
     margin: 0;
-    font-family: 'Fjord', sans-serif;
+    font-family: 'Fjord', s           bbb0ans-serif;
 }
 
 button {
@@ -375,13 +375,13 @@ button > input[type="checkbox"] {
 }
 
 a#magicWindowLeft {
-    display: block;
+    display: none;
     color: white;
     margin-top: 1em;
 }
 
 a#magicWindowRight {
-    display: block;
+    display: none;
     color: white;
     margin-top: 1em;
 }
