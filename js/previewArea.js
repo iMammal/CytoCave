@@ -1713,7 +1713,7 @@ function PreviewArea(canvas_, model_, name_) {
     this.drawTopNEdgesByNode = function (nodeIndex, n) {
 
 	var row = [];
-	if(!getEnableContra() && !getEnableIpsi()) {
+	if(false && !getEnableContra() && !getEnableIpsi()) { //todo: evaluate best action for neither ipsi nor contra
 		row = model.getTopConnectionsByNode(nodeIndex, n );
 	} else {
 		if(getEnableContra()) {
@@ -1749,9 +1749,12 @@ function PreviewArea(canvas_, model_, name_) {
         var edgeIdx = model.getEdgesIndeces();
         if (getEnableEB( )) {
             model.performEBOnNode(indexNode);
-        } 
+        }
 
-        // It can get too cluttered if both ipsi-
+        // todo: evaluate this: For now, If neither ipsi nor contra are selected, then don't draw any edges
+        if (!getEnableIpsi() && !getEnableContra()) { return; }
+
+            // It can get too cluttered if both ipsi-
         if (getEnableIpsi() && getEnableContra()) {
             for (var i = 0; i < row.length; i++) {
 
