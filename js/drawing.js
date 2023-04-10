@@ -354,7 +354,7 @@ var initControls = function () {
 
     createLegend(modelLeft);
 
-    // if (mobile) { // todo: probably not required for webXR
+    // if (mobile) { // todo: probably not required for webXR. Now hidden in css style sheet
     //     console.log("Mobile VR requested");
     // } else {
     //     hideVRMaximizeButtons();

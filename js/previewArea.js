@@ -1751,6 +1751,8 @@ function PreviewArea(canvas_, model_, name_) {
             model.performEBOnNode(indexNode);
         }
 
+        //console.log("contra: "+getEnableContra()+"...ipsi: "+getEnableIpsi());
+
         // todo: evaluate this: For now, If neither ipsi nor contra are selected, then don't draw any edges
         if (!getEnableIpsi() && !getEnableContra()) { return; }
 

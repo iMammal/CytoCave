@@ -17,7 +17,7 @@ var rightSearching = false;
 var leftSearching = false;
 
 // initialize subject selection drop down menus
-import {getDataFile,setDataFile,atlas} from "./globals.js";
+import {getDataFile,setDataFile,atlas,neuro} from "./globals.js";
 import {
     changeSceneToSubject,
     changeActiveGeometry,
@@ -345,7 +345,7 @@ var addThresholdSlider = function () {
             modelLeft.setThreshold(this.value/thresholdMultiplier);
             modelRight.setThreshold(this.value/thresholdMultiplier);
             redrawEdges();
-            document.getElementById("thresholdSliderLabel").innerHTML = "Threshold @ " + this.value/thresholdMultiplier;
+            document.getElementById("thresholdSliderLabel").innerHTML = neuro?"Ipsi-Threshold @ ":"Intra-Threshold @ " + this.value/thresholdMultiplier;
         });
     menu.append("label")
         .attr("for", "thresholdSlider")
@@ -376,12 +376,12 @@ var addConThresholdSlider = function () {
             modelLeft.setConThreshold(this.value / thresholdMultiplier);
             modelRight.setConThreshold(this.value / thresholdMultiplier);
             redrawEdges();
-            document.getElementById("conThresholdSliderLabel").innerHTML = "Contra Threshold @ " + this.value / thresholdMultiplier;
+            document.getElementById("conThresholdSliderLabel").innerHTML = neuro?"Contra-Threshold @ ":"Inter-Threshold @ " + this.value / thresholdMultiplier;
         });
     menu.append("label")
         .attr("for", "conThresholdSlider")
         .attr("id", "conThresholdSliderLabel")
-        .text("Contra Threshold @ " + max / 2 / thresholdMultiplier);
+        .text(neuro?"Contra-Threshold @ ":"Inter-Threshold @ "  + max / 2 / thresholdMultiplier);
     modelLeft.setConThreshold(max / 2 / thresholdMultiplier);
     modelRight.setConThreshold(max / 2 / thresholdMultiplier);
 };
@@ -427,50 +427,58 @@ var addEdgeBundlingCheck = function () {
 var addLateralityCheck = function () {
     var menu = d3.select("#edgeInfoPanel");
     menu.append("br");
-    menu.append("label")
-        .attr("for", "enableIpsiCheck")
-        .attr("id", "enableIpsiCheckLabel")
-        .text("Ipsilateral");
-    menu.append("input")
-        .attr("type", "checkbox")
-        .attr("checked", false)
-        .attr("id", "enableIpsiCheck")
-        .on("change", function () {
-            enableIpsilaterality(this.checked);
-            var input = $('#changeModalityBtn');
-            var modChecked = input.data("checked");
-            var elem = document.getElementById('conThresholdSlider');
 
-            if (this.checked && getEnableContra() && !elem && modChecked) {
-                addConThresholdSlider();
-            } else {
-                removeConThresholdSlider();
-            }
-            updateScenes();
-        });
-    menu.append("br");
-    menu.append("label")
-        .attr("for", "enableContraCheck")
-        .attr("id", "enableContraCheckLabel")
-        .text("Contralateral");
-    menu.append("input")
-        .attr("type", "checkbox")
-        .attr("checked", false)
-        .attr("id", "enableContraCheck")
-        .on("change", function () {
-            enableContralaterality(this.checked);
-            var input = $('#changeModalityBtn');
-            var modChecked = input.data("checked");
-            var elem = document.getElementById('conThresholdSlider');
+    if (true) {
+        menu.append("label")
+            .attr("for", "enableIpsiCheck")
+            .attr("id", "enableIpsiCheckLabel")
+            .text(neuro ? "Ipsilateral" : "Intra-group");
 
-            if (this.checked && getEnableIpsi() && !elem &&modChecked) {
-                addConThresholdSlider();
-            } else {
-                removeConThresholdSlider();
-            }
-            updateScenes();
 
-        });
+        menu.append("input")
+            .attr("type", "checkbox")
+            .attr("checked", false)
+            .attr("id", "enableIpsiCheck")
+            .on("change", function () {
+                enableIpsilaterality(this.checked);
+                var input = $('#changeModalityBtn');
+                var modChecked = input.data("checked");
+                var elem = document.getElementById('conThresholdSlider');
+
+                if (this.checked && getEnableContra() && !elem && modChecked) {
+                    addConThresholdSlider();
+                } else {
+                    removeConThresholdSlider();
+                }
+                updateScenes();
+            });
+        menu.append("br");
+        menu.append("label")
+            .attr("for", "enableContraCheck")
+            .attr("id", "enableContraCheckLabel")
+            .text(neuro ? "Contralateral" : "Inter-group");
+        menu.append("input")
+            .attr("type", "checkbox")
+            .attr("checked", false)
+            .attr("id", "enableContraCheck")
+            .on("change", function () {
+                enableContralaterality(this.checked);
+                var input = $('#changeModalityBtn');
+                var modChecked = input.data("checked");
+                var elem = document.getElementById('conThresholdSlider');
+
+                if (this.checked && getEnableIpsi() && !elem && modChecked) {
+                    addConThresholdSlider();
+                } else {
+                    removeConThresholdSlider();
+                }
+                updateScenes();
+
+            });
+    }
+    addConThresholdSlider();
+    //enableContralaterality(true);
+    //enableIpsilaterality()
     //menu.append("br");
     //menu.append("label")
       //  .attr("for", "enableLateralityCheck")
