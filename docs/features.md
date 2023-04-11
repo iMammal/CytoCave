@@ -44,11 +44,9 @@ visualize neurogenomic datasets by incorporating additional features
 such as independent glyph scaling control, side-by-side window display, and independent 
 color coding. 
 
-1. Independent glyph scaling control sliders for spheres and cubes allows the adjustment 
-for the point density difference between two different simultaneously visualized datasets.
-COMBINE INTO ONE BULLETPOINT
-2. For viewing different datasets in the two windows, the decoupled left and right window glyph size sliders 
-allow adjustment for scale differences between the two dataset components.
+Independent glyph scaling control sliders for spheres and cubes, including the decoupled 
+left and right window glyph size sliders, allow the adjustment for point density difference 
+and scale differences between two different datasets simultaneously visualized in the two windows.
 
 3.  Decoupling the color code selector in the two windows allows for different color codings of the same 
 dataset to be compared. For example, in the brain, anatomical regions are color coded on the left 
