@@ -91,19 +91,21 @@ brain regions. Edge linex can be removed with Opacity slider when connected node
 
 ![Allen Edge Display](AllenEdges.gif)
 
-- The intragroup and intergroup (or ipsilateral and contralateral) connectivity edge display toggle and threshold can be adjusted to explore 
+- The intragroup and intergroup (or ipsilateral and contralateral) connectivity edge display toggle and threshold 
+can be adjusted to explore 
 the connectivity pattern between brain regions and genes. For example, the threshold can be set to display only 
 the strongest connections between brain regions and genes, or to explore the overall connectivity pattern within 
 the dataset.
 
 ![Allen Single Cell Omics](AllenOmics.gif)
 
-- Large-scale single-cell omics studies can also be visualized in the same way, by using a 3D tSNE embedding of 
-the cells instead of brain regions. The cells can be represented as spheres, and the genes as cubes, and both 
-grouped based on their expression profilew, allowing for the exploration of gene expression patterns and cell 
-types within the dataset. 
-The independent glyph size and color coding control can be used to compare and contrast different aspects of the 
-single-cell data across different regions of the 3D embedding.
+- Large-scale spatial or single-cell omics studies can also be visualized in the same way. Using a 3D tSNE embedding of 
+the cells, instead of brain regions, for the 3D node positions, with cells represented as spheres, and the genes as cubes,
+both grouped based on their expression profilew, allow for the exploration of non-spacial gene expression patterns and 
+cell types within the dataset. 
+The independent glyph size and color coding control can be used to adjust for differences in point density and scale, 
+in comparing and contrasting different aspects of the single-cell or microdissection data across different regions 
+of the 3D embedding.
 
 ![Allen Neurogenomics Heirachical Clustering Display with 3D Platonic Solid]()
 
