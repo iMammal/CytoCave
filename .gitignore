@@ -1,0 +1,17 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/VSWorkspaceState.json
+/.vs/slnx.sqlite
+/.vs/ProjectSettings.json
+/.vs/NeuroCave/v17/.wsuo
+/.vs/NeuroCave/v17
+/.vs/NeuroCave/FileContentIndex/read.lock
+/.vs/NeuroCave/FileContentIndex/a714ef98-41ea-49ec-bb77-6bf03f7fbef5.vsidx
+/.vs/NeuroCave/FileContentIndex/9a92ca90-c9b2-4f4a-a478-83cd26c7c08d.vsidx
+/.vs/NeuroCave/FileContentIndex/8076830a-37b9-4f2d-b598-043643f38261.vsidx
+/.vs/NeuroCave/FileContentIndex/27839cb6-f38a-4914-a88d-ac8ef9d3e8ec.vsidx
+/.vs/NeuroCave/FileContentIndex
+/.vs/NeuroCave/config/applicationhost.config
+/.vs/NeuroCave/config
