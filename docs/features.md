@@ -1,29 +1,34 @@
 Welcome to the NeuroCave 3D brain visualization tool demo! This tool provides a 
-unique and interactive way to explore brain regions and their connectivity. Let's 
-take a look at some of the features:
+unique and interactive way to explore brain regions and their connectivity. It has now
+been generalized to explore Neurogenomics and general genomics datasets. Let's take a 
+look at some of the features:
 
-![caption](/home/morris/Pictures/SolarSystem.gif)
+![Independent Glyph Slider Control](BrainGlyphs.gif)
 
 Independent glyph size control for left and right view windows allows 
 users to adjust the size of the cube and sphere glyphs independently for the left 
 and right view windows. This is particularly useful when comparing brain regions or 
 when focusing on a specific hemisphere.
 
+![Independent Hemiphere Edge Display Thresholds](BrainEdges.gif)
 Independent control of ipsilateral and contralateral connectivity edge display 
 toggle and threshold allows users to control the visibility of ipsilateral 
 and contralateral connectivity edges separately. Users can also set a threshold for 
 edge display, allowing them to focus on the most significant connections.
 
+![Independent Region Color Visibility](BrainRegions.gif)
 Independent control of region color visibility for left and right view window - 
 users can set the visibility of brain region colors separately for the left and 
 right view windows. This allows them to highlight specific brain regions and their 
 connectivity.
 
+![Search bar](BrainSearch.gif)
 Search bar to search for brain region of interest and display its connections - the 
-search bar feature allows users to search for a specific brain region of interest 
+search bar feature allows users to search for a specific brain region or gene of interest 
 and display its connections. This feature can help users focus on specific brain 
 regions and their connectivity.
 
+![Animation amplitude and frequency control for pulsing and Flashing](BrainAnim.gif)
 Animation amplitude and frequency control for pulsing and flashing of selected and 
 connected nodes - the tool provides animation control features, allowing users to 
 adjust the amplitude and frequency of pulsing and flashing for selected and 
@@ -32,14 +37,16 @@ connected nodes. This can help highlight important brain regions and their conne
 Overall, the NeuroCave 3D brain visualization tool provides a comprehensive and 
 interactive way to explore brain regions and their connectivity.
 
+![Allen Brain Institute Neurogenomics MicroArray Dataset](AllenGenomics.gif)
 The original NeuroCave connectomics visualization tool provided a powerful means of 
 exploring brain connectome data with its 3D representation of brain regions as spheres 
 and cubes for the two hemispheres 
 and their connections as edges. Building on this foundation, we generaled NeuroCave to 
-visualize neurogenomic datasets by incorporating additional features 
+visualize neurogenomic and genomics datasets by incorporating additional features 
 such as independent glyph scaling control, side-by-side window display, and independent 
 color coding. 
 
+![Allen Neurogenomics Glyph Scaling](AllenGlyphs.gif)
 - Independent glyph scaling control sliders for spheres and cubes, including the decoupled 
 left and right window glyph size sliders, allow the adjustment for point density difference 
 and scale differences between two different datasets simultaneously visualized in the two windows.
@@ -86,30 +93,3 @@ neurogenomic datasets by visualizing brain regions and genes in 3D space and all
 exploration of different datasets and color codings. The decoupled control of glyph size, color coding, and 
 connectivity edge display toggle provide users with the ability to customize the visualization to their specific 
 research needs.
-
-
-
-
-Morris Chukhman
-Add a bulletpoint about how large scale single cell omics studies can be visualized in the same way but with a 
-3D tSNE embedding of the cells instead of the brain samples.
-
-Large-scale single-cell omics studies can also be visualized in the same way, by using a 3D tSNE embedding of 
-the cells instead of brain regions. The cells can be represented as spheres, and the genes as cubes, and both 
-grouped based on their expression profilew, allowing for the exploration of gene expression patterns and cell 
-types within the dataset. 
-The independent glyph size and color coding control can be used to compare and contrast different aspects of the 
-single-cell data across different regions of the 3D embedding.
-
-
-
-Morris Chukhman
-add a bulletpoint about how the 3d platonic solid based representation of clustering data can  be used to explore the heirarchical clustering of cell relationships, neuronal circuits, or gene networks.
-The 3D platonic solid based representation of clustering data can be used to explore the hierarchical clustering of cell relationships, neuronal circuits, or gene networks. The nodes in the network can be represented by spheres and the edges can be represented by lines connecting the nodes. The size and color of the spheres can be used to represent different features of the data such as gene expression levels or cell type. The edges can also be color coded to represent different types of connections or interactions between nodes. This type of visualization allows for easy exploration of complex network structures and relationships.
-
-These new features enable the visualization and comparison of two
-different datasets, such as brain connectome and gene network data, providing
-insights into how these two datasets interact and influence each other. 
-NeuroCave can also be used to visualize large-scale single-cell omics data by
-replacing brain samples with cell embeddings in a 3D tSNE space, while 
-
