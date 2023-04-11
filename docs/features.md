@@ -5,13 +5,9 @@ take a look at some of the features:
 ![caption](/home/morris/Pictures/SolarSystem.gif)
 
 Independent glyph size control for left and right view windows allows 
-users to adjust the size of the glyphs (cubes and spheres) independently for the left 
+users to adjust the size of the cube and sphere glyphs independently for the left 
 and right view windows. This is particularly useful when comparing brain regions or 
 when focusing on a specific hemisphere.
-
-?????Independent sphere and cube glyph control - users can choose to represent brain regions 
-as cubes or spheres depending on their preference. This feature can help highlight 
-different aspects of brain regions and their connections.
 
 Independent control of ipsilateral and contralateral connectivity edge display 
 toggle and threshold allows users to control the visibility of ipsilateral 
@@ -44,43 +40,44 @@ visualize neurogenomic datasets by incorporating additional features
 such as independent glyph scaling control, side-by-side window display, and independent 
 color coding. 
 
-Independent glyph scaling control sliders for spheres and cubes, including the decoupled 
+- Independent glyph scaling control sliders for spheres and cubes, including the decoupled 
 left and right window glyph size sliders, allow the adjustment for point density difference 
 and scale differences between two different datasets simultaneously visualized in the two windows.
 
-3.  Decoupling the color code selector in the two windows allows for different color codings of the same 
-dataset to be compared. For example, in the brain, anatomical regions are color coded on the left 
-and connection degree range 
-is color coded on the right to study connectivity degree fluctuations across various brain regions.
-- displaying different colorings of the same data visualization, allows the user to draw correlations 
-	between metrics such as anatomical regions and node degree in a brain connectome or similarly gene 
-	ontology and centrality in gene networks
+-  Decoupling the color code selector in the two windows allows for different color codings of the same 
+dataset to be compared. For example, in the brain, anatomical regions can be color coded on the left 
+and connection degree range can be color coded on the right, to study connectivity degree variations  
+throughout a range of brain regions.
+
+	- displaying different colorings of the genomics dataset such as gene networks allows the user to draw 
+	correlations between metrics such as gene ontology and gene centrality 
 	
 	- displaying different but complementary datasets in each window, with linked selection and edge display, 
 	between them allows for comparisons between networks such as brain connectome on one side and gene network 
-	on the other.
+	on the other. Different color codings can be applied to each view window, each taylored to the dataset in
+	that window.
 
 
-4. The search bar can be used to locate a specific brain region or gene of interest, and its connections 
+- The search bar can be used to locate a specific brain region or gene of interest, and its connections 
 or correlated regions can be highlighted in the visualization.
 
-5. Animation controls can be used to highlight a specific gene or brain region and its connections by pulsing 
+- Animation controls can be used to highlight a specific gene or brain region and its connections by pulsing 
 or flashing its sphere and edges, allowing for easy identification and visualization of important genes or 
 brain regions.
 
-6. The ipsilateral and contralateral connectivity edge display toggle and threshold can be adjusted to explore 
+- The ipsilateral and contralateral connectivity edge display toggle and threshold can be adjusted to explore 
 the connectivity pattern between brain regions and genes. For example, the threshold can be set to display only 
 the strongest connections between brain regions and genes, or to explore the overall connectivity pattern within 
 the dataset.
 
-7. Large-scale single-cell omics studies can also be visualized in the same way, by using a 3D tSNE embedding of 
+- Large-scale single-cell omics studies can also be visualized in the same way, by using a 3D tSNE embedding of 
 the cells instead of brain regions. The cells can be represented as spheres, and the genes as cubes, and both 
 grouped based on their expression profilew, allowing for the exploration of gene expression patterns and cell 
 types within the dataset. 
 The independent glyph size and color coding control can be used to compare and contrast different aspects of the 
 single-cell data across different regions of the 3D embedding.
 
-8. The 3D platonic solid-based representation of clustering data can provide a means of
+- The 3D platonic solid-based representation of clustering data can provide a means of
 exploring the hierarchical clustering of cell relationships, neuronal circuits, or
 gene networks.
 
