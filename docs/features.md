@@ -41,7 +41,8 @@ Overall, the NeuroCave 3D brain visualization tool provides a comprehensive and
 interactive way to explore brain regions and their connectivity.
 
 ![Allen Brain Institute Neurogenomics MicroArray Dataset](AllenGenomics.gif)
-The original NeuroCave connectomics visualization tool provided a powerful means of 
+
+The original NeuroCave connectomics visualization tool provides a powerful means of 
 exploring brain connectome data with its 3D representation of brain regions as spheres 
 and cubes for the two hemispheres 
 and their connections as edges. Building on this foundation, we generalized NeuroCave to 
@@ -50,23 +51,28 @@ such as independent glyph scaling control, side-by-side window display, and inde
 color coding. 
 
 ![Allen Neurogenomics Glyph Scaling](AllenGlyphs.gif)
+
 - Independent glyph scaling control sliders for spheres and cubes, including the decoupled 
 left and right window glyph size sliders, allow the adjustment for point density difference 
 and scale differences between two different datasets, simultaneously visualized in the two windows.
 
 ![Decoupling the color code selector for Allen Neurogenomics](AllenRegions.gif)
+
 -  Decoupling the color code selector in the two windows enable a could use cases:
 
 	![Allen Brain Color Coding Degree Anatomy](AllenDegree.gif)
+
 	- different color codings of the same dataset, for example, in the brain, anatomical regions can be 
 	color coded on the left and connection degree range can be color coded on the right, to study 
 	connectivity degree variations throughout a range of brain regions.
 
 	![Allen Gene Color Coding ](AllenGeneCentrality.gif)
+
 	- displaying different colorings of genomic datasets, like gene networks, allows the user to draw 
 	correlations between metrics such as gene Module Membership and gene centrality 
 	
 	![Allen Color Gene Brain Intermodal](AllenIntermodal.gif)
+
 	- displaying different but complementary datasets in each window, with linked selection and edge display, 
 	between them allows for intermodal exploration of networks such as brain connectome on one side and gene 
 	network on the other. Different color codings can be applied to each view window, each taylored to the 
