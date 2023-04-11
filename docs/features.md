@@ -49,34 +49,42 @@ color coding.
 ![Allen Neurogenomics Glyph Scaling](AllenGlyphs.gif)
 - Independent glyph scaling control sliders for spheres and cubes, including the decoupled 
 left and right window glyph size sliders, allow the adjustment for point density difference 
-and scale differences between two different datasets simultaneously visualized in the two windows.
+and scale differences between two different datasets, simultaneously visualized in the two windows.
 
--  Decoupling the color code selector in the two windows allows for different color codings of the same 
-dataset to be compared. For example, in the brain, anatomical regions can be color coded on the left 
-and connection degree range can be color coded on the right, to study connectivity degree variations  
-throughout a range of brain regions.
+![Decoupling the color code selector for Allen Neurogenomics](AllenRegions.gif)
+-  Decoupling the color code selector in the two windows enable a could use cases:
 
-	- displaying different colorings of the genomics dataset such as gene networks allows the user to draw 
-	correlations between metrics such as gene ontology and gene centrality 
+	![Allen Brain Color Coding Degree Anatomy](AllenDegree.gif)
+	- different color codings of the same dataset, for example, in the brain, anatomical regions can be 
+	color coded on the left and connection degree range can be color coded on the right, to study 
+	connectivity degree variations throughout a range of brain regions.
+
+	![Allen Gene Color Coding ](AllenGeneCentrality.gif)
+	- displaying different colorings of genomic datasets, like gene networks, allows the user to draw 
+	correlations between metrics such as gene Module Membership and gene centrality 
 	
+	![Allen Color Gene Brain Intermodal](AllenIntermodal.gif)
 	- displaying different but complementary datasets in each window, with linked selection and edge display, 
-	between them allows for comparisons between networks such as brain connectome on one side and gene network 
-	on the other. Different color codings can be applied to each view window, each taylored to the dataset in
-	that window.
+	between them allows for intermodal exploration of networks such as brain connectome on one side and gene 
+	network on the other. Different color codings can be applied to each view window, each taylored to the 
+	dataset in that window.
 
-
+![Allen Search Bar](AllenSearch.gif)
 - The search bar can be used to locate a specific brain region or gene of interest, and its connections 
 or correlated regions can be highlighted in the visualization.
 
+![Allen Animation](AllenAnimations.gif)
 - Animation controls can be used to highlight a specific gene or brain region and its connections by pulsing 
 or flashing its sphere and edges, allowing for easy identification and visualization of important genes or 
-brain regions.
+brain regions. Edge linex can be removed with Opacity slider when connected nodes are animated.
 
-- The ipsilateral and contralateral connectivity edge display toggle and threshold can be adjusted to explore 
+![Allen Edge Display](AllenEdges.gif)
+- The intragroup and intergroup (or ipsilateral and contralateral) connectivity edge display toggle and threshold can be adjusted to explore 
 the connectivity pattern between brain regions and genes. For example, the threshold can be set to display only 
 the strongest connections between brain regions and genes, or to explore the overall connectivity pattern within 
 the dataset.
 
+![Allen Single Cell Omics](AllenOmics.gif)
 - Large-scale single-cell omics studies can also be visualized in the same way, by using a 3D tSNE embedding of 
 the cells instead of brain regions. The cells can be represented as spheres, and the genes as cubes, and both 
 grouped based on their expression profilew, allowing for the exploration of gene expression patterns and cell 
@@ -84,10 +92,12 @@ types within the dataset.
 The independent glyph size and color coding control can be used to compare and contrast different aspects of the 
 single-cell data across different regions of the 3D embedding.
 
+![Allen Neurogenomics Heirachical Clustering Display with 3D Platonic Solid]()
 - The 3D platonic solid-based representation of clustering data can provide a means of
 exploring the hierarchical clustering of cell relationships, neuronal circuits, or
 gene networks.
 
+![Allen Neurogenomics Overall Interactive Visualization](AllenNeuroGenomics.gif)
 Overall, the Neurocave 3D brain visualization tool provides a powerful platform to explore and analyze complex 
 neurogenomic datasets by visualizing brain regions and genes in 3D space and allowing for easy comparison and 
 exploration of different datasets and color codings. The decoupled control of glyph size, color coding, and 
