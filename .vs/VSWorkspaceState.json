@@ -1,10 +1,11 @@
 {
   "ExpandedNodes": [
     "",
+    "\\docs",
     "\\js",
     "\\js\\utils",
     "\\style"
   ],
-  "SelectedNode": "\\js\\graphicsUtils.js",
+  "SelectedNode": "\\docs\\features.md",
   "PreviewInSolutionExplorer": false
 }

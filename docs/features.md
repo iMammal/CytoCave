@@ -1,7 +1,7 @@
-Welcome to the NeuroCave 3D brain visualization tool demo! This tool provides a 
-unique and interactive way to explore brain regions and their connectivity. It has now
-been generalized to explore Neurogenomics and general genomics datasets. Let's take a 
-look at some of the features:
+This is the NeuroCave 3D brain visualization tool demo! This tool provides a 
+unique and interactive way to explore brain regions and their connectivity. It is currently
+undergoing a generalization to allow the exploration Neurogenomics and general genomics 
+datasets. Here are some of the new generalized features:
 
 ![Independent Glyph Slider Control](BrainGlyphs.gif)
 
