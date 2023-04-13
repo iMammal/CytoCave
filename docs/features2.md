@@ -1,7 +1,17 @@
 This is the NeuroCave 3D brain visualization tool demo! This tool provides a
 unique and interactive way to explore brain regions and their connectivity. It is currently
 undergoing a generalization transformation to allow the exploration of Neurogenomics and general genomics
-datasets. Here are some of the new features:
+datasets.
+
+![Allen Brain Institute Neurogenomics MicroArray Dataset - open Allen demo - zoom - sync - spin](AllenGenomics.gif)
+
+The original NeuroCave connectomics visualization tool provides a powerful means of
+exploring brain connectome data with its 3D representation of brain regions as spheres
+and cubes for the two hemispheres
+and their connections as edges. Building on this foundation, we generalized NeuroCave to
+visualize neurogenomic and genomics datasets by incorporating additional features
+such as independent glyph scaling control, side-by-side window display, and independent
+color coding. Here are some of the new features:
 
 ![Independent Glyph Slider Control - zoom in - Sync - demo sliders](BrainGlyphs.gif)
 
@@ -82,7 +92,7 @@ when edge lines are removed with the Opacity slider.
 
 - Large-scale spatial or single-cell omics studies can also be visualized in the same way. Using a 3D tSNE embedding of
   the cells, instead of brain regions, for the 3D node positions, with cells represented as spheres, and the genes as cubes,
-  both grouped based on their expression profilew, allow for the exploration of non-spacial gene expression patterns and
+  both grouped based on their expression profiles, allow for the exploration of non-spacial gene expression patterns and
   cell types within the dataset.
   The independent glyph size and color coding control can be used to adjust for differences in point density and scale,
   in comparing and contrasting different aspects of the single-cell or microdissection data across different regions
@@ -94,15 +104,7 @@ when edge lines are removed with the Opacity slider.
   exploring the hierarchical clustering of cell relationships, neuronal circuits, or
   gene networks.
 
-![Allen Brain Institute Neurogenomics MicroArray Dataset - open Allen demo - zoom - sync - spin](AllenGenomics.gif)
 
-The original NeuroCave connectomics visualization tool provides a powerful means of
-exploring brain connectome data with its 3D representation of brain regions as spheres
-and cubes for the two hemispheres
-and their connections as edges. Building on this foundation, we generalized NeuroCave to
-visualize neurogenomic and genomics datasets by incorporating additional features
-such as independent glyph scaling control, side-by-side window display, and independent
-color coding.
 
 Here are a few possible use cases for the NeuroCave 3D brain visualization tool:
 
