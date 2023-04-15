@@ -13,19 +13,19 @@ visualize neurogenomic and genomics datasets by incorporating additional feature
 such as independent glyph scaling control, side-by-side window display, and independent
 color coding. Here are some of the new features:
 
-![Independent Glyph Slider Control - zoom in - Sync - demo sliders](BrainGlyphs.gif)
+![Independent Glyph Slider Control - zoom in - Sync - demo sliders](./BrainGlyphs.gif)
 
 There are now two sets of two independent glyph size control sliders for left and right 
 view windows, allowing users to adjust the size of the cube and sphere glyphs independently 
 for the left and right view windows. This is particularly useful when comparing brain regions or
-when focusing on a specific hemisphere.
+when focusing on a specific hemisphere
 
 ![Allen Neurogenomics Glyph Scaling - unlock sliders - demo adjustment](AllenGlyphs.gif)
 
 - Independent glyph scaling control sliders allow users to compensate for point density 
   and scale differences between two datasets simultaneously viewed in the two windows.
 
-![Independent Hemiphere Edge Display Thresholds - select some nodes - Edge checkboxes and Sliders](BrainEdges.gif)
+![Independent Hemiphere Edge Display Thresholds - select some nodes - Edge checkboxes and Sliders](./BrainEdges.gif)
 
 - Independent control of ipsilateral and contralateral connectivity edge display
 toggle and threshold allows users to control the visibility of ipsilateral
@@ -53,7 +53,7 @@ connectivity.
 
 -  Decoupling the color code selector in the two windows enable a few additional use cases:
 
-   ![Allen Brain Color Coding Degree Anatomy - choose degree on right - toggle regions - sync](AllenDegree.gif)
+   ![Allen Brain Color Coding Degree Anatomy - choose degree on right - toggle regions - sync](./AllenDegree.gif)
 
     - different color codings of the same dataset, for example, in the brain, anatomical regions can be
       color coded on the left and connection degree range can be color coded on the right, to study
@@ -74,10 +74,10 @@ connectivity.
       network on the other. Different color codings can be applied to each view window, each tailored to its
       own specific dataset in that window.
 
-![Allen Search Bar - search brain regions - search genes](AllenSearch.gif)
+![Allen Search Bar - search brain regions - search genes](./AllenSearch.gif)
 
 - The search bar can be used to locate a specific brain region or gene of interest, and its connections
-  or correlated regions can be highlighted in the visualization.
+    or correlated regions can be highlighted in the visualization.
 
 ![Animation amplitude and frequency control for pulsing and Flashing - adjust Animation and Flash Sliders](AllenAnimations.gif)
 
