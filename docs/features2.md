@@ -32,7 +32,7 @@ toggle and threshold allows users to control the visibility of ipsilateral
 and contralateral connectivity edges separately. Users can also set a threshold for
 edge display, allowing them to focus on the most significant connections.
 
-![Allen Edge Display - play with edge visibility controls](AllenEdges.gif)
+![Allen Edge Display - play with edge visibility controls](./AllenEdges.gif)
 
 - For genomic datasets they become intragroup and intergroup connectivity edge display toggle and threshold, which
   can be adjusted to explore
@@ -88,7 +88,7 @@ Selected and connected nodes, highlighted by pulsing or flashing, are still visi
 when edge lines are removed with the Opacity slider.
 
 
-![Allen Single Cell Omics - switch to omics tab and play around](AllenOmics.gif)
+![Allen Single Cell Omics - switch to omics tab - explore](./AllenOmics.gif)
 
 - Large-scale spatial or single-cell omics studies can also be visualized in the same way. Using a 3D tSNE embedding of
   the cells, instead of brain regions, for the 3D node positions, with cells represented as spheres, and the genes as cubes,
@@ -98,7 +98,7 @@ when edge lines are removed with the Opacity slider.
   in comparing and contrasting different aspects of the single-cell or microdissection data across different regions
   of the 3D embedding.
 
-![Allen Neurogenomics Heirachical Clustering Display with 3D Platonic Solid]()
+![Allen Neurogenomics Heirachical Clustering Display with 3D Platonic Solid](./AllenClustering.gif)
 
 - The 3D platonic solid-based representation of clustering data can provide a means of
   exploring the hierarchical clustering of cell relationships, neuronal circuits, or
@@ -119,7 +119,7 @@ Here are a few possible use cases for the NeuroCave 3D brain visualization tool:
   or KEGG pathway data.
 
 
-![Allen Neurogenomics Overall Interactive Visualization](AllenNeuroGenomics.gif)
+![Allen Neurogenomics Overall Interactive Visualization](./AllenNeuroGenomics.gif)
 
 Overall, the Neurocave 3D brain visualization tool provides a comprehensive and
   interactive platform to explore and analyze complex
