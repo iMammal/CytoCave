@@ -12,7 +12,7 @@ and their connections as edges. Building on this foundation, we generalized Neur
 visualize neurogenomic and genomics datasets by incorporating additional features
 such as independent glyph scaling control, side-by-side window display, and independent
 color coding. Here are some of the new features:
----
+
 ![Independent Glyph Slider Control - zoom in - Sync - demo sliders](./BrainGlyphs.gif)
 
 There are now two sets of two independent glyph size control sliders for left and right 
