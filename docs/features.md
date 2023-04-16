@@ -23,13 +23,13 @@ Independent control of region color visibility for left and right view window -
 users can set the visibility of brain region colors separately for the left and 
 right view windows. This allows them to highlight specific brain regions and their 
 connectivity.
-
+---
 ![Search bar - search for Cingu a few times](BrainSearch.gif)
 
 Search bar to search for brain region of interest and display its connections allows users to search for a specific brain region or gene of interest 
 and display its connections. This feature can help users focus on specific brain 
 regions and their connectivity.
-
+---
 ![Animation amplitude and frequency control for pulsing and Flashing - adjust Animation and Flash Sliders](BrainAnim.gif)
 
 Animation amplitude and frequency control for pulsing and flashing of selected and 

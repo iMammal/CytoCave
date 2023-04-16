@@ -12,26 +12,26 @@ and their connections as edges. Building on this foundation, we generalized Neur
 visualize neurogenomic and genomics datasets by incorporating additional features
 such as independent glyph scaling control, side-by-side window display, and independent
 color coding. Here are some of the new features:
-
+---
 ![Independent Glyph Slider Control - zoom in - Sync - demo sliders](./BrainGlyphs.gif)
 
 There are now two sets of two independent glyph size control sliders for left and right 
 view windows, allowing users to adjust the size of the cube and sphere glyphs independently 
 for the left and right view windows. This is particularly useful when comparing brain regions or
 when focusing on a specific hemisphere
-
+---
 ![Allen Neurogenomics Glyph Scaling - unlock sliders - demo adjustment](./AllenGlyphs.gif)
 
 - Independent glyph scaling control sliders allow users to compensate for point density 
   and scale differences between two datasets simultaneously viewed in the two windows.
-
+---
 ![Independent Hemiphere Edge Display Thresholds - select some nodes - Edge checkboxes and Sliders](./BrainEdges.gif)
 
 - Independent control of ipsilateral and contralateral connectivity edge display
 toggle and threshold allows users to control the visibility of ipsilateral
 and contralateral connectivity edges separately. Users can also set a threshold for
 edge display, allowing them to focus on the most significant connections.
-
+---
 ![Allen Edge Display - play with edge visibility controls](./AllenEdges.gif)
 
 - For genomic datasets they become intragroup and intergroup connectivity edge display toggle and threshold, which
@@ -40,7 +40,7 @@ edge display, allowing them to focus on the most significant connections.
   to display only
   the strongest connections between brain regions and genes, or to explore the overall connectivity pattern within
   the dataset.
-
+---
   
 ![Decoupling the color code selector for Allen Neurogenomics - Unlock Regions](AllenRegions.gif)
 
@@ -49,7 +49,7 @@ edge display, allowing them to focus on the most significant connections.
    users can set the visibility of brain region colors separately for the left and
    right view windows. This allows them to highlight specific brain regions and their
    connectivity.
-
+---
    ![Allen Brain Color Coding Degree Anatomy - choose degree on right - toggle regions - sync](./AllenDegree.gif)
 
     - different color codings of the same dataset, for example, in the brain, anatomical regions can be
@@ -75,7 +75,7 @@ edge display, allowing them to focus on the most significant connections.
 
 - The search bar can be used to locate a specific brain region or gene of interest, and its connections
     or correlated regions can be highlighted in the visualization.
-
+---
 ![Animation amplitude and frequency control for pulsing and Flashing - adjust Animation and Flash Sliders](./AllenAnimations.gif)
 
 Animation amplitude and frequency control for pulsing and flashing of selected and
@@ -83,7 +83,7 @@ connected nodes provides animation control features, allowing users to
 highlight important brain regions and their connections.
 Selected and connected nodes, highlighted by pulsing or flashing, are still visible
 when edge lines are removed with the Opacity slider.
-
+---
 
 ![Allen Single Cell Omics - switch to omics tab - explore](./AllenOmics.gif)
 
@@ -94,13 +94,13 @@ when edge lines are removed with the Opacity slider.
   The independent glyph size and color coding control can be used to adjust for differences in point density and scale,
   in comparing and contrasting different aspects of the single-cell or microdissection data across different regions
   of the 3D embedding.
-
+---
 ![Allen Neurogenomics Heirachical Clustering Display with 3D Platonic Solid](./AllenClustering.gif)
 
 - The 3D platonic solid-based representation of clustering data can provide a means of
   exploring the hierarchical clustering of cell relationships, neuronal circuits, or
   gene networks.
-
+---
 
 
 Here are a few possible use cases for the NeuroCave 3D brain visualization tool:
