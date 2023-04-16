@@ -15,7 +15,7 @@ color coding. Here are some of the new features:
 
 ![Independent Glyph Slider Control - zoom in - Sync - demo sliders](./BrainGlyphs.gif)
 
-There are now two sets of two independent glyph size control sliders for left and right 
+- There are now two sets of two independent glyph size control sliders for left and right 
 view windows, allowing users to adjust the size of the cube and sphere glyphs independently 
 for the left and right view windows. This is particularly useful when comparing brain regions or
 when focusing on a specific hemisphere
