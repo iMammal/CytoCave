@@ -76,8 +76,8 @@ the hierarchical clustering of cell relationships or gene expression patterns as
 
 Here are a few possible use cases for the new version of NeuroCave:
 
-- Exploring the connectivity pattern of brain regions and genes in 3D space, with the ability to highlight
-  specially annotated gene types such as gnee fusions, lncRNA, circRNA and protein coding mRNA expression patterns 
+- Exploration of the connectivity pattern of brain regions and genes in 3D space, with the ability to highlight
+  specially annotated gene types such as gene fusions, lncRNA, circRNA and protein coding mRNA expression patterns 
   in the brain, alongside the brain regions of interest in which they are expressed.
 
 ![Allen Neurogenomics Overall Interactive Visualization](./AllenNeuroGenomics.gif)
@@ -88,10 +88,10 @@ contrasting single-cell or microdissection data across different regions of the 
 
 ![Allen Single Cell Omics - switch to omics tab - explore](AllenOmics.gif)
 
-- Comparing clustering algorithms such as Louvain, PLACE and WGCNA on the same dataset, exploring the
+- Comparison between clustering algorithms such as Louvain, PLACE and WGCNA on the same dataset, exploring the
   differences in the clustering results and the gene modules identified by each algorithm.
 
-- Exploring the connectivity patterns of genes in 3D space, using different connectivity
+- Exploration of the connectivity patterns of genes in 3D space, using different connectivity
   matricies, derived from different types of data, such as gene expression, protein-protein interaction,
   or KEGG pathway data.
 
