@@ -20,7 +20,7 @@ view windows, allowing users to adjust the size of the cube and sphere glyphs in
 for the left and right view windows. This is particularly useful when comparing brain regions or
 when focusing on a specific hemisphere
 
-![Allen Neurogenomics Glyph Scaling - unlock sliders - demo adjustment](AllenGlyphs.gif)
+![Allen Neurogenomics Glyph Scaling - unlock sliders - demo adjustment](./AllenGlyphs.gif)
 
 - Independent glyph scaling control sliders allow users to compensate for point density 
   and scale differences between two datasets simultaneously viewed in the two windows.
@@ -41,17 +41,14 @@ edge display, allowing them to focus on the most significant connections.
   the strongest connections between brain regions and genes, or to explore the overall connectivity pattern within
   the dataset.
 
-![Independent Region Color Visibility - Unlock Left ColorCoding and click regions and dropdown](BrainRegions.gif)
-
-- Independent control of region color visibility for left and right view window
-users can set the visibility of brain region colors separately for the left and
-right view windows. This allows them to highlight specific brain regions and their
-connectivity.
-
-
+  
 ![Decoupling the color code selector for Allen Neurogenomics - Unlock Regions](AllenRegions.gif)
 
--  Decoupling the color code selector in the two windows enable a few additional use cases:
+-  Decoupling the color code selector in the two windows enable a few additional use cases.
+   Independent control of region color visibility for left and right view window
+   users can set the visibility of brain region colors separately for the left and
+   right view windows. This allows them to highlight specific brain regions and their
+   connectivity.
 
    ![Allen Brain Color Coding Degree Anatomy - choose degree on right - toggle regions - sync](./AllenDegree.gif)
 
@@ -79,7 +76,7 @@ connectivity.
 - The search bar can be used to locate a specific brain region or gene of interest, and its connections
     or correlated regions can be highlighted in the visualization.
 
-![Animation amplitude and frequency control for pulsing and Flashing - adjust Animation and Flash Sliders](AllenAnimations.gif)
+![Animation amplitude and frequency control for pulsing and Flashing - adjust Animation and Flash Sliders](./AllenAnimations.gif)
 
 Animation amplitude and frequency control for pulsing and flashing of selected and
 connected nodes provides animation control features, allowing users to
