@@ -79,7 +79,7 @@ edge display, allowing them to focus on the most significant connections.
 ---
 ![Animation amplitude and frequency control for pulsing and Flashing - adjust Animation and Flash Sliders](./AllenAnimations.gif)
 
-Animation amplitude and frequency control for pulsing and flashing of selected and
+- Animation amplitude and frequency control for pulsing and flashing of selected and
 connected nodes provides animation control features, allowing users to
 highlight important brain regions and their connections.
 Selected and connected nodes, highlighted by pulsing or flashing, are still visible
