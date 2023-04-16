@@ -50,9 +50,9 @@ edge display, allowing them to focus on the most significant connections.
    right view windows. This allows them to highlight specific brain regions and their
    connectivity.
 ---
-   ![Allen Brain Color Coding Degree Anatomy - choose degree on right - toggle regions - sync](./AllenDegree.gif)
+![Allen Brain Color Coding Degree Anatomy - choose degree on right - toggle regions - sync](./AllenDegree.gif)
 
-    - different color codings of the same dataset, for example, in the brain, anatomical regions can be
+- different color codings of the same dataset, for example, in the brain, anatomical regions can be
       color coded on the left and connection degree range can be color coded on the right, to study
       connectivity degree variations throughout a range of brain regions. Dual faceted views allow for selection
       of specific regions and their connections in each window, under one color coding, and the selection is linked
@@ -61,15 +61,16 @@ edge display, allowing them to focus on the most significant connections.
 
    ![Allen Gene Color Coding - switch to gene tab](AllenGeneCentrality.gif)
 
-    - displaying different colorings of genomic datasets, like gene networks, allows the user to draw
+- displaying different colorings of genomic datasets, like gene networks, allows the user to draw
       correlations between metrics such as gene Module Membership and gene centrality
 
    ![Allen Color Gene Brain Intermodal - in first tab select Genes Coords - select colors](AllenIntermodal.gif)
 
-    - displaying different complementary datasets in each window, with linked selection and edge display,
-      between them allows for intermodal exploration of networks such as brain connectome on one side and gene
-      network on the other. Different color codings can be applied to each view window, each tailored to its
-      own specific dataset in that window.
+- displaying different complementary datasets in each window, with linked selection and edge display,
+  between them allows for intermodal exploration of networks such as brain connectome on one side and gene
+  network on the other. Different color codings can be applied to each view window, each tailored to its
+  own specific dataset in that window.
+---
 
 ![Allen Search Bar - search brain regions - search genes](./AllenSearch.gif)
 
