@@ -1,14 +1,14 @@
 Presenting the NeuroCave 3D brain visualization tool. Originally designed for interactive exploration 
-of brain regions and connectivity, here it is being transformed  to facilitate the exploration of 
+of brain regions and connectivity, here, it is being transformed  to facilitate the exploration of 
 Neurogenomics and general genomics datasets. The generalized version now features 
-independent glyph scaling control, Independent hemisphere or other group edge display, and independent 
+independent glyph scaling control, independent hemisphere or other group edge display, and independent 
 color coding, controllable animations, and a search box, enhancing its utility for visualizing 
 neurogenomic and genomic datasets.
 
 
 Key new features:
 
-Two sets of independent glyph size control sliders for left and right view windows, allowing users to 
+Two sets of independent glyph size control sliders for left and right view windows allow users to 
 control sizes of cube and sphere glyphs for the left and right view windows for comparing brain 
 regions or focusing on a specific hemisphere.
 
@@ -16,14 +16,14 @@ regions or focusing on a specific hemisphere.
 
 ---
 
-This feature allows users to compensate for point density and scale 
-differences between two datasets simultaneously viewed in the two windows.
+This feature allows users to view two different datasets simultaneously in the windows, enabling them to compensate
+for point density and scale variations on the fly.
 
 ![Allen Neurogenomics Glyph Scaling - unlock sliders - demo adjustment](./AllenGlyphs.gif)
 
 ---
 
-Separate control of ipsilateral and contralateral connectivity edge display, gives users more 
+Separate control of ipsilateral and contralateral connectivity edge display gives users more 
 control over the edge visibility thresholds allowing them to focus on the most significant connections
 or get a general sense of the connectivity patterns.
 
@@ -36,20 +36,19 @@ connectivity patterns between cells, samples, brain regions, and genes in genomi
 ![Allen Edge Display - Adjust edge visibility controls](./AllenEdges.gif)
 
 ---
-Decoupled color code selector in the two windows for various use cases, including independent control 
+Decoupling the color code selectors in the two windows allows for various use cases, including independent control 
 of region color visibility and highlighting specific brain regions and their connectivity.
 
 ![Decoupling the color code selector for Allen Neurogenomics - Unlock Regions](./AllenDegree.gif)
 
 - Different color codings of the same dataset, with dual faceted views allowing selection of specific 
-regions and their connections in each window under one color coding, enabling the exploration of the 
-intersection of the two color codings.
+regions and their connections in each window to explore the intersections between the two color codings.
 
 - Displaying different colorings of genomic datasets to draw correlations between metrics such as gene 
 Module Membership and gene centrality.
 
-- Displaying complementary datasets in each window for intermodal exploration of networks, with tailored 
-color codings for each specific dataset.
+- Displaying complementary datasets in each window for intermodal exploration of networks, with customized 
+color codings for each dataset.
 
 ---
 
@@ -60,16 +59,16 @@ connections or correlated regions in the visualization.
 
 ---
 
-Animation amplitude and frequency control for pulsing and flashing of selected and connected nodes, 
-providing a means to highlight important brain regions and their connections, even when edge lines 
+Animation amplitude and frequency control for pulsing and flashing of selected and connected nodes 
+provides a means to highlight important brain regions and their connections, even when edge lines 
 are be removed to reduce crossing clutter. (This is done with the opacity slider.)
 
 ![Animation amplitude and frequency control for pulsing and Flashing - adjust Animation and Flash Sliders](AllenAnimations.gif)
 
 ---
 
-3D platonic solid-based representation of clustering data for exploring hierarchical clustering of cell 
-relationships, neuronal circuits, or gene expression patterns.
+The original 3D platonic solid-based representation of clustering data is also useful for exploring 
+the hierarchical clustering of cell relationships or gene expression patterns as well as neuronal circuits.
 
 ![Allen Neurogenomics Heirachical Clustering Display with 3D Platonic Solid](AllenClustering.gif)
 
@@ -78,7 +77,8 @@ relationships, neuronal circuits, or gene expression patterns.
 Here are a few possible use cases for the new version of NeuroCave:
 
 - Exploring the connectivity pattern of brain regions and genes in 3D space, with the ability to highlight
-  lncRNA and mRNA expression patterns in the brain, alongside genes or brain regions of interest.
+  specially annotated gene types such as gnee fusions, lncRNA, circRNA and protein coding mRNA expression patterns 
+  in the brain, alongside the brain regions of interest in which they are expressed.
 
 ![Allen Neurogenomics Overall Interactive Visualization](./AllenNeuroGenomics.gif)
 
