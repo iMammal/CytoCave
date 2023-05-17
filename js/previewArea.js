@@ -1159,6 +1159,7 @@ function PreviewArea(canvas_, model_, name_) {
         brain.updateMatrix();
         brain.position.set(0, 0, 0);
         brain.rotation.set(0, 0, 0);
+        brain.rotation.x = -Math.PI / 2;
         brain.scale.set(1, 1, 1);
         brain.updateMatrix();
         brain.matrixWorldNeedsUpdate = true;

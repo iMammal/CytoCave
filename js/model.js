@@ -12,6 +12,9 @@ import * as THREE from 'three'
 import {Platonics} from "./polyhedron";
 import * as math from 'mathjs'
 import {sunflower} from "./graphicsUtils";
+//import * as Papa from "papaparse";
+//const math = require('mathjs');
+
 
 function Model(side) {
     var groups = {};                    // contain nodes group affiliation according to Anatomy, place, rich club, id
@@ -252,7 +255,8 @@ function Model(side) {
 
     // set connection matrix
     this.setConnectionMatrix = function (d) {
-        connectionMatrix = d.data;
+        //console.log("set connection matrix:",Papa);
+        connectionMatrix = math.sparse(d.data); // d.data;
         this.computeDistanceMatrix();
         this.computeNodalStrength();
     };
@@ -289,7 +293,7 @@ function Model(side) {
 
     // get a row (one node) from connection matrix
     this.getConnectionMatrixRow = function (index) {
-        return connectionMatrix[index].slice(0);
+        return connectionMatrix.subset(math.index(index,math.range(0,connectionMatrix.size()[0]))).toArray().slice(0);
     };
 
     // get the group of a specific node according to activeGroup
@@ -366,7 +370,7 @@ function Model(side) {
 
     // get the connection matrix number of nodes
     this.getConnectionMatrixDimension = function () {
-        return connectionMatrix.length;
+        return connectionMatrix.size()[1]; //length;
     };
 
     // get top n edges connected to a specific node
@@ -486,15 +490,15 @@ function Model(side) {
     };
 
     this.computeNodalStrength = function () {
-        var nNodes = connectionMatrix.length;
+        var nNodes = connectionMatrix.size()[1];//length;
         nodesStrength = new Array(nNodes);
         for (var i = 0; i < nNodes; ++i)
-            nodesStrength[i] = d3.sum(connectionMatrix[i].slice(0));
+            nodesStrength[i] = d3.sum(this.getConnectionMatrixRow(i));
     };
 
     // compute distance matrix = 1/(adjacency matrix)
     this.computeDistanceMatrix = function () {
-        var nNodes = connectionMatrix.length;
+        var nNodes = connectionMatrix.size()[1];//length;
         distanceMatrix = new Array(nNodes);
         graph = new Graph();
         var idx = 0;
@@ -505,9 +509,9 @@ function Model(side) {
             edgeIdx.push(new Array(nNodes));
             edgeIdx[i].fill(-1); // indicates no connection
             for (var j = 0; j < nNodes; j++) {
-                vertexes[j] = 1 / connectionMatrix[i][j];
-                row[j] = 1 / connectionMatrix[i][j];
-                if (j > i && Math.abs(connectionMatrix[i][j]) > 0) {
+                vertexes[j] = 1 / connectionMatrix.get([i,j]);//  [i][j];
+                row[j] = 1 / connectionMatrix.get([i,j]);//[i][j];
+                if (j > i && Math.abs(connectionMatrix.get([i,j])) > 0) {
                     edgeIdx[i][j] = idx;
                     idx++;
                 }
@@ -728,11 +732,11 @@ function Model(side) {
     this.performEBOnNode = function (nodeIdx) {
         var edges_ = [];
         var edgeIndices = [];
-        var nNodes = connectionMatrix.length;
+        var nNodes = connectionMatrix.size()[1];//length;
         var cen = centroids[activeTopology];
         // all edges of selected node
         for (var i = 0; i < nNodes; i++) {
-            if (Math.abs(connectionMatrix[nodeIdx][i]) > 0) {
+            if (Math.abs(connectionMatrix.get([nodeIdx,i])) > 0) {
                 edges_.push({
                     'source': cen[i],
                     'target': cen[nodeIdx]
@@ -752,7 +756,7 @@ function Model(side) {
             if (edges_.length >= 500)
                 break;
             if (neighbors[i].idx != nodeIdx) {
-                var row = connectionMatrix[neighbors[i].idx];
+                var row = this.getConnectionMatrixRow(neighbors[i].idx);//,math.range(0,connectionMatrix.size()[0]))).toArray()[0];
                 for (var j = 0; j < nNodes; j++) {
                     if (Math.abs(row[j]) > 0 && j != nodeIdx) {
                         edges_.push({
@@ -835,11 +839,11 @@ function Model(side) {
     // compute the edges for a specific topology
     this.computeEdgesForTopology = function (topology) {
         console.log("Computing edges for " + topology);
-        var nNodes = connectionMatrix.length;
+        var nNodes = connectionMatrix.size()[1];//length;
         edges = [];
         for (var i = 0; i < nNodes; i++) {
             for (var j = i + 1; j < nNodes; j++) {
-                if (Math.abs(connectionMatrix[i][j]) > 0) {
+                if (Math.abs(connectionMatrix.get([i,j])) > 0) {
                     var edge = [];
                     edge.push(centroids[topology][i]);
                     edge.push(centroids[topology][j]);
