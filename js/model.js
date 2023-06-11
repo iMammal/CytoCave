@@ -497,37 +497,51 @@ function Model(side) {
     };
 
     // compute distance matrix = 1/(adjacency matrix)
-    this.computeDistanceMatrix = function () {
-        var nNodes = connectionMatrix.size()[1];//length;
-        distanceMatrix = new Array(nNodes);
-        graph = new Graph();
-        var idx = 0;
-        // for every node, add the distance to all other nodes
-        for (var i = 0; i < nNodes; i++) {
-            var vertexes = [];
-            var row = new Array(nNodes);
-            edgeIdx.push(new Array(nNodes));
-            edgeIdx[i].fill(-1); // indicates no connection
-            for (var j = 0; j < nNodes; j++) {
-                vertexes[j] = 1 / connectionMatrix.get([i,j]);//  [i][j];
-                row[j] = 1 / connectionMatrix.get([i,j]);//[i][j];
-                if (j > i && Math.abs(connectionMatrix.get([i,j])) > 0) {
-                    edgeIdx[i][j] = idx;
-                    idx++;
-                }
+    this.computeDistanceMatrix = function() {
+        const nNodes = connectionMatrix.size()[1];
+        let idx = 0; // Initialize idx to 0
+        edgeIdx = connectionMatrix.map((value, index) => {
+            const i = index[0];
+            const j = index[1];
+            if (j > i && Math.abs(value) > 0) {
+                const result = idx; // Store the current value of idx
+                idx++; // Increment idx for the next iteration
+                return result;
             }
-            distanceMatrix[i] = row;
-            graph.addVertex(i, vertexes);
-        }
+            return -1; // Return -1 for (j < i) entries
+        }, true); // skipZeros=true
 
-        // mirror it
-        for (var i = 0; i < nNodes; i++) {
-            for (var j = i + 1; j < nNodes; j++) {
-                edgeIdx[j][i] = edgeIdx[i][j];
+        edgeIdx.forEach((value, index) => {
+            const i = index[0];
+            const j = index[1];
+            if (j < i) {
+                return (connectionMatrix.get([j, i]));
             }
-        }
-        console.log("Distance Matrix Computed");
+        });
+
+        const distanceMatrix = connectionMatrix.map(value => {
+            if (value !== 0) {
+                return 1 / value;
+            }
+            return 0;
+        }, true); // skipZeros=true
+
+        const graph = new Graph();
+
+        // for (let i = 0; i < nNodes; i++) {
+        //     const row = connectionMatrix
+        //         .subset(math.index(i, math.range(0, connectionMatrix.size()[0])))
+        //         .toArray()
+        //         .filter(value => value !== 0);
+        //     graph.addVertex(i, row);
+        // }
+
+
+        // Assign the computed distanceMatrix and edgeIdx to class variables
+        this.distanceMatrix = distanceMatrix;
+        this.edgeIdx = edgeIdx;
     };
+
 
     // compute shortest path from a specific node to the rest of the nodes
     this.computeShortestPathDistances = function (rootNode) {
