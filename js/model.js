@@ -12,6 +12,7 @@ import * as THREE from 'three'
 import {Platonics} from "./polyhedron";
 import * as math from 'mathjs'
 import {sunflower} from "./graphicsUtils";
+
 //import * as Papa from "papaparse";
 //const math = require('mathjs');
 
@@ -196,19 +197,20 @@ function Model(side) {
 
     this.computeNodesDistances = function (topology) {
         nodesDistances[topology] = [];
-        var cen = centroids[topology];
-        var nNodes = cen.length;
-        var distances = new Array(nNodes);
-        for (var i = 0; i < nNodes; i++) {
-            distances[i] = new Array(nNodes);
-        }
-        for (var i = 0; i < nNodes; i++) {
-            for (var j = i; j < nNodes; j++) {
-                distances[i][j] = cen[i].distanceTo(cen[j]);
-                distances[j][i] = distances[i][j];
-            }
-        }
-        nodesDistances[topology] = distances;
+        // var cen = centroids[topology];
+        // var nNodes = cen.length;
+        // var distances = new Array(nNodes);
+        // for (var i = 0; i < nNodes; i++) {
+        //     distances[i] = new Array(nNodes);
+        // }
+        // for (var i = 0; i < nNodes; i++) {
+        //     for (var j = i; j < nNodes; j++) {
+        //         distances[i][j] = cen[i].distanceTo(cen[j]);
+        //         distances[j][i] = distances[i][j];
+        //     }
+        // }
+        // nodesDistances[topology] = distances;
+
     };
 
     // store nodes centroids according to topological spaces
@@ -491,9 +493,13 @@ function Model(side) {
 
     this.computeNodalStrength = function () {
         var nNodes = connectionMatrix.size()[1];//length;
-        nodesStrength = new Array(nNodes);
-        for (var i = 0; i < nNodes; ++i)
-            nodesStrength[i] = d3.sum(this.getConnectionMatrixRow(i));
+        // nodesStrength = new Array(nNodes);
+        // for (var i = 0; i < nNodes; ++i)
+        //     nodesStrength[i] = d3.sum(this.getConnectionMatrixRow(i));
+
+        const OnesVector = math.ones([nNodes,1]);
+        nodesStrength = math.multiply(connectionMatrix, OnesVector);
+
     };
 
     // compute distance matrix = 1/(adjacency matrix)
@@ -857,7 +863,7 @@ function Model(side) {
         edges = [];
         for (var i = 0; i < nNodes; i++) {
             for (var j = i + 1; j < nNodes; j++) {
-                if (Math.abs(connectionMatrix.get([i,j])) > 0) {
+                if (Math.abs(connectionMatrix.get([i,j])) > 0.5) {
                     var edge = [];
                     edge.push(centroids[topology][i]);
                     edge.push(centroids[topology][j]);
