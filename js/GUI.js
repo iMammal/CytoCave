@@ -1364,7 +1364,6 @@ var searchElement = function(intext,side) {
     //drawSelectedNode(index, glyphs[index]);
     if (side !== 'Right' || leftSearching) {
         previewAreaLeft.drawSelectedNode(index, previewAreaLeft.getGlyph[index]);
-
     }
     if (side !== 'Left' || rightSearching) {
         previewAreaRight.drawSelectedNode(index, previewAreaRight.getGlyph[index]);

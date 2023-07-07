@@ -69,10 +69,10 @@ function PreviewArea(canvas_, model_, name_) {
     var camera = null, renderer = null, controls = null, scene = null, raycaster = null, gl = null;
     var nodeLabelSprite = null, nodeNameMap = null, nspCanvas = null;
     var clock = new THREE.Clock();
-    var instances = {}; //for tracking instanced meshes
+    //var instances = {}; //for tracking instanced meshes
     // make instances public so we can access them from another class
-    this.instances = instances;
-
+    //this.instances = instances;
+    this.instances = {};
     // VR stuff
     var vrControl = null, effect = null;
     var controllerLeft = null, controllerRight = null, xrInputLeft = null, xrInputRight = null,
@@ -1369,93 +1369,75 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     // update node scale according to selection status
-    this.updateNodeGeometry = function (instanceId, group, hemisphere, instance, status) {
+    this.updateNodeGeometry = function (nodeObject,status) {
         console.log("updateNodeGeometry");
-        console.log("instanceId: " + instanceId);
-        console.log("group: " + group);
-        console.log("hemisphere: " + hemisphere);
-        console.log("instance: ");
-        console.log(instance);
-        console.log("status: " + status);
-        //compare instaceID with nodeIndex
-        console.log("instanceId: " + instanceId);
-        console.log("nodeIndex: " + instance.userData.nodeIndex);
-        //console.log("instanceId == nodeIndex: " + (instanceId == instance.userData.nodeIndex));
+        console.log("new status: " + status);
+        console.log("nodeObject: ");
+        console.log(nodeObject);
 
-        let targetInstanceList = instances[instance.name.group][instance.name.hemisphere];
-        console.log("targetInstanceList: ");
-        console.log(targetInstanceList);
+        let objectParent;
+        if (nodeObject.object.name.hemisphere === 'left') {
+            objectParent = this.instances[nodeObject.object.name.group].left;
+        } else {
+            objectParent = this.instances[nodeObject.object.name.group].right;
+        }
+        console.log("object Parent: ");
+        console.log(objectParent);
+
         var scale = 1.0;
         var delta = clock.getDelta();
-        var dataset = model.getDataset();
         let matrix = new THREE.Matrix4();
+
         switch (status) {
             case 'normal':
-                console.log("normal")
+                console.log("normal");
                 scale = 1.0;
-                // get matrix from instantiated object
-                // get matrix from instantiated object
-                //matrix = new THREE.Matrix4();
-                targetInstanceList.getMatrixAt(instanceId, matrix);
-                // apply scale to matrix preserve other transformations
+                objectParent.getMatrixAt(nodeObject.instanceId, matrix);
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
-                // set matrix back to instantiated object
-                targetInstanceList.setMatrixAt(instanceId, matrix);
-                // update instance matrix
-
-                //glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
+                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+                objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( scaleColorGroup(null, nodeObject.object.name.group))     );
+                objectParent.instanceColor.needsUpdate = true;
                 break;
+
             case 'mouseover':
                 console.log("mouseover");
                 scale = 1.72;
-
-                //glyphs[nodeIndex].material.color = new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0));
-                // set color of the instantiated object to random color
-                targetInstanceList.setColorAt(instance.userData.instanceIndex, new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0)));
-                //console.log("Delta:" + (delta * 10.0 )) + " " + (1.0-delta * 10.0 ) + " " + (0.5 + delta * 5.0 );
-                // update instance matrix
-
+                objectParent.setColorAt(nodeObject.instanceId, new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0)));
+                objectParent.instanceColor.needsUpdate = true;
                 break;
+
             case 'selected':
                 console.log("selected");
-                // get matrix from instantiated object
-                //matrix = new THREE.Matrix4();
-                targetInstanceList.getMatrixAt(instance.userData.instanceIndex, matrix);
-                // apply scale to matrix preserve other transformations
-                scale = (8 / 3);
+                objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+                scale = 8 / 3;
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
-                // set matrix back to instantiated object
-                targetInstanceList.setMatrixAt(instance.userData.instanceIndex, matrix);
-                // set color of the instantiated object to color from scaleColorGroup
-                targetInstanceList.setColorAt(instance.userData.instanceIndex, new THREE.Color(scaleColorGroup(model, group)));
-                // todo scalecolorgroup should return a previously defined color object instead of creating a new one
-                // update instance matrix
-
-                //glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
+                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+                objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( 1, 1, 1));
+                objectParent.instanceColor.needsUpdate = true;
                 break;
+
             case 'root':
                 console.log("root");
-                scale = (10 / 3);
-                // get matrix from instantiated object
-                //matrix = new THREE.Matrix4();
-                targetInstanceList.getMatrixAt(instanceId, matrix);
-                matrix = targetInstanceList.getMatrixAt(instanceId, matrix);
-                // apply scale to matrix preserve other transformations
+                scale = 10 / 3;
+                objectParent.getMatrixAt(nodeObject.instanceId, matrix);
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
-                // set matrix back to instantiated object
-                targetInstanceList.setMatrixAt(instanceId, matrix);
-                // set color of the instantiated object to color from scaleColorGroup
-                targetInstanceList.setColorAt(instanceId, new THREE.Color(scaleColorGroup(model, group)));
-                // update instance matrix
-
-                //glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
+                let oldColor = new THREE.Color();
+                objectParent.getColorAt(nodeObject.instanceId, oldColor);
+                console.log("oldColor: ");
+                console.log(oldColor);
+                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+                objectParent.setColorAt(nodeObject.instanceId, new THREE.Color(scaleColorGroup(model, nodeObject.object.name.group)));
+                console.log("newColor: ");
+                console.log(scaleColorGroup(model, nodeObject.object.name.group));
+                objectParent.instanceColor.needsUpdate = true;
                 break;
+
             default:
                 console.log("default");
                 console.log("status: " + status);
         }
-        //glyphs[nodeIndex].scale.set(scale, scale, scale);
-        targetInstanceList.needsUpdate = true;
+
+        objectParent.needsUpdate = true;
     };
 
     var animateNodeBreathing = function (nodeList) {
@@ -1691,23 +1673,27 @@ function PreviewArea(canvas_, model_, name_) {
         for (let i = 0; i < groups.length; i++) {
             let leftCount = this.countGroupMembers(groups[i], 'left');
             let rightCount = this.countGroupMembers(groups[i], 'right');
-            instances[groups[i]] = {
+            this.instances[groups[i]] = {
                 left: null,
                 right: null
             };
             // create instance mesh for each group and hemisphere
             let geometry = getNormalGeometry('left');
             let material = getNormalMaterial(model, groups[i]);
-            instances[groups[i]].left = new THREE.InstancedMesh(geometry, material, leftCount);
+            this.instances[groups[i]].left = new THREE.InstancedMesh(geometry, material, leftCount);
+            this.instances[groups[i]].left.setColorAt(0, material.color);
+
             geometry = getNormalGeometry('right');
             material = getNormalMaterial(model, groups[i]);
-            instances[groups[i]].right = new THREE.InstancedMesh(geometry, material, rightCount);
+            this.instances[groups[i]].right = new THREE.InstancedMesh(geometry, material, rightCount);
+            this.instances[groups[i]].right.setColorAt(0, material.color);
+
             // name the instance with group_hemisphere
-            instances[groups[i]].left.name = {
+            this.instances[groups[i]].left.name = {
                 group: groups[i],
                 hemisphere: 'left'
             };
-            instances[groups[i]].right.name = {
+            this.instances[groups[i]].right.name = {
                 group: groups[i],
                 hemisphere: 'right'
             }
@@ -1725,7 +1711,7 @@ function PreviewArea(canvas_, model_, name_) {
             // get the index of the instance mesh to add to
             let index = topIndexes[dataset[i].group][dataset[i].hemisphere];
             // get the instance mesh to add to
-            let instance = instances[dataset[i].group][dataset[i].hemisphere];
+            let instance = this.instances[dataset[i].group][dataset[i].hemisphere];
             // instance.userData = {
             //     nodeIndex: i
             // }
@@ -1734,26 +1720,27 @@ function PreviewArea(canvas_, model_, name_) {
             let position = dataset[i].position;
             // set the position of the instance
             instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
+            instance.setColorAt(index, instance.material.color);
             // increment the index
             topIndexes[dataset[i].group][dataset[i].hemisphere]++;
             instance.userData = {
                 nodeIndex: i, //overall index according to load order
                 instanceIndex: topIndexes[dataset[i].group][dataset[i].hemisphere], //index within the instance
                 selected: false,
-
+                
             }
         }
 
 
         // mark instances as dirty
         for (let i = 0; i < groups.length; i++) {
-            instances[groups[i]].left.instanceMatrix.needsUpdate = true;
-            instances[groups[i]].right.instanceMatrix.needsUpdate = true;
+            this.instances[groups[i]].left.instanceMatrix.needsUpdate = true;
+            this.instances[groups[i]].right.instanceMatrix.needsUpdate = true;
         }
         // add the instance meshes to the scene
         for (let i = 0; i < groups.length; i++) {
-            brain.add(instances[groups[i]].left);
-            brain.add(instances[groups[i]].right);
+            brain.add(this.instances[groups[i]].left);
+            brain.add(this.instances[groups[i]].right);
         }
 
         // // print count of instances
@@ -1789,7 +1776,7 @@ function PreviewArea(canvas_, model_, name_) {
         var instance = null;
         var index = null;
         for (var i = 0; i < dataset.length; i++) {
-            instance = instances[dataset[i].group][dataset[i].hemisphere];
+            instance = this.instances[dataset[i].group][dataset[i].hemisphere];
             index = instance.userData.nodeIndex;
             instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z));
         }
@@ -1821,7 +1808,7 @@ function PreviewArea(canvas_, model_, name_) {
             } else {
                 opacity = 0.0;
             }
-            instances[dataset[i].group][dataset[i].hemisphere].material.opacity = opacity;
+            this.instances[dataset[i].group][dataset[i].hemisphere].material.opacity = opacity;
             //glyphs[i].material.opacity = opacity;
         }
     };
@@ -1831,19 +1818,19 @@ function PreviewArea(canvas_, model_, name_) {
         let selectedNodes = [];
         var groups = this.listGroups();
         for (let i = 0; i < groups.length; i++) {
-            for (let j = 0; j < instances[groups[i]].left.count; j++) {
-                if (instances[groups[i]].left.userData.selected) {
+            for (let j = 0; j < this.instances[groups[i]].left.count; j++) {
+                if (this.instances[groups[i]].left.userData.selected) {
                     // check if the node is already in the list
-                    if (selectedNodes.indexOf(instances[groups[i]].left.userData.nodeIndex) == -1) {
-                        selectedNodes.push(instances[groups[i]].left.userData.nodeIndex);
+                    if (selectedNodes.indexOf(this.instances[groups[i]].left.userData.nodeIndex) == -1) {
+                        selectedNodes.push(this.instances[groups[i]].left.userData.nodeIndex);
                     }
 
                 }
             }
-            for (let j = 0; j < instances[groups[i]].right.count; j++) {
-                if (instances[groups[i]].right.userData.selected) {
-                    if (selectedNodes.indexOf(instances[groups[i]].right.userData.nodeIndex) == -1) {
-                        selectedNodes.push(instances[groups[i]].right.userData.nodeIndex);
+            for (let j = 0; j < this.instances[groups[i]].right.count; j++) {
+                if (this.instances[groups[i]].right.userData.selected) {
+                    if (selectedNodes.indexOf(this.instances[groups[i]].right.userData.nodeIndex) == -1) {
+                        selectedNodes.push(this.instances[groups[i]].right.userData.nodeIndex);
                     }
                 }
             }
@@ -2248,12 +2235,12 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     // draw a selected node: increase it's size
-    this.drawSelectedNode = function (instanceId, group, hemisphere, instance) {
+    this.drawSelectedNode = function (nodeObject) {
         // todo: check if this is really needed since there is already a toggle for selected in instances
         // if (getNodesSelected().indexOf(nodeIndex) == -1) {
         //     setNodesSelected(getNodesSelected().length, nodeIndex);
         // }
-        this.updateNodeGeometry(instanceId, group, hemisphere, instance, 'selected');
+        this.updateNodeGeometry(nodeObject, 'selected');
     };
 
 

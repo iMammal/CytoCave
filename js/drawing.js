@@ -90,7 +90,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     //console.log(intersectedObject);
     if(intersectedObject === undefined)
         return;
-    nodeIdx = intersectedObject.object.userData.nodeIndex;
+    nodeIdx = intersectedObject.object.instanceId;
     if (intersectedObject) {
         nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
         region = model.getRegionByIndex(nodeIdx);
@@ -188,46 +188,57 @@ function onLeftClick(model, event) {
 }
 
 const updateNodeSelection = (model, objectIntersected, isLeft) => {
-    console.log("model: ", model);
-    console.log("objectIntersected: ", objectIntersected);
-    console.log(`isLeft: ${isLeft}`);
+    // console.log("model: ", model);
+    // console.log("objectIntersected: ", objectIntersected);
+    // console.log(`isLeft: ${isLeft}`);
 
     if (!objectIntersected) return;
 
-    const instanceId = objectIntersected.object.userData.instanceIndex;
+    const instanceId = objectIntersected.instanceId;
     const group = objectIntersected.object.name.group;
     const hemisphere = objectIntersected.object.name.hemisphere;
     // check if name is blank, if so return undefined, otherwise you'll end up intersecting the skybox.
-    if (objectIntersected.object.name === "") return;
+    if (objectIntersected.object.name === "") {
+        console.log("objectIntersected.object.name is blank");
+        return;
+    }
 
     const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
-    console.log("previewArea instances: ");
-    console.log(previewArea.instances);
+    //console.log("previewArea instances: ");
+    //console.log(previewArea.instances);
     // if
-    const instance = previewArea.instances[group][hemisphere];
+    //const instanceList = previewArea.instances[group][hemisphere];
+    //or could be
+    //const instanceList = objectIntersected.
     // log instance
-    console.log("instance: ")
-    console.log(instance);
-    if (!group || !hemisphere || !instance) return;
 
+    if (!group || !hemisphere || !instanceId) {
+        console.log("group: ", group);
+        console.log("hemisphere: ", hemisphere);
+        console.log("instanceId: ", instanceId);
+
+        return;
+        }
+    //if selected make unselected, if unselected make selected
     objectIntersected.object.userData.selected = !objectIntersected.object.userData.selected;
 
     if (objectIntersected.object.userData.selected) {
-        console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
-        previewArea.drawSelectedNode(instanceId, group, hemisphere, instance);
-        let nodeIndex = instance.userData.nodeIndex;
+        console.log("objectIntersected.object.userData.selected: ", objectIntersected.object.userData.selected);
+        //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
+        //previewArea.drawSelectedNode(objectIntersected);
+        //let nodeIndex = objectIntersected.object.userData.nodeIndex;
         if (thresholdModality) {
-            previewArea.drawEdgesGivenNode(nodeIndex);
+            //previewArea.drawEdgesGivenNode(nodeIndex);
         } else {
-            const n = model.getNumberOfEdges();
-            previewArea.drawTopNEdgesByNode(nodeIndex, n);
+            //const n = model.getNumberOfEdges();
+            //previewArea.drawTopNEdgesByNode(nodeIndex, n);
         }
-
+        previewArea.updateNodeGeometry(objectIntersected, 'selected');
     } else {
-        console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
+        //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         objectIntersected.object.userData.selected = false;
-        previewArea.updateNodeGeometry(instanceId, group, hemisphere, instance, 'normal');
-        removeEdgesGivenNodeFromScenes(instanceId, group, hemisphere, instance);
+        previewArea.updateNodeGeometry(objectIntersected, 'normal');
+        //removeEdgesGivenNodeFromScenes(instance);
     }
 };
 
