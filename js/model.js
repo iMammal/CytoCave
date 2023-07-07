@@ -13,10 +13,6 @@ import {Platonics} from "./polyhedron";
 import * as math from 'mathjs'
 import {sunflower} from "./graphicsUtils";
 
-//import * as Papa from "papaparse";
-//const math = require('mathjs');
-
-
 function Model(side) {
     var groups = {};                    // contain nodes group affiliation according to Anatomy, place, rich club, id
     var activeGroup;                    // active group name
@@ -304,6 +300,7 @@ function Model(side) {
         //console.log(row);
         return row[0];
         //return connectionMatrix.subset(math.index(index,math.range(0,connectionMatrix.size()[0]))).toArray().slice(0);
+
     };
 
     // get the group of a specific node according to activeGroup

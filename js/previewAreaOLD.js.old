@@ -792,6 +792,7 @@ function PreviewAreaOLD(canvas_, model_, name_) {
     this.getIntersectedObject = function(vector) {
         raycaster.setFromCamera(vector, camera);
         var objectsIntersected = raycaster.intersectObjects( glyphs );
+        console.log("Intersected: " + objectsIntersected.length);
         return (objectsIntersected[0])?  objectsIntersected[0] : undefined;
     };
 

@@ -40,21 +40,22 @@ var getNormalGeometry = function(hemisphere) {
 };
 
 // create normal edge geometry: sphere or cube
-var getNormalGeometry = function(hemisphere,side) {
-    if(hemisphere == "left"){
-	    if(side == "Left"){
-		    return leftSphereNormal;
-	    } else {
-        return rightSphereNormal;
-	    }
-    } else if(hemisphere == "right"){
-	    if(side == "Left"){
-		    return leftBoxNormal;
-	    } else {
-        return rightBoxNormal;
-	    }
-    }
-};
+//commented out since it already exists?
+// var getNormalGeometry = function(hemisphere,side) {
+//     if(hemisphere == "left"){
+// 	    if(side == "Left"){
+// 		    return leftSphereNormal;
+// 	    } else {
+//         return rightSphereNormal;
+// 	    }
+//     } else if(hemisphere == "right"){
+// 	    if(side == "Left"){
+// 		    return leftBoxNormal;
+// 	    } else {
+//         return rightBoxNormal;
+// 	    }
+//     }
+// };
 
 // scaling the glyphs
 var setDimensionFactor = function(value){
@@ -108,6 +109,7 @@ var setDimensionFactorRightBox = function(value){
 };
 
 // return the material for a node (vertex) according to its state: active or transparent
+//todo: change to static reusable materials
 var getNormalMaterial = function(model, group) {
     var material, opacity = 1.0;
     switch (model.getRegionState(group)){
