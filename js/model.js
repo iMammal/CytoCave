@@ -523,6 +523,9 @@ function Model(side) {
             if (j < i) {
                 return (connectionMatrix.get([j, i]));
             }
+            else  {
+                return 1; // i=j entries set matrix diagonal to 1
+            }
         });
 
         const distanceMatrix = connectionMatrix.map(value => {
