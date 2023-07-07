@@ -1626,7 +1626,7 @@ function PreviewArea(canvas_, model_, name_) {
         var colorFrequency = 3*frequency;
         const elapsedTime = clock.getElapsedTime();
         const deltaRadius = colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime);
-        var edge, c1, c2, tempColor = new THREE.Color();
+        var edge, c1, c2, tempColor = new THREE.Color(), targetColor = new THREE.Color();
         for (var i = 0; i < displayedEdges.length; i++) {
             edge = displayedEdges[i];
             c1 = edge.nodes[0]; //.material.color;
@@ -1634,12 +1634,13 @@ function PreviewArea(canvas_, model_, name_) {
             var baseColor = new THREE.Color(scaleColorGroup(model, dataset[c2].group));
             var deltaColor = new THREE.Color(scaleColorGroup(model, dataset[c1].group)); //1,0.6,0.3);
                 //amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime),0,0 );      //delta * 180, delta * 10, delta * 10);
-            var tempColor = new THREE.Color();
+            tempColor = new THREE.Color();
+            targetColor = new THREE.Color();
             tempColor.lerpColors(baseColor, deltaColor, 0.5*deltaRadius);
-            var targetColor = tempColor.offsetHSL(0, 0.5*deltaRadius, deltaRadius);  //new THREE.Color();
+            targetColor = tempColor.offsetHSL(0, 0.5*deltaRadius, deltaRadius);  //new THREE.Color();
             //0.5*deltaRadius+0.5);
-            //edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
-            //tempColor.lerpHSL(targetColor, 0.5*deltaRadius+0.5);
+            edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
+            tempColor.lerpHSL(targetColor, 0.5*deltaRadius+0.5);
             glyphs[edge.nodes[1]].material.color = targetColor;
         }
 
@@ -1647,7 +1648,7 @@ function PreviewArea(canvas_, model_, name_) {
             edge = displayedEdges[i];
             c1 = glyphs[edge.nodes[0]].material.color;
             c2 = glyphs[edge.nodes[1]].material.color;
-            //edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
+            edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
 
         }
     };
@@ -1705,6 +1706,11 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     var drawEdgeWithName = function (edge, ownerNode, nodes) {
+        console.log("Edge: ");
+        console.log(edge);
+        console.log("ownerNode: " + ownerNode);
+        console.log("nodes: ");
+        console.log(nodes);
         var line = createLine(edge, ownerNode, nodes);
         brain.add(line);
         return line;
@@ -1714,31 +1720,57 @@ function PreviewArea(canvas_, model_, name_) {
     this.drawTopNEdgesByNode = function (nodeIndex, n) {
 
 	var row = [];
-	if(false && !getEnableContra() && !getEnableIpsi()) { //todo: evaluate best action for neither ipsi nor contra
-		row = model.getTopConnectionsByNode(nodeIndex, n );
+	if(false && (!getEnableContra() && !getEnableIpsi())) { //todo: evaluate best action for neither ipsi nor contra
+		console.log("Neither ipsi nor contra: this should not be able to be accessed.")
+        row = model.getTopConnectionsByNode(nodeIndex, n );
 	} else {
 		if(getEnableContra()) {
+            console.log("contra");
 			row = row.concat(model.getTopContraLateralConnectionsByNode(nodeIndex, n ));
 		} 
 		if (getEnableIpsi()) {
+            console.log("ipsi!");
 			row = row.concat(model.getTopIpsiLateralConnectionsByNode(nodeIndex, n ));
 		}
 	}	
-	    console.log("contra"+getEnableContra());
-	    console.log("ipsi"+getEnableIpsi());
+	    console.log("contra: "+getEnableContra());
+	    console.log("ipsi: "+getEnableIpsi());
 
         var edges = model.getActiveEdges();
+        console.log("Active edges: ");
+        console.log(edges);
         var edgeIdx = model.getEdgesIndeces();
         if (getEnableEB()) {
+            console.log("EB point");
             model.performEBOnNode(nodeIndex);
         }
         for (var i = 0; i < row.length; ++i) {
             if ((nodeIndex != row[i]) && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i)) {
-                displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[nodeIndex][row[i]]], nodeIndex, [nodeIndex, row[i]]);
+                //display debug info for each variable above.
+                console.log("Displayed Edges Length: ");
+                console.log(displayedEdges.length);
+                console.log("Edges: ");
+                console.log(edges);
+                console.log("edgeIdx: ");
+                console.log(edgeIdx);
+                console.log("displayedEdges: ");
+                console.log(displayedEdges);
+                console.log("nodeIndex: ");
+                console.log(nodeIndex);
+                console.log("row: ");
+                console.log(row);
+                console.log("i: ");
+                console.log(i);
+                //let edix = edgeIdx[nodeIndex][row[i]];
+                let edix = model.getEdgesIndeces().get([nodeIndex, row[i]]);
+                if(edix < 0) continue;
+                if(edix > edges.length) continue;
+                displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[ edix ], nodeIndex, [nodeIndex, row[i]]);
+
             }
         }
 
-        // setEdgesColor();
+        //setEdgesColor();
     };
 
     // draw edges given a node following edge threshold
@@ -1759,28 +1791,62 @@ function PreviewArea(canvas_, model_, name_) {
 
             // It can get too cluttered if both ipsi-
         if (getEnableIpsi() && getEnableContra()) {
+            console.log("edges: ipsi or contra enabled")
             for (var i = 0; i < row.length; i++) {
-
+                //console.log("Row length: ");
+                //console.log(row.length);
                 var myThreshold = model.getThreshold();
-
+                //console.log("myThreshold: ");
+                //console.log(myThreshold);
                 if (dataset[indexNode].hemisphere !== dataset[i].hemisphere) {
                     myThreshold = model.getConThreshold();
+                    //console.log("myThreshold overwritten by ConThreshold: ");
+                    //console.log(myThreshold);
                 }
-
+                if (myThreshold <= 0 || isNaN(myThreshold)) {
+                    myThreshold = 2;
+                }
                 if ((i != indexNode) &&
                     (Math.abs(row[i]) > myThreshold) &&
                     model.isRegionActive(model.getGroupNameByNodeIndex(i)) &&
                     getVisibleNodes(i) ) {
-                    displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
+                    //displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
+                    // //display debug info for each variable above.
+                    // console.log("Displayed Edges Length: ");
+                    // console.log(displayedEdges.length);
+                    // console.log("Edges: ");
+                    // console.log(edges);
+                    // console.log("edgeIdx: ");
+                    // console.log(edgeIdx);
+                    //
+                    // console.log("indexNode: ");
+                    // console.log(indexNode);
+                    // console.log("row: ");
+                    // console.log(row);
+                    // console.log("i: ");
+                    // console.log(i);
+                    //let edix = edgeIdx[nodeIndex][row[i]];
+                    let edix = model.getEdgesIndeces().get([indexNode, i]);
+                    if(edix < 0) continue;
+                    if(edix > edges.length) continue;
+                    console.log("Edix");
+                    console.log(edix);
+                    console.log("displayedEdges before: ");
+                    console.log(displayedEdges);
+                    displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[ edix ], indexNode, [indexNode, i]);
+                    console.log("displayedEdges after: ");
+                    console.log(displayedEdges);
                 }
             }
         } else {
+            console.log("edges: ipsi or contra not enabled")
             for (var i = 0; i < row.length; i++) {
                 if ((i != indexNode) && Math.abs(row[i]) > model.getThreshold() && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i) &&
                     ((getEnableIpsi() && (dataset[indexNode].hemisphere === dataset[i].hemisphere)) ||
                         (getEnableContra() && (dataset[indexNode].hemisphere !== dataset[i].hemisphere)) ||
                         (!getEnableIpsi() && !getEnableContra()) ) ) {
-                    displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
+                    let edix = model.getEdgesIndeces().get([indexNode, i]);
+                    displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edix], indexNode, [indexNode, i]);
                 }
             }
         }

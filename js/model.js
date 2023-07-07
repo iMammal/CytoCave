@@ -295,7 +295,15 @@ function Model(side) {
 
     // get a row (one node) from connection matrix
     this.getConnectionMatrixRow = function (index) {
-        return connectionMatrix.subset(math.index(index,math.range(0,connectionMatrix.size()[0]))).toArray().slice(0);
+        // log the index
+        //console.log("index:",index);
+        //console.log("ConnectionMatrix Size:",connectionMatrix.size());
+        //console.log("ConnectionMatrix:",connectionMatrix);
+        let row = connectionMatrix.subset(math.index(index,math.range(0,connectionMatrix.size()[0]))).toArray().slice(0);
+        //console.log("Row: ");
+        //console.log(row);
+        return row[0];
+        //return connectionMatrix.subset(math.index(index,math.range(0,connectionMatrix.size()[0]))).toArray().slice(0);
     };
 
     // get the group of a specific node according to activeGroup
@@ -501,7 +509,39 @@ function Model(side) {
         nodesStrength = math.multiply(connectionMatrix, OnesVector);
 
     };
-
+// // old compute distance
+//     compute distance matrix = 1/(adjacency matrix)
+//     this.computeDistanceMatrix = function () {
+//         var nNodes = connectionMatrix.length;
+//         distanceMatrix = new Array(nNodes);
+//         graph = new Graph();
+//         var idx = 0;
+//         // for every node, add the distance to all other nodes
+//         for (var i = 0; i < nNodes; i++) {
+//             var vertexes = [];
+//             var row = new Array(nNodes);
+//             edgeIdx.push(new Array(nNodes));
+//             edgeIdx[i].fill(-1); // indicates no connection
+//             for (var j = 0; j < nNodes; j++) {
+//                 vertexes[j] = 1 / connectionMatrix[i][j];
+//                 row[j] = 1 / connectionMatrix[i][j];
+//                 if (j > i && Math.abs(connectionMatrix[i][j]) > 0) {
+//                     edgeIdx[i][j] = idx;
+//                     idx++;
+//                 }
+//             }
+//             distanceMatrix[i] = row;
+//             graph.addVertex(i, vertexes);
+//         }
+//
+//         // mirror it
+//         for (var i = 0; i < nNodes; i++) {
+//             for (var j = i + 1; j < nNodes; j++) {
+//                 edgeIdx[j][i] = edgeIdx[i][j];
+//             }
+//         }
+//         console.log("Distance Matrix Computed");
+//     };
     // compute distance matrix = 1/(adjacency matrix)
     this.computeDistanceMatrix = function() {
         const nNodes = connectionMatrix.size()[1];
@@ -521,7 +561,7 @@ function Model(side) {
             const i = index[0];
             const j = index[1];
             if (j < i) {
-                return (connectionMatrix.get([j, i]));
+                return (edgeIdx.get([j, i]));
             }
             else  {
                 return 1; // i=j entries set matrix diagonal to 1
