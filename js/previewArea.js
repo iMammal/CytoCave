@@ -900,7 +900,7 @@ function PreviewArea(canvas_, model_, name_) {
     var xrDolly = new THREE.Object3D();
 
     var scanOculusTouch = function () {
-
+    return;
         //exit if no controllers
         if (!controllerLeft || !controllerRight) return;
         //exit if no brain
@@ -1264,7 +1264,8 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     this.resetCamera = function () {
-        camera.position.set(50, 50, 50);
+        console.log("reset camera");
+        camera.position.set(0, 0, -50);
     };
 
     this.resetBrainPosition = function () {
@@ -1369,6 +1370,21 @@ function PreviewArea(canvas_, model_, name_) {
 
     // update node scale according to selection status
     this.updateNodeGeometry = function (instanceId, group, hemisphere, instance, status) {
+        console.log("updateNodeGeometry");
+        console.log("instanceId: " + instanceId);
+        console.log("group: " + group);
+        console.log("hemisphere: " + hemisphere);
+        console.log("instance: ");
+        console.log(instance);
+        console.log("status: " + status);
+        //compare instaceID with nodeIndex
+        console.log("instanceId: " + instanceId);
+        console.log("nodeIndex: " + instance.userData.nodeIndex);
+        //console.log("instanceId == nodeIndex: " + (instanceId == instance.userData.nodeIndex));
+
+        let targetInstanceList = instances[instance.name.group][instance.name.hemisphere];
+        console.log("targetInstanceList: ");
+        console.log(targetInstanceList);
         var scale = 1.0;
         var delta = clock.getDelta();
         var dataset = model.getDataset();
@@ -1380,11 +1396,11 @@ function PreviewArea(canvas_, model_, name_) {
                 // get matrix from instantiated object
                 // get matrix from instantiated object
                 //matrix = new THREE.Matrix4();
-                instance.getMatrixAt(instanceId, matrix);
+                targetInstanceList.getMatrixAt(instanceId, matrix);
                 // apply scale to matrix preserve other transformations
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
                 // set matrix back to instantiated object
-                instance.setMatrixAt(instanceId, matrix);
+                targetInstanceList.setMatrixAt(instanceId, matrix);
                 // update instance matrix
 
                 //glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
@@ -1395,7 +1411,7 @@ function PreviewArea(canvas_, model_, name_) {
 
                 //glyphs[nodeIndex].material.color = new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0));
                 // set color of the instantiated object to random color
-                instance.setColorAt(instanceId, new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0)));
+                targetInstanceList.setColorAt(instance.userData.instanceIndex, new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0)));
                 //console.log("Delta:" + (delta * 10.0 )) + " " + (1.0-delta * 10.0 ) + " " + (0.5 + delta * 5.0 );
                 // update instance matrix
 
@@ -1404,14 +1420,14 @@ function PreviewArea(canvas_, model_, name_) {
                 console.log("selected");
                 // get matrix from instantiated object
                 //matrix = new THREE.Matrix4();
-                instance.getMatrixAt(instanceId, matrix);
+                targetInstanceList.getMatrixAt(instance.userData.instanceIndex, matrix);
                 // apply scale to matrix preserve other transformations
                 scale = (8 / 3);
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
                 // set matrix back to instantiated object
-                instance.setMatrixAt(instanceId, matrix);
+                targetInstanceList.setMatrixAt(instance.userData.instanceIndex, matrix);
                 // set color of the instantiated object to color from scaleColorGroup
-                instance.setColorAt(instanceId, new THREE.Color(scaleColorGroup(model, group)));
+                targetInstanceList.setColorAt(instance.userData.instanceIndex, new THREE.Color(scaleColorGroup(model, group)));
                 // todo scalecolorgroup should return a previously defined color object instead of creating a new one
                 // update instance matrix
 
@@ -1422,13 +1438,14 @@ function PreviewArea(canvas_, model_, name_) {
                 scale = (10 / 3);
                 // get matrix from instantiated object
                 //matrix = new THREE.Matrix4();
-                instance.getMatrixAt(instanceId, matrix);
+                targetInstanceList.getMatrixAt(instanceId, matrix);
+                matrix = targetInstanceList.getMatrixAt(instanceId, matrix);
                 // apply scale to matrix preserve other transformations
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
                 // set matrix back to instantiated object
-                instance.setMatrixAt(instanceId, matrix);
+                targetInstanceList.setMatrixAt(instanceId, matrix);
                 // set color of the instantiated object to color from scaleColorGroup
-                instance.setColorAt(instanceId, new THREE.Color(scaleColorGroup(model, group)));
+                targetInstanceList.setColorAt(instanceId, new THREE.Color(scaleColorGroup(model, group)));
                 // update instance matrix
 
                 //glyphs[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
@@ -1438,11 +1455,11 @@ function PreviewArea(canvas_, model_, name_) {
                 console.log("status: " + status);
         }
         //glyphs[nodeIndex].scale.set(scale, scale, scale);
-        instance.instanceMatrix.needsUpdate = true;
+        targetInstanceList.needsUpdate = true;
     };
 
     var animateNodeBreathing = function (nodeList) {
-
+        return;
         //const amplitude =  0.015;
         var scaleFrequency = frequency; //0.5;
         var scaleAmplitude = amplitude;
@@ -1501,7 +1518,7 @@ function PreviewArea(canvas_, model_, name_) {
                     var newColor = new THREE.Color(color);
                     tempColor.lerpColors(tempColor, newColor, colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime));
                 }
-                glyphs[nodeIdx].material.color = tempColor; //new THREE.Color(baseColor[0] + delta * 12, baseColor[1]+delta * 2, baseColor[2]+delta * 5);
+                //glyphs[nodeIdx].material.color = tempColor; //new THREE.Color(baseColor[0] + delta * 12, baseColor[1]+delta * 2, baseColor[2]+delta * 5);
                 //console.log(elapsedTime, baseColor, deltaColor, tempColor)
             }
         }
@@ -1510,7 +1527,7 @@ function PreviewArea(canvas_, model_, name_) {
     this.updateNodesColor = function () {
         var dataset = model.getDataset();
         for (var i = 0; i < glyphs.length; ++i) {
-            glyphs[i].material.color = new THREE.Color(scaleColorGroup(model, dataset[i].group));
+            //glyphs[i].material.color = new THREE.Color(scaleColorGroup(model, dataset[i].group));
         }
     };
 
@@ -1709,9 +1726,9 @@ function PreviewArea(canvas_, model_, name_) {
             let index = topIndexes[dataset[i].group][dataset[i].hemisphere];
             // get the instance mesh to add to
             let instance = instances[dataset[i].group][dataset[i].hemisphere];
-            instance.userData = {
-                nodeIndex: i
-            }
+            // instance.userData = {
+            //     nodeIndex: i
+            // }
 
             // get the position of the region
             let position = dataset[i].position;
@@ -1719,6 +1736,12 @@ function PreviewArea(canvas_, model_, name_) {
             instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
             // increment the index
             topIndexes[dataset[i].group][dataset[i].hemisphere]++;
+            instance.userData = {
+                nodeIndex: i, //overall index according to load order
+                instanceIndex: topIndexes[dataset[i].group][dataset[i].hemisphere], //index within the instance
+                selected: false,
+
+            }
         }
 
 
@@ -1805,22 +1828,29 @@ function PreviewArea(canvas_, model_, name_) {
 
     this.getNodesSelected = function () {
         // check all instances and return the nodeIndex of ones flagged as selected
-        var selectedNodes = [];
+        let selectedNodes = [];
         var groups = this.listGroups();
         for (let i = 0; i < groups.length; i++) {
             for (let j = 0; j < instances[groups[i]].left.count; j++) {
                 if (instances[groups[i]].left.userData.selected) {
-                    selectedNodes.push(instances[groups[i]].left.userData.nodeIndex);
+                    // check if the node is already in the list
+                    if (selectedNodes.indexOf(instances[groups[i]].left.userData.nodeIndex) == -1) {
+                        selectedNodes.push(instances[groups[i]].left.userData.nodeIndex);
+                    }
+
                 }
             }
             for (let j = 0; j < instances[groups[i]].right.count; j++) {
                 if (instances[groups[i]].right.userData.selected) {
-                    selectedNodes.push(instances[groups[i]].right.userData.nodeIndex);
+                    if (selectedNodes.indexOf(instances[groups[i]].right.userData.nodeIndex) == -1) {
+                        selectedNodes.push(instances[groups[i]].right.userData.nodeIndex);
+                    }
                 }
             }
         }
+        //console.log("selected nodes");
+        //console.log(selectedNodes);
         return selectedNodes;
-
     }
     // draw all connections between the selected nodes, needs the connection matrix.
     // don't draw edges belonging to inactive nodes
@@ -2413,7 +2443,7 @@ function PreviewArea(canvas_, model_, name_) {
             text = text + "_";
         }
         //text = text + "___________________________";
-        context.clearRect(0, 0, 256 * 4, 256);
+        //context.clearRect(0, 0, 256 * 4, 256);
         context.fillText(text, 5, 120);
 
         nodeNameMap.needsUpdate = true;

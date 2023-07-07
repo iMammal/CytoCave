@@ -194,7 +194,7 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
 
     if (!objectIntersected) return;
 
-    const instanceId = objectIntersected.object.instanceId;
+    const instanceId = objectIntersected.object.userData.instanceIndex;
     const group = objectIntersected.object.name.group;
     const hemisphere = objectIntersected.object.name.hemisphere;
     // check if name is blank, if so return undefined, otherwise you'll end up intersecting the skybox.
@@ -756,6 +756,12 @@ var setThresholdModality = function (modality) {
     thresholdModality = modality
 }
 
+var getEnableIpsi = function () {
+    return enableIpsi;
+}
+var getEnableContra = function () {
+    return enableContra;
+}
 // export {
 //     changeSceneToSubject,
 //     initControls,
@@ -798,7 +804,7 @@ export {
     getVisibleNodesLength,
     setVisibleNodes,
     getEnableEB,
-    // getEnableIpsi, //todo: couldn't find definition
-    // getEnableContra,
+    getEnableIpsi, //todo: couldn't find definition
+    getEnableContra,
     setThresholdModality
 }
