@@ -1391,19 +1391,26 @@ function PreviewArea(canvas_, model_, name_) {
         //console.log(nodeObject);
         switch (status) {
             case 'normal':
+
                 console.log("normal");
                 let color = new THREE.Color(scaleColorGroup(model,nodeObject.object.name.group));
                 // restore nodeObject to original scale and color
                 objectParent.setColorAt(nodeObject.instanceId, color);
                 //if object was scaled, restore it
-                if (nodeObject.object.userData.scaledBy != 1.0) {
+                //if (nodeObject.object.userData.scaledBy != 1.0) {
+                    //restore scale
+                    scale = 1.0;
+                    nodeObject.object.userData.scaledBy = scale;
                     objectParent.getMatrixAt(nodeObject.instanceId, matrix);
-                    // if node was scaled by nodeObject.userData.scaledBy, then to restore it to original scale, we need to scale it by 1/nodeObject.userData.oldScale
-                    matrix.scale(new THREE.Vector3(1/nodeObject.object.userData.scaledBy, 1/nodeObject.object.userData.scaledBy, 1/nodeObject.object.userData.scaledBy));
+                    let position = new THREE.Vector3();
+                    let quaternion = new THREE.Quaternion();
+                    let scaleVector = new THREE.Vector3();
+                    matrix.decompose(position, quaternion, scaleVector);
+                    matrix.identity();
+                    matrix.makeTranslation(position.x, position.y, position.z);
                     objectParent.setMatrixAt(nodeObject.instanceId, matrix);
-                    nodeObject.object.userData.scaledBy = 1.0;
                     objectParent.instanceMatrix.needsUpdate = true;
-                }
+                //}
                 // set the matrix dirty
                 objectParent.instanceColor.needsUpdate = true;
 
@@ -1808,19 +1815,19 @@ function PreviewArea(canvas_, model_, name_) {
         var instance = null;
         var index = null;
         // randoms for x,y,z small offsets to make nodes less likely to overlap
-        var xRandom = 0;
-        var yRandom = 0;
-        var zRandom = 0;
-        // 0.25-1 jitter
-        xRandom = (Math.random() * 10) + 10;
-        yRandom = (Math.random() * 10) + 10;
-        zRandom = (Math.random() * 10) + 10;
+        // var xRandom = 0;
+        // var yRandom = 0;
+        // var zRandom = 0;
+        // // 0.25-1 jitter
+        // xRandom = (Math.random() * 10) + 10;
+        // yRandom = (Math.random() * 10) + 10;
+        // zRandom = (Math.random() * 10) + 10;
 
 
         for (var i = 0; i < dataset.length; i++) {
             instance = this.instances[dataset[i].group][dataset[i].hemisphere];
             index = instance.userData.nodeIndex;
-            instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(dataset[i].position.x + xRandom, dataset[i].position.y + yRandom, dataset[i].position.z + zRandom));
+            instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z));
         }
         // for (var i = 0; i < dataset.length; i++) {
         //     glyphs[i].position.set(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z);
