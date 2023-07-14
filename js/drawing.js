@@ -817,5 +817,6 @@ export {
     getEnableEB,
     getEnableIpsi, //todo: couldn't find definition
     getEnableContra,
-    setThresholdModality
+    setThresholdModality,
+    getThresholdModality
 }

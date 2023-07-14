@@ -1391,29 +1391,41 @@ function PreviewArea(canvas_, model_, name_) {
         switch (status) {
             case 'normal':
                 console.log("normal");
-                scale = 1.0;
+                // restore nodeObject to original scale and color
+                objectParent.setColorAt(nodeObject.instanceId, scaleColorGroup(null,nodeObject.object.name.group));
                 objectParent.getMatrixAt(nodeObject.instanceId, matrix);
-                matrix.scale(new THREE.Vector3(scale, scale, scale));
+                // if node was scaled by nodeObject.userData.oldScale, then to restore it to original scale, we need to scale it by 1/nodeObject.userData.oldScale
+                matrix.scale(new THREE.Vector3(1/nodeObject.userData.oldScale, 1/nodeObject.userData.oldScale, 1/nodeObject.userData.oldScale));
                 objectParent.setMatrixAt(nodeObject.instanceId, matrix);
-                objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( scaleColorGroup(null, nodeObject.object.name.group))     );
+                // set the matrix dirty
+                objectParent.instanceMatrix.needsUpdate = true;
                 objectParent.instanceColor.needsUpdate = true;
+
                 break;
 
             case 'mouseover':
                 console.log("mouseover");
                 scale = 1.72;
+                nodeObject.userData.oldScale = scale;
+                objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+                matrix.scale(new THREE.Vector3(scale, scale, scale));
+                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0)));
                 objectParent.instanceColor.needsUpdate = true;
+                objectParent.instanceMatrix.needsUpdate = true;
                 break;
 
             case 'selected':
                 console.log("selected");
                 objectParent.getMatrixAt(nodeObject.instanceId, matrix);
                 scale = 8 / 3;
+                nodeObject.userData.oldScale = scale;
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
                 objectParent.setMatrixAt(nodeObject.instanceId, matrix);
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( 1, 1, 1));
                 objectParent.instanceColor.needsUpdate = true;
+                objectParent.instanceMatrix.needsUpdate = true;
                 break;
 
             case 'root':
@@ -1430,6 +1442,7 @@ function PreviewArea(canvas_, model_, name_) {
                 console.log("newColor: ");
                 console.log(scaleColorGroup(model, nodeObject.object.name.group));
                 objectParent.instanceColor.needsUpdate = true;
+                objectParent.instanceMatrix.needsUpdate = true;
                 break;
 
             default:
@@ -1467,7 +1480,7 @@ function PreviewArea(canvas_, model_, name_) {
                 //console.log(glyphscale);
 
                 //glyphs[nodeIdx].scale.fromArray(newscale);
-                glyphs[nodeIdx].scale.set(newscale0, newscale1, newscale2);
+                //glyphs[nodeIdx].scale.set(newscale0, newscale1, newscale2);
             }
         }
     }
@@ -1731,7 +1744,7 @@ function PreviewArea(canvas_, model_, name_) {
                     /*
                     { g: group, hemisphere: hemisphere, weight: weight, instanceId: instanceId, active: false }
                     */
-
+                oldScale: 1,
 
             }
         }
@@ -1780,10 +1793,20 @@ function PreviewArea(canvas_, model_, name_) {
         var dataset = model.getDataset();
         var instance = null;
         var index = null;
+        // randoms for x,y,z small offsets to make nodes less likely to overlap
+        var xRandom = 0;
+        var yRandom = 0;
+        var zRandom = 0;
+        // 0.25-1 jitter
+        xRandom = (Math.random() * 10) + 10;
+        yRandom = (Math.random() * 10) + 10;
+        zRandom = (Math.random() * 10) + 10;
+
+
         for (var i = 0; i < dataset.length; i++) {
             instance = this.instances[dataset[i].group][dataset[i].hemisphere];
             index = instance.userData.nodeIndex;
-            instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z));
+            instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(dataset[i].position.x + xRandom, dataset[i].position.y + yRandom, dataset[i].position.z + zRandom));
         }
         // for (var i = 0; i < dataset.length; i++) {
         //     glyphs[i].position.set(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z);
@@ -1913,16 +1936,17 @@ function PreviewArea(canvas_, model_, name_) {
         if ((elapsedTime % 30) < 29.8) {
             return;
         }
-
+        console.log("updateNodesColor");
         // todo: getNodesFocused() is not working correctly at the moment.
-        //console.log(getNodesFocused());
+        console.log("nodes focused: ");
+        console.log(getNodesFocused());
         clrNodesFocused();
 
         for (var i = 0; i < glyphs.length; ++i) {
             glyphs[i].material.color = new THREE.Color(scaleColorGroup(model, dataset[i].group));
         }
     };
-    ``
+
     // set the color of displayed edges
     var shimmerEdgeNodeColors = function () {
         var dataset = model.getDataset();

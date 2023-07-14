@@ -268,9 +268,9 @@ function Model(side) {
             }
         } else {
             connectionMatrix = math.sparse(d.data); // d.data;
-            this.computeDistanceMatrix();
-            this.computeNodalStrength();
         }
+        this.computeDistanceMatrix();
+        this.computeNodalStrength();
     };
 
     // prepare the dataset data
@@ -913,19 +913,23 @@ function Model(side) {
     // compute the edges for a specific topology
     this.computeEdgesForTopology = function (topology) {
         console.log("Computing edges for " + topology);
-        var nNodes = connectionMatrix.size()[1];//length;
-        edges = [];
-        for (var i = 0; i < nNodes; i++) {
+        var nNodes = connectionMatrix.size()[1];
+        var edges = [];
+
+        for (var i = 0; i < nNodes - 1; i++) {
+            var centroidI = centroids[topology][i];
+
             for (var j = i + 1; j < nNodes; j++) {
-                if (Math.abs(connectionMatrix.get([i,j])) > 0.5) {
-                    var edge = [];
-                    edge.push(centroids[topology][i]);
-                    edge.push(centroids[topology][j]);
-                    edges.push(edge);
+                var connectionValue = Math.abs(connectionMatrix.get([i, j]));
+
+                if (connectionValue > 0.5) {
+                    var centroidJ = centroids[topology][j];
+                    edges.push([centroidI, centroidJ]);
                 }
             }
         }
 
+        return edges;
     }
 }
 
