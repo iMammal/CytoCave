@@ -1434,12 +1434,25 @@ function PreviewArea(canvas_, model_, name_) {
             case 'selected':
                 console.log("selected");
                     if(nodeObject.object.userData.scaledBy == 1.0) {
-                        objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+                        //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
                         scale = 8 / 3;
-                        nodeObject.object.userData.scaledBy = scale;
+                        //nodeObject.object.userData.scaledBy = scale;
+                        objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+                        let position = new THREE.Vector3();
+                        let quaternion = new THREE.Quaternion();
+                        let scaleVector = new THREE.Vector3();
+                        matrix.decompose(position, quaternion, scaleVector);
+                        matrix.identity();
+                        matrix.makeTranslation(position.x, position.y, position.z);
                         matrix.scale(new THREE.Vector3(scale, scale, scale));
                         objectParent.setMatrixAt(nodeObject.instanceId, matrix);
                         objectParent.instanceMatrix.needsUpdate = true;
+                        //
+                        // scale = 8 / 3;
+                        // nodeObject.object.userData.scaledBy = scale;
+                        // matrix.scale(new THREE.Vector3(scale, scale, scale));
+                        // objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+                        // objectParent.instanceMatrix.needsUpdate = true;
                     }
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( 1, 1, 1));
                 objectParent.instanceColor.needsUpdate = true;
