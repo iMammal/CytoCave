@@ -1370,10 +1370,10 @@ function PreviewArea(canvas_, model_, name_) {
 
     // update node scale according to selection status
     this.updateNodeGeometry = function (nodeObject,status) {
-        console.log("updateNodeGeometry");
-        console.log("new status: " + status);
-        console.log("nodeObject: ");
-        console.log(nodeObject);
+        // console.log("updateNodeGeometry");
+        // console.log("new status: " + status);
+        // console.log("nodeObject: ");
+        // console.log(nodeObject);
 
         let objectParent;
         if (nodeObject.object.name.hemisphere === 'left') {
@@ -1381,72 +1381,82 @@ function PreviewArea(canvas_, model_, name_) {
         } else {
             objectParent = this.instances[nodeObject.object.name.group].right;
         }
-        console.log("object Parent: ");
-        console.log(objectParent);
+        //console.log("object Parent: ");
+        //console.log(objectParent);
 
         var scale = 1.0;
         var delta = clock.getDelta();
         let matrix = new THREE.Matrix4();
-        console.log("NodeObject: ");
-        console.log(nodeObject);
+        //console.log("NodeObject: ");
+        //console.log(nodeObject);
         switch (status) {
             case 'normal':
                 console.log("normal");
                 let color = new THREE.Color(scaleColorGroup(model,nodeObject.object.name.group));
                 // restore nodeObject to original scale and color
                 objectParent.setColorAt(nodeObject.instanceId, color);
-                objectParent.getMatrixAt(nodeObject.instanceId, matrix);
-                // if node was scaled by nodeObject.userData.scaledBy, then to restore it to original scale, we need to scale it by 1/nodeObject.userData.oldScale
-                matrix.scale(new THREE.Vector3(1/nodeObject.object.userData.scaledBy, 1/nodeObject.object.userData.scaledBy, 1/nodeObject.object.userData.scaledBy));
-                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
-                nodeObject.object.userData.scaledBy = 1.0;
+                //if object was scaled, restore it
+                if (nodeObject.object.userData.scaledBy != 1.0) {
+                    objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+                    // if node was scaled by nodeObject.userData.scaledBy, then to restore it to original scale, we need to scale it by 1/nodeObject.userData.oldScale
+                    matrix.scale(new THREE.Vector3(1/nodeObject.object.userData.scaledBy, 1/nodeObject.object.userData.scaledBy, 1/nodeObject.object.userData.scaledBy));
+                    objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+                    nodeObject.object.userData.scaledBy = 1.0;
+                    objectParent.instanceMatrix.needsUpdate = true;
+                }
                 // set the matrix dirty
-                objectParent.instanceMatrix.needsUpdate = true;
                 objectParent.instanceColor.needsUpdate = true;
 
                 break;
 
             case 'mouseover':
                 console.log("mouseover");
-                scale = 1.72;
-                nodeObject.object.userData.scaledBy = scale;
-                objectParent.getMatrixAt(nodeObject.instanceId, matrix);
-                matrix.scale(new THREE.Vector3(scale, scale, scale));
-                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
-
+                if(nodeObject.object.userData.scaledBy == 1.0) {
+                    scale = 1.72;
+                    nodeObject.object.userData.scaledBy = scale;
+                    objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+                    matrix.scale(new THREE.Vector3(scale, scale, scale));
+                    objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+                    objectParent.instanceMatrix.needsUpdate = true;
+                }
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0)));
                 objectParent.instanceColor.needsUpdate = true;
-                objectParent.instanceMatrix.needsUpdate = true;
+
                 break;
 
             case 'selected':
                 console.log("selected");
-                objectParent.getMatrixAt(nodeObject.instanceId, matrix);
-                scale = 8 / 3;
-                nodeObject.object.userData.scaledBy = scale;
-                matrix.scale(new THREE.Vector3(scale, scale, scale));
-                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+                    if(nodeObject.object.userData.scaledBy == 1.0) {
+                        objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+                        scale = 8 / 3;
+                        nodeObject.object.userData.scaledBy = scale;
+                        matrix.scale(new THREE.Vector3(scale, scale, scale));
+                        objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+                        objectParent.instanceMatrix.needsUpdate = true;
+                    }
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( 1, 1, 1));
                 objectParent.instanceColor.needsUpdate = true;
-                objectParent.instanceMatrix.needsUpdate = true;
+
                 break;
 
             case 'root':
                 console.log("root");
-                scale = 10 / 3;
-                objectParent.getMatrixAt(nodeObject.instanceId, matrix);
-                matrix.scale(new THREE.Vector3(scale, scale, scale));
-                nodeObject.object.userData.scaledBy = scale;
+                    if(nodeObject.object.userData.scaledBy == 1.0) {
+                        scale = 10 / 3;
+                        nodeObject.object.userData.scaledBy = scale;
+                        objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+                        matrix.scale(new THREE.Vector3(scale, scale, scale));
+                        objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+                        objectParent.instanceMatrix.needsUpdate = true;
+                    }
                 let oldColor = new THREE.Color();
                 objectParent.getColorAt(nodeObject.instanceId, oldColor);
-                console.log("oldColor: ");
-                console.log(oldColor);
-                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color(scaleColorGroup(model, nodeObject.object.name.group)));
                 console.log("newColor: ");
                 console.log(scaleColorGroup(model, nodeObject.object.name.group));
                 objectParent.instanceColor.needsUpdate = true;
-                objectParent.instanceMatrix.needsUpdate = true;
+
                 break;
 
             default:
