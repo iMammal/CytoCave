@@ -716,7 +716,8 @@ var getNodesSelected = function () {
 }
 
 var clrNodesSelected = function () {
-    nodesSelected = [];
+    previewAreaLeft.clrNodesSelected();
+    previewAreaRight.clrNodesSelected();
 }
 
 var setNodesSelected = function (arrIndex, newNodeVal) {

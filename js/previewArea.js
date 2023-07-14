@@ -1888,6 +1888,20 @@ function PreviewArea(canvas_, model_, name_) {
         //console.log(selectedNodes);
         return selectedNodes;
     }
+
+    this.clrNodesSelected = function () {
+        // remove the selected flag from all nodes
+        var groups = this.listGroups();
+        for (let i = 0; i < groups.length; i++) {
+            for (let j = 0; j < this.instances[groups[i]].left.count; j++) {
+                this.instances[groups[i]].left.userData.selected = false;
+            }
+            for (let j = 0; j < this.instances[groups[i]].right.count; j++) {
+                this.instances[groups[i]].right.userData.selected = false;
+            }
+        }
+
+    }
     // draw all connections between the selected nodes, needs the connection matrix.
     // don't draw edges belonging to inactive nodes
     this.drawConnections = function () {
