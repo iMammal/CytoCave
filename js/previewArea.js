@@ -1387,16 +1387,19 @@ function PreviewArea(canvas_, model_, name_) {
         var scale = 1.0;
         var delta = clock.getDelta();
         let matrix = new THREE.Matrix4();
-
+        console.log("NodeObject: ");
+        console.log(nodeObject);
         switch (status) {
             case 'normal':
                 console.log("normal");
+                let color = new THREE.Color(scaleColorGroup(model,nodeObject.object.name.group));
                 // restore nodeObject to original scale and color
-                objectParent.setColorAt(nodeObject.instanceId, scaleColorGroup(null,nodeObject.object.name.group));
+                objectParent.setColorAt(nodeObject.instanceId, color);
                 objectParent.getMatrixAt(nodeObject.instanceId, matrix);
-                // if node was scaled by nodeObject.userData.oldScale, then to restore it to original scale, we need to scale it by 1/nodeObject.userData.oldScale
-                matrix.scale(new THREE.Vector3(1/nodeObject.userData.oldScale, 1/nodeObject.userData.oldScale, 1/nodeObject.userData.oldScale));
+                // if node was scaled by nodeObject.userData.scaledBy, then to restore it to original scale, we need to scale it by 1/nodeObject.userData.oldScale
+                matrix.scale(new THREE.Vector3(1/nodeObject.object.userData.scaledBy, 1/nodeObject.object.userData.scaledBy, 1/nodeObject.object.userData.scaledBy));
                 objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+                nodeObject.object.userData.scaledBy = 1.0;
                 // set the matrix dirty
                 objectParent.instanceMatrix.needsUpdate = true;
                 objectParent.instanceColor.needsUpdate = true;
@@ -1406,7 +1409,7 @@ function PreviewArea(canvas_, model_, name_) {
             case 'mouseover':
                 console.log("mouseover");
                 scale = 1.72;
-                nodeObject.userData.oldScale = scale;
+                nodeObject.object.userData.scaledBy = scale;
                 objectParent.getMatrixAt(nodeObject.instanceId, matrix);
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
                 objectParent.setMatrixAt(nodeObject.instanceId, matrix);
@@ -1420,7 +1423,7 @@ function PreviewArea(canvas_, model_, name_) {
                 console.log("selected");
                 objectParent.getMatrixAt(nodeObject.instanceId, matrix);
                 scale = 8 / 3;
-                nodeObject.userData.oldScale = scale;
+                nodeObject.object.userData.scaledBy = scale;
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
                 objectParent.setMatrixAt(nodeObject.instanceId, matrix);
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( 1, 1, 1));
@@ -1433,6 +1436,7 @@ function PreviewArea(canvas_, model_, name_) {
                 scale = 10 / 3;
                 objectParent.getMatrixAt(nodeObject.instanceId, matrix);
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
+                nodeObject.object.userData.scaledBy = scale;
                 let oldColor = new THREE.Color();
                 objectParent.getColorAt(nodeObject.instanceId, oldColor);
                 console.log("oldColor: ");
@@ -1744,7 +1748,7 @@ function PreviewArea(canvas_, model_, name_) {
                     /*
                     { g: group, hemisphere: hemisphere, weight: weight, instanceId: instanceId, active: false }
                     */
-                oldScale: 1,
+                scaledBy: 1,
 
             }
         }
