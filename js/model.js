@@ -562,38 +562,46 @@ function Model(side) {
         edgeIdx = connectionMatrix.map((value, index) => {
             const i = index[0];
             const j = index[1];
-            if (j > i && Math.abs(value) > 0) {
+            if (j > i) { // && Math.abs(value) > 0) {
                 let result = idx++; // St1ext iteration
+                //edgeIdx.set([j, i], result); // Set the symmetric entry
                 return result;
             }
-            return -1; // Return -1 for (j < i) entries
+            return 0; //-1; // Return -1 for (j < i) entries
         }, true); // skipZeros=true
 
         idx = 0; // Initialize idx to 0
         edgeIdx.forEach((value, index) => {
             const i = index[0];
             const j = index[1];
-            let retval = 0;
-            idx = idx + 1;
-
-            // if (value === -1) {
-            //     retval = 0;
-            // }
-
-            if (i === j) {
-                return 1; // i=j entries set matrix diagonal to 1
-            }
-
-            if (j < i) {
-                retval = (edgeIdx.get([j, i]));
+            if (j > i) { // && Math.abs(value) > 0) {
+                edgeIdx.set([j, i], idx++); // Set the symmetric entry
             } else {
-                retval = value;
+                return edgeIdx.get([i, j]);
             }
-            if (retval === -1) {
-                retval = 0;
-            }
-            return retval;
-        },true);
+        }, true); // skipZeros=true
+
+        //     let retval = 0;
+        //     idx = idx + 1;
+        //
+        //     // if (value === -1) {
+        //     //     retval = 0;
+        //     // }
+        //
+        //     if (i === j) {
+        //         return 1; // i=j entries set matrix diagonal to 1
+        //     }
+        //
+        //     if (j < i) {
+        //         retval = (edgeIdx.get([j, i]));
+        //     } else {
+        //         retval = value;
+        //     }
+        //     if (retval === -1) {
+        //         retval = 0;
+        //     }
+        //     return retval;
+        // },true);
 
         console.log("edgeIdx", edgeIdx);
 

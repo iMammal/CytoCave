@@ -228,10 +228,10 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         //previewArea.drawSelectedNode(objectIntersected);
         //let nodeIndex = objectIntersected.object.userData.nodeIndex;
         if (thresholdModality) {
-            //previewArea.drawEdgesGivenNode(nodeIndex);
+            previewArea.drawEdgesGivenNode(nodeIndex);
         } else {
             //const n = model.getNumberOfEdges();
-            //previewArea.drawTopNEdgesByNode(nodeIndex, n);
+            previewArea.drawTopNEdgesByNode(nodeIndex, n);
         }
         previewArea.updateNodeGeometry(objectIntersected, 'selected');
     } else {
