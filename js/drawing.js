@@ -578,8 +578,8 @@ var getIntersectedObject = function (event) {
         -(event.clientY / window.innerHeight) * 2 + 1
     );
     let iObject = isLeft ? previewAreaLeft.getIntersectedObject(vector) : previewAreaRight.getIntersectedObject(vector);
-    console.log("Intersected object: ");
-    console.log(iObject);
+    //console.log("Intersected object: ");
+    //console.log(iObject);
     return iObject;
 };
 
@@ -710,13 +710,22 @@ var getNodesSelected = function () {
     // combine the two arrays and remove duplicates
     var nodesSelected = nodesRight.concat(nodesLeft.filter(function (item) {
         return nodesRight.indexOf(item) < 0;
-    }));
-
+    }
+    ));
+    // remove duplicates
+    nodesSelected = nodesSelected.filter(function (item, pos) {
+        return nodesSelected.indexOf(item) == pos;
+        }
+    );
+    //log the result
+    console.log("nodesSelected: ");
+    console.log(nodesSelected);
     return nodesSelected;
 }
 
 var clrNodesSelected = function () {
-    nodesSelected = [];
+    previewAreaLeft.clrNodesSelected();
+    previewAreaRight.clrNodesSelected();
 }
 
 var setNodesSelected = function (arrIndex, newNodeVal) {

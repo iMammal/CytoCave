@@ -29,8 +29,8 @@ import {
     setRoot,
     getSpt,
     glyphNodeDictionary,
-    getNodesSelected,
-    clrNodesSelected,
+    //getNodesSelected,
+    //clrNodesSelected,
     setNodesSelected,
     getNodesFocused,
     clrNodesFocused,
@@ -1622,12 +1622,12 @@ function PreviewArea(canvas_, model_, name_) {
         } else {
             controls.update();
         }
-
-        animateNodeShimmer(getNodesSelected(), 0.5);
-        animateNodeShimmer(getNodesFocused(), 4);//, "#ffffff")
-        animateNodeBreathing(getNodesSelected());
-        shimmerEdgeNodeColors();
-        updateNodesColor();
+        //todo: update to account for instancing.
+        //animateNodeShimmer(getNodesSelected(), 0.5);
+        //animateNodeShimmer(getNodesFocused(), 4);//, "#ffffff")
+        //animateNodeBreathing(getNodesSelected());
+        //shimmerEdgeNodeColors();
+        //updateNodesColor();
 
         //update camera position
         camera.updateProjectionMatrix();
@@ -1778,7 +1778,7 @@ function PreviewArea(canvas_, model_, name_) {
                     /*
                     { g: group, hemisphere: hemisphere, weight: weight, instanceId: instanceId, active: false }
                     */
-                scaledBy: 1,
+
 
             }
         }
@@ -1897,10 +1897,30 @@ function PreviewArea(canvas_, model_, name_) {
                 }
             }
         }
-        //console.log("selected nodes");
-        //console.log(selectedNodes);
+        console.log("selected nodes");
+        console.log(selectedNodes);
         return selectedNodes;
     }
+
+    this.clrNodesSelected = function () {
+        // remove the selected flag from all nodes
+        var groups = this.listGroups();
+        for (let i = 0; i < groups.length; i++) {
+            this.instances[groups[i]].left.traverse(function (child) {
+                    if (child.userData.selected) {
+                        child.userData.selected = false;
+                    }
+                }
+            );
+            this.instances[groups[i]].right.traverse(function (child) {
+                    if (child.userData.selected) {
+                        child.userData.selected = false;
+                    }
+                }
+            );
+        }
+    };
+
     // draw all connections between the selected nodes, needs the connection matrix.
     // don't draw edges belonging to inactive nodes
     this.drawConnections = function () {
