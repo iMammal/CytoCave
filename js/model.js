@@ -254,9 +254,23 @@ function Model(side) {
     // set connection matrix
     this.setConnectionMatrix = function (d) {
         //console.log("set connection matrix:",Papa);
-        connectionMatrix = math.sparse(d.data); // d.data;
-        this.computeDistanceMatrix();
-        this.computeNodalStrength();
+        connectionMatrix = math.sparse();
+        if (d.data[0].length == 3) {
+            // Process each data row
+            for (let i = 0; i < d.data.length; i++) {
+                const row = d.data[i];
+                const from = row[0];
+                const to = row[1];
+                const weight = row[2];
+
+                // Assign the weight to the corresponding position in the sparse matrix
+                connectionMatrix.set([from, to], weight);
+            }
+        } else {
+            connectionMatrix = math.sparse(d.data); // d.data;
+            this.computeDistanceMatrix();
+            this.computeNodalStrength();
+        }
     };
 
     // prepare the dataset data
