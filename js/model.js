@@ -268,14 +268,11 @@ function Model(side) {
                 // Assign the weight to the corresponding position in the sparse matrix
                 connectionMatrix.set([from, to], weight);
             }
-
         } else {
             connectionMatrix = math.sparse(d.data); // d.data;
         }
-
         this.computeDistanceMatrix();
         this.computeNodalStrength();
-
     };
 
     // prepare the dataset data

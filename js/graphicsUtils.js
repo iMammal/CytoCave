@@ -110,8 +110,23 @@ var setDimensionFactorRightBox = function(value){
 
 // return the material for a node (vertex) according to its state: active or transparent
 //todo: change to static reusable materials
+let materialGroups = {};
 var getNormalMaterial = function(model, group) {
     var material, opacity = 1.0;
+
+    if (materialGroups[group] === undefined) {
+        material = new THREE.MeshPhongMaterial({
+            color: scaleColorGroup(model, group),
+            shininess: 50,
+            transparent: true,
+            specular: 0x222222,
+            reflectivity:1.3,
+            opacity: opacity
+        });
+        materialGroups[group] = material;
+    } else {
+        material = materialGroups[group];
+    }
     switch (model.getRegionState(group)){
         case 'active':
             opacity = 1.0;
@@ -119,19 +134,11 @@ var getNormalMaterial = function(model, group) {
         case 'transparent':
             opacity = 0.3;
             break;
-
         case 'inactive':
             opacity = 0.0;
             break;
     }
-    material = new THREE.MeshPhongMaterial({
-        color: scaleColorGroup(model, group),
-        shininess: 50,
-        transparent: true,
-        specular: 0x222222,
-        reflectivity:1.3,
-        opacity: opacity
-    });
+    material.opacity = opacity;
     return material;
 };
 
