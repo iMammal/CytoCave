@@ -191,6 +191,8 @@ function Model(side) {
         return activeTopology;
     };
 
+    //todo: These are the distances between the nodes in the selected topology used for edge bundling calculations.
+    // This is not the same as the distance matrix used for the shortest path calculations.
     this.computeNodesDistances = function (topology) {
         nodesDistances[topology] = [];
         // var cen = centroids[topology];
@@ -561,23 +563,39 @@ function Model(side) {
             const i = index[0];
             const j = index[1];
             if (j > i && Math.abs(value) > 0) {
-                const result = idx; // Store the current value of idx
-                idx++; // Increment idx for the next iteration
+                let result = idx++; // St1ext iteration
                 return result;
             }
             return -1; // Return -1 for (j < i) entries
         }, true); // skipZeros=true
 
+        idx = 0; // Initialize idx to 0
         edgeIdx.forEach((value, index) => {
             const i = index[0];
             const j = index[1];
-            if (j < i) {
-                return (edgeIdx.get([j, i]));
-            }
-            else  {
+            let retval = 0;
+            idx = idx + 1;
+
+            // if (value === -1) {
+            //     retval = 0;
+            // }
+
+            if (i === j) {
                 return 1; // i=j entries set matrix diagonal to 1
             }
-        });
+
+            if (j < i) {
+                retval = (edgeIdx.get([j, i]));
+            } else {
+                retval = value;
+            }
+            if (retval === -1) {
+                retval = 0;
+            }
+            return retval;
+        },true);
+
+        console.log("edgeIdx", edgeIdx);
 
         const distanceMatrix = connectionMatrix.map(value => {
             if (value !== 0) {
@@ -909,28 +927,43 @@ function Model(side) {
         }
         return newCentroids;
     };
-
-    // compute the edges for a specific topology
+// compute the edges for a specific topology
     this.computeEdgesForTopology = function (topology) {
         console.log("Computing edges for " + topology);
-        var nNodes = connectionMatrix.size()[1];
-        var edges = [];
+        var nNodes = connectionMatrix.size()[1]; //length;
+        edges = [];
 
-        for (var i = 0; i < nNodes - 1; i++) {
-            var centroidI = centroids[topology][i];
+        connectionMatrix.forEach(function (value, index) {
+            var i = index[0];
+            var j = index[1];
 
-            for (var j = i + 1; j < nNodes; j++) {
-                var connectionValue = Math.abs(connectionMatrix.get([i, j]));
-
-                if (connectionValue > 0.5) {
-                    var centroidJ = centroids[topology][j];
-                    edges.push([centroidI, centroidJ]);
-                }
+            if (Math.abs(value) > 0.5 && j > i) {
+                var edge = [];
+                edge.push(centroids[topology][i]);
+                edge.push(centroids[topology][j]);
+                edges.push(edge);
             }
-        }
+        },true);  // true to iterate over non-zero entries only
+    };
 
-        return edges;
-    }
+    // compute the edges for a specific topology
+    // this.computeEdgesForTopology = function (topology) {
+    //     console.log("Computing edges for " + topology);
+    //     var nNodes = connectionMatrix.size()[1];//length;
+    //     edges = [];
+    //     for (var i = 0; i < nNodes; i++) {
+    //         for (var j = i + 1; j < nNodes; j++) {
+    //             if (Math.abs(connectionMatrix.get([i,j])) > 0.5) {
+    //                 var edge = [];
+    //                 edge.push(centroids[topology][i]);
+    //                 edge.push(centroids[topology][j]);
+    //                 edges.push(edge);
+    //             }
+    //         }
+    //     }
+    //
+    // }
+
 }
 
 var modelLeft = new Model("Left");
