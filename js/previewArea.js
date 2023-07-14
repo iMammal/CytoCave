@@ -2169,7 +2169,7 @@ function PreviewArea(canvas_, model_, name_) {
                     myThreshold = 2;
                 }
                 if ((i != indexNode) &&
-                    (Math.abs(row[i]) > myThreshold) &&
+                    (Math.abs(row[i]) >= myThreshold) &&
                     model.isRegionActive(model.getGroupNameByNodeIndex(i)) &&
                     getVisibleNodes(i) ) {
                     //displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);

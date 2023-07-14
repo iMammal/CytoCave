@@ -311,10 +311,31 @@ function Model(side) {
         //console.log("index:",index);
         //console.log("ConnectionMatrix Size:",connectionMatrix.size());
         //console.log("ConnectionMatrix:",connectionMatrix);
-        let row = connectionMatrix.subset(math.index(index,math.range(0,connectionMatrix.size()[0]))).toArray().slice(0);
+        //let row = connectionMatrix.subset(math.index(index,math.range(0,connectionMatrix.size()[0]))).toArray().slice(0);
+        const size = connectionMatrix.size()[0];
+        const range = math.range(0, size);
+        const rowindex = math.index(index, range);
+        const row = connectionMatrix.subset(rowindex).toArray().slice(0);
+
+        // let row = connectionMatrix.subset();
+        //
+        // // Create a vector of zeros
+        // const vector = math.zeros(connectionMatrix.size()[0]+1);
+        //
+        // // Set the nth value to one (e.g., n = 10)
+        //
+        // vector.set([index], 1);
+        //
+        // // Multiply the vector by the matrix to get the nth row vector
+        // const nthRow = math.multiply(connectionMatrix,vector);
+        //
+        // console.log(nthRow);
+
+
         //console.log("Row: ");
         //console.log(row);
         return row[0];
+
         //return connectionMatrix.subset(math.index(index,math.range(0,connectionMatrix.size()[0]))).toArray().slice(0);
 
     };
@@ -562,7 +583,7 @@ function Model(side) {
         edgeIdx = connectionMatrix.map((value, index) => {
             const i = index[0];
             const j = index[1];
-            if (j > i) { // && Math.abs(value) > 0) {
+            if (true || (j > i)) { // && Math.abs(value) > 0) {
                 let result = idx++; // St1ext iteration
                 //edgeIdx.set([j, i], result); // Set the symmetric entry
                 return result;
@@ -574,11 +595,14 @@ function Model(side) {
         edgeIdx.forEach((value, index) => {
             const i = index[0];
             const j = index[1];
-            if (j > i) { // && Math.abs(value) > 0) {
-                edgeIdx.set([j, i], idx++); // Set the symmetric entry
-            } else {
-                return edgeIdx.get([i, j]);
-            }
+            edgeIdx.set([j, i], value);
+            return value;
+
+            // if (j > i) { // && Math.abs(value) > 0) {
+            //     edgeIdx.set([j, i], idx++); // Set the symmetric entry
+            // } else {
+            //     return edgeIdx.get([i, j]);
+            // }
         }, true); // skipZeros=true
 
         //     let retval = 0;
@@ -945,7 +969,7 @@ function Model(side) {
             var i = index[0];
             var j = index[1];
 
-            if (Math.abs(value) > 0.5 && j > i) {
+            if (Math.abs(value) > 0.5 || j > i) {
                 var edge = [];
                 edge.push(centroids[topology][i]);
                 edge.push(centroids[topology][j]);
