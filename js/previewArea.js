@@ -1727,7 +1727,12 @@ function PreviewArea(canvas_, model_, name_) {
                 nodeIndex: i, //overall index according to load order
                 instanceIndex: topIndexes[dataset[i].group][dataset[i].hemisphere], //index within the instance
                 selected: false,
-                
+                edges: {},
+                    /*
+                    { g: group, hemisphere: hemisphere, weight: weight, instanceId: instanceId, active: false }
+                    */
+
+
             }
         }
 
