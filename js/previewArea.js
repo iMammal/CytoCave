@@ -1917,7 +1917,7 @@ function PreviewArea(canvas_, model_, name_) {
             glyphs[i].material.color = new THREE.Color(scaleColorGroup(model, dataset[i].group));
         }
     };
-    ``
+
     // set the color of displayed edges
     var shimmerEdgeNodeColors = function () {
         var dataset = model.getDataset();
