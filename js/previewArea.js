@@ -1925,8 +1925,10 @@ function PreviewArea(canvas_, model_, name_) {
     // don't draw edges belonging to inactive nodes
     this.drawConnections = function () {
         var nodeIdx;
-        for (var i = 0; i < getNodesSelected().length; i++) {
-            nodeIdx = getNodesSelected()[i];
+        let nodesSelected = this.getNodesSelected();
+        let numNodesSelected = nodesSelected.length;
+        for (var i = 0; i < nodesSelected; i++) {
+            nodeIdx = nodesSelected[i];
             // draw only edges belonging to active nodes
             if ((nodeIdx >= 0) && model.isRegionActive(model.getGroupNameByNodeIndex(nodeIdx))) {
                 // two ways to draw edges

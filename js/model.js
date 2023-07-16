@@ -591,6 +591,8 @@ function Model(side) {
             return 0; //-1; // Return -1 for (j < i) entries
         }, true); // skipZeros=true
 
+        //let edgeIdxTr = edgeIdx.transpose();
+
         idx = 0; // Initialize idx to 0
         edgeIdx.forEach((value, index) => {
             const i = index[0];
