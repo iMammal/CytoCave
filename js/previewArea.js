@@ -59,6 +59,7 @@ import {timerDelta} from "three/examples/jsm/nodes/shadernode/ShaderNodeElements
 import {WebXRManager} from "three/src/renderers/webxr/WebXRManager";
 import {abs, sign} from "mathjs";
 import {NODE_STREAM_INPUT} from "papaparse";
+import {modelLeft} from "./model";
 
 //import * as d3 from '../external-libraries/d3'
 
@@ -1781,6 +1782,13 @@ function PreviewArea(canvas_, model_, name_) {
 
 
             }
+
+            instance.getEdges = function () {
+                let row = model.getConnectionMatrixRow(this.userData.nodeIndex);
+
+
+            }
+
         }
 
 
@@ -1841,6 +1849,8 @@ function PreviewArea(canvas_, model_, name_) {
             instance = this.instances[dataset[i].group][dataset[i].hemisphere];
             index = instance.userData.nodeIndex;
             instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z));
+            // set matrix needs update to true
+            instance.instanceMatrix.needsUpdate = true;
         }
         // for (var i = 0; i < dataset.length; i++) {
         //     glyphs[i].position.set(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z);
@@ -1948,9 +1958,12 @@ function PreviewArea(canvas_, model_, name_) {
             brain.add(shortestPathEdges[i]);
         }
 
-        // setEdgesColor();
+        this.setEdgesColor();
     };
 
+    this.setEdgesColor = function () {
+
+    }
     // skew the color distributio n according to the nodes strength
     var computeColorGradient = function (c1, c2, n, p) {
         var gradient = new Float32Array(n * 3);

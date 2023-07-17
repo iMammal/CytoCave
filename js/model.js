@@ -315,7 +315,7 @@ function Model(side) {
         const size = connectionMatrix.size()[0];
         const range = math.range(0, size);
         const rowindex = math.index(index, range);
-        const row = connectionMatrix.subset(rowindex).toArray().slice(0);
+        const row = connectionMatrix.subset(rowindex);
 
         // let row = connectionMatrix.subset();
         //
