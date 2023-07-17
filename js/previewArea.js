@@ -1776,27 +1776,40 @@ function PreviewArea(canvas_, model_, name_) {
 
             /////////////////////////////////
             // IMPORTANT: Any variable in userdata must be prototypes here before being used
-            instance.userData = {
-                nodeIndex: dataset[i].label, //overall index according to load order
-                instanceIndex: topIndexes[dataset[i].group][dataset[i].hemisphere], //index within the instance
-                selected: false,
-                edgesActive: false
-
-                    /*
-                    { g: group, hemisphere: hemisphere, weight: weight, instanceId: instanceId, active: false }
-                    */
-
-
+            //if there is no userData on the instance create it.
+            if (instance.userData === undefined) {
+                instance.userData = {
+                    indexList: [], //contains the dataset index of the nodes in the instance
+                };
+                //push the dataset index to the instance.userData.indexList
+                instance.userData.indexList.push(i); //or maybe dataset[i].label they are 1 off from each other. Todo: check this
+            } else {
+                // if userData already exists push the dataset index to the instance.userData.indexList
+                instance.userData.indexList.push(i); //or maybe dataset[i].label they are 1 off from each other. Todo: check this
             }
+            //push dataset.label to instance.userData.indexList
             // if userData failed to populate log it.
-            if (instance.userData.nodeIndex === undefined) {
-                console.log("Error: userData.nodeIndex is undefined");
-            }
-            // if userData does not contain a nodeIndex log it.
-            if (instance.userData.nodeIndex === undefined) {
-                console.log("Error: userData.nodeIndex is undefined");
-                // log dataset label
-                console.log(dataset[i].label);
+
+            instance.getIndex = function (nodeObject) {
+                //get object parent
+                let parent;
+                if(nodeObject.object.name.hemisphere == 'left') {
+                    parent = this.instances[nodeObject.name.group].left;
+                } else {
+                    parent = this.instances[nodeObject.name.group].right;
+                }
+
+                // correlate the dataset[].label to the instanceId
+                //return parent.userData.indexList[nodeObject.instanceId];
+                // add some error checking
+                if (parent.userData.indexList[nodeObject.instanceId] === undefined) {
+                    console.log("Error: Could not find index for instanceId: " + nodeObject.instanceId);
+                    return -1;
+                } else {
+                    return parent.userData.indexList[nodeObject.instanceId];
+                }
+
+
             }
 
             instance.getEdges = function () {
@@ -1808,7 +1821,8 @@ function PreviewArea(canvas_, model_, name_) {
                 row.forEach(function (weight, index) {
                     //var i = index[0];
                     //let edgeToId = index[1];
-
+                    console.log("index: ");
+                    console.log(index);
                     if (weight > 0) {
                         let edge = {
                             //g: dataset[index].group,
