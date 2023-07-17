@@ -1948,10 +1948,10 @@ function PreviewArea(canvas_, model_, name_) {
             brain.add(shortestPathEdges[i]);
         }
 
-        // setEdgesColor();
+        //setEdgesColor();
     };
 
-    // skew the color distributio n according to the nodes strength
+    // skew the color distribution according to the nodes strength
     var computeColorGradient = function (c1, c2, n, p) {
         var gradient = new Float32Array(n * 3);
         var p1 = p;

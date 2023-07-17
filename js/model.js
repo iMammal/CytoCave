@@ -971,7 +971,7 @@ function Model(side) {
             var i = index[0];
             var j = index[1];
 
-            if (Math.abs(value) > 0.5 || j > i) {
+            if (Math.abs(value) > 0.5 ) { //|| j > i) {
                 var edge = [];
                 edge.push(centroids[topology][i]);
                 edge.push(centroids[topology][j]);
