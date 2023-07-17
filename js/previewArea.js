@@ -1714,6 +1714,8 @@ function PreviewArea(canvas_, model_, name_) {
     // assumes all nodes are visible, nothing is selected
     this.drawRegions = function () {
         var dataset = model.getDataset();
+        console.log("Dataset: ");
+        console.log(dataset);
         // for each group and hemisphere in the dataset, create an instance mesh
         var groups = this.listGroups();
 
@@ -1775,7 +1777,7 @@ function PreviewArea(canvas_, model_, name_) {
             /////////////////////////////////
             // IMPORTANT: Any variable in userdata must be prototypes here before being used
             instance.userData = {
-                nodeIndex: i, //overall index according to load order
+                nodeIndex: dataset[i].label, //overall index according to load order
                 instanceIndex: topIndexes[dataset[i].group][dataset[i].hemisphere], //index within the instance
                 selected: false,
                 edgesActive: false
@@ -1786,10 +1788,21 @@ function PreviewArea(canvas_, model_, name_) {
 
 
             }
+            // if userData failed to populate log it.
+            if (instance.userData.nodeIndex === undefined) {
+                console.log("Error: userData.nodeIndex is undefined");
+            }
+            // if userData does not contain a nodeIndex log it.
+            if (instance.userData.nodeIndex === undefined) {
+                console.log("Error: userData.nodeIndex is undefined");
+                // log dataset label
+                console.log(dataset[i].label);
+            }
 
             instance.getEdges = function () {
                 let row = model.getConnectionMatrixRow(this.userData.nodeIndex);
-
+                console.log("Row: ");
+                console.log(row);
                 let edges = [];
 
                 row.forEach(function (weight, index) {
@@ -1802,8 +1815,10 @@ function PreviewArea(canvas_, model_, name_) {
                             //hemisphere: dataset[index].hemisphere,
                             weight: weight,
                             targetNodeId: index[1],
-                            active: false
+                            //active: false
                         };
+                        //log creation of edge
+                        console.log("Edge created: " + edge.targetNodeId + " with weight " + edge.weight);
                         edges.push(edge);
                     }
                 }, true); // true: skip zeros
@@ -1912,27 +1927,26 @@ function PreviewArea(canvas_, model_, name_) {
         // check all instances and return the nodeIndex of ones flagged as selected
         let selectedNodes = [];
         var groups = this.listGroups();
+
+        // for each group and hemisphere in instances add to sellectedNodes if selected equals true
         for (let i = 0; i < groups.length; i++) {
-            for (let j = 0; j < this.instances[groups[i]].left.count; j++) {
-                if (this.instances[groups[i]].left[j].userData.selected) {
-                    // check if the node is already in the list
-                    if (selectedNodes.indexOf(this.instances[groups[i]].left[j].userData.nodeIndex) !== -1) {
-                        selectedNodes.push(this.instances[groups[i]].left[j]);
-                    }
-
-                }
-            }
-
-
-            for (let j = 0; j < this.instances[groups[i]].right.count; j++) {
-                if (this.instances[groups[i]].right[j].userData.selected) {
-                    if (selectedNodes.indexOf(this.instances[groups[i]].right[j].userData.nodeIndex) !== -1) {
-                        selectedNodes.push(this.instances[groups[i]].right[j]);
+            this.instances[groups[i]].left.traverse(function (child) {
+                    if (child.userData.selected) {
+                        selectedNodes.push(child);
                     }
                 }
-            }
+            );
+
+            this.instances[groups[i]].right.traverse(function (child) {
+                    if (child.userData.selected) {
+                        selectedNodes.push(child);
+                    }
+                }
+            );
+
         }
-        console.log("selected nodes");
+
+        console.log("Selected Nodes: ");
         console.log(selectedNodes);
         return selectedNodes;
     }
@@ -1956,28 +1970,95 @@ function PreviewArea(canvas_, model_, name_) {
         }
     };
 
+    this.getNodeByIndex = function (nodeIndex) {
+    //traverse instances return node where userData.nodeIndex == nodeIndex
+        let groups = this.listGroups();
+        let match = null;
+        for (let i = 0; i < groups.length; i++) {
+            match = this.instances[groups[i]].left.traverse(function (child) {
+                        console.log("Child: ");
+                        console.log(child);
+                        if (!child.userData) {
+                            console.log("Child has no userData");
+                        }
+                        if (child.userData.nodeIndex == nodeIndex) {
+                            return child;
+                        }
+                    }
+                );
+            if (match) {
+                return match;
+            }
+            match = this.instances[groups[i]].right.traverse(function (child) {
+                        console.log("Child: ");
+                        console.log(child);
+                        if (!child.userData) {
+                            console.log("Child has no userData");
+                        }
+                        if (child.userData.nodeIndex == nodeIndex) {
+                            return child;
+                        }
+                    }
+                );
+
+            if (match) {
+                return match;
+            }
+        }
+        console.log("No Match: ");
+        console.log(nodeIndex);
+        return null;
+            // this.instances[groups[i]].right.traverse(function (child) {
+            //     console.log("Child: ");
+            //     console.log(child);
+            //         if (child.userData.nodeIndex == nodeIndex) {
+            //             return child;
+            //         }
+            //     }
+            // );
+
+    };
+
     // draw all connections between the selected nodes, needs the connection matrix.
     // don't draw edges belonging to inactive nodes
     this.drawConnections = function () {
 
         let activeEdges = this.getActiveEdges();
+        console.log("Active Edges: ");
+        console.log(activeEdges);
+
 
         for (var i = 0; i <  activeEdges.length; i++) {
-            nodeIdx = activeEdges[i];
-            // draw only edges belonging to active nodes
-            if ((nodeIdx >= 0) && model.isRegionActive(model.getGroupNameByNodeIndex(nodeIdx))) {
-                // two ways to draw edges
-                if (getThresholdModality()) {
-                    // 1) filter edges according to threshold
-                    this.drawEdgesGivenNode(nodeIdx);
+            let node = activeEdges[i][0];
+            for (var j = 0; j < activeEdges[i][1].length; j++) {
+                let targetNode = this.getNodeByIndex(activeEdges[i][1][j].targetNodeId);
+                if(!targetNode) {
+                    console.log("No target node found");
+                    console.log(activeEdges[i][1][j].targetNodeId);
                 } else {
-                    // 2) draw top n edges connected to the selected node
-                    this.drawTopNEdgesByNode(nodeIdx, model.getNumberOfEdges());
+                    console.log("Target Node: ");
+                    console.log(targetNode);
                 }
-            }
-        }
 
+                //let edge = createLine();
+            }
+            //let targetNode = this.getNodeByIndex(activeEdges[i][1].targetNodeId);
+
+
+            // // draw only edges belonging to active nodes
+            // if ((nodeIdx >= 0) && model.isRegionActive(model.getGroupNameByNodeIndex(nodeIdx))) {
+            //     // two ways to draw edges
+            //     if (getThresholdModality()) {
+            //         // 1) filter edges according to threshold
+            //         this.drawEdgesGivenNode(nodeIdx);
+            //     } else {
+            //         // 2) draw top n edges connected to the selected node
+            //         this.drawTopNEdgesByNode(nodeIdx, model.getNumberOfEdges());
+            //     }
+            }
     }
+
+
 
     this.getActiveEdges = function () {
         var nodeIdx;
@@ -1987,20 +2068,20 @@ function PreviewArea(canvas_, model_, name_) {
 
         // get all edges connected to the selected nodes
         for (var i = 0; i < numNodesSelected; i++) {
-            activeEdges.push(nodesSelected[i].getActiveEdges());
+            activeEdges.push([nodesSelected[i],nodesSelected[i].getEdges()]);
         }
 
-
+        return activeEdges;
 
         // draw all edges belonging to the shortest path array
-        if (getSpt()) {
-            for (i = 0; i < shortestPathEdges.length; i++) {
-                displayedEdges[displayedEdges.length] = shortestPathEdges[i];
-                brain.add(shortestPathEdges[i]);
-            }
-        }
+        // if (getSpt()) {
+        //     for (i = 0; i < shortestPathEdges.length; i++) {
+        //         displayedEdges[displayedEdges.length] = shortestPathEdges[i];
+        //         brain.add(shortestPathEdges[i]);
+        //     }
+        // }
 
-        this.setEdgesColor();
+        //this.setEdgesColor();
     };
 
     this.setEdgesColor = function () {
