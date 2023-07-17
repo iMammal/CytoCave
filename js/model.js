@@ -334,7 +334,7 @@ function Model(side) {
 
         //console.log("Row: ");
         //console.log(row);
-        return row[0];
+        return row;
 
         //return connectionMatrix.subset(math.index(index,math.range(0,connectionMatrix.size()[0]))).toArray().slice(0);
 

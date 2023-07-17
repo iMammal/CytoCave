@@ -1411,6 +1411,9 @@ function PreviewArea(canvas_, model_, name_) {
                     matrix.makeTranslation(position.x, position.y, position.z);
                     objectParent.setMatrixAt(nodeObject.instanceId, matrix);
                     objectParent.instanceMatrix.needsUpdate = true;
+
+                    nodeObject.object.userData.edgesActive = false;
+
                 //}
                 // set the matrix dirty
                 objectParent.instanceColor.needsUpdate = true;
@@ -1448,12 +1451,9 @@ function PreviewArea(canvas_, model_, name_) {
                         matrix.scale(new THREE.Vector3(scale, scale, scale));
                         objectParent.setMatrixAt(nodeObject.instanceId, matrix);
                         objectParent.instanceMatrix.needsUpdate = true;
-                        //
-                        // scale = 8 / 3;
-                        // nodeObject.object.userData.scaledBy = scale;
-                        // matrix.scale(new THREE.Vector3(scale, scale, scale));
-                        // objectParent.setMatrixAt(nodeObject.instanceId, matrix);
-                        // objectParent.instanceMatrix.needsUpdate = true;
+
+                        console.log("Edges " , nodeObject.object.getEdges());
+                        nodeObject.object.userData.edgesActive = true;
                     }
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( 1, 1, 1));
                 objectParent.instanceColor.needsUpdate = true;
@@ -1684,7 +1684,7 @@ function PreviewArea(canvas_, model_, name_) {
 
     // updating scenes: redrawing glyphs and displayed edges
     this.updateScene = function () {
-        updateNodesPositions();
+        //updateNodesPositions(); // todo: update to account for instancing
         this.updateNodesVisibility();
         this.redrawEdges();
     };
@@ -1771,11 +1771,15 @@ function PreviewArea(canvas_, model_, name_) {
             instance.setColorAt(index, instance.material.color);
             // increment the index
             topIndexes[dataset[i].group][dataset[i].hemisphere]++;
+
+            /////////////////////////////////
+            // IMPORTANT: Any variable in userdata must be prototypes here before being used
             instance.userData = {
                 nodeIndex: i, //overall index according to load order
                 instanceIndex: topIndexes[dataset[i].group][dataset[i].hemisphere], //index within the instance
                 selected: false,
-                edges: {},
+                edgesActive: false
+
                     /*
                     { g: group, hemisphere: hemisphere, weight: weight, instanceId: instanceId, active: false }
                     */
@@ -1786,6 +1790,25 @@ function PreviewArea(canvas_, model_, name_) {
             instance.getEdges = function () {
                 let row = model.getConnectionMatrixRow(this.userData.nodeIndex);
 
+                let edges = [];
+
+                row.forEach(function (weight, index) {
+                    //var i = index[0];
+                    //let edgeToId = index[1];
+
+                    if (weight > 0) {
+                        let edge = {
+                            //g: dataset[index].group,
+                            //hemisphere: dataset[index].hemisphere,
+                            weight: weight,
+                            targetNodeId: index[1],
+                            active: false
+                        };
+                        edges.push(edge);
+                    }
+                }, true); // true: skip zeros
+
+                return edges;
 
             }
 
@@ -1891,18 +1914,20 @@ function PreviewArea(canvas_, model_, name_) {
         var groups = this.listGroups();
         for (let i = 0; i < groups.length; i++) {
             for (let j = 0; j < this.instances[groups[i]].left.count; j++) {
-                if (this.instances[groups[i]].left.userData.selected) {
+                if (this.instances[groups[i]].left[j].userData.selected) {
                     // check if the node is already in the list
-                    if (selectedNodes.indexOf(this.instances[groups[i]].left.userData.nodeIndex) == -1) {
-                        selectedNodes.push(this.instances[groups[i]].left.userData.nodeIndex);
+                    if (selectedNodes.indexOf(this.instances[groups[i]].left[j].userData.nodeIndex) !== -1) {
+                        selectedNodes.push(this.instances[groups[i]].left[j]);
                     }
 
                 }
             }
+
+
             for (let j = 0; j < this.instances[groups[i]].right.count; j++) {
-                if (this.instances[groups[i]].right.userData.selected) {
-                    if (selectedNodes.indexOf(this.instances[groups[i]].right.userData.nodeIndex) == -1) {
-                        selectedNodes.push(this.instances[groups[i]].right.userData.nodeIndex);
+                if (this.instances[groups[i]].right[j].userData.selected) {
+                    if (selectedNodes.indexOf(this.instances[groups[i]].right[j].userData.nodeIndex) !== -1) {
+                        selectedNodes.push(this.instances[groups[i]].right[j]);
                     }
                 }
             }
@@ -1934,11 +1959,11 @@ function PreviewArea(canvas_, model_, name_) {
     // draw all connections between the selected nodes, needs the connection matrix.
     // don't draw edges belonging to inactive nodes
     this.drawConnections = function () {
-        var nodeIdx;
-        let nodesSelected = this.getNodesSelected();
-        let numNodesSelected = nodesSelected.length;
-        for (var i = 0; i < nodesSelected; i++) {
-            nodeIdx = nodesSelected[i];
+
+        let activeEdges = this.getActiveEdges();
+
+        for (var i = 0; i <  activeEdges.length; i++) {
+            nodeIdx = activeEdges[i];
             // draw only edges belonging to active nodes
             if ((nodeIdx >= 0) && model.isRegionActive(model.getGroupNameByNodeIndex(nodeIdx))) {
                 // two ways to draw edges
@@ -1952,10 +1977,27 @@ function PreviewArea(canvas_, model_, name_) {
             }
         }
 
+    }
+
+    this.getActiveEdges = function () {
+        var nodeIdx;
+        let nodesSelected = this.getNodesSelected();
+        let numNodesSelected = nodesSelected.length;
+        let activeEdges = [];
+
+        // get all edges connected to the selected nodes
+        for (var i = 0; i < numNodesSelected; i++) {
+            activeEdges.push(nodesSelected[i].getActiveEdges());
+        }
+
+
+
         // draw all edges belonging to the shortest path array
-        for (i = 0; i < shortestPathEdges.length; i++) {
-            displayedEdges[displayedEdges.length] = shortestPathEdges[i];
-            brain.add(shortestPathEdges[i]);
+        if (getSpt()) {
+            for (i = 0; i < shortestPathEdges.length; i++) {
+                displayedEdges[displayedEdges.length] = shortestPathEdges[i];
+                brain.add(shortestPathEdges[i]);
+            }
         }
 
         this.setEdgesColor();
@@ -2180,6 +2222,8 @@ function PreviewArea(canvas_, model_, name_) {
         if (getEnableEB()) {
             model.performEBOnNode(indexNode);
         }
+
+        return;  // todo: get back to this after edge thresholding is re-implemented
 
         //console.log("contra: "+getEnableContra()+"...ipsi: "+getEnableIpsi());
 
