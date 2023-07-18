@@ -226,7 +226,7 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         console.log("objectIntersected.object.userData.selected: ", objectIntersected.object.userData.selected);
         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         //previewArea.drawSelectedNode(objectIntersected);
-        let nodeIndex = objectIntersected.object.userData.nodeIndex;
+        let nodeIndex = objectIntersected.object.getDatasetIndex(objectIntersected);
         if (thresholdModality) {
             previewArea.drawEdgesGivenNode(nodeIndex);
         } else {
