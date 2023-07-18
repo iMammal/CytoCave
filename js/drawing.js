@@ -251,6 +251,8 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         //previewArea.drawSelectedNode(objectIntersected);
         let nodeIndex = objectIntersected.object.getDatasetIndex(objectIntersected);
+        let activeEdges = previewArea.drawConnections(); //do we want to draw the connectinos there or here in drawing? My vote is here.
+        //todo: work out the below.
         if (thresholdModality) {
             previewArea.drawEdgesGivenNode(nodeIndex);
         } else {

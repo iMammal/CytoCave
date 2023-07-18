@@ -1432,7 +1432,7 @@ function PreviewArea(canvas_, model_, name_) {
             case 'mouseover':
                 console.log("mouseover");
                 //todo track mouseover.
-                break;
+                //break;
                 scale = 1.72;
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
                 objectParent.setMatrixAt(nodeObject.instanceId, matrix);
@@ -1459,7 +1459,7 @@ function PreviewArea(canvas_, model_, name_) {
                 objectParent.setMatrixAt(nodeObject.instanceId, matrix);
                 objectParent.instanceMatrix.needsUpdate = true;
                 // if node is not on list of selectedNodes, add it
-                this.drawConnections();
+                //this.drawConnections();//better done in mouseclick
 
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( 1, 1, 1));
                 objectParent.instanceColor.needsUpdate = true;
@@ -2296,6 +2296,8 @@ function PreviewArea(canvas_, model_, name_) {
             //         this.drawTopNEdgesByNode(nodeIdx, model.getNumberOfEdges());
             //     }
             }
+        //letting drawing do the work here, it just needs the data
+        return activeEdges;
     }
 
 
