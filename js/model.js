@@ -905,10 +905,12 @@ function Model(side) {
     };
 
     this.getActiveEdges = function () {
+        console.log("model getActiveEdges");
         return edges;
     };
 
     this.getEdgesIndeces = function () {
+        console.log("model getEdgesIndeces");
         return edgeIdx;
     };
 
