@@ -60,6 +60,7 @@ import {WebXRManager} from "three/src/renderers/webxr/WebXRManager";
 import {abs, sign} from "mathjs";
 import {NODE_STREAM_INPUT} from "papaparse";
 import {modelLeft} from "./model";
+import node from "three/addons/nodes/core/Node";
 
 //import * as d3 from '../external-libraries/d3'
 
@@ -1375,19 +1376,15 @@ function PreviewArea(canvas_, model_, name_) {
         // console.log("new status: " + status);
         // console.log("nodeObject: ");
         // console.log(nodeObject);
-
         let objectParent = nodeObject.object;
+        let testObject = this.instances[objectParent.name.group][objectParent.name.hemisphere];
+        //do the above two lines reference the same object?
+        //log them both
+        console.log("objectParent: ");
+        console.log(objectParent);
+        console.log("testObject: ");
+        console.log(testObject);
 
-        //console.log("object Parent: ");
-        //console.log(objectParent);
-        console.log("nodeObject: ");
-        console.log(nodeObject);
-        //compare nodeObject to objectParent
-        console.log("nodeObject.object.name: ");
-        console.log(nodeObject.object.name);
-        console.log("objectParent.name: ");
-        console.log(objectParent.name);
-        console.assert(nodeObject.object.name === objectParent.name);
         let scale = 1.0;
         let delta = clock.getDelta();
         let matrix = new THREE.Matrix4();
@@ -1402,9 +1399,7 @@ function PreviewArea(canvas_, model_, name_) {
         //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
         position.setFromMatrixPosition(matrix);
         //matrix.decompose(position, quaternion, scaleVector);
-        position = new THREE.Vector3();
-        quaternion = new THREE.Quaternion();
-        scaleVector = new THREE.Vector3();
+
         //log position, quaternion and scaleVector
         console.log("position: ");
         console.log(position);
@@ -1412,12 +1407,10 @@ function PreviewArea(canvas_, model_, name_) {
         switch (status) {
             case 'normal':
                 //check if datasetIndex is in selectedNodes already if it is not, then do nothing
-                if (!objectParent.userData.selectedNodes.includes(datasetIndex)) {
-                    console.log("setting normal, but datasetIndex not in selectedNodes, abort.");
-                    return;
-                } else {
-                    console.log("setting normal, datasetIndex is in selectedNodes, continue.");
-                    console.log("datasetIndex: " + datasetIndex);
+                if (!objectParent.isSelected(nodeObject)) {
+                    console.log("setting normal, but datasetIndex not in selectedNodes," +
+                        "may be normalizing unhandled state. Recommend unselecting directly following this" +
+                        " call");
                 }
                 console.log("normal");
                 let color = new THREE.Color(scaleColorGroup(model,nodeObject.object.name.group));
@@ -1438,7 +1431,8 @@ function PreviewArea(canvas_, model_, name_) {
 
             case 'mouseover':
                 console.log("mouseover");
-
+                //todo track mouseover.
+                break;
                 scale = 1.72;
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
                 objectParent.setMatrixAt(nodeObject.instanceId, matrix);
@@ -1449,13 +1443,12 @@ function PreviewArea(canvas_, model_, name_) {
                 break;
 
             case 'selected':
-                console.log("selected");
-                if (!objectParent.userData.selectedNodes.includes(datasetIndex)) {
-                    objectParent.userData.selectedNodes.push(datasetIndex);
+                console.log("selected state");
+                if (!objectParent.isSelected(nodeObject)) {
+                    objectParent.select(datasetIndex);
                     console.log("Added to selectedNodes: " + datasetIndex);
-                } else {
-                    console.log("Already in selectedNodes: " + datasetIndex);
-                    return;
+                    console.log("Please adjust calling function to check if node is already selected.");
+                    console.log("Applying scale and translation may cause problems if node is already selected.");
                 }
                 //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
                 scale = 8 / 3;
@@ -1466,18 +1459,6 @@ function PreviewArea(canvas_, model_, name_) {
                 objectParent.setMatrixAt(nodeObject.instanceId, matrix);
                 objectParent.instanceMatrix.needsUpdate = true;
                 // if node is not on list of selectedNodes, add it
-                console.log("Selecting: " + nodeObject.instanceId);
-                //objectParent.userData.selectedNodes.push(objectParent.getDatasetIndex(nodeObject));
-                if (!objectParent.userData.selectedNodes.includes(datasetIndex)) {
-                    objectParent.userData.selectedNodes.push(datasetIndex);
-                    console.log("Added to selectedNodes: " + datasetIndex);
-                } else {
-                    console.log("Already in selectedNodes: " + datasetIndex);
-                }
-
-                console.log('Selected Nodes: ' + objectParent.userData.selectedNodes);
-                console.log("Edges " , objectParent.getEdges(nodeObject));
-
                 this.drawConnections();
 
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( 1, 1, 1));
@@ -1834,6 +1815,13 @@ function PreviewArea(canvas_, model_, name_) {
                 }
             };
 
+            instance.getSelectedNodes = function() {
+                if(instance.userData.selectedNodes === undefined) {
+                    instance.userData.selectedNodes = [];
+                }
+                return instance.userData.selectedNodes;
+            }
+
             instance.getData = function(nodeObject) {
                 let index = instance.getDatasetIndex(nodeObject);
                 return model.getDataset()[index];
@@ -1845,9 +1833,14 @@ function PreviewArea(canvas_, model_, name_) {
                 if (instance.userData.selectedNodes === undefined) {
                     return false;
                 }
-                if (instance.userData.selectedNodes.includes(index)) {
+                // return true if it is, false if it isn't
+                if(instance.userData.selectedNodes.includes(index)){
+                    console.log("Yes Node is selected");
                     return true;
+                } else {
+                    return false;
                 }
+                //return instance.userData.selectedNodes.includes(index);
             }
 
             instance.select = function(nodeObject) {
@@ -1941,6 +1934,9 @@ function PreviewArea(canvas_, model_, name_) {
 
                 return edges;
             };
+
+
+
         }
 
         // mark instances as dirty
@@ -2184,14 +2180,45 @@ function PreviewArea(canvas_, model_, name_) {
         }
     };
 
-    this.getNodesSelected = function () {
+    this.getSelectedNodes = function () {
         //concat the list of indexes from each instance selectedNodes array into one array
         var groups = this.listGroups();
         var selectedNodes = [];
         for (let i = 0; i < groups.length; i++) {
-            selectedNodes = selectedNodes.concat(this.instances[groups[i]].left.selectedNodes);
-            selectedNodes = selectedNodes.concat(this.instances[groups[i]].right.selectedNodes);
+            //verify that the instance exists
+            if (this.instances[groups[i]] === undefined) {
+                console.log("instance undefined: " + groups[i]);
+                continue;
+            }
+            //verify that the instance is the left hemisphere
+            if (this.instances[groups[i]]['left'] === undefined) {
+                console.log("instance left undefined: " + groups[i]);
+            }
+            //verify that the instance is the right hemisphere
+            if (this.instances[groups[i]]['right'] === undefined) {
+                console.log("instance right undefined: " + groups[i]);
+            }
+            //getSelectedNodes may not exist in some cases check first.
+            if (this.instances[groups[i]]['left'].getSelectedNodes === undefined) {
+                console.log("getSelectedNodes left undefined: " + groups[i]);
+            }
+            else {
+                selectedNodes = selectedNodes.concat(this.instances[groups[i]]['left'].getSelectedNodes());
+            }
+            if (this.instances[groups[i]]['right'].getSelectedNodes === undefined) {
+                console.log("getSelectedNodes right undefined: " + groups[i]);
+            }
+            else {
+                selectedNodes = selectedNodes.concat(this.instances[groups[i]]['right'].getSelectedNodes());
+            }
+
         }
+        //remove undefined values
+        selectedNodes = selectedNodes.filter(function (n) {
+            return n !== undefined
+        } );
+        console.log("selectedNodes: ");
+        console.log(selectedNodes);
         return selectedNodes;
     }
 
@@ -2310,7 +2337,7 @@ function PreviewArea(canvas_, model_, name_) {
 
     this.getActiveEdges = function () {
         var nodeIdx;
-        let nodesSelected = this.getNodesSelected();
+        let nodesSelected = this.getSelectedNodes();
         let numNodesSelected = nodesSelected.length;
         let activeEdges = [];
 

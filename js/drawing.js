@@ -90,6 +90,16 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     //console.log(intersectedObject);
     if(intersectedObject === undefined)
         return;
+    //check if name is defined, if not, it is not a node
+    if (intersectedObject.name === undefined) {
+        return;
+    }
+    //it's also not a valid node if it has no name
+    if (intersectedObject.name === '') {
+        return;
+    }
+    console.log("intersected Object Moveover: ");
+    console.log(intersectedObject);
     //check if the intersected object is a node, if it is the name.type will be 'region'
     //if it is a node, get the node index and the region name
     if (intersectedObject.name.type == 'region') {
@@ -117,7 +127,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
         // }
     }
 
-    if (nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1)) { // not selected
+    if (nodeExistAndVisible && intersectedObject.object.isSelected(intersectedObject)) { // not selected
         if (hoverTimeout && oldNodeIndex == nodeIdx) {
             // create a selected node (bigger) from the pointed node
             pointedObject = intersectedObject.object;
@@ -231,10 +241,13 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
     //if selected make unselected, if unselected make selected
     //objectIntersected.object.userData.selected = !objectIntersected.object.userData.selected;
     // check if object is selected or not
+    let isSelected = objectIntersected.object.isSelected(objectIntersected);
 
-
-    if (objectIntersected.object.userData.selected) {
-        console.log("objectIntersected.object.userData.selected: ", objectIntersected.object.userData.selected);
+    if (!isSelected) {
+        //mark object selected
+        objectIntersected.object.select(objectIntersected);
+        previewArea.updateNodeGeometry(objectIntersected, 'selected');
+        console.log("switched to selected");
         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         //previewArea.drawSelectedNode(objectIntersected);
         let nodeIndex = objectIntersected.object.getDatasetIndex(objectIntersected);
@@ -244,13 +257,20 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
             //const n = model.getNumberOfEdges();
             previewArea.drawTopNEdgesByNode(nodeIndex, n);
         }
-        previewArea.updateNodeGeometry(objectIntersected, 'selected');
+
     } else {
         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
-        objectIntersected.object.userData.selected = false;
+        //objectIntersected.object.userData.selected = false;
+        //unselect the object
+        console.log("switching to unselected");
         previewArea.updateNodeGeometry(objectIntersected, 'normal');
+        objectIntersected.object.unSelect(objectIntersected);
+        console.log("end switch");
         //removeEdgesGivenNodeFromScenes(instance);
     }
+    //log the currently selected nodes
+    let selectedNodes = getNodesSelected(); // local to drawing, returns a list from both preview areas
+    console.log("selectedNodes: ", selectedNodes);
 };
 
 // callback on mouse press
@@ -714,21 +734,9 @@ var getSpt = function () {
 }
 
 var getNodesSelected = function () {
-    // use local method for previewArea. This is because the previewAreaLeft and previewAreaRight are not the same object.
-    // even though they are synced. todo: Either share data between previewAreas correctly or use local methods.
-    var nodesRight = previewAreaRight.getNodesSelected();
-    var nodesLeft = previewAreaLeft.getNodesSelected();
-    // combine the two arrays and remove duplicates
-    var nodesSelected = nodesRight.concat(nodesLeft.filter(function (item) {
-        return nodesRight.indexOf(item) < 0;
-    }
-    ));
-    // remove duplicates
-    nodesSelected = nodesSelected.filter(function (item, pos) {
-        return nodesSelected.indexOf(item) == pos;
-        }
-    );
-    //log the result
+    var nodesRight = previewAreaRight.getSelectedNodes();
+    var nodesLeft = previewAreaLeft.getSelectedNodes();
+    var nodesSelected = [...new Set(nodesRight.concat(nodesLeft))];
     console.log("nodesSelected: ");
     console.log(nodesSelected);
     return nodesSelected;
@@ -740,19 +748,23 @@ var clrNodesSelected = function () {
 }
 
 var setNodesSelected = function (arrIndex, newNodeVal) {
+    //todo update this to sync the two previewAreas nodes selected groups
     nodesSelected[arrIndex] = newNodeVal;
 }
 
 var getNodesFocused = function () {
+    //todo add a focused state list to userData similar to selected state list.
+    // also figure out what to do with the focused state list.
     return nodesFocused;
 }
 
 var clrNodesFocused = function () {
+    //todo same as getNodesFocused comment except for this stuff.
     console.log(nodesFocused);
     nodesFocused = [];
 }
 
-//todo: probably shouldn't always be true. Also it's currently not used for anything.
+//todo: probably shouldn't always be true. what is this for?
 var setNodesFocused = function (arrIndex, newNodeVal) {
     if(true || newNodeVal) {
         nodesFocused[arrIndex] = newNodeVal;
