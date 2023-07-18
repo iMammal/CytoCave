@@ -1872,13 +1872,18 @@ function PreviewArea(canvas_, model_, name_) {
 
                 }
 
-                instance.toggleSelect = function(nodeObject) {
-                    if (instance.isSelected(nodeObject)) {
-                        instance.unSelect(nodeObject);
-                    } else {
-                        instance.select(nodeObject);
-                    }
+            instance.toggleSelect = function(nodeObject) {
+                if (instance.isSelected(nodeObject)) {
+                    instance.unSelect(nodeObject);
+                } else {
+                    instance.select(nodeObject);
                 }
+            }
+
+            instance.clearSelection = function() {
+                // clear the selectedNodes array
+                instance.userData.selectedNodes = [];
+            }
 
             /*Get edges for instanced node.*/
             instance.getEdges = function(nodeObject) {
@@ -1899,43 +1904,8 @@ function PreviewArea(canvas_, model_, name_) {
                         edges.push(edge);
                     }
                 }, true); // true: skip zeros
-
-                // let count;
-                // count = 0;
-                // for(let i = 0; i < edges.length; i++){
-                //     if(edges[i].weight === 0){
-                //         count++;
-                //         // log edge
-                //         let edge = edges[i];
-                //         console.log(edge);
-                //     }
-                //     if(count > 5){
-                //         console.log("...")
-                //         break;
-                //     }
-                //
-                // }
-                // //console.log edges that have a non-zero target node id
-                // count = 0; //might as well resuse...
-                // for(let i = 0; i < edges.length; i++){
-                //     if(edges[i].targetNodeId > 0){
-                //         count++;
-                //         // log edge
-                //         let edge = edges[i];
-                //         console.log(edge);
-                //     }
-                //     if(count > 5){
-                //         console.log("And that's enough of that.")
-                //         break;
-                //     }
-                // }
-
-
-
                 return edges;
             };
-
-
 
         }
 
@@ -1944,7 +1914,12 @@ function PreviewArea(canvas_, model_, name_) {
             this.instances[groups[i]].left.instanceMatrix.needsUpdate = true;
             this.instances[groups[i]].right.instanceMatrix.needsUpdate = true;
         }
-
+        // display count for each hemisphere
+        for (let i = 0; i < groups.length; i++) {
+            let leftCount = this.countGroupMembers(groups[i], 'left');
+            let rightCount = this.countGroupMembers(groups[i], 'right');
+            console.log("Group: " + groups[i] + " Left: " + leftCount + " Right: " + rightCount);
+        }
         // add the instance meshes to the scene
         for (let i = 0; i < groups.length; i++) {
             brain.add(this.instances[groups[i]].left);
@@ -2225,19 +2200,32 @@ function PreviewArea(canvas_, model_, name_) {
     this.clrNodesSelected = function () {
         // remove the selected flag from all nodes
         var groups = this.listGroups();
+        //clear selected nodes from each instance
         for (let i = 0; i < groups.length; i++) {
-            this.instances[groups[i]].left.traverse(function (child) {
-                    if (child.userData.selected) {
-                        child.userData.selected = false;
-                    }
-                }
-            );
-            this.instances[groups[i]].right.traverse(function (child) {
-                    if (child.userData.selected) {
-                        child.userData.selected = false;
-                    }
-                }
-            );
+            // only log errors
+            if (this.instances[groups[i]] === undefined) {
+                console.log("instance group undefined: " + groups[i]);
+                continue;
+            }
+            if (this.instances[groups[i]]['left'] === undefined) {
+                console.log("instance left undefined: " + groups[i]);
+            }
+            if (this.instances[groups[i]]['right'] === undefined) {
+                console.log("instance right undefined: " + groups[i]);
+            }
+            if (this.instances[groups[i]]['left'].clearSelection === undefined) {
+                console.log("instance clearSelection left undefined: " + groups[i]);
+            } else {
+                this.instances[groups[i]]['left'].clearSelection();
+            }
+            if (this.instances[groups[i]]['right'].clearSelection === undefined) {
+                console.log("instance clearSelection right undefined: " + groups[i]);
+            } else {
+                this.instances[groups[i]]['right'].clearSelection();
+            }
+
+
+
         }
     };
 
