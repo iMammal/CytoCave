@@ -2267,6 +2267,9 @@ function PreviewArea(canvas_, model_, name_) {
 
             for (var j = 0; j < activeEdges[i][1].length; j++) {
                 let targetNode = node.object.getNodesInstanceFromDatasetIndex(activeEdges[i][1][j].targetNodeId);
+                if (targetNode < 0) {
+                    continue;
+                }
                 if(!targetNode) {
                     console.log("No target node found");
                     console.log(activeEdges[i][1][j].targetNodeId);
@@ -2278,7 +2281,7 @@ function PreviewArea(canvas_, model_, name_) {
                 //let edge = createLine();
             }
             // do create line logic here
-            
+
             //let targetNode = this.getNodeByIndex(activeEdges[i][1].targetNodeId);
 
 
