@@ -1376,15 +1376,18 @@ function PreviewArea(canvas_, model_, name_) {
         // console.log("nodeObject: ");
         // console.log(nodeObject);
 
-        let objectParent;
-        if (nodeObject.object.name.hemisphere === 'left') {
-            objectParent = this.instances[nodeObject.object.name.group].left;
-        } else {
-            objectParent = this.instances[nodeObject.object.name.group].right;
-        }
+        let objectParent = nodeObject.object;
+
         //console.log("object Parent: ");
         //console.log(objectParent);
-
+        console.log("nodeObject: ");
+        console.log(nodeObject);
+        //compare nodeObject to objectParent
+        console.log("nodeObject.object.name: ");
+        console.log(nodeObject.object.name);
+        console.log("objectParent.name: ");
+        console.log(objectParent.name);
+        console.assert(nodeObject.object.name === objectParent.name);
         let scale = 1.0;
         let delta = clock.getDelta();
         let matrix = new THREE.Matrix4();
@@ -1393,9 +1396,29 @@ function PreviewArea(canvas_, model_, name_) {
         let position = new THREE.Vector3();
         let quaternion = new THREE.Quaternion();
         let scaleVector = new THREE.Vector3();
+
+        // get the position of the instanced node, not sure here which to use or if identical.
+        nodeObject.object.getMatrixAt(nodeObject.instanceId, matrix);
+        //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+        position.setFromMatrixPosition(matrix);
+        //matrix.decompose(position, quaternion, scaleVector);
+        position = new THREE.Vector3();
+        quaternion = new THREE.Quaternion();
+        scaleVector = new THREE.Vector3();
+        //log position, quaternion and scaleVector
+        console.log("position: ");
+        console.log(position);
+        let datasetIndex = objectParent.getDatasetIndex(nodeObject);
         switch (status) {
             case 'normal':
-
+                //check if datasetIndex is in selectedNodes already if it is not, then do nothing
+                if (!objectParent.userData.selectedNodes.includes(datasetIndex)) {
+                    console.log("setting normal, but datasetIndex not in selectedNodes, abort.");
+                    return;
+                } else {
+                    console.log("setting normal, datasetIndex is in selectedNodes, continue.");
+                    console.log("datasetIndex: " + datasetIndex);
+                }
                 console.log("normal");
                 let color = new THREE.Color(scaleColorGroup(model,nodeObject.object.name.group));
                 // restore nodeObject to original scale and color
@@ -1404,34 +1427,22 @@ function PreviewArea(canvas_, model_, name_) {
                 //if (nodeObject.object.userData.scaledBy != 1.0) {
                     //restore scale
                 scale = 1.0;
-
-                objectParent.getMatrixAt(nodeObject.instanceId, matrix);
-
-                matrix.decompose(position, quaternion, scaleVector);
                 matrix.identity();
                 matrix.makeTranslation(position.x, position.y, position.z);
                 objectParent.setMatrixAt(nodeObject.instanceId, matrix);
                 objectParent.instanceMatrix.needsUpdate = true;
-                // remove index from selectedNodes
-                objectParent.userData.selectedNodes.splice(objectParent.userData.selectedNodes.indexOf(nodeObject.instanceId), 1);
-                    //nodeObject.object.userData.edgesActive = false;
-
-                //}
+                objectParent.userData.selectedNodes = objectParent.userData.selectedNodes.filter(id => id != datasetIndex);
                 // set the matrix dirty
                 objectParent.instanceColor.needsUpdate = true;
-
                 break;
 
             case 'mouseover':
                 console.log("mouseover");
 
                 scale = 1.72;
-
-                objectParent.getMatrixAt(nodeObject.instanceId, matrix);
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
                 objectParent.setMatrixAt(nodeObject.instanceId, matrix);
                 objectParent.instanceMatrix.needsUpdate = true;
-
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0)));
                 objectParent.instanceColor.needsUpdate = true;
 
@@ -1439,15 +1450,16 @@ function PreviewArea(canvas_, model_, name_) {
 
             case 'selected':
                 console.log("selected");
-
+                if (!objectParent.userData.selectedNodes.includes(datasetIndex)) {
+                    objectParent.userData.selectedNodes.push(datasetIndex);
+                    console.log("Added to selectedNodes: " + datasetIndex);
+                } else {
+                    console.log("Already in selectedNodes: " + datasetIndex);
+                    return;
+                }
                 //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
                 scale = 8 / 3;
                 //nodeObject.object.userData.scaledBy = scale;
-                objectParent.getMatrixAt(nodeObject.instanceId, matrix);
-                position = new THREE.Vector3();
-                quaternion = new THREE.Quaternion();
-                scaleVector = new THREE.Vector3();
-                matrix.decompose(position, quaternion, scaleVector);
                 matrix.identity();
                 matrix.makeTranslation(position.x, position.y, position.z);
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
@@ -1455,7 +1467,14 @@ function PreviewArea(canvas_, model_, name_) {
                 objectParent.instanceMatrix.needsUpdate = true;
                 // if node is not on list of selectedNodes, add it
                 console.log("Selecting: " + nodeObject.instanceId);
-                objectParent.userData.selectedNodes.push(objectParent.getDatasetIndex(nodeObject));
+                //objectParent.userData.selectedNodes.push(objectParent.getDatasetIndex(nodeObject));
+                if (!objectParent.userData.selectedNodes.includes(datasetIndex)) {
+                    objectParent.userData.selectedNodes.push(datasetIndex);
+                    console.log("Added to selectedNodes: " + datasetIndex);
+                } else {
+                    console.log("Already in selectedNodes: " + datasetIndex);
+                }
+
                 console.log('Selected Nodes: ' + objectParent.userData.selectedNodes);
                 console.log("Edges " , objectParent.getEdges(nodeObject));
 
@@ -1470,8 +1489,8 @@ function PreviewArea(canvas_, model_, name_) {
                 console.log("root");
 
                 scale = 10 / 3;
-                nodeObject.object.userData.scaledBy = scale;
-                objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+
+
                 matrix.scale(new THREE.Vector3(scale, scale, scale));
                 objectParent.setMatrixAt(nodeObject.instanceId, matrix);
                 objectParent.instanceMatrix.needsUpdate = true;
@@ -1749,11 +1768,13 @@ function PreviewArea(canvas_, model_, name_) {
             // name the instance with group_hemisphere
             this.instances[groups[i]].left.name = {
                 group: groups[i],
-                hemisphere: 'left'
+                hemisphere: 'left',
+                type: 'region'
             };
             this.instances[groups[i]].right.name = {
                 group: groups[i],
-                hemisphere: 'right'
+                hemisphere: 'right',
+                type: 'region'
             };
         }
 
@@ -1812,27 +1833,111 @@ function PreviewArea(canvas_, model_, name_) {
                     return object.userData.indexList[nodeObject.instanceId];
                 }
             };
+
+            instance.getData = function(nodeObject) {
+                let index = instance.getDatasetIndex(nodeObject);
+                return model.getDataset()[index];
+            }
+
+            instance.isSelected = function(nodeObject) {
+                // check if the index is in the selectedNodes array
+                let index = instance.getDatasetIndex(nodeObject);
+                if (instance.userData.selectedNodes === undefined) {
+                    return false;
+                }
+                if (instance.userData.selectedNodes.includes(index)) {
+                    return true;
+                }
+            }
+
+            instance.select = function(nodeObject) {
+                let index = instance.getDatasetIndex(nodeObject);
+                // push the index into the selectedNodes array, if it doesn't exist
+                if (instance.userData.selectedNodes === undefined) {
+                    instance.userData.selectedNodes = [];
+                }
+                //check if index is already in selectedNodes
+                if (instance.userData.selectedNodes.includes(index)) {
+                    // do nothing
+                } else {
+                    instance.userData.selectedNodes.push(index);
+                }
+
+            }
+
+            instance.unSelect = function(nodeObject) {
+                // check if index is in selectedNodes array and remove it if it is
+                let index = instance.getDatasetIndex(nodeObject);
+                if (!instance.userData.selectedNodes === undefined) {
+                    let i = instance.userData.selectedNodes.indexOf(index);
+                    if (i > -1) {
+                        instance.userData.selectedNodes.splice(i, 1);
+                    }
+                }
+
+
+
+                }
+
+                instance.toggleSelect = function(nodeObject) {
+                    if (instance.isSelected(nodeObject)) {
+                        instance.unSelect(nodeObject);
+                    } else {
+                        instance.select(nodeObject);
+                    }
+                }
+
             /*Get edges for instanced node.*/
             instance.getEdges = function(nodeObject) {
                 let object = nodeObject.object;
                 let index = object.getDatasetIndex(nodeObject);
-                console.log("Index: " + index);
+                //console.log("Index: " + index);
                 let row = model.getConnectionMatrixRow(index);
-                console.log("Row: ");
-                console.log(row);
+                //console.log("Row: ");
+                //console.log(row);
                 let edges = [];
 
                 row.forEach(function(weight, targetIndex) {
                     if (weight > 0) {
                         let edge = {
                             weight: weight,
-                            targetNodeId: targetIndex
+                            targetNodeId: targetIndex[1]
                         };
-                        // log creation of edge
-                        console.log("Edge created: " + edge.targetNodeId + " with weight " + edge.weight);
                         edges.push(edge);
                     }
                 }, true); // true: skip zeros
+
+                // let count;
+                // count = 0;
+                // for(let i = 0; i < edges.length; i++){
+                //     if(edges[i].weight === 0){
+                //         count++;
+                //         // log edge
+                //         let edge = edges[i];
+                //         console.log(edge);
+                //     }
+                //     if(count > 5){
+                //         console.log("...")
+                //         break;
+                //     }
+                //
+                // }
+                // //console.log edges that have a non-zero target node id
+                // count = 0; //might as well resuse...
+                // for(let i = 0; i < edges.length; i++){
+                //     if(edges[i].targetNodeId > 0){
+                //         count++;
+                //         // log edge
+                //         let edge = edges[i];
+                //         console.log(edge);
+                //     }
+                //     if(count > 5){
+                //         console.log("And that's enough of that.")
+                //         break;
+                //     }
+                // }
+
+
 
                 return edges;
             };
@@ -2601,13 +2706,13 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     // draw a selected node: increase it's size
-    this.drawSelectedNode = function (nodeObject) {
-        // todo: check if this is really needed since there is already a toggle for selected in instances
-        // if (getNodesSelected().indexOf(nodeIndex) == -1) {
-        //     setNodesSelected(getNodesSelected().length, nodeIndex);
-        // }
-        this.updateNodeGeometry(nodeObject, 'selected');
-    };
+    // this.drawSelectedNode = function (nodeObject) {
+    //     // todo: check if this is really needed since there is already a toggle for selected in instances
+    //     // if (getNodesSelected().indexOf(nodeIndex) == -1) {
+    //     //     setNodesSelected(getNodesSelected().length, nodeIndex);
+    //     // }
+    //     this.updateNodeGeometry(nodeObject, 'selected');
+    // };
 
 
     //listen for mouse click on canvas

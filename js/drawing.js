@@ -90,13 +90,23 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     //console.log(intersectedObject);
     if(intersectedObject === undefined)
         return;
-    nodeIdx = intersectedObject.object.instanceId;
-    if (intersectedObject) {
-        nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
-        region = model.getRegionByIndex(nodeIdx);
-        nodeRegion = model.getGroupNameByNodeIndex(nodeIdx);
+    //check if the intersected object is a node, if it is the name.type will be 'region'
+    //if it is a node, get the node index and the region name
+    if (intersectedObject.name.type == 'region') {
+        nodeIdx = intersectedObject.object.getDatasetIndex(intersectedObject.instanceId);
+        if (intersectedObject) {
+            //nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
+            region = model.getRegionByIndex(nodeIdx);
+            nodeRegion = model.getGroupNameByNodeIndex(nodeIdx);
+        }
     }
-
+    //nodeIdx = intersectedObject.object.getDatasetIndex(intersectedObject.instanceId);
+    // if (intersectedObject) {
+    //     nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
+    //     region = model.getRegionByIndex(nodeIdx);
+    //     nodeRegion = model.getGroupNameByNodeIndex(nodeIdx);
+    // }
+        //todo check if the visibleNodes array is valid
     var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
     // update node information label
     if (nodeExistAndVisible) {
@@ -179,10 +189,10 @@ function onLeftClick(model, event) {
 
     event.preventDefault();
     var objectIntersected = getIntersectedObject(event);
-    console.log("onLeftClick event: ");
-    console.log(event);
-    console.log("onLeftClick objectIntersected: ");
-    console.log(objectIntersected);
+    // console.log("onLeftClick event: ");
+    // console.log(event);
+    // console.log("onLeftClick objectIntersected: ");
+    // console.log(objectIntersected);
     var isLeft = event.clientX < window.innerWidth / 2;
     updateNodeSelection(model, objectIntersected, isLeft);
 }
@@ -197,11 +207,10 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
     const instanceId = objectIntersected.instanceId;
     const group = objectIntersected.object.name.group;
     const hemisphere = objectIntersected.object.name.hemisphere;
-    // check if name is blank, if so return undefined, otherwise you'll end up intersecting the skybox.
-    if (objectIntersected.object.name === "") {
-        console.log("objectIntersected.object.name is blank");
-        return;
-    }
+    // check if name is blank empty or undefined
+    if (group === "" || group === undefined) return;
+    if (hemisphere === "" || hemisphere === undefined) return;
+    if (instanceId === "" || instanceId === undefined) return;
 
     const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
     //console.log("previewArea instances: ");
@@ -220,7 +229,9 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         return;
         }
     //if selected make unselected, if unselected make selected
-    objectIntersected.object.userData.selected = !objectIntersected.object.userData.selected;
+    //objectIntersected.object.userData.selected = !objectIntersected.object.userData.selected;
+    // check if object is selected or not
+
 
     if (objectIntersected.object.userData.selected) {
         console.log("objectIntersected.object.userData.selected: ", objectIntersected.object.userData.selected);
