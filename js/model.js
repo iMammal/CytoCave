@@ -906,6 +906,7 @@ function Model(side) {
 
     this.getActiveEdges = function () {
         console.log("model getActiveEdges");
+
         return edges;
     };
 

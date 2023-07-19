@@ -46,7 +46,7 @@ import {
     activeVR,
     updateNodeSelection,
     updateNodeMoveOver,
-
+    getActiveEdges
 } from './drawing'
 import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS} from './GUI'
 import {scaleColorGroup} from './utils/scale'
@@ -1377,13 +1377,12 @@ function PreviewArea(canvas_, model_, name_) {
         // console.log("nodeObject: ");
         // console.log(nodeObject);
         let objectParent = nodeObject.object;
-        let testObject = this.instances[objectParent.name.group][objectParent.name.hemisphere];
+        //let testObject = this.instances[objectParent.name.group][objectParent.name.hemisphere];
         //do the above two lines reference the same object?
         //log them both
         console.log("objectParent: ");
         console.log(objectParent);
-        console.log("testObject: ");
-        console.log(testObject);
+
 
         let scale = 1.0;
         let delta = clock.getDelta();
@@ -1819,11 +1818,11 @@ function PreviewArea(canvas_, model_, name_) {
                 // return the instanceId and the object
                 // if the index is not found return -1
                 console.log("Searching for index: " + index);
-                console.log(this);
+                //console.log(this);
                 //check that userData.indexList exists
                 if (this.userData.indexList === undefined) {
                     console.log("Error: userData.indexList is undefined");
-                    return -1;
+                    return null;
                 }
                 for (let i = 0; i < this.userData.indexList.length; i++) {
                     if (this.userData.indexList[i] === index) {
@@ -1836,7 +1835,8 @@ function PreviewArea(canvas_, model_, name_) {
                         };
                     }
                 }
-                return -1;
+                //console.log("Error: Could not find index: " + index);
+                return null;
             }
 
             instance.getSelectedNodes = function() {
@@ -1911,6 +1911,8 @@ function PreviewArea(canvas_, model_, name_) {
 
             /*Get edges for instanced node.*/
             instance.getEdges = function(nodeObject) {
+                console.log("Getting edges for instance node: " + nodeObject.instanceId);
+                console.log(nodeObject);
                 let object = nodeObject.object;
                 let index = object.getDatasetIndex(nodeObject);
                 //console.log("Index: " + index);
@@ -1954,11 +1956,11 @@ function PreviewArea(canvas_, model_, name_) {
             this.instances[groups[i]].right.instanceMatrix.needsUpdate = true;
         }
         // display count for each hemisphere
-        for (let i = 0; i < groups.length; i++) {
-            let leftCount = this.countGroupMembers(groups[i], 'left');
-            let rightCount = this.countGroupMembers(groups[i], 'right');
-            console.log("Group: " + groups[i] + " Left: " + leftCount + " Right: " + rightCount);
-        }
+        // for (let i = 0; i < groups.length; i++) {
+        //     let leftCount = this.countGroupMembers(groups[i], 'left');
+        //     let rightCount = this.countGroupMembers(groups[i], 'right');
+        //     console.log("Group: " + groups[i] + " Left: " + leftCount + " Right: " + rightCount);
+        // }
         // add the instance meshes to the scene
         for (let i = 0; i < groups.length; i++) {
             brain.add(this.instances[groups[i]].left);
@@ -2255,7 +2257,7 @@ function PreviewArea(canvas_, model_, name_) {
     this.drawConnections = function () {
 
         let activeEdges = this.getActiveEdges();
-        console.log("Active Edges: ");
+        console.log("drawconnections: Active Edges: ");
         console.log(activeEdges);
 
 
@@ -2266,8 +2268,8 @@ function PreviewArea(canvas_, model_, name_) {
             console.log(node);
 
             for (var j = 0; j < activeEdges[i][1].length; j++) {
-                let targetNode = node.object.getNodesInstanceFromDatasetIndex(activeEdges[i][1][j].targetNodeId);
-                if (targetNode < 0) {
+                let targetNode = this.index2node(activeEdges[i][1][j].targetNodeId);
+                if (!targetNode) {
                     continue;
                 }
                 if(!targetNode) {
@@ -2306,75 +2308,82 @@ function PreviewArea(canvas_, model_, name_) {
         var nodeIdx;
         let nodesSelected = this.getSelectedNodes();
         let numNodesSelected = nodesSelected.length;
+        console.log("numNodesSelected: " + numNodesSelected);
         let activeEdges = [];
         let groups = this.listGroups();
         let threshold = model.getThreshold();
-        if(threshold === undefined) {
+        if (threshold === undefined) {
             console.log("Threshold undefined");
-            //consider all selected nodes active
+            // consider all selected nodes active
             threshold = 0;
         }
         console.log("active edges nodesSelected: ");
         console.log(nodesSelected);
-        //for each node in nodesSelected look it up in instances and get the edges
+// for each node in nodesSelected look it up in instances and get the edges
         for (var i = 0; i < numNodesSelected; i++) {
-
-            //check through the instances for the index and then return the node
+            // check through the instances for the index and then return the node
             for (let j = 0; j < groups.length; j++) {
                 // each group may have a left and right hemisphere
-
                 const groupOf = this.instances[groups[j]];
                 if (!groupOf) continue;
-                if(groupOf['left'] === undefined) {
+                if (groupOf['left'] === undefined && groupOf['right'] === undefined) {
+                    console.log("groupOf left and right undefined: " + groups[j]);
+                    continue;
+                }
+                if (groupOf['left'] === undefined) {
                     console.log("groupOf left undefined: " + groups[j]);
                 }
-                if(groupOf['right'] === undefined) {
+                if (groupOf['right'] === undefined) {
                     console.log("groupOf right undefined: " + groups[j]);
                 }
                 const leftHemisphere = groupOf['left'];
                 const rightHemisphere = groupOf['right'];
                 if (!leftHemisphere || !rightHemisphere) continue;
-                //check which hemisphere is valid
-                let node = -1;
-                if(leftHemisphere.getNodesInstanceFromDatasetIndex) {
+                // check which hemisphere is valid
+                let node = null;
+                let leftorright = "";
+                if (leftHemisphere.getNodesInstanceFromDatasetIndex) {
                     node = leftHemisphere.getNodesInstanceFromDatasetIndex(nodesSelected[i]);
-                } else if(rightHemisphere.getNodesInstanceFromDatasetIndex) {
+                    leftorright = "left";
+                } else if (rightHemisphere.getNodesInstanceFromDatasetIndex) {
                     node = rightHemisphere.getNodesInstanceFromDatasetIndex(nodesSelected[i]);
+                    leftorright = "right";
+                } else {
+                    console.log("No hemisphere found");
+                    continue;
                 }
-
-                if(node < 0 || node === undefined) {
-                    console.log("Node not found");
+                if (node === null) {
+                    //console.log("Node not found in " + leftorright + " hemisphere");
                     continue;
                 }
                 console.log("Node: ");
                 console.log(node);
-                //get the edges
+                // get the edges
                 let edges = node.object.getEdgesFromIndex(nodesSelected[i]);
-                if(!edges) {
+                if (!edges) {
                     console.log("Edges not found");
                     continue;
                 }
-                //get the edges that are above the threshold
+                console.log("Edges: ");
+                console.log(edges);
+                // get the edges that are above the threshold
                 let edgesAboveThreshold = edges.filter(edge => edge.weight > threshold);
-                if(!edgesAboveThreshold) {
+                if (edgesAboveThreshold.length === 0) {
                     console.log("Edges above threshold not found");
                     continue;
                 }
+                console.log("adding edges to active edges:");
+                console.log(edgesAboveThreshold);
+                //console log the length of edges vs edges above threshold
+                console.log("edges length: " + edges.length);
+                console.log("edges above threshold length: " + edgesAboveThreshold.length);
                 //add the node and the edges to the active edges array if the edges are above the threshold
                 activeEdges.push([node, edgesAboveThreshold]);
             }
         }
+        console.log("fresh active edges: ");
+        console.log(activeEdges);
         return activeEdges;
-
-        // draw all edges belonging to the shortest path array
-        // if (getSpt()) {
-        //     for (i = 0; i < shortestPathEdges.length; i++) {
-        //         displayedEdges[displayedEdges.length] = shortestPathEdges[i];
-        //         brain.add(shortestPathEdges[i]);
-        //     }
-        // }
-
-        //this.setEdgesColor();
     };
 
     this.setEdgesColor = function () {
@@ -2549,8 +2558,8 @@ function PreviewArea(canvas_, model_, name_) {
 	    console.log("contra: "+getEnableContra());
 	    console.log("ipsi: "+getEnableIpsi());
 
-        var edges = model.getActiveEdges();
-        console.log("Active edges: ");
+        var edges = this.getActiveEdges();
+        console.log("drawtopNedges Active edges: ");
         console.log(edges);
         var edgeIdx = model.getEdgesIndeces();
         if (getEnableEB()) {
@@ -2585,13 +2594,45 @@ function PreviewArea(canvas_, model_, name_) {
 
         //setEdgesColor();
     };
-
+    this.index2node = function (index) {
+        let instanceObj = null;
+        for(let group in this.instances) {
+            for(let side in this.instances[group]) {
+                if(this.instances[group][side] == null || this.instances[group][side] === undefined) continue;
+                if(this.instances[group][side].getNodesInstanceFromDatasetIndex === undefined) continue;
+                let temp = this.instances[group][side].getNodesInstanceFromDatasetIndex(index);
+                if(temp != null) {
+                    instanceObj = {
+                        object: this.instances[group][side],
+                        instanceId: temp.instanceId,
+                        group: group,
+                        side: side
+                    };
+                    return instanceObj;
+                }
+            }
+        }
+        return null;
+    }
     // draw edges given a node following edge threshold
     this.drawEdgesGivenNode = function (indexNode) {
         console.log("Attempting to draw edges given node: " + indexNode);
         var dataset = model.getDataset();
         var row = model.getConnectionMatrixRow(indexNode);
-        var edges = model.getActiveEdges();
+
+        //let instanceObj = this.instances[dataset[indexNode].group]["left"].getNodesInstanceFromDatasetIndex(indexNode);
+        //instanceObj may be in any group (left or right) so we need to find it. getnodesinstancefromdatasetindex returns null if not found in that group.
+        let instanceObj = this.index2node(indexNode);
+
+        if(instanceObj == null) {
+            console.log("instanceObj is null");
+            return;
+        }
+
+        var edges = instanceObj.object.getEdges(instanceObj);
+        //var edges = this.getActiveEdges(); //this gets all active edges.
+        console.log("drawEdgesGivenNode: Active edges: ");
+        console.log(edges);
         var edgeIdx = model.getEdgesIndeces();
         if (getEnableEB()) {
             model.performEBOnNode(indexNode);

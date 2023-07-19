@@ -251,7 +251,9 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         //previewArea.drawSelectedNode(objectIntersected);
         let nodeIndex = objectIntersected.object.getDatasetIndex(objectIntersected);
-        let activeEdges = previewArea.drawConnections(); //do we want to draw the connectinos there or here in drawing? My vote is here.
+        let activeEdges = previewArea.drawConnections(); //do we want to draw the connections there or here in drawing? My vote is here.
+        // draw connections does not draw connections, but it does returs the lists of the connections to be drawn, filtered by the threshold.
+
         //todo: work out the below.
         if (thresholdModality) {
             previewArea.drawEdgesGivenNode(nodeIndex);
@@ -267,6 +269,7 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         console.log("switching to unselected");
         previewArea.updateNodeGeometry(objectIntersected, 'normal');
         objectIntersected.object.unSelect(objectIntersected);
+        //probably want to remove the edges from the scene here.
         console.log("end switch");
         //removeEdgesGivenNodeFromScenes(instance);
     }
