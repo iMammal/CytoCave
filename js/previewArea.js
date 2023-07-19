@@ -1444,7 +1444,7 @@ function PreviewArea(canvas_, model_, name_) {
             case 'selected':
                 console.log("selected state");
                 if (!objectParent.isSelected(nodeObject)) {
-                    objectParent.select(datasetIndex);
+                    objectParent.select(nodeObject);
                     console.log("Added to selectedNodes: " + datasetIndex);
                     console.log("Please adjust calling function to check if node is already selected.");
                     console.log("Applying scale and translation may cause problems if node is already selected.");
@@ -1846,6 +1846,28 @@ function PreviewArea(canvas_, model_, name_) {
                 return instance.userData.selectedNodes;
             }
 
+            instance.setSelectedNodes = function(selectedNodes) {
+                //accepts an array of indexes, only set
+                //only set select if index is in the indexList
+
+                //loop through the selectedNodes array
+                // node = this.index2node(index);
+                // if(node !== null) {
+                //     node.object.select(node);
+                // }
+                for (let i = 0; i < selectedNodes.length; i++) {
+                    //check if index is in indexList
+                    if (instance.userData.indexList.includes(selectedNodes[i])) {
+                        //check if it is already in the selectedNodes array
+                        if (!instance.userData.selectedNodes.includes(selectedNodes[i])) {
+                            //if not, push it in
+                            instance.userData.selectedNodes.push(selectedNodes[i]);
+                        }
+
+                    }
+                }
+            }
+
             instance.getData = function(nodeObject) {
                 let index = instance.getDatasetIndex(nodeObject);
                 return model.getDataset()[index];
@@ -2216,6 +2238,35 @@ function PreviewArea(canvas_, model_, name_) {
 
         selectedNodes = selectedNodes.filter(Boolean);
         return selectedNodes;
+    }
+
+    this.setSelectedNodes = function (nodes) {
+        //accepts an array of dataset indexes and sets the selected flag to true for each node
+        //sets selections globally across all instances
+        let groups= this.listGroups();
+        for (let i = 0; i < groups.length; i++) {
+            const instance = this.instances[groups[i]];
+            // if (!instance) continue;
+            //
+            // const leftHemisphere = instance['left'];
+            // const rightHemisphere = instance['right'];
+            // if (!leftHemisphere || !rightHemisphere) continue;
+            //
+            // const leftSelectedNodes = leftHemisphere.setSelectedNodes && leftHemisphere.setSelectedNodes(nodes);
+            // const rightSelectedNodes = rightHemisphere.setSelectedNodes && rightHemisphere.setSelectedNodes(nodes);
+            //batching seems great until you realise you need some side effects during the change
+            //call updateNodeGeometry to update the visual state to selected
+            for(let j=0;j<nodes.length;j++){
+                const node = this.index2node(nodes[j]);
+                //check if nodes is already selected
+                if(!node.object.isSelected(node)) {
+                    //mark node as selected
+                    node.object.select(node);
+                    this.updateNodeGeometry(node, 'selected');
+
+                }
+            }
+        }
     }
 
     this.clrNodesSelected = function () {

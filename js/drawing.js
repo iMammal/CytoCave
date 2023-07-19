@@ -742,6 +742,9 @@ var getNodesSelected = function () {
     var nodesRight = previewAreaRight.getSelectedNodes();
     var nodesLeft = previewAreaLeft.getSelectedNodes();
     var nodesSelected = [...new Set(nodesRight.concat(nodesLeft))];
+    //update the previewAreas nodesSelected groups while we've already concatted them
+    previewAreaLeft.setSelectedNodes(nodesSelected);
+    previewAreaRight.setSelectedNodes(nodesSelected);
     console.log("nodesSelected: ");
     console.log(nodesSelected);
     return nodesSelected;
