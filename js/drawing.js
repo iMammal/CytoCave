@@ -246,7 +246,10 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
     if (!isSelected) {
         //mark object selected
         objectIntersected.object.select(objectIntersected);
-        previewArea.updateNodeGeometry(objectIntersected, 'selected');
+        //previewArea.updateNodeGeometry(objectIntersected, 'selected');
+        //set the object geometry to selected in both scenes
+        previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected');
+        previewAreaRight.updateNodeGeometry(objectIntersected, 'selected');
         console.log("switched to selected");
         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         //previewArea.drawSelectedNode(objectIntersected);
@@ -267,7 +270,10 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         //objectIntersected.object.userData.selected = false;
         //unselect the object
         console.log("switching to unselected");
-        previewArea.updateNodeGeometry(objectIntersected, 'normal');
+        //previewArea.updateNodeGeometry(objectIntersected, 'normal');
+        //set the object geometry to normal in both scenes
+        previewAreaLeft.updateNodeGeometry(objectIntersected, 'normal');
+        previewAreaRight.updateNodeGeometry(objectIntersected, 'normal');
         objectIntersected.object.unSelect(objectIntersected);
         //probably want to remove the edges from the scene here.
         console.log("end switch");

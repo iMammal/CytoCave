@@ -1376,10 +1376,11 @@ function PreviewArea(canvas_, model_, name_) {
         // console.log("new status: " + status);
         // console.log("nodeObject: ");
         // console.log(nodeObject);
-        let objectParent = nodeObject.object;
-        //let testObject = this.instances[objectParent.name.group][objectParent.name.hemisphere];
+        //let objectParent = nodeObject.object;
+        let objectParent = this.instances[nodeObject.object.name.group][nodeObject.object.name.hemisphere];
         //do the above two lines reference the same object?
-        //log them both
+        //log them both, while they are the same if a nodeobject from another preview window is passed in they will be different in some ways.
+        // using this.instances[objectParent.name.group][objectParent.name.hemisphere] is the correct way to get the objectParent
         console.log("objectParent: ");
         console.log(objectParent);
 
@@ -1448,6 +1449,7 @@ function PreviewArea(canvas_, model_, name_) {
                     console.log("Added to selectedNodes: " + datasetIndex);
                     console.log("Please adjust calling function to check if node is already selected.");
                     console.log("Applying scale and translation may cause problems if node is already selected.");
+                    console.log("it may have been called from an event on another preview window.");
                 }
                 //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
                 scale = 8 / 3;
