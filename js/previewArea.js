@@ -1949,7 +1949,7 @@ function PreviewArea(canvas_, model_, name_) {
                     if (weight > 0) {
                         let edge = {
                             weight: weight,
-                            targetNodeId: targetIndex[1]
+                            targetNodeId: targetIndex[0] //1] // subset was 1 but multiply is 0
                         };
                         edges.push(edge);
                     }
@@ -1964,7 +1964,7 @@ function PreviewArea(canvas_, model_, name_) {
                     if (weight > 0) {
                         let edge = {
                             weight: weight,
-                            targetNodeId: targetIndex[1]
+                            targetNodeId: targetIndex[0]  //1]  // subset was 1 but multiply is 0
                         };
                         edges.push(edge);
                     }
@@ -2668,7 +2668,7 @@ function PreviewArea(canvas_, model_, name_) {
         return null;
     }
     // draw edges given a node following edge threshold
-    this.drawEdgesGivenNode = function (indexNode) {
+    this.drawEdgesGivenNode = function (indexNode, topN = null) {
         console.log("Attempting to draw edges given node: " + indexNode);
         var dataset = model.getDataset();
         var row = model.getConnectionMatrixRow(indexNode);
@@ -2682,10 +2682,48 @@ function PreviewArea(canvas_, model_, name_) {
             return;
         }
 
+        let matrix = new THREE.Matrix4();
+        //console.log("NodeObject: ");
+        //console.log(nodeObject);
+        let instancePosition = new THREE.Vector3();
+        let targetPosition = new THREE.Vector3();
+        //let quaternion = new THREE.Quaternion();
+        //let scaleVector = new THREE.Vector3();
+
+        // get the position of the instanced node, not sure here which to use or if identical.
+        instanceObj.object.getMatrixAt(instanceObj.instanceId, matrix);
+        //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+        instancePosition.setFromMatrixPosition(matrix);
+
         var edges = instanceObj.object.getEdges(instanceObj);
         //var edges = this.getActiveEdges(); //this gets all active edges.
         console.log("drawEdgesGivenNode: Active edges: ");
         console.log(edges);
+
+        if(!topN) {
+            edges = edges.filter(edge => edge.weight >= model.getThreshold());
+        } else {
+            edges = edges.sort((a, b) => b.weight - a.weight).slice(0, topN);
+        }
+
+        for(let i = 0; i < edges.length; i++) {
+            console.log("edge: ");
+            console.log(edges[i]);
+
+            let edge  = [];
+            edge.push(instancePosition);
+            let targetNodeId = edges[i].targetNodeId;
+            let targetNode = this.index2node(targetNodeId);
+            //position = targetNode.object.getPosition(targetNode.instanceId);
+            targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
+            targetPosition.setFromMatrixPosition(matrix);
+            edge.push(targetPosition);
+            displayedEdges[displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode, targetNodeId]);
+        }
+
+        return;
+
+
         var edgeIdx = model.getEdgesIndeces();
         if (getEnableEB()) {
             model.performEBOnNode(indexNode);
