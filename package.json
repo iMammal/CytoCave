@@ -23,7 +23,7 @@
     "dev": "webpack --watch --mode=development",
     "prod": "webpack --mode=production",
     "local": "webpack --mode=production && http-server ./",
-    "localdev": "webpack --watch --mode=development && http-server ./NeuroCave/"
+    "localdev": "webpack --watch --mode=development & http-server ./"
   },
   "repository": {
     "type": "git",

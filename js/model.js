@@ -312,10 +312,19 @@ function Model(side) {
         //console.log("ConnectionMatrix Size:",connectionMatrix.size());
         //console.log("ConnectionMatrix:",connectionMatrix);
         //let row = connectionMatrix.subset(math.index(index,math.range(0,connectionMatrix.size()[0]))).toArray().slice(0);
-        const size = connectionMatrix.size()[0];
-        const range = math.range(0, size);
-        const rowindex = math.index(index, range);
-        const row = connectionMatrix.subset(rowindex);
+
+        const size = connectionMatrix.size()[1];
+
+        // if (false) {
+        //     const range = math.range(0, size);
+        //     const rowindex = math.index(index, range);
+        //     const rowA = connectionMatrix.subset(rowindex);
+        // }
+
+        const rowVector = math.zeros([size,1]);
+        rowVector[index][0] = 1; //.set([index], 1);
+
+        let row = math.multiply(connectionMatrix, rowVector);
 
         // let row = connectionMatrix.subset();
         //
@@ -530,7 +539,7 @@ function Model(side) {
     /* BCT Stuff*/
     // compute nodal strength of a specific node given its row
     this.getNodalStrength = function (idx) {
-        return nodesStrength[idx];
+        return nodesStrength.get([idx, 0]);
     };
 
     this.computeNodalStrength = function () {
@@ -579,6 +588,23 @@ function Model(side) {
     // compute distance matrix = 1/(adjacency matrix)
     this.computeDistanceMatrix = function() {
         const nNodes = connectionMatrix.size()[1];
+
+        const distanceMatrix = connectionMatrix.map(value => {
+            if (value !== 0) {
+                return 1 / value;
+            }
+            return 0;
+        }, true); // skipZeros=true
+
+        //const graph = new Graph();
+
+        // Assign the computed distanceMatrix and edgeIdx to class variables
+        this.distanceMatrix = distanceMatrix;
+
+        return;
+
+        //edgeIdx is not used anymore.
+
         let idx = 0; // Initialize idx to 0
         edgeIdx = connectionMatrix.map((value, index) => {
             const i = index[0];
@@ -593,6 +619,7 @@ function Model(side) {
 
         //let edgeIdxTr = edgeIdx.transpose();
 
+        //if (false) {
         idx = 0; // Initialize idx to 0
         edgeIdx.forEach((value, index) => {
             const i = index[0];
@@ -631,14 +658,6 @@ function Model(side) {
 
         console.log("edgeIdx", edgeIdx);
 
-        const distanceMatrix = connectionMatrix.map(value => {
-            if (value !== 0) {
-                return 1 / value;
-            }
-            return 0;
-        }, true); // skipZeros=true
-
-        const graph = new Graph();
 
         // for (let i = 0; i < nNodes; i++) {
         //     const row = connectionMatrix
@@ -649,8 +668,7 @@ function Model(side) {
         // }
 
 
-        // Assign the computed distanceMatrix and edgeIdx to class variables
-        this.distanceMatrix = distanceMatrix;
+        // Assign edgeIdx to class variables
         this.edgeIdx = edgeIdx;
     };
 
@@ -969,6 +987,9 @@ function Model(side) {
         console.log("Computing edges for " + topology);
         var nNodes = connectionMatrix.size()[1]; //length;
         edges = [];
+
+        return;
+        //edges array is no longer used. Data is stored in node instance userdata
 
         connectionMatrix.forEach(function (value, index) {
             var i = index[0];
