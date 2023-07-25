@@ -1680,7 +1680,30 @@ function PreviewArea(canvas_, model_, name_) {
         this.removeEdgesFromScene();
         if (getSpt())
             this.updateShortestPathEdges();
-        this.drawConnections();
+        const activeEdges = this.drawConnections();
+
+        let matrix = new THREE.Matrix4();
+        let targetPosition = new THREE.Vector3();
+        let instancePosition = new THREE.Vector3();
+
+        for (var i = 0; i < activeEdges.length; ++i) {
+
+            let indexNode = activeEdges[i][0];
+            indexNode.object.getMatrixAt(indexNode.instanceId, matrix);
+            instancePosition.setFromMatrixPosition(matrix);
+
+            for (var j = 0; j < activeEdges[i][1].length; ++j) {
+                let edge  = [];
+                edge.push(instancePosition);
+                let targetNodeId = activeEdges[i][1][j].targetNodeId;
+                let targetNode = this.index2node(targetNodeId);
+                targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
+                targetPosition.setFromMatrixPosition(matrix);
+                edge.push(targetPosition);
+                displayedEdges[displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode.instanceId, targetNodeId]);
+
+            }
+        }
     };
 
     // determine if a region should be drawn
@@ -2357,7 +2380,7 @@ function PreviewArea(canvas_, model_, name_) {
 
 
 
-    this.getActiveEdges = function () {
+    this.getActiveEdges = function (topN = null) {
         var nodeIdx;
         let nodesSelected = this.getSelectedNodes();
         let numNodesSelected = nodesSelected.length;
@@ -2420,7 +2443,12 @@ function PreviewArea(canvas_, model_, name_) {
                 console.log("Edges: ");
                 console.log(edges);
                 // get the edges that are above the threshold
-                let edgesAboveThreshold = edges.filter(edge => edge.weight > threshold);
+                let edgesAboveThreshold = [];
+                if (!topN) {
+                    edgesAboveThreshold = edges.filter(edge => edge.weight >= threshold);
+                } else {
+                    edgesAboveThreshold = edges.sort((a, b) => b.weight - a.weight).slice(0, topN);
+                }
                 if (edgesAboveThreshold.length === 0) {
                     console.log("Edges above threshold not found");
                     continue;
