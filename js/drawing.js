@@ -259,12 +259,14 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
 
         //todo: work out the below.
         if (thresholdModality) {
-            previewArea.drawEdgesGivenNode(nodeIndex);//,activeEdges);
+            previewAreaLeft.drawEdgesGivenNode(nodeIndex);//,activeEdges);
+            previewAreaRight.drawEdgesGivenNode(nodeIndex);//,activeEdges);
 
         } else {
             //const n = model.getNumberOfEdges();
             //previewArea.drawTopNEdgesByNode(nodeIndex, n);
-            previewArea.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
+            previewAreaLeft.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
+            previewAreaRight.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
         }
 
     } else {
