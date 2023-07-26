@@ -242,7 +242,7 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
     //objectIntersected.object.userData.selected = !objectIntersected.object.userData.selected;
     // check if object is selected or not
     let isSelected = objectIntersected.object.isSelected(objectIntersected);
-
+    let nodeIndex = objectIntersected.object.getDatasetIndex(objectIntersected);
     if (!isSelected) {
         //mark object selected
         objectIntersected.object.select(objectIntersected);
@@ -253,7 +253,7 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         console.log("switched to selected");
         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         //previewArea.drawSelectedNode(objectIntersected);
-        let nodeIndex = objectIntersected.object.getDatasetIndex(objectIntersected);
+
         let activeEdges = previewArea.drawConnections(); //do we want to draw the connections there or here in drawing? My vote is here.
         // draw connections does not draw connections, but it does returs the lists of the connections to be drawn, filtered by the threshold.
 
@@ -281,7 +281,7 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         objectIntersected.object.unSelect(objectIntersected);
         //probably want to remove the edges from the scene here.
         console.log("end switch");
-        //removeEdgesGivenNodeFromScenes(instance);
+        removeEdgesGivenNodeFromScenes(nodeIndex);
     }
     //log the currently selected nodes
     let selectedNodes = getNodesSelected(); // local to drawing, returns a list from both preview areas

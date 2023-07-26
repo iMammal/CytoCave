@@ -96,7 +96,7 @@ function PreviewArea(canvas_, model_, name_) {
     // nodes and edges
     var brain = null; // three js group housing all glyphs and edges
     var glyphs = [];
-    var displayedEdges = [];
+    this.displayedEdges = [];
 
     // shortest path
     var shortestPathEdges = [];
@@ -1576,10 +1576,10 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     this.removeEdgesFromScene = function () {
-        for (var i = 0; i < displayedEdges.length; ++i) {
-            brain.remove(displayedEdges[i]);
+        for (var i = 0; i < this.displayedEdges.length; ++i) {
+            brain.remove(this.displayedEdges[i]);
         }
-        displayedEdges = [];
+        this.displayedEdges = [];
 
         this.removeShortestPathEdgesFromScene();
     };
@@ -1700,7 +1700,7 @@ function PreviewArea(canvas_, model_, name_) {
                 targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
                 targetPosition.setFromMatrixPosition(matrix);
                 edge.push(targetPosition);
-                displayedEdges[displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode.instanceId, targetNodeId]);
+                this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode.instanceId, targetNodeId]);
 
             }
         }
@@ -2489,15 +2489,15 @@ function PreviewArea(canvas_, model_, name_) {
     // set the color of displayed edges
     this.updateEdgeColors = function () {
         var edge, c1, c2;
-        for (var i = 0; i < displayedEdges.length; i++) {
-            edge = displayedEdges[i];
+        for (var i = 0; i < this.displayedEdges.length; i++) {
+            edge = this.displayedEdges[i];
             c1 = glyphs[edge.nodes[0]].material.color;
             c2 = glyphs[edge.nodes[1]].material.color;
             edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
         }
 
         for (i = 0; i < shortestPathEdges.length; i++) {
-            edge = displayedEdges[i];
+            edge = this.displayedEdges[i];
             c1 = glyphs[edge.nodes[0]].material.color;
             c2 = glyphs[edge.nodes[1]].material.color;
             edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
@@ -2530,8 +2530,8 @@ function PreviewArea(canvas_, model_, name_) {
         const elapsedTime = clock.getElapsedTime();
         const deltaRadius = colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime);
         var edge, c1, c2, tempColor = new THREE.Color(), targetColor = new THREE.Color();
-        for (var i = 0; i < displayedEdges.length; i++) {
-            edge = displayedEdges[i];
+        for (var i = 0; i < this.displayedEdges.length; i++) {
+            edge = this.displayedEdges[i];
             c1 = edge.nodes[0]; //.material.color;
             c2 = edge.nodes[1]; //.material.color;
             var baseColor = new THREE.Color(scaleColorGroup(model, dataset[c2].group));
@@ -2548,7 +2548,7 @@ function PreviewArea(canvas_, model_, name_) {
         }
 
         for (i = 0; i < shortestPathEdges.length; i++) {
-            edge = displayedEdges[i];
+            edge = this.displayedEdges[i];
             c1 = glyphs[edge.nodes[0]].material.color;
             c2 = glyphs[edge.nodes[1]].material.color;
             edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
@@ -2558,8 +2558,8 @@ function PreviewArea(canvas_, model_, name_) {
 
     this.updateEdgeOpacity = function (opacity) {
         var edgeOpacity = opacity;
-        for (var i = 0; i < displayedEdges.length; i++) {
-            displayedEdges[i].material.opacity = opacity;
+        for (var i = 0; i < this.displayedEdges.length; i++) {
+            this.displayedEdges[i].material.opacity = opacity;
         }
     };
 
@@ -2598,6 +2598,8 @@ function PreviewArea(canvas_, model_, name_) {
 
         // geometry.colors = colorGradient;
         var line = new THREE.Line(geometry, material);
+        console.log("ownerNode: ");
+        console.log(ownerNode);
         line.name = ownerNode;
         line.nPoints = n;
         line.nodes = nodes;
@@ -2651,13 +2653,13 @@ function PreviewArea(canvas_, model_, name_) {
             if ((nodeIndex != row[i]) && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i)) {
                 //display debug info for each variable above.
                 console.log("Displayed Edges Length: ");
-                console.log(displayedEdges.length);
+                console.log(this.displayedEdges.length);
                 console.log("Edges: ");
                 console.log(edges);
                 console.log("edgeIdx: ");
                 console.log(edgeIdx);
-                console.log("displayedEdges: ");
-                console.log(displayedEdges);
+                console.log("this.displayedEdges: ");
+                console.log(this.displayedEdges);
                 console.log("nodeIndex: ");
                 console.log(nodeIndex);
                 console.log("row: ");
@@ -2668,7 +2670,7 @@ function PreviewArea(canvas_, model_, name_) {
                 let edix = model.getEdgesIndeces().get([nodeIndex, row[i]]);
                 if(edix < 0) continue;
                 if(edix > edges.length) continue;
-                displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[ edix ], nodeIndex, [nodeIndex, row[i]]);
+                this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edges[ edix ], nodeIndex, [nodeIndex, row[i]]);
 
             }
         }
@@ -2742,16 +2744,20 @@ function PreviewArea(canvas_, model_, name_) {
             edge.push(instancePosition);
             let targetNodeId = edges[i].targetNodeId;
             let targetNode = this.index2node(targetNodeId);
+            if(targetNode == null) {
+                console.log("targetNode is null");
+                continue;
+            }
             //position = targetNode.object.getPosition(targetNode.instanceId);
             targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
             targetPosition.setFromMatrixPosition(matrix);
             edge.push(targetPosition);
-            displayedEdges[displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode, targetNodeId]);
+            this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode, targetNodeId]);
         }
 
         return;
 
-
+        // unreachable code beyond this point
         var edgeIdx = model.getEdgesIndeces();
         if (getEnableEB()) {
             model.performEBOnNode(indexNode);
@@ -2806,11 +2812,11 @@ function PreviewArea(canvas_, model_, name_) {
                     if(edix > edges.length) continue;
                     console.log("Edix");
                     console.log(edix);
-                    console.log("displayedEdges before: ");
-                    console.log(displayedEdges);
-                    displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[ edix ], indexNode, [indexNode, i]);
-                    console.log("displayedEdges after: ");
-                    console.log(displayedEdges);
+                    console.log("this.displayedEdges before: ");
+                    console.log(this.displayedEdges);
+                    this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edges[ edix ], indexNode, [indexNode, i]);
+                    console.log("this.displayedEdges after: ");
+                    console.log(this.displayedEdges);
                 }
             }
         } else {
@@ -2821,7 +2827,7 @@ function PreviewArea(canvas_, model_, name_) {
                         (getEnableContra() && (dataset[indexNode].hemisphere !== dataset[i].hemisphere)) ||
                         (!getEnableIpsi() && !getEnableContra()) ) ) {
                     let edix = model.getEdgesIndeces().get([indexNode, i]);
-                    displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edix], indexNode, [indexNode, i]);
+                    this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edges[edix], indexNode, [indexNode, i]);
                 }
             }
         }
@@ -2829,14 +2835,16 @@ function PreviewArea(canvas_, model_, name_) {
 
     // give a specific node index, remove all edges from a specific node in a specific scene
     this.removeEdgesGivenNode = function (indexNode) {
-        var l = displayedEdges.length;
+        var l = this.displayedEdges.length;
 
         // keep a list of removed edges indexes
         var removedEdges = [];
         for (var i = 0; i < l; i++) {
-            var edge = displayedEdges[i];
+            var edge = this.displayedEdges[i];
             //removing only the edges that starts from that node
-            if (edge.name == indexNode && shortestPathEdges.indexOf(edge) == -1) {
+            console.log("removing edge: ");
+            console.log(edge);
+            if (edge.name == indexNode) {
                 removedEdges[removedEdges.length] = i;
                 brain.remove(edge);
             }
@@ -2844,17 +2852,17 @@ function PreviewArea(canvas_, model_, name_) {
 
         // update the displayedEdges array
         var updatedDisplayEdges = [];
-        for (i = 0; i < displayedEdges.length; i++) {
+        for (i = 0; i < this.displayedEdges.length; i++) {
             //if the edge should not be removed
             if (removedEdges.indexOf(i) == -1) {
-                updatedDisplayEdges[updatedDisplayEdges.length] = displayedEdges[i];
+                updatedDisplayEdges[updatedDisplayEdges.length] = this.displayedEdges[i];
             }
         }
 
         for (i = 0; i < shortestPathEdges.length; i++) {
             updatedDisplayEdges[updatedDisplayEdges.length] = shortestPathEdges[i];
         }
-        var displayedEdges = updatedDisplayEdges;
+        this.displayedEdges = updatedDisplayEdges;
     };
 
     // draw skybox from images
