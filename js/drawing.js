@@ -631,20 +631,24 @@ var getIntersectedObject = function (event) {
 
 // This now only changes the Right color group
 var changeColorGroup = function (name, side) {
-    if (side !== "Right") { modelLeft.setActiveGroup(name); }
-    if (side !== "Left") { modelRight.setActiveGroup(name); }
+    if (side !== "Right") {
+        modelLeft.setActiveGroup(name);
+        modelLeft.setAllRegionsActivated();
+        previewAreaLeft.updateNodesVisibility();
+        previewAreaLeft.updateNodesColor();
+        createLegend(modelLeft, "Left");
+    }
 
-    if (side !== "Right") { modelLeft.setAllRegionsActivated(); }
-    if (side !== "Left") { modelRight.setAllRegionsActivated(); }
+    if (side !== "Left") {
+        modelRight.setActiveGroup(name);
+        modelRight.setAllRegionsActivated();
+        previewAreaRight.updateNodesVisibility();
+        previewAreaRight.updateNodesColor();
+        createLegend(modelRight, "Right");
+    }
+
     setColorGroupScale(side);
-
-    if (side !== "Right") { previewAreaLeft.updateNodesVisibility(); }
-    if (side !== "Left") { previewAreaRight.updateNodesVisibility(); }
-    if (side !== "Right") { previewAreaLeft.updateNodesColor(); }
-    if (side !== "Left") { previewAreaRight.updateNodesColor(); }
     redrawEdges();
-    if (side !== "Right") { createLegend(modelLeft,"Left"); }
-    if (side !== "Left") { createLegend(modelRight,"Right"); }
 };
 
 /* Instead of two functions just add an arguement to original one
