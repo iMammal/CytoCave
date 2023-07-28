@@ -1853,6 +1853,9 @@ function PreviewArea(canvas_, model_, name_) {
             //     nodeIndex: i
             // }
 
+            //console.log("dataset[i].group: " + dataset[i].group);
+            //console.log("index: " + i);
+
             // get the position of the region
             let position = dataset[i].position;
             // set the position of the instance
@@ -2289,6 +2292,8 @@ function PreviewArea(canvas_, model_, name_) {
             } else {
                 opacity = 0.0;
             }
+
+            //todo: this.instances["area_43"]["left"]  <--- would work
             this.instances[dataset[i].group][dataset[i].hemisphere].material.opacity = opacity;
             //glyphs[i].material.opacity = opacity;
         }
