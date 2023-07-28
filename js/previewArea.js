@@ -1718,6 +1718,29 @@ function PreviewArea(canvas_, model_, name_) {
         this.redrawEdges();
     };
 
+    this.removeAllInstances = function () {
+        // free all material and geometry for all instance objects in this.instances
+        let groups = this.listGroups();
+        for (let i = 0; i < groups.length; i++) {
+            let group = groups[i];
+            let groupObject = this.instances[group];
+            let left = groupObject.left;
+            let right = groupObject.right;
+            if(left && left.geometry && left.material) {
+                left.geometry.dispose();
+                left.material.dispose();
+                brain.remove(left);
+            }
+            if(right && right.geometry && right.material) {
+                right.geometry.dispose();
+                right.material.dispose();
+                brain.remove(right);
+            }
+            this.instances[group] = {left: null, right: null};
+        }
+    };
+
+
     // list groups in the dataset
     this.listGroups = function () {
         var dataset = model.getDataset();
