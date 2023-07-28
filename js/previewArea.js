@@ -1719,26 +1719,54 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     this.removeAllInstances = function () {
-        // free all material and geometry for all instance objects in this.instances
-        let groups = this.listGroups();
-        for (let i = 0; i < groups.length; i++) {
-            let group = groups[i];
-            let groupObject = this.instances[group];
-            let left = groupObject.left;
-            let right = groupObject.right;
-            if(left && left.geometry && left.material) {
-                left.geometry.dispose();
-                left.material.dispose();
-                brain.remove(left);
+        // Loop through all group names in this.instances
+        for (let group in this.instances) {
+            // Check if the group has hemispheres
+            if (this.instances.hasOwnProperty(group)) {
+                // Get the left and right hemisphere objects
+                let left = this.instances[group].left;
+                let right = this.instances[group].right;
+
+                // Clear memory associated with the left hemisphere if it exists
+                if (left && left.geometry && left.material) {
+                    left.geometry.dispose();
+                    left.material.dispose();
+                    brain.remove(left);
+                    this.instances[group].left = null;
+                }
+
+                // Clear memory associated with the right hemisphere if it exists
+                if (right && right.geometry && right.material) {
+                    right.geometry.dispose();
+                    right.material.dispose();
+                    brain.remove(right);
+                    this.instances[group].right = null;
+                }
             }
-            if(right && right.geometry && right.material) {
-                right.geometry.dispose();
-                right.material.dispose();
-                brain.remove(right);
-            }
-            this.instances[group] = {left: null, right: null};
         }
     };
+
+    // this.removeAllInstances = function () {
+    //     // free all material and geometry for all instance objects in this.instances
+    //     let groups = this.listGroups();
+    //     for (let i = 0; i < groups.length; i++) {
+    //         let group = groups[i];
+    //         let groupObject = this.instances[group];
+    //         let left = groupObject.left;
+    //         let right = groupObject.right;
+    //         if(left && left.geometry && left.material) {
+    //             left.geometry.dispose();
+    //             left.material.dispose();
+    //             brain.remove(left);
+    //         }
+    //         if(right && right.geometry && right.material) {
+    //             right.geometry.dispose();
+    //             right.material.dispose();
+    //             brain.remove(right);
+    //         }
+    //         this.instances[group] = {left: null, right: null};
+    //     }
+    // };
 
 
     // list groups in the dataset
