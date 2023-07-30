@@ -1784,7 +1784,7 @@ function PreviewArea(canvas_, model_, name_) {
         var dataset = model.getDataset();
         var count = 0;
         for (var i = 0; i < dataset.length; i++) {
-            if (dataset[i].group === group && dataset[i].hemisphere === hemisphere) {
+            if (  (dataset[i].group === group  || dataset[i].group.toString() === group) && dataset[i].hemisphere === hemisphere) {
                 count++;
             }
         }

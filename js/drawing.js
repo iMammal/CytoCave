@@ -633,18 +633,24 @@ var getIntersectedObject = function (event) {
 var changeColorGroup = function (name, side) {
     if (side !== "Right") {
         modelLeft.setActiveGroup(name);
+        previewAreaLeft.removeAllInstances();
         modelLeft.setAllRegionsActivated();
+        previewAreaLeft.drawRegions();
         previewAreaLeft.updateNodesVisibility();
         previewAreaLeft.updateNodesColor();
         createLegend(modelLeft, "Left");
+        //redrawScene("Left")   // This is not needed as the redrawScene is called in the updateNodesVisibility
     }
 
     if (side !== "Left") {
         modelRight.setActiveGroup(name);
+        previewAreaRight.removeAllInstances();
         modelRight.setAllRegionsActivated();
+        previewAreaRight.drawRegions();
         previewAreaRight.updateNodesVisibility();
         previewAreaRight.updateNodesColor();
         createLegend(modelRight, "Right");
+        //redrawScene("Right")  // This is not needed as the redrawScene is called in the updateNodesVisibility
     }
 
     setColorGroupScale(side);
