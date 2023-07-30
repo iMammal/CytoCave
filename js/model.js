@@ -217,6 +217,7 @@ function Model(side) {
         var data = [];
         // data[0] is assumed to contain a string header
         for (var i = 1; i < d.length; i++) {
+            //console.log("i,d[i]:",i, d[i]);
             data.push(new THREE.Vector3(d[i][0 + offset], d[i][1 + offset], d[i][2 + offset]));
         }
         centroids[topology] = scaleCentroids(data);
@@ -291,11 +292,18 @@ function Model(side) {
         }
     };
 
-    // get the dataset according to activeTopology
-    this.getDataset = function () {
-        for (var i = 0; i < dataset.length; i++) {
-            dataset[i].position = centroids[activeTopology][i];
-            dataset[i].group = groups[activeGroup][i];
+    // Not just a getter. Also adds/updates position and group info into the dataset according to activeTopology
+    // Maybe it should be split up into a getter and an updater?
+    this.getDataset = function (update = false) {
+        if (update) {
+            for (var i = 0; i < dataset.length; i++) {
+                // console.log("i,activeTopology:", i, activeTopology);
+                // console.log("activeGroup:", activeGroup);
+                // console.log("centroids[activeTopology][i]:", centroids[activeTopology][i]);
+                // console.log("groups[activeGroup][i]:", groups[activeGroup][i]);
+                dataset[i].position = centroids[activeTopology][i];
+                dataset[i].group = groups[activeGroup][i];
+            }
         }
         return dataset;
     };

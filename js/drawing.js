@@ -248,8 +248,19 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         objectIntersected.object.select(objectIntersected);
         //previewArea.updateNodeGeometry(objectIntersected, 'selected');
         //set the object geometry to selected in both scenes
-        previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected');
-        previewAreaRight.updateNodeGeometry(objectIntersected, 'selected');
+        // this if statement is to handle different active groups in the left and right preview areas
+        let nodeIndex = -1;
+        if (isLeft) {
+            nodeIndex = previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected');
+            previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
+            //previewAreaLeft.getNodesInstanceFromDatasetIndex(nodeIndex);
+        } else {
+            //previewAreaRight.getNodesInstanceFromDatasetIndex(nodeIndex);
+            nodeIndex = previewAreaRight.updateNodeGeometry(objectIntersected, 'selected');
+            previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
+        }
+        //previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
+        //previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
         console.log("switched to selected");
         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         //previewArea.drawSelectedNode(objectIntersected);
@@ -635,6 +646,7 @@ var changeColorGroup = function (name, side) {
         modelLeft.setActiveGroup(name);
         previewAreaLeft.removeAllInstances();
         modelLeft.setAllRegionsActivated();
+        modelLeft.getDataset(true);
         previewAreaLeft.drawRegions();
         previewAreaLeft.updateNodesVisibility();
         previewAreaLeft.updateNodesColor();
@@ -646,6 +658,7 @@ var changeColorGroup = function (name, side) {
         modelRight.setActiveGroup(name);
         previewAreaRight.removeAllInstances();
         modelRight.setAllRegionsActivated();
+        modelRight.getDataset(true);
         previewAreaRight.drawRegions();
         previewAreaRight.updateNodesVisibility();
         previewAreaRight.updateNodesColor();

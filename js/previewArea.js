@@ -1371,13 +1371,18 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     // update node scale according to selection status
-    this.updateNodeGeometry = function (nodeObject,status) {
+    this.updateNodeGeometry = function (nodeObject, status, nodeIndex) {
         // console.log("updateNodeGeometry");
         // console.log("new status: " + status);
         // console.log("nodeObject: ");
         // console.log(nodeObject);
         //let objectParent = nodeObject.object;
+
+        if(nodeIndex) {
+            nodeObject = this.getNodeInstanceByIndex(nodeIndex);
+        }
         let objectParent = this.instances[nodeObject.object.name.group][nodeObject.object.name.hemisphere];
+
         //do the above two lines reference the same object?
         //log them both, while they are the same if a nodeobject from another preview window is passed in they will be different in some ways.
         // using this.instances[objectParent.name.group][objectParent.name.hemisphere] is the correct way to get the objectParent
@@ -1492,6 +1497,8 @@ function PreviewArea(canvas_, model_, name_) {
         }
 
         objectParent.needsUpdate = true;
+
+        return datasetIndex;
     };
 
     var animateNodeBreathing = function (nodeList) {
@@ -1714,7 +1721,7 @@ function PreviewArea(canvas_, model_, name_) {
     // updating scenes: redrawing glyphs and displayed edges
     this.updateScene = function () {
         //updateNodesPositions(); // todo: update to account for instancing
-        this.updateNodesVisibility();
+        this.updateNodesVisibility(true);
         this.redrawEdges();
     };
 
@@ -1784,7 +1791,7 @@ function PreviewArea(canvas_, model_, name_) {
         var dataset = model.getDataset();
         var count = 0;
         for (var i = 0; i < dataset.length; i++) {
-            if (  (dataset[i].group === group  || dataset[i].group.toString() === group) && dataset[i].hemisphere === hemisphere) {
+            if ( dataset[i].group && (dataset[i].group === group  || dataset[i].group.toString() === group) && dataset[i].hemisphere === hemisphere) {
                 count++;
             }
         }
@@ -2269,8 +2276,8 @@ function PreviewArea(canvas_, model_, name_) {
         // }
     };
 
-    this.updateNodesVisibility = function () {
-        var dataset = model.getDataset();
+    this.updateNodesVisibility = function (updateDataset = false) {
+        var dataset = model.getDataset(updateDataset);
         for (var i = 0; i < dataset.length; i++) {
             var opacity = 1.0;
             if (getRoot && getRoot == i) { // root node
@@ -2434,7 +2441,48 @@ function PreviewArea(canvas_, model_, name_) {
         return activeEdges;
     }
 
+    this.getNodeInstanceByIndex = function (index) {
+        let groups = this.listGroups();
+        for (let j = 0; j < groups.length; j++) {
+            // each group may have a left and right hemisphere
+            const groupOf = this.instances[groups[j]];
+            if (!groupOf) continue;
+            if (groupOf['left'] === undefined && groupOf['right'] === undefined) {
+                console.log("groupOf left and right undefined: " + groups[j]);
+                continue;
+            }
+            if (groupOf['left'] === undefined) {
+                console.log("groupOf left undefined: " + groups[j]);
+            }
+            if (groupOf['right'] === undefined) {
+                console.log("groupOf right undefined: " + groups[j]);
+            }
+            const leftHemisphere = groupOf['left'];
+            const rightHemisphere = groupOf['right'];
+            if (!leftHemisphere || !rightHemisphere) continue;
+            // check which hemisphere is valid
+            let node = null;
+            let leftorright = "";
+            if (leftHemisphere.getNodesInstanceFromDatasetIndex) {
+                node = leftHemisphere.getNodesInstanceFromDatasetIndex(index);
+                leftorright = "left";
+            } else if (rightHemisphere.getNodesInstanceFromDatasetIndex) {
+                node = rightHemisphere.getNodesInstanceFromDatasetIndex(index);
+                leftorright = "right";
+            } else {
+                console.log("No hemisphere found");
+                continue;
+            }
+            if (node === null) {
+                //console.log("Node not found in " + leftorright + " hemisphere");
+                continue;
+            }
+            console.log("Node: ");
+            console.log(node);
 
+            return node;
+        }
+    }
 
     this.getActiveEdges = function (topN = null) {
         var nodeIdx;
