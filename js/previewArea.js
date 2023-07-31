@@ -1816,7 +1816,7 @@ function PreviewArea(canvas_, model_, name_) {
             };
 
             // create instance mesh for each group and hemisphere
-            let geometry = getNormalGeometry('left');
+            let geometry = getNormalGeometry('left',name);
             let material = getNormalMaterial(model, groups[i]);
             // create the instance mesh with the number of nodes in the group
             this.instances[groups[i]].left = new THREE.InstancedMesh(geometry, material, leftCount);
