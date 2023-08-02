@@ -404,7 +404,7 @@ var initControls = function () {
     // addEdgeBundlingCheck();
     addModalityButton();
     addThresholdSlider();
-	addLateralityCheck();
+	//addLateralityCheck();
     addColorGroupList();
     addColorGroupListLeft();
     addTopologyMenu(modelLeft, 'Left');
@@ -711,8 +711,21 @@ var redrawScene = function (side) {
 var changeActiveGeometry = function (model, side, type) {
     console.log("Change Active Geometry to: ", type);
     model.setActiveTopology(type);
-    redrawScene(side);
-};
+    if(side !== "Left") {
+        previewAreaRight.removeAllInstances();
+        modelRight.setAllRegionsActivated();
+        modelRight.getDataset(true);
+        previewAreaRight.drawRegions();
+        previewAreaRight.updateNodesVisibility();
+    } else {
+        previewAreaLeft.removeAllInstances();
+        modelLeft.setAllRegionsActivated();
+        modelLeft.getDataset(true);
+        previewAreaLeft.drawRegions();
+        previewAreaLeft.updateNodesVisibility();
+    }
+    model.computeEdgesForTopology(model.getActiveTopology());
+    redrawScene(side);};
 
 // draw shortest path for the left and right scenes = prepare the edges and plot them
 var updateShortestPathEdges = function (side) {
