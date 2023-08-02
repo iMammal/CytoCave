@@ -1035,7 +1035,7 @@ var setColorClusteringSliderVisibility = function (value) {
 /* Topology options at viewLeft and viewRight */
 // add "Topological Spaces" menu for scene containing:
 // Isomap, MDS, tSNE and anatomy spaces
-var addTopologyMenu = function (model, side) {
+var addTopologyMenu = function (model, side, type="anatomy") {
 
     var topologies = model.getTopologies();
     var hierarchicalClusteringExist = false;
@@ -1048,7 +1048,7 @@ var addTopologyMenu = function (model, side) {
         var el = document.createElement("option");
         el.textContent = topology;
         el.value = topology;
-        el.selected = (i == 0);
+        el.selected = (topology === type); // (i == 0);
         select.appendChild(el);
     }
     select.onchange = function () {

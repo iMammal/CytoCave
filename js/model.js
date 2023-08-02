@@ -197,7 +197,7 @@ function Model(side) {
     };
 
     this.getActiveTopology = function () {
-        return activeTopology;
+        return activeTopology;0
     };
 
     //todo: These are the distances between the nodes in the selected topology used for edge bundling calculations.

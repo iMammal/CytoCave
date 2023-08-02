@@ -1903,7 +1903,7 @@ function PreviewArea(canvas_, model_, name_) {
                 // search through all instances for the index in the userData.indexList
                 // return the instanceId and the object
                 // if the index is not found return -1
-                console.log("Searching for index: " + index);
+                /////console.log("Searching for index: " + index);
                 //console.log(this);
                 //check that userData.indexList exists
                 if (this.userData.indexList === undefined) {
@@ -1912,7 +1912,7 @@ function PreviewArea(canvas_, model_, name_) {
                 }
                 for (let i = 0; i < this.userData.indexList.length; i++) {
                     if (this.userData.indexList[i] === index) {
-                        console.log("Found index: " + index + " at instanceId: " + i);
+                        /////console.log("Found index: " + index + " at instanceId: " + i);
                         return {
                             instanceId: i,
                             hemisphere: this.name.hemisphere,
@@ -1967,7 +1967,7 @@ function PreviewArea(canvas_, model_, name_) {
                 }
                 // return true if it is, false if it isn't
                 if(instance.userData.selectedNodes.includes(index)){
-                    console.log("Yes Node is selected");
+                    /////console.log("Yes Node is selected");
                     return true;
                 } else {
                     return false;

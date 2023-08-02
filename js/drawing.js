@@ -750,6 +750,12 @@ var changeSceneToSubject = function (subjectId, model, previewArea, side) {
     var fileNames = dataFiles[subjectId];
     removeGeometryButtons(side);
     var info = model.getCurrentRegionsInformation();
+    var type = model.getActiveTopology();
+    if(side !== "Left") {
+        type = modelRight.getActiveTopology();
+    } else {
+        type = modelLeft.getActiveTopology();
+    }
     model.clearModel();
 
     queue()
@@ -764,13 +770,14 @@ var changeSceneToSubject = function (subjectId, model, previewArea, side) {
                     var level1 = model.getClusteringLevel();
                     var level2 = model.getClusteringGroupLevel();
                     model.createGroups();
-                    addTopologyMenu(model, side);
+                    addTopologyMenu(model, side, type);
                     model.setActiveGroup(activeGroup);
                     model.setClusteringLevel(level1);
                     model.updateClusteringGroupLevel(level2);
                     model.setAllRegionsActivated();
                     model.setCurrentRegionsInformation(info);
-                    model.computeEdgesForTopology(model.getActiveTopology());
+                    model.computeEdgesForTopology(type); //model.getActiveTopology());
+                    changeActiveGeometry(model, side, type);
                     redrawScene(side);
                 })
             ;
