@@ -25,6 +25,7 @@ function Model(side) {
     var centroids = {};                 // nodes centroids according to topological spaces: centroids[node][technique] = (x,y,z)
     var topologies = [];                // available topologies
     var clusteringTopologies = [];      // available clustering topologies
+    var heatmapTopologies = [];      // available heatmap topologies
     var activeTopology;                 // isomap, MDS, anatomy, tsne, PLACE, selection from centroids
     var nodesDistances = {};            // Euclidean distance between the centroids of all nodes
 
@@ -50,6 +51,7 @@ function Model(side) {
     var metricQuantileScale;
 
     var clusters = {};                  // PLACE clusters, assumed level 4: clusters from 1 to 16
+    var heatmaps = {};                  // PLACE clusters, assumed level 4: clusters from 1 to 16
     var maxClusterHierarchicalLevel = 4;// max clustering hierarchical level
     var clusteringLevel = 4;            // default PLACE/PACE level
     var clusteringGroupLevel = 4;       // clustering group level used for color coding, 1 to 4
@@ -148,13 +150,20 @@ function Model(side) {
             }
         }
 
+        if (false && this.hasHeatmapData()) {   // TODO: roll heatmap data into clustering data for now
+            for (var i = 0; i < heatmapTopologies.length; ++i) {
+                var topology = heatmapTopologies[i];
+                groups[topology] = heatmaps[topology][heatmaps[topology].length - 1];
+            }
+        }
+
         activeGroup = names[0];
         this.prepareDataset();
     };
 
     // update the clustering group level, level can be 1 to 4
     this.updateClusteringGroupLevel = function (level) {
-        if (this.hasClusteringData() && clusteringTopologies.indexOf(activeGroup) > -1 && clusters[activeGroup].length > 1) {
+        if (this. hasClusteringData() && clusteringTopologies.indexOf(activeGroup) > -1 && clusters[activeGroup].length > 1) {
             groups[activeGroup] = clusters[activeGroup][level - 1];
             clusteringGroupLevel = level;
         }
@@ -716,6 +725,7 @@ function Model(side) {
     this.computeNodesLocationForClusters = function (topology) {
         var platonic = new Platonics();
         var isHierarchical = topology === "PLACE" || topology === "PACE";
+        var isHeatmap = topology.indexOf("HEATMAP") !== -1;
         var level = isHierarchical ? clusteringLevel - 1 : 0;
         var cluster = clusters[topology][level];
         var totalNNodes = cluster.length;
@@ -725,6 +735,11 @@ function Model(side) {
         // this only happens if the provided data have < 4 levels
         // of clusters. The clusteringLevel should discover that
         nClusters = Math.min(nClusters, maxNumberOfClusters);
+
+        if(isHeatmap) {
+            console.error("Can not visualize heatmap data.");
+            return;
+        }
 
         if (maxNumberOfClusters < 4)
             platonic.createTetrahedron();
@@ -773,7 +788,7 @@ function Model(side) {
     };
 
     // clusters can be hierarchical such as PLACE and PACE or not
-    this.setClusters = function (data, loc, name) {
+    this.setClusters = function (data, loc, name, heatmap = false) {
         var clusteringData = [];
         // data[0] is assumed to contain a string header
         for (var j = 1; j < data.length; j++) {
@@ -799,6 +814,9 @@ function Model(side) {
             temp[0] = clusteringData;
         }
         clusters[name] = temp;
+        if (false && heatmap) {
+            heatmaps[name] = clusteringData;
+        }
     };
 
     this.setClusteringLevel = function (level) {
@@ -836,8 +854,16 @@ function Model(side) {
         return (clusteringTopologies.length > 0);
     };
 
+    this.hasHeatmapData = function () {
+        return (heatmapTopologies.length > 0);
+    };
+
     this.getClusteringTopologiesNames = function () {
         return clusteringTopologies;
+    };
+
+    this.getHeatmapTopologiesNames = function () {
+        return heatmapTopologies;
     };
 
     this.setTopology = function (data) {
@@ -861,6 +887,13 @@ function Model(side) {
                 this.computeNodesLocationForClusters(dataType);
                 topologies.push(dataType);
                 clusteringTopologies.push(dataType);
+            } else if ( dataType.includes("Heatmap") ) {
+                //dataType = dataType.replace("Heatmap", "");  //Todo: Keep it in the name for now to distinguish it from clustering
+                this.setClusters(data, i, dataType, true);
+                this.computeNodesLocationForClusters(dataType);
+                topologies.push(dataType);
+                clusteringTopologies.push(dataType);
+                //heatmapTopologies.push(dataType);
             } else { // all other topologies
                 this.setCentroids(data, dataType, i);
                 topologies.push(dataType);

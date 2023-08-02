@@ -642,9 +642,12 @@ var getIntersectedObject = function (event) {
 
 // This now only changes the Right color group
 var changeColorGroup = function (name, side) {
+    console.log("Change color group: " + name + " " + side);
+    let tempNodesSelected = getNodesSelected();
+
     if (side !== "Right") {
-        modelLeft.setActiveGroup(name);
         previewAreaLeft.removeAllInstances();
+        modelLeft.setActiveGroup(name);
         modelLeft.setAllRegionsActivated();
         modelLeft.getDataset(true);
         previewAreaLeft.drawRegions();
@@ -652,11 +655,12 @@ var changeColorGroup = function (name, side) {
         previewAreaLeft.updateNodesColor();
         createLegend(modelLeft, "Left");
         //redrawScene("Left")   // This is not needed as the redrawScene is called in the updateNodesVisibility
+        previewAreaLeft.setSelectedNodes(tempNodesSelected);
     }
 
     if (side !== "Left") {
-        modelRight.setActiveGroup(name);
         previewAreaRight.removeAllInstances();
+        modelRight.setActiveGroup(name);
         modelRight.setAllRegionsActivated();
         modelRight.getDataset(true);
         previewAreaRight.drawRegions();
@@ -664,6 +668,7 @@ var changeColorGroup = function (name, side) {
         previewAreaRight.updateNodesColor();
         createLegend(modelRight, "Right");
         //redrawScene("Right")  // This is not needed as the redrawScene is called in the updateNodesVisibility
+        previewAreaRight.setSelectedNodes(tempNodesSelected);
     }
 
     setColorGroupScale(side);

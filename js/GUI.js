@@ -840,14 +840,25 @@ var addColorGroupList = function() {
     }
 
     var hierarchicalClusteringExist = false;
-    if (modelLeft.hasClusteringData() && modelRight.hasClusteringData()) {
+    if ((modelLeft.hasClusteringData() || modelLeft.hasHeatmapData() ) &&
+        (modelRight.hasClusteringData() || modelRight.hasHeatmapData() )) {
         //var clusterNames = modelLeft.getClusteringTopologiesNames();
-        var clusterNames = modelRight.getClusteringTopologiesNames();
+        let clusterNames = modelRight.getClusteringTopologiesNames();
+        let heatmapNames = modelRight.getHeatmapTopologiesNames();
 
         for (var i = 0; i < clusterNames.length; ++i) {
             var name = clusterNames[i];
             var isHierarchical = name == "PLACE" || name == "PACE";
             hierarchicalClusteringExist |= isHierarchical;
+
+            var el = document.createElement("option");
+            el.textContent = name;
+            el.value = name;
+            select.appendChild(el);
+        }
+
+        for (var i = 0; i < heatmapNames.length; ++i) {
+            var name = heatmapNames[i];
 
             var el = document.createElement("option");
             el.textContent = name;
