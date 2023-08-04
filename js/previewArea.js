@@ -3208,7 +3208,7 @@ function PreviewArea(canvas_, model_, name_) {
     // Update the text and position according to selected node
     // The alignment, size and offset parameters are set by experimentation
     // TODO needs more experimentation
-    this.updateNodeLabel = function (text, nodeIndex) {
+    this.updateNodeLabel = function (text, nodeObject) {    ///Index) {
         var context = nspCanvas.getContext('2d');
         context.textAlign = 'left';
         // Find the length of the text and add enough _s to fill half of the canvas
@@ -3218,11 +3218,12 @@ function PreviewArea(canvas_, model_, name_) {
             text = text + "_";
         }
         //text = text + "___________________________";
-        //context.clearRect(0, 0, 256 * 4, 256);
+        context.clearRect(0, 0, 256 * 4, 256);
         context.fillText(text, 5, 120);
 
         nodeNameMap.needsUpdate = true;
-        var pos = glyphs[nodeIndex].position;
+        //var pos = glyphs[nodeIndex].position;
+        var pos = nodeObject.point;
         nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
         nodeLabelSprite.needsUpdate = true;
     };

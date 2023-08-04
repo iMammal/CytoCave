@@ -91,19 +91,19 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     if(intersectedObject === undefined)
         return;
     //check if name is defined, if not, it is not a node
-    if (intersectedObject.name === undefined) {
+    if (intersectedObject.object.name === undefined) {
         return;
     }
     //it's also not a valid node if it has no name
-    if (intersectedObject.name === '') {
+    if (intersectedObject.object.name === '') {
         return;
     }
     console.log("intersected Object Moveover: ");
     console.log(intersectedObject);
     //check if the intersected object is a node, if it is the name.type will be 'region'
     //if it is a node, get the node index and the region name
-    if (intersectedObject.name.type == 'region') {
-        nodeIdx = intersectedObject.object.getDatasetIndex(intersectedObject.instanceId);
+    if (intersectedObject.object.name.type == 'region') {
+        nodeIdx = intersectedObject.object.getDatasetIndex(intersectedObject); //.instanceId);
         if (intersectedObject) {
             //nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
             region = model.getRegionByIndex(nodeIdx);
@@ -122,8 +122,9 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     if (nodeExistAndVisible) {
         setNodeInfoPanel(region, nodeIdx);
         // if (vr) {  //todo: this can be used outside of VR to help get node label info next to the node itself, not in the screen corner
-             previewAreaLeft.updateNodeLabel(region.name, nodeIdx);
-             previewAreaRight.updateNodeLabel(region.name, nodeIdx);
+            let labeltext = region.group+" "+region.name+" "+region.label;
+             previewAreaLeft.updateNodeLabel(labeltext,  intersectedObject);
+             previewAreaRight.updateNodeLabel(labeltext, intersectedObject);
         // }
     }
 
@@ -422,8 +423,8 @@ var initControls = function () {
     addDimensionFactorSliderRight('Right');
     // addFslRadioButton();
     addSearchPanel();
-    addAnimationSlider();
-    addFlashRateSlider();
+    //addAnimationSlider();
+    //addFlashRateSlider();
     addSkyboxButton();
 
     modelLeft.setAllRegionsActivated();
