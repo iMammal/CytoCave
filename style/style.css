@@ -226,6 +226,20 @@ button > input[type="checkbox"] {
     left: 20px;
 }
 
+#allToggleRight {
+    position: relative;
+    height: 25px;
+    top: 5px;
+    left: 20px;
+}
+
+#allToggleLeft {
+    position: relative;
+    height: 25px;
+    top: 5px;
+    left: 20px;
+}
+
 #viewRight {
     position: absolute;
     height: 100px;

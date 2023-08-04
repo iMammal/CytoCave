@@ -892,6 +892,7 @@ var addColorGroupList = function() {
         //previewAreaRight.syncCameraWith(previewAreaLeft.getCamera());
         if (this.innerHTML === "Unlock") {
             document.getElementById("colorCodingLeft").hidden = false;
+            document.getElementById("allToggleLeft").hidden = false;
             document.getElementById("colorCodingMenu").label = "Right ColorCoding:";
             document.getElementById("legendLeft").hidden = false;
             var selection = document.getElementById("colorCodingMenu");
@@ -905,6 +906,7 @@ var addColorGroupList = function() {
             document.getElementById("colorCodingLeft").hidden = true;
             document.getElementById("colorCodingMenu").label = "ColorCoding:";
             document.getElementById("legendLeft").hidden = true;
+            document.getElementById("allToggleLeft").hidden = true;
             this.value = 'Locked';
             this.innerHTML = "Unlock";
             var selection = document.getElementById("colorCodingMenu");
@@ -919,7 +921,6 @@ var addColorGroupList = function() {
         }
     };
 };
-
 
 /* Color coding area for Left Viewport at upload */
 // add "Color Coding" radio button group containing: Anatomy, Embeddedness ...
@@ -998,8 +999,49 @@ var addColorGroupListLeft = function () {
             */
 
     };
-};
 
+
+    document.getElementById("allToggleRight").onclick = function () {
+
+        //todo: toggle all regions in the right viewport or both if sync locked
+        var activeGroup = modelRight.getActiveGroup();
+        for (var i = 0; i < activeGroup.length; ++i) {
+            let groupid = activeGroup[i];
+
+            if (false && modelRight.getRegionActivation(activeGroup[i])) {
+                model.setRegionActivation(activeGroup[i], false);
+            }
+            if (lockLegend) {
+                modelLeft.toggleRegion(groupid);
+            }
+            let side = "right";
+            console.log("RIGHTmodel:" + side + modelRight.getName());
+            modelRight.toggleRegion(groupid);//,"Right");
+            if (modelRight.getRegionState(groupid) == 'transparent')
+                updateNodesVisiblity(lockLegend ? "Both" : "Right");
+            else
+                updateScenes(lockLegend ? "Both" : "Right");
+        }
+    }
+
+    document.getElementById("allToggleLeft").onclick = function () {
+
+        //todo: toggle all regions in the right viewport or both if sync locked
+        var activeGroup = modelLeft.getActiveGroup();
+        for (var i = 0; i < activeGroup.length; ++i) {
+            let groupid = activeGroup[i];
+
+            let side = "left";
+            console.log("LEFTmodel:" + side + modelLeft.getName());
+            modelLeft.toggleRegion(groupid);//,"Left");
+            if (modelLeft.getRegionState(groupid) == 'transparent')
+                updateNodesVisiblity(lockLegend ? "Both" : "Left");
+            else
+                updateScenes(lockLegend ? "Both" : "Left");
+        }
+    };
+
+};
 
 var addColorClusteringSlider = function () {
     var menu = d3.select("#colorCoding");
