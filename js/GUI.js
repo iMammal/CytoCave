@@ -143,10 +143,10 @@ var addDimensionFactorSliderLeft = function (side) {
         .attr("for", "dimensionSlider")
         .attr("id", "dimensionSliderLabel"+side)
         .text(side+" Sphere Size");
-    panel.append("label")
-        .attr("for", "dimensionSlider")
-        .attr("id", "dimensionSliderLabel"+side)
-        .text(side+" Box Size");
+    // panel.append("label")
+    //     .attr("for", "dimensionSlider")
+    //     .attr("id", "dimensionSliderLabel"+side)
+    //     .text(side+" Box Size");
 
     panel.append("br");
 };
