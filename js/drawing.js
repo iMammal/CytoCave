@@ -760,9 +760,11 @@ var changeSceneToSubject = function (subjectId, model, previewArea, side) {
     var type = model.getActiveTopology();
     if(side !== "Left") {
         type = modelRight.getActiveTopology();
-    } else {
+    }
+    if(side !== "Right") {
         type = modelLeft.getActiveTopology();
     }
+    let tempNodesSelected = getNodesSelected();
     model.clearModel();
 
     queue()
@@ -785,6 +787,8 @@ var changeSceneToSubject = function (subjectId, model, previewArea, side) {
                     model.setCurrentRegionsInformation(info);
                     model.computeEdgesForTopology(type); //model.getActiveTopology());
                     changeActiveGeometry(model, side, type);
+                    if (side !== "right") previewAreaLeft.setSelectedNodes(tempNodesSelected);
+                    if (side !== "left") previewAreaRight.setSelectedNodes(tempNodesSelected);
                     redrawScene(side);
                 })
             ;
