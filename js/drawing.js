@@ -711,19 +711,25 @@ var redrawScene = function (side) {
 // change the active geometry
 var changeActiveGeometry = function (model, side, type) {
     console.log("Change Active Geometry to: ", type);
+    let tempNodesSelected = getNodesSelected();
     model.setActiveTopology(type);
+
     if(side !== "Left") {
         previewAreaRight.removeAllInstances();
         modelRight.setAllRegionsActivated();
         modelRight.getDataset(true);
         previewAreaRight.drawRegions();
         previewAreaRight.updateNodesVisibility();
+        previewAreaRight.setSelectedNodes(tempNodesSelected);
+
     } else {
         previewAreaLeft.removeAllInstances();
         modelLeft.setAllRegionsActivated();
         modelLeft.getDataset(true);
         previewAreaLeft.drawRegions();
         previewAreaLeft.updateNodesVisibility();
+        previewAreaLeft.setSelectedNodes(tempNodesSelected);
+
     }
     model.computeEdgesForTopology(model.getActiveTopology());
     redrawScene(side);};
