@@ -1664,7 +1664,16 @@ function PreviewArea(canvas_, model_, name_) {
         const material = this.edgeFlareMaterial;
 
         for (var i = 0; i < this.displayedEdges.length; ++i) {
-            this.displayedEdgeFlareTravelPercentages[i] += 0.01;
+            let nodeIdx = this.displayedEdges[i].name.instanceId;
+
+            let groupVal = null;
+            if(model.getDataset()[nodeIdx] != undefined) groupVal = model.getDataset()[nodeIdx].group;
+            let firerate = 0.01;
+            if (typeof (groupVal) === 'number') {
+                firerate = (groupVal % 10) / 100;
+            }
+
+            this.displayedEdgeFlareTravelPercentages[i] += firerate;
             //brain.remove(this.displayedEdges[i]);
             this.edgeFlareVertices[i*3] = this.displayedEdges[i].geometry.attributes.position.array[0] + this.displayedEdgeFlareTravelPercentages[i] * (this.displayedEdges[i].geometry.attributes.position.array[3] - this.displayedEdges[i].geometry.attributes.position.array[0]);
             this.edgeFlareVertices[i*3+1] = this.displayedEdges[i].geometry.attributes.position.array[1] + this.displayedEdgeFlareTravelPercentages[i] * (this.displayedEdges[i].geometry.attributes.position.array[4] - this.displayedEdges[i].geometry.attributes.position.array[1]);
