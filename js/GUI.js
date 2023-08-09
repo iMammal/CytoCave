@@ -313,17 +313,20 @@ var addSkyboxButton = function (side) {
 };
 
 // adds a text label showing: label - region name - nodal strength
-var setNodeInfoPanel = function (region, index) {
+var setNodeInfoPanel = function (region, index, text = null) {
 
     var panel = d3.select('#nodeInfoPanel');
-
+    var para = document.createElement("p");
     panel.selectAll("p").remove();
 
-    var nodalStrengthLeft = Math.floor(modelLeft.getNodalStrength(index)*100)/100;
-    var nodalStrengthRight = Math.floor(modelRight.getNodalStrength(index)*100)/100;
+    if(!text) {
 
-    var para = document.createElement("p");
-    var node = document.createTextNode(region.label + " " + region.name + " " + nodalStrengthLeft + " / " + nodalStrengthRight);
+        var nodalStrengthLeft = Math.floor(modelLeft.getNodalStrength(index) * 100) / 100;
+        var nodalStrengthRight = Math.floor(modelRight.getNodalStrength(index) * 100) / 100;
+
+        text = region.label + " " + region.name + " " + nodalStrengthLeft + " / " + nodalStrengthRight;
+    }
+    var node = document.createTextNode(text); //region.label + " " + region.name + " " + nodalStrengthLeft + " / " + nodalStrengthRight);
 
     panel.node().appendChild(para).appendChild(node);
 };
@@ -1433,7 +1436,10 @@ var toggleMenus = function (e) {
     $('#viewLeft').toggle();
     $('#viewRight').toggle();
     $('#legend').toggle();
-    // $('#nodeInfoPanel').toggle();
+    $('#legendLeft').toggle();
+    //$('#nodeInfoPanel').toggle();
+    //$('#nodeInfoPanelLeft').toggle();
+    //$('#nodeInfoPanelRight').toggle();
     $('#colorCoding').toggle();
     $('#edgeInfoPanel').toggle();
     $('#search').toggle();
