@@ -30,7 +30,7 @@ import {
     getSpt,
     glyphNodeDictionary,
     //getNodesSelected,
-    //clrNodesSelected,
+    clrNodesSelected,
     setNodesSelected,
     getNodesFocused,
     clrNodesFocused,
@@ -1966,7 +1966,7 @@ function PreviewArea(canvas_, model_, name_) {
             // set the color of the first instance to the group color
             this.instances[groups[i]].left.setColorAt(0, material.color);
 
-            geometry = getNormalGeometry('right');
+            geometry = getNormalGeometry('right',name);
             material = getNormalMaterial(model, groups[i]);
             this.instances[groups[i]].right = new THREE.InstancedMesh(geometry, material, rightCount);
             this.instances[groups[i]].right.setColorAt(0, material.color);
@@ -3244,6 +3244,9 @@ function PreviewArea(canvas_, model_, name_) {
         var edges = model.getActiveEdges();
         var edgeIdx = model.getEdgesIndeces();
         var previousMap = model.getPreviousMap();
+        if(!previousMap) {
+            return;
+        }
 
         this.removeShortestPathEdgesFromScene();
 
@@ -3279,6 +3282,9 @@ function PreviewArea(canvas_, model_, name_) {
         var edges = model.getActiveEdges();
         var edgeIdx = model.getEdgesIndeces();
         var previousMap = model.getPreviousMap();
+        if(!previousMap) {
+            return;
+        }
 
         for (i = 0; i < getVisibleNodesLength(); ++i) {
             if (getVisibleNodes(i)) {
@@ -3309,7 +3315,7 @@ function PreviewArea(canvas_, model_, name_) {
         var prev; // previous node
         var edges = model.getActiveEdges();
         var edgeIdx = model.getEdgesIndeces();
-        var previousMap = model.getPreviousMap();
+        //var previousMap = model.getPreviousMap();
 
         setVisibleNodes(getVisibleNodes().fill(true));
         while (previousMap[i] != null) {

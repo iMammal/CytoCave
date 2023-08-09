@@ -147,7 +147,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
         }
     } else {
         if (pointedObject ) {
-            nodeIdx = glyphNodeDictionary[pointedObject.uuid];
+            nodeIdx = intersectedObject.object; //glyphNodeDictionary[pointedObject.uuid];
             if (nodeIdx === undefined)
                 return;
             hoverMode = hoverMode & ~mode; // clear the hover mode that triggered this function
@@ -176,7 +176,7 @@ function onMiddleClick(event) {
 
     var intersectedObject = getIntersectedObject(event);
     if (intersectedObject) {
-        var nodeIndex = glyphNodeDictionary[intersectedObject.object.uuid];
+        var nodeIndex = intersectedObject.instanceId; //glyphNodeDictionary[intersectedObject.object.uuid];
         if (nodeIndex == undefined || nodeIndex < 0)
             return;
         if (root == nodeIndex) { // disable spt and reset nodes visibility
@@ -184,6 +184,7 @@ function onMiddleClick(event) {
             root = undefined;
             visibleNodes.fill(true);
         } else { // enable spt
+            spt = true;
             spt = true;
             // compute the shortest path for the two models
             previewAreaLeft.computeShortestPathForNode(nodeIndex);
@@ -214,6 +215,8 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
     // console.log(`isLeft: ${isLeft}`);
 
     if (!objectIntersected) return;
+
+
 
     const instanceId = objectIntersected.instanceId;
     const group = objectIntersected.object.name.group;
@@ -265,6 +268,28 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         console.log("switched to selected");
         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         //previewArea.drawSelectedNode(objectIntersected);
+
+        if(spt) {
+            //previewArea.getShortestPathFromRootToNode(nodeIndex);
+            //return;
+            let pathArray = isLeft? modelLeft.getPathArray(getRoot(), nodeIndex) : modelRight.getPathArray(getRoot(), nodeIndex);
+            //console.log("pathArray: ", pathArray);
+            //console.log("pathArray.length: ", pathArray.length);
+            //console.log("pathArray[0]: ", pathArray[0]);
+            for (let i = 0; i < pathArray.length; i++) {
+                if (thresholdModality) {
+                    previewAreaLeft.drawEdgesGivenNode(pathArray[i]);//,activeEdges);
+                    previewAreaRight.drawEdgesGivenNode(pathArray[i]);//,activeEdges);
+
+                } else {
+                    //const n = model.getNumberOfEdges();
+                    //previewArea.drawTopNEdgesByNode(nodeIndex, n);
+                    previewAreaLeft.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
+                    previewAreaRight.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
+                }
+
+            }
+        }
 
         let activeEdges = previewArea.drawConnections(); //do we want to draw the connections there or here in drawing? My vote is here.
         // draw connections does not draw connections, but it does returs the lists of the connections to be drawn, filtered by the threshold.
@@ -411,10 +436,10 @@ var initControls = function () {
     addTopologyMenu(modelLeft, 'Left');
     addTopologyMenu(modelRight, 'Right');
 
-    //addShortestPathFilterButton();
-    //addDistanceSlider();
-    //addShortestPathHopsSlider();
-    //enableShortestPathFilterButton(false);
+    // addShortestPathFilterButton();
+    // addDistanceSlider();
+    // addShortestPathHopsSlider();
+    // enableShortestPathFilterButton(false);
 
     //addDimensionFactorSlider();
     addDimensionFactorSliderLeft('Left');

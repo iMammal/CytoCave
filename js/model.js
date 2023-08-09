@@ -6,12 +6,14 @@ private variables
  */
 import * as d3 from './external-libraries/d3'
 import {labelLUT, dataFiles, atlas, folder, setDataFile, setAtlas} from "./globals";
-import { Graph } from './utils/Dijkstra'
+//import { Graph } from './utils/Dijkstra'
+import Graph from 'node-dijkstra';
 //import { GPUForceEdgeBundling } from "./utils/gpu-forcebundling.js"; // Todo: Fix Edge Bundling
 import * as THREE from 'three'
 import {Platonics} from "./polyhedron";
 import * as math from 'mathjs'
 import {sunflower} from "./graphicsUtils";
+import {setNodeInfoPanel} from "./GUI";
 
 function Model(side) {
     var groups = {};                    // contain nodes group affiliation according to Anatomy, place, rich club, id
@@ -28,6 +30,7 @@ function Model(side) {
     var heatmapTopologies = [];      // available heatmap topologies
     var activeTopology;                 // isomap, MDS, anatomy, tsne, PLACE, selection from centroids
     var nodesDistances = {};            // Euclidean distance between the centroids of all nodes
+    let previousMap = {};               // previous map of nodesDistances
 
     var connectionMatrix = [];          // adjacency matrix
     var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
@@ -44,7 +47,7 @@ function Model(side) {
     var maxDistance = null;             // max value of distanceArray
     var distanceThreshold = 50;         // threshold for the distanceArray in percentage of the max value: 0 to 100
     var numberOfHops = 0;               // max number of hops for shortest path
-    var graph;
+    this.graph = new Graph();
 
     var metricValues = [];
 
@@ -277,6 +280,12 @@ function Model(side) {
 
                 // Assign the weight to the corresponding position in the sparse matrix
                 connectionMatrix.set([from, to], weight);
+                let text = "from: " + from + " to: " + to + " weight: " + weight;
+                setNodeInfoPanel(1,1,text);
+                if(i % 1000 == 0) {
+                    console.log(text);
+
+                }
             }
         } else {
             connectionMatrix = math.sparse(d.data); // d.data;
@@ -606,14 +615,23 @@ function Model(side) {
     this.computeDistanceMatrix = function() {
         const nNodes = connectionMatrix.size()[1];
 
-        const distanceMatrix = connectionMatrix.map(value => {
+        this.graph = new Graph();
+        const distanceMatrix = connectionMatrix.map((value, index) => {
+            const i = index[0];
+            const j = index[1];
+            //this.graph.addNode(i.toString(), {j.toString(): value});  //todo: fix j
+
+            const newmap = new Map();
+            newmap.set(j.toString(), value); //            j.toString(): value);
+
+            this.graph.addNode(i.toString(),newmap);
+
             if (value !== 0) {
                 return 1 / value;
             }
             return 0;
         }, true); // skipZeros=true
 
-        //const graph = new Graph();
 
         // Assign the computed distanceMatrix and edgeIdx to class variables
         this.distanceMatrix = distanceMatrix;
@@ -621,11 +639,14 @@ function Model(side) {
         return;
 
         //edgeIdx is not used anymore.
-
+        // but we create it anyway for the sake of consistency
+        // use also create the graph for SPT
         let idx = 0; // Initialize idx to 0
         edgeIdx = connectionMatrix.map((value, index) => {
             const i = index[0];
             const j = index[1];
+            this.graph.addNode(i.toString(), {j: value});
+
             if (true || (j > i)) { // && Math.abs(value) > 0) {
                 let result = idx++; // St1ext iteration
                 //edgeIdx.set([j, i], result); // Set the symmetric entry
@@ -635,22 +656,22 @@ function Model(side) {
         }, true); // skipZeros=true
 
         //let edgeIdxTr = edgeIdx.transpose();
+        //lets try not doing this:
+        if (false) {
+            idx = 0; // Initialize idx to 0
+            edgeIdx.forEach((value, index) => {
+                const i = index[0];
+                const j = index[1];
+                edgeIdx.set([j, i], value);
+                return value;
 
-        //if (false) {
-        idx = 0; // Initialize idx to 0
-        edgeIdx.forEach((value, index) => {
-            const i = index[0];
-            const j = index[1];
-            edgeIdx.set([j, i], value);
-            return value;
-
-            // if (j > i) { // && Math.abs(value) > 0) {
-            //     edgeIdx.set([j, i], idx++); // Set the symmetric entry
-            // } else {
-            //     return edgeIdx.get([i, j]);
-            // }
-        }, true); // skipZeros=true
-
+                // if (j > i) { // && Math.abs(value) > 0) {
+                //     edgeIdx.set([j, i], idx++); // Set the symmetric entry
+                // } else {
+                //     return edgeIdx.get([i, j]);
+                // }
+            }, true); // skipZeros=true
+        }
         //     let retval = 0;
         //     idx = idx + 1;
         //
@@ -693,7 +714,17 @@ function Model(side) {
     // compute shortest path from a specific node to the rest of the nodes
     this.computeShortestPathDistances = function (rootNode) {
         console.log("computing spt");
-        distanceArray = graph.shortestPath(String(rootNode));
+        var nNodes = connectionMatrix.size()[1];
+        distanceArray = [];
+        for (var i = 0; i < nNodes; i++) {
+            const pathArray = this.graph.path(String(rootNode), String(i));
+            if(pathArray) {
+                distanceArray[i]=(pathArray.length);
+
+            } else {
+                distanceArray[i] = -1;  //nNodes+nNodes;
+            }  //graph.shortestPath(String(rootNode));
+        }
         maxDistance = d3.max(distanceArray);
     };
 
@@ -702,11 +733,11 @@ function Model(side) {
     };
 
     this.getPreviousMap = function () {
-        return (graph) ? graph.getPreviousMap() : null;
+        return (this.previousMap) ? this.previousMap : null;
     };
 
     this.getMaxNumberOfHops = function () {
-        return graph.getMaxNumberOfHops();
+        return maxDistance; //  graph.getMaxNumberOfHops();  // maxDistance can be standin for maxNumberOfHops for now
     };
 
     this.setNumberOfHops = function (hops) {
@@ -716,6 +747,10 @@ function Model(side) {
     this.getNumberOfHops = function () {
         return numberOfHops;
     };
+
+    this.getPathArray = function (rootIndex,targetId) {
+        return this.graph.path(rootIndex, targetId);
+ 7   }
 
     // compute the position of each node for a clustering topology according to clustering data
     // in case of PLACE or PACE, clustering level can be 1 to 4, clusters[topology][level]
@@ -771,6 +806,10 @@ function Model(side) {
                 if (cluster[s] == (i + 1)) clusterIdx.push(s);
             }
             var nNodes = clusterIdx.length;
+            if(nNodes < 2) {
+                console.error("Can not visualize clustering data.");
+                return;
+            }
             face = platonic.getFace(i);
             coneAxis = math.mean(face, 0);
             coneAxis = math.divide(coneAxis, math.norm(coneAxis));
