@@ -1,3 +1,28 @@
+# NeuroCavePlus
+
+![alt text](readme_images/NeuroCave_Cover2.png  "Simulation Step: 90,000ms. Left: UMAP Topology with UMAP, RIght: Anatomical Coordinates; Color Code: UMAP Grid.")
+
+![alt text]( readme_images/beforeStimulusAfterSteadyState.png  " Stimulus 40k-200k UMAP; Before Stimulus (left) and after (right) steady state")
+
+![alt text]( readme_images/NeuroCave_LesionStimulus50kCroissantUMAP.png  "Lesion (left) and Stimulus (right) both at 50,000 ms after induction, showing formation of engram line attractor with UMAP Coordinates
+and Original Anatomy node colors to show how original groups boundaries are transformed in the mapping.
+Figure 9: Calcium-variation Dataset. Topo: Isomap (Left), UMAP (Right); Colors: Isomap.")
+
+![alt text]( readme_images/NeuroCave_Lesion50kCroissantUMAP.png "Engram Encoding lesion Timestep in UMAP topology and color coding (left) shown alongside anatomical brain with same UMAP color
+coding.")
+
+NeuroCave [4] facilitates the comparison of structural connectomes,
+such as male and female group studies [5], different functional
+connectomes, such as those of participants performing different cognitive, spatial or verbal tasks, and to explore the brain’s intrinsic
+structure [1] through the visualization of connectomes in topological
+space coupled with clustering information. Given its capabilitieswhich include interactive web-based viewports for comparing brain
+connectomes as node-link diagrams, color mapping features for highlighting brain anatomy and brain clusters, and an optional VR modewe based our visualization of the 2023 IEEE SciVis Contest simulation data on a newly updated version of NeuroCave, called NeuroCavePlus (https://github.com/iMammal/NeuroCave/tree/Dev-WebXR-x4.1-instancing-alpha), adding a number of ad-
+ditional features and scalability upgrades to support visualizing and
+interacting with large scale brain simulations. 
+
+NeuroCavePlus is a work in progress, this prototype was developed for the IEEE 2023 SciVis Contest. (https://sciviscontest2023.github.io).
+
+-------------------------------------------------------------
 # NeuroCave
 
 ![alt text](readme_images/f2500withInset.png "NeuroCave")
@@ -9,15 +34,13 @@
 ![alt text](readme_images/case2.png "NeuroCave")
 
 
-NeuroCave is a web-based tool that enables researchers to visualize connectome data in order to more effectively observe 
-how the regions of the brain are interconnected. NeuroCave helps researchers to explore and analyze the intrinsic geometry 
-of the brain by letting the user switch quickly between different topological spaces where the connectome is embedded. 
-Our tool supports multiple, side-by-side viewing of one or more connectomes, facilitating group study analysis. With a 
-simple and easy-to-use interface, users can explore all the connections with a edge-on-demand technique and to focus on 
-very specific areas by toggling on and off regions of the brain as desired. Simple analytics such as nodal strength 
-and shortest path trees can be computed on the fly. Our tool support explorations using VR techniques, and it is
+NeuroCave is a web-based tool that enables researchers to visualize connectome data in order to more effectively observe
+how the regions of the brain are interconnected. NeuroCave helps researchers to explore and analyze the intrinsic geometry
+of the brain by letting the user switch quickly between different topological spaces where the connectome is embedded.
+Our tool supports multiple, side-by-side viewing of one or more connectomes, facilitating group study analysis. With asimple and easy-to-use interface, users can explore all the connections with a edge-on-demand technique and to focus on
+very specific areas by toggling on and off regions of the brain as desired. Simple analytics such as nodal strengthand shortest path trees can be computed on the fly. Our tool support explorations using VR techniques, and it is
 compatible with the Oculus Rift headset and the Oculus Touch input accessory for nodal
-selection. 
+selection.
 
 # Network Neuroscience article and video documentation
 
