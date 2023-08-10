@@ -11,16 +11,32 @@ Figure 9: Calcium-variation Dataset. Topo: Isomap (Left), UMAP (Right); Colors: 
 ![alt text]( readme_images/NeuroCave_Lesion50kCroissantUMAP.png "Engram Encoding lesion Timestep in UMAP topology and color coding (left) shown alongside anatomical brain with same UMAP color
 coding.")
 
-NeuroCave [4] facilitates the comparison of structural connectomes,
-such as male and female group studies [5], different functional
+NeuroCave [2] facilitates the comparison of structural connectomes,
+such as male and female group studies [3], different functional
 connectomes, such as those of participants performing different cognitive, spatial or verbal tasks, and to explore the brain’s intrinsic
 structure [1] through the visualization of connectomes in topological
-space coupled with clustering information. Given its capabilitieswhich include interactive web-based viewports for comparing brain
+space coupled with clustering information. Given its capabilities, ++
+which include interactive web-based viewports for comparing brain
 connectomes as node-link diagrams, color mapping features for highlighting brain anatomy and brain clusters, and an optional VR modewe based our visualization of the 2023 IEEE SciVis Contest simulation data on a newly updated version of NeuroCave, called NeuroCavePlus (https://github.com/iMammal/NeuroCave/tree/Dev-WebXR-x4.1-instancing-alpha), adding a number of ad-
 ditional features and scalability upgrades to support visualizing and
 interacting with large scale brain simulations. 
 
 NeuroCavePlus is a work in progress, this prototype was developed for the IEEE 2023 SciVis Contest. (https://sciviscontest2023.github.io).
+
+Live Demo of NeuroCavePlus with ScuVis Contest Data: https://src.dogstarlabs.com/morris/NeuroCave/visualization.html?dataset=SciVisIEEE2023&load=0&lut=viznonet
+
+[1] G. Conte, A. Q. Ye, A. G. Forbes, O. Ajilore, and A. Leow. Braintrinsic:
+A virtual reality-compatible tool for exploring intrinsic topologies of
+the human brain connectome. In Y. Guo, K. Friston, F. Aldo, S. Hill,
+and H. Peng, eds., Brain Informatics and Health, pp. 67–76. Springer
+International Publishing, Cham, 2015.
+
+[2] J. J. Keiriz, L. Zhan, O. Ajilore, A. D. Leow, and A. G. Forbes. Neu-
+rocave: A web-based immersive visualization platform for exploring
+connectome datasets. Network Neuroscience, 2(3):344–361, 2018.
+
+[3] J. J. G. Keiriz, L. Zhan, M. Chukhman, O. Ajilore, A. D. Leow, and A. G.
+Forbes. Exploring the human connectome topology in group studies,
 
 -------------------------------------------------------------
 # NeuroCave

@@ -36,6 +36,11 @@ function Model(side) {
     var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
     var nodesStrength = [];
 
+    this.minConnectionMatrix = 1;
+    this.maxConnectionMatrix = 1;
+
+
+
     var threshold = 1;                  // threshold for the edge value, default to 1, max, no edges
     var conthreshold = 1;               // threshold for the contralateral edge value, default to 1, max, no edges
     var numberOfEdges = 5;              // threshold the number of edges for shortest paths
@@ -280,12 +285,11 @@ function Model(side) {
 
                 // Assign the weight to the corresponding position in the sparse matrix
                 connectionMatrix.set([from, to], weight);
-                let text = "from: " + from + " to: " + to + " weight: " + weight;
-                setNodeInfoPanel(1,1,text);
-                if(i % 1000 == 0) {
-                    console.log(text);
-
-                }
+                // let text = "from: " + from + " to: " + to + " weight: " + weight;
+                // setNodeInfoPanel(1,1,text);
+                //if(i % 1000 == 0) {
+                //    console.log(text);
+                // }
             }
         } else {
             connectionMatrix = math.sparse(d.data); // d.data;
@@ -517,6 +521,7 @@ function Model(side) {
 
 
     this.getMaximumWeight = function () {
+        return this.maxConnectionMatrix;
         return d3.max(connectionMatrix, function (d) {
             return d3.max(d, function (d) {
                 return d;
@@ -525,6 +530,7 @@ function Model(side) {
     };
 
     this.getMinimumWeight = function () {
+        return this.minConnectionMatrix;
         return d3.min(connectionMatrix, function (d) {
             return d3.min(d, function (d) {
                 return d;
@@ -625,6 +631,9 @@ function Model(side) {
             newmap.set(j.toString(), value); //            j.toString(): value);
 
             this.graph.addNode(i.toString(),newmap);
+
+            if (value < this.minConnectionMatrix) this.minConnectionMatrix = value;
+            if (value > this.maxConnectionMatrix) this.maxConnectionMatrix = value;
 
             if (value !== 0) {
                 return 1 / value;
