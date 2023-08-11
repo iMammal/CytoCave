@@ -4,11 +4,11 @@
 
 ![alt text]( readme_images/beforeStimulusAfterSteadyState.png  " Stimulus 40k-200k UMAP; Before Stimulus (left) and after (right) steady state")
 
-![alt text]( readme_images/NeuroCave_LesionStimulus50kCroissantUMAP.png  "Lesion (left) and Stimulus (right) both at 50,000 ms after induction, showing formation of engram line attractor with UMAP Coordinates
+![alt text]( readme_images/NeuroCave_LesionStimulus50kCroissantUMAPScreenshot.png   "Lesion (left) and Stimulus (right) both at 50,000 ms after induction, showing formation of engram line attractor with UMAP Coordinates
 and Original Anatomy node colors to show how original groups boundaries are transformed in the mapping.
 Figure 9: Calcium-variation Dataset. Topo: Isomap (Left), UMAP (Right); Colors: Isomap.")
 
-![alt text]( readme_images/NeuroCave_Lesion50kCroissantUMAP.png "Engram Encoding lesion Timestep in UMAP topology and color coding (left) shown alongside anatomical brain with same UMAP color
+![alt text]( readme_images/NeuroCave_Lesion50kCroissantUMAPScreenshot.png "Engram Encoding lesion Timestep in UMAP topology and color coding (left) shown alongside anatomical brain with same UMAP color
 coding.")
 
 NeuroCave [2] facilitates the comparison of structural connectomes,
