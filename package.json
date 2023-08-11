@@ -4,12 +4,13 @@
   "description": "![alt text](readme_images/f2500withInset.png \"NeuroCave\")",
   "main": "index.js",
   "dependencies": {
+    "csv-parser": "^3.0.0",
     "d3": "^7.6.1",
-    "mathjs": "^11.3.1",
+    "mathjs": "^11.9.1",
+    "node-dijkstra": "^2.5.0",
     "papaparse": "^5.3.2",
     "queue": "^6.0.2",
-    "three": "^0.145.0",
-    "node-dijkstra": "^2.5.0"
+    "three": "^0.145.0"
   },
   "devDependencies": {
     "@babel/core": "^7.19.6",
