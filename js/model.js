@@ -271,7 +271,18 @@ function Model(side) {
         return conthreshold;
     };
 
-    // set connection matrix
+    // set connection matrix from JSON file
+    this.setConnectionMatrixFromJSON = function (jsonData) {
+        //const connectionMatrix = math.sparse(jsonData);
+        connectionMatrix = math.SparseMatrix.fromJSON(jsonData);
+
+        console.log(`Successfully created the sparse matrix from JSON data.`);
+        this.computeDistanceMatrix();
+        this.computeNodalStrength();
+        //console.log(connectionMatrix);  // This will print the sparse matrix. You can do further processing if needed.
+    }
+
+    // set connection matrix from CSV file
     this.setConnectionMatrix = function (d) {
         //console.log("set connection matrix:",Papa);
         connectionMatrix = math.sparse();

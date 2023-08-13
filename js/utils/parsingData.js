@@ -5,7 +5,6 @@
 import {labelLUT, dataFiles, atlas, folder, setDataFile, setAtlas} from "../globals";
 import {Atlas} from "../atlas"
 import * as Papa from "papaparse";
-
 //var folder='Demo6';
 
 var setFolder = function (folderName, callback) {
@@ -78,18 +77,58 @@ var loadLookUpTable = function (callback) {
 };
 
 var loadSubjectNetwork = function (fileNames, model, callback) {
-    Papa.parse("data/" + folder + "/" + fileNames.network, {
-        download: true,
-        dynamicTyping: true,
-        delimiter: ',',
-        header: false,
-        skipEmptyLines: true,
-        complete: function (results) {
-            model.setConnectionMatrix(results);
-            console.log("NW loaded ... ");
-            callback(null, null);
-        }
-    });
+    if (fileNames.network.toString().endsWith(".csv")) {
+        Papa.parse("data/" + folder + "/" + fileNames.network, {
+            download: true,
+            dynamicTyping: true,
+            delimiter: ',',
+            header: false,
+            skipEmptyLines: true,
+            complete: function (results) {
+                model.setConnectionMatrix(results);
+                console.log("NW loaded ... ");
+                callback(null, null);
+            }
+        });
+    }
+    if (fileNames.network.toString().endsWith(".json")) {
+        // Papa.parse("data/" + folder + "/" + fileNames.network, {
+        //     download: true,
+        //     dynamicTyping: true,
+        //     delimiter: ',',
+        //     header: false,
+        //     skipEmptyLines: true,
+        //     complete: function (results) {
+        //         model.setConnectionMatrix(results);
+        //         console.log("NW loaded ... ");
+        //         callback(null, null);
+        //     }
+        // });
+        // fs.readFile("data/" + folder + "/" + fileNames.network, 'utf8', (err, jsonString) => {
+        //     if (err) {
+        //         console.error(`Failed to read the file ${filename}. Reason: ${err.message}`);
+        //         return;
+        //     }
+
+        // Fetch a JSON file from the server
+        fetch("data/" + folder + "/" + fileNames.network)
+            .then(response => response.json())  // parse the JSON from the response
+            .then(jsonData => {
+                console.log(`Successfully read file: ${fileNames.network}`);
+                console.log(`Attempting to parse JSON data...`);
+                console.log(jsonData);  // do something with the data
+                try {
+                    model.setConnectionMatrixFromJSON(jsonData);
+                    console.log("NW loaded ... ");
+                    callback(null, null);
+                } catch (error) {
+                    console.error(`Failed to parse the JSON from ${fileNames.network} or create the sparse matrix. Reason: ${error.message}`);
+                }
+            })
+            .catch(error => console.error('Error fetching the JSON:', error));
+
+    }
+
 };
 
 var loadSubjectTopology = function (fileNames, model, callback) {
