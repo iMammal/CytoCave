@@ -666,6 +666,8 @@ var changeColorGroup = function (name, side) {
         //redrawScene("Right")  // This is not needed as the redrawScene is called in the updateNodesVisibility
     }
 
+    //todo: getNodesSelected before removeAllInstances and set them selected again
+
     setColorGroupScale(side);
     redrawEdges();
 };
