@@ -1,4 +1,4 @@
-# NeuroCave
+# CytoCave
 
 ![alt text](readme_images/f2500withInset.png "NeuroCave")
 
@@ -8,16 +8,18 @@
 
 ![alt text](readme_images/case2.png "NeuroCave")
 
-
-NeuroCave is a web-based tool that enables researchers to visualize connectome data in order to more effectively observe 
-how the regions of the brain are interconnected. NeuroCave helps researchers to explore and analyze the intrinsic geometry 
-of the brain by letting the user switch quickly between different topological spaces where the connectome is embedded. 
-Our tool supports multiple, side-by-side viewing of one or more connectomes, facilitating group study analysis. With a 
-simple and easy-to-use interface, users can explore all the connections with a edge-on-demand technique and to focus on 
-very specific areas by toggling on and off regions of the brain as desired. Simple analytics such as nodal strength 
-and shortest path trees can be computed on the fly. Our tool support explorations using VR techniques, and it is
-compatible with the Oculus Rift headset and the Oculus Touch input accessory for nodal
-selection. 
+CytoCave is an immersive interactive online visualization platform
+based on the NeuroCave [4] connectome visualization application,
+but modified and optimized for general -omics network visualization.
+CytoCave leverages existing features of NeuroCave— including the
+side-by-side viewports designed for freeform exploration of node-
+link diagrams under various transformations or coordinate system
+embeddings, as well its immersive capabilities— while adding a
+range of new features that facilitate the exploration of general multi-
+omics network data using dimensionality reduction projection of
+high-dimensional biological data with cluster membership highlight-
+ing, as well as scalability upgrades to support visualizing and inter-
+acting with large scale proteomics and multi-omics data.
 
 # Network Neuroscience article and video documentation
 
