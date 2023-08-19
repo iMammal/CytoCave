@@ -1,12 +1,12 @@
 # CytoCave
 
-![alt text](readme_images/f2500withInset.png "NeuroCave")
+![alt text](readme_images/PanCanScreenshotBosutinibIsomapLouvainCDK4tSNE.png "CytoCave")
 
 
-![alt text](readme_images/case1_1.png "NeuroCave")
+![alt text](readme_images/PanCanScreenshotDrugProtTSNE2View.png "CytoCave")
 
 
-![alt text](readme_images/case2.png "NeuroCave")
+![alt text](readme_images/panCanScreenshotTSNEdrugsProtsNilotinib.png "CytoCave")
 
 CytoCave is an immersive interactive online visualization platform
 based on the NeuroCave [4] connectome visualization application,
