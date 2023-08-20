@@ -23,7 +23,7 @@ with large scale proteomics and multi-omics data.
 
 NeuroCavePlus is a work in progress, this prototype was developed for the IEEE 2023 Bio+MedVis Challenge. (http://biovis.net/2023/biovisChallenges_vis).
 
-Live Demo of NeuroCavePlus with SciVis Contest Data: https://src.dogstarlabs.com/morris/CytoCave/visualization.html?dataset=BioVisIEEE2023&load=0&lut=BioMedVis2023drugs2f
+Live Demo of NeuroCavePlus with SciVis Contest Data: https://src.dogstarlabs.com/morris/CytoCave/visualization.html?dataset=BioVisIEEE2023&load=0&neuro=0&lut=BioMedVis2023drugs2f
 
 [Short Video introducing the main features of CytoCave](https://youtu.be/8x6G1FqFLNY)
 
