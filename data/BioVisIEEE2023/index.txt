@@ -1,0 +1,5 @@
+subjectID,network,topology
+panCanProteinDrugs,comboNetwork.json,comboTopologyR5.csv
+panCanDrugs,drug2Network.csv,drug2TopologyR5.csv
+panCanProtein,proteinSTRINGNW.json,proteinTopologyR5a.csv
+panCanProtein,proteinSTRINGNW300.json,proteinTopologyRW.csv
