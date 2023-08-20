@@ -25,6 +25,8 @@ NeuroCavePlus is a work in progress, this prototype was developed for the IEEE 2
 
 Live Demo of NeuroCavePlus with SciVis Contest Data: https://src.dogstarlabs.com/morris/CytoCave/visualization.html?dataset=BioVisIEEE2023&load=0&lut=BioMedVis2023drugs2f
 
+[Short Video introducing the main features of CytoCave](https://youtu.be/8x6G1FqFLNY)
+
 # Network Neuroscience article and video documentation
 
 An article introducing NeuroCave— [NeuroCave: A Web-based Immersive Visualization Platform for Exploring Connectome Datasets](https://doi.org/10.1162/NETN_a_00044)— has been acccepted to Network Neuroscience. A short video presentation introducing the main features of NeuroCave can be found 
