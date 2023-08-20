@@ -17,9 +17,13 @@ link diagrams under various transformations or coordinate system
 embeddings, as well its immersive capabilities— while adding a
 range of new features that facilitate the exploration of general multi-
 omics network data using dimensionality reduction projection of
-high-dimensional biological data with cluster membership highlight-
-ing, as well as scalability upgrades to support visualizing and inter-
-acting with large scale proteomics and multi-omics data.
+high-dimensional biological data with cluster membership highlighting, 
+as well as scalability upgrades to support visualizing and interacting 
+with large scale proteomics and multi-omics data.
+
+NeuroCavePlus is a work in progress, this prototype was developed for the IEEE 2023 Bio+MedVis Challenge. (http://biovis.net/2023/biovisChallenges_vis).
+
+Live Demo of NeuroCavePlus with SciVis Contest Data: https://src.dogstarlabs.com/morris/CytoCave/visualization.html?dataset=BioVisIEEE2023&load=0&lut=BioMedVis2023drugs2f
 
 # Network Neuroscience article and video documentation
 
