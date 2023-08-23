@@ -50,14 +50,21 @@ var scaleColorGroup = function(model, group) {
         color = colorMap[filteredGroup];
     }
 
-    // metric based
-    /*if(model.getActiveGroupName() == 4){
-        if(nodeIndex == -1){
-            console.log("ERROR!!!!");
-            return metricQuantileScale(0);
-        }
-        color = metricQuantileScale(metricValues[nodeIndex][0]);
-    }*/
+    if(model.getActiveGroupName().indexOf("Heatmap") != -1){
+
+        color = groupColor(filteredGroup);
+
+    }
+
+        // metric based
+    //     if(nodeIndex == -1){
+    //         console.log("ERROR!!!!");
+    //         return metricQuantileScale(0);
+    //     }
+    //     color = metricQuantileScale(metricValues[nodeIndex][0]);
+    // }
+
+
     return color;
 };
 
@@ -70,7 +77,14 @@ var setColorGroupScale = function (side) { //model) {
         model = modelLeft;
     }
     //groupColor = (modelLeft.getActiveGroup().length <= 10) ? d3.scale.category10() : d3.scale.category20();
-    groupColor = (model.getActiveGroup().length <= 10) ? d3.scale.category10() : d3.scale.category20();
+    if(model.getActiveGroupName().indexOf("Heatmap") != -1){
+        groupColor  = d3.scale.linear()
+            .domain([1, model.getActiveGroup().length])
+            .range(["red", "blue"]);
+            ///.range(["brown", "steelblue"]);
+    } else {
+        groupColor = (model.getActiveGroup().length <= 10) ? d3.scale.category10() : d3.scale.category20();
+    }
 };
 
 // return a power scale function for the adjacency matrix

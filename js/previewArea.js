@@ -30,7 +30,7 @@ import {
     getSpt,
     glyphNodeDictionary,
     //getNodesSelected,
-    //clrNodesSelected,
+    clrNodesSelected,
     setNodesSelected,
     getNodesFocused,
     clrNodesFocused,
@@ -46,7 +46,7 @@ import {
     activeVR,
     updateNodeSelection,
     updateNodeMoveOver,
-    getActiveEdges
+    getActiveEdges, previewAreaLeft,previewAreaRight
 } from './drawing'
 import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS} from './GUI'
 import {scaleColorGroup} from './utils/scale'
@@ -106,6 +106,16 @@ function PreviewArea(canvas_, model_, name_) {
     // animation settings
     var amplitude =  0.0015;
     var frequency =  0.5;
+
+    this.edgeFlareVertices = [];
+    this.edgeFlareGeometry = null;
+    this.edgeFlareMaterial = null;
+    //this.edgeFlareMesh = null;
+    this.displayedEdgeFlareTravelPercentages = [];
+
+    this.edgeFlaresVisible = true;
+    this.labelsVisible = false;
+    this.particlesVisible = false;
 
     this.initXR = function () {
         //init VR //todo: this is stub now
@@ -1262,13 +1272,34 @@ function PreviewArea(canvas_, model_, name_) {
         controls.minDistance = 10;
         controls.maxDistance = 1000;
 
-        addNodeLabel();
+
+
+        //addNodeLabel();
     };
 
     this.resetCamera = function () {
         console.log("reset camera");
         camera.position.set(0, 0, -50);
     };
+
+    this.initEdgeFlare = function () {
+
+        for ( let i = 0; i < 1000; i ++ ) {
+            const x = THREE.MathUtils.randFloatSpread( 0 );
+            const y = THREE.MathUtils.randFloatSpread( 0 );
+            const z = THREE.MathUtils.randFloatSpread( 0 );
+
+            this.edgeFlareVertices.push( x, y, z );
+            this.displayedEdgeFlareTravelPercentages[i] = 0.0
+        }
+
+        this.edgeFlareGeometry = new THREE.BufferGeometry();
+        this.edgeFlareGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( this.edgeFlareVertices, 3 ) );
+        this.edgeFlareMaterial = new THREE.PointsMaterial( { color: 0x888888, size: 3.0 } );
+        const points = new THREE.Points( this.edgeFlareGeometry, this.edgeFlareMaterial );
+        scene.add( points );
+
+    }
 
     this.resetBrainPosition = function () {
         brain.updateMatrix();
@@ -1355,8 +1386,51 @@ function PreviewArea(canvas_, model_, name_) {
         if (event.key == 's') {
             this.resetBrainPosition();
         }
+        if (event.key == 'l') {
+            this.toggleLabels();
+        }
+        if (event.key == 'f') {
+            this.toggleFlare();
+        }
+        if (event.key == 'p') {
+            this.toggleParticles();
+        }
     }
 
+    // toggle between showing and hiding labels
+    this.toggleLabels = function () {
+        if (this.labelsVisible) {
+            this.labelsVisible = false;
+            //this.hideLabels();
+            //addNodeLabel();
+        } else {
+            this.labelsVisible = true;
+            //this.showLabels();
+            addNodeLabel();
+        }
+    }
+
+    // toggle between showing and hiding edge flares
+    this.toggleFlare = function () {
+        if (this.edgeFlareVisible) {
+            this.edgeFlareVisible = false;
+            //this.hideEdgeFlare();
+        } else {
+            this.edgeFlareVisible = true;
+            //this.showEdgeFlare();
+        }
+    }
+
+    // toggle between showing and hiding particles
+    this.toggleParticles = function () {
+        if (this.particlesVisible) {
+            this.particlesVisible = false;
+              //this.hideParticles();
+        } else {
+            this.particlesVisible = true;
+            //this.showParticles();
+        }
+    }
 
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
     //todo is this sort of infinite recursion intentional?
@@ -1380,6 +1454,9 @@ function PreviewArea(canvas_, model_, name_) {
 
         if(nodeIndex) {
             nodeObject = this.getNodeInstanceByIndex(nodeIndex);
+        }
+        if(!nodeObject || !nodeObject.object || !nodeObject.object.name) { //todo why is this happening?
+            return;
         }
         let objectParent = this.instances[nodeObject.object.name.group][nodeObject.object.name.hemisphere];
 
@@ -1582,6 +1659,65 @@ function PreviewArea(canvas_, model_, name_) {
         glyphs = [];
     };
 
+    this.animateEdges = function () {
+        const positions = this.edgeFlareGeometry.attributes.position;
+        const material = this.edgeFlareMaterial;
+
+        for (var i = 0; i < this.displayedEdges.length; ++i) {
+            let nodeIdx = this.displayedEdges[i].name.instanceId;
+
+            let groupVal = null;
+            if(model.getDataset()[nodeIdx] != undefined) groupVal = model.getDataset()[nodeIdx].group;
+            let firerate = 0.01;
+            if (typeof (groupVal) === 'number') {
+                firerate = (groupVal % 10) / 100;
+            }
+
+            this.displayedEdgeFlareTravelPercentages[i] += firerate;
+            //brain.remove(this.displayedEdges[i]);
+            this.edgeFlareVertices[i*3] = this.displayedEdges[i].geometry.attributes.position.array[0] + this.displayedEdgeFlareTravelPercentages[i] * (this.displayedEdges[i].geometry.attributes.position.array[3] - this.displayedEdges[i].geometry.attributes.position.array[0]);
+            this.edgeFlareVertices[i*3+1] = this.displayedEdges[i].geometry.attributes.position.array[1] + this.displayedEdgeFlareTravelPercentages[i] * (this.displayedEdges[i].geometry.attributes.position.array[4] - this.displayedEdges[i].geometry.attributes.position.array[1]);
+            this.edgeFlareVertices[i*3+2] = this.displayedEdges[i].geometry.attributes.position.array[2] + this.displayedEdgeFlareTravelPercentages[i] * (this.displayedEdges[i].geometry.attributes.position.array[5] - this.displayedEdges[i].geometry.attributes.position.array[2]);
+            if (this.displayedEdgeFlareTravelPercentages[i] > 1.0) {
+                this.displayedEdgeFlareTravelPercentages[i] = 0.0;
+            }
+
+            positions.setXYZ(i, this.edgeFlareVertices[i*3], this.edgeFlareVertices[3*i+1], this.edgeFlareVertices[3*i+2]);
+            let fromNodeColor = this.displayedEdges[i].geometry.attributes.color.array.slice(0, 3);
+            material.color.setRGB(i, fromNodeColor[0], fromNodeColor[1], fromNodeColor[2]);
+
+
+        }
+
+        positions.needsUpdate = true;
+
+        //this.displayedEdges = [];
+
+        //this.animateShortestPathEdges();
+    };
+
+    this.animateStars = function () {
+        const positions = this.edgeFlareGeometry.attributes.position;
+
+        for (var i = 0; i < this.edgeFlareVertices.length; i++) {  //} displayedEdges.length; ++i) {
+            //brain.remove(this.displayedEdges[i]);
+            this.edgeFlareVertices[i] += 0.1;
+            if (this.edgeFlareVertices[i] > 1000.0) {
+                this.edgeFlareVertices[i] = -1000.0;
+            }
+
+            if (i%3 == 0) {
+                positions.setXYZ(i, this.edgeFlareVertices[i], this.edgeFlareVertices[i+1], this.edgeFlareVertices[i+2]);
+            }
+        }
+
+        positions.needsUpdate = true;
+
+        //this.displayedEdges = [];
+
+        //this.animateShortestPathEdges();
+    };
+
     this.removeEdgesFromScene = function () {
         for (var i = 0; i < this.displayedEdges.length; ++i) {
             brain.remove(this.displayedEdges[i]);
@@ -1642,6 +1778,13 @@ function PreviewArea(canvas_, model_, name_) {
         //animateNodeBreathing(getNodesSelected());
         //shimmerEdgeNodeColors();
         //updateNodesColor();
+
+        if(previewAreaLeft ) {
+            // previewAreaLeft.animateEdges();
+        }
+        if(previewAreaRight ) {
+            // previewAreaRight.animateEdges();
+        }
 
         //update camera position
         camera.updateProjectionMatrix();
@@ -1823,7 +1966,7 @@ function PreviewArea(canvas_, model_, name_) {
             // set the color of the first instance to the group color
             this.instances[groups[i]].left.setColorAt(0, material.color);
 
-            geometry = getNormalGeometry('right');
+            geometry = getNormalGeometry('right',name);
             material = getNormalMaterial(model, groups[i]);
             this.instances[groups[i]].right = new THREE.InstancedMesh(geometry, material, rightCount);
             this.instances[groups[i]].right.setColorAt(0, material.color);
@@ -1866,6 +2009,8 @@ function PreviewArea(canvas_, model_, name_) {
             // get the position of the region
             let position = dataset[i].position;
             // set the position of the instance
+            console.log("position: " + i + ","+dataset[i].group+"," + index + "," + position.x + ", " + position.y + ", " + position.z);
+
             instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
             instance.setColorAt(index, instance.material.color);
             // increment the index
@@ -1903,7 +2048,7 @@ function PreviewArea(canvas_, model_, name_) {
                 // search through all instances for the index in the userData.indexList
                 // return the instanceId and the object
                 // if the index is not found return -1
-                console.log("Searching for index: " + index);
+                /////console.log("Searching for index: " + index);
                 //console.log(this);
                 //check that userData.indexList exists
                 if (this.userData.indexList === undefined) {
@@ -1912,7 +2057,7 @@ function PreviewArea(canvas_, model_, name_) {
                 }
                 for (let i = 0; i < this.userData.indexList.length; i++) {
                     if (this.userData.indexList[i] === index) {
-                        console.log("Found index: " + index + " at instanceId: " + i);
+                        /////console.log("Found index: " + index + " at instanceId: " + i);
                         return {
                             instanceId: i,
                             hemisphere: this.name.hemisphere,
@@ -1967,7 +2112,7 @@ function PreviewArea(canvas_, model_, name_) {
                 }
                 // return true if it is, false if it isn't
                 if(instance.userData.selectedNodes.includes(index)){
-                    console.log("Yes Node is selected");
+                    /////console.log("Yes Node is selected");
                     return true;
                 } else {
                     return false;
@@ -2634,8 +2779,8 @@ function PreviewArea(canvas_, model_, name_) {
         const elapsedTime = clock.getElapsedTime();
         const deltaRadius = colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime);
         var edge, c1, c2, tempColor = new THREE.Color(), targetColor = new THREE.Color();
-        for (var i = 0; i < this.displayedEdges.length; i++) {
-            edge = this.displayedEdges[i];
+        for (var i = 0; i < previewAreaLeft.displayedEdges.length; i++) {
+            edge = previewAreaLeft.displayedEdges[i];
             c1 = edge.nodes[0]; //.material.color;
             c2 = edge.nodes[1]; //.material.color;
             var baseColor = new THREE.Color(scaleColorGroup(model, dataset[c2].group));
@@ -2648,7 +2793,7 @@ function PreviewArea(canvas_, model_, name_) {
             //0.5*deltaRadius+0.5);
             edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
             tempColor.lerpHSL(targetColor, 0.5*deltaRadius+0.5);
-            glyphs[edge.nodes[1]].material.color = targetColor;
+            // glyphs[edge.nodes[1]].material.color = targetColor; //todo:instancize this
         }
 
         for (i = 0; i < shortestPathEdges.length; i++) {
@@ -3101,6 +3246,9 @@ function PreviewArea(canvas_, model_, name_) {
         var edges = model.getActiveEdges();
         var edgeIdx = model.getEdgesIndeces();
         var previousMap = model.getPreviousMap();
+        if(!previousMap) {
+            return;
+        }
 
         this.removeShortestPathEdgesFromScene();
 
@@ -3136,6 +3284,9 @@ function PreviewArea(canvas_, model_, name_) {
         var edges = model.getActiveEdges();
         var edgeIdx = model.getEdgesIndeces();
         var previousMap = model.getPreviousMap();
+        if(!previousMap) {
+            return;
+        }
 
         for (i = 0; i < getVisibleNodesLength(); ++i) {
             if (getVisibleNodes(i)) {
@@ -3166,7 +3317,7 @@ function PreviewArea(canvas_, model_, name_) {
         var prev; // previous node
         var edges = model.getActiveEdges();
         var edgeIdx = model.getEdgesIndeces();
-        var previousMap = model.getPreviousMap();
+        //var previousMap = model.getPreviousMap();
 
         setVisibleNodes(getVisibleNodes().fill(true));
         while (previousMap[i] != null) {
@@ -3208,7 +3359,9 @@ function PreviewArea(canvas_, model_, name_) {
     // Update the text and position according to selected node
     // The alignment, size and offset parameters are set by experimentation
     // TODO needs more experimentation
-    this.updateNodeLabel = function (text, nodeIndex) {
+    this.updateNodeLabel = function (text, nodeObject) {    ///Index) {
+        if(this.labelsVisible == false) return;
+
         var context = nspCanvas.getContext('2d');
         context.textAlign = 'left';
         // Find the length of the text and add enough _s to fill half of the canvas
@@ -3218,13 +3371,16 @@ function PreviewArea(canvas_, model_, name_) {
             text = text + "_";
         }
         //text = text + "___________________________";
-        //context.clearRect(0, 0, 256 * 4, 256);
+        context.clearRect(0, 0, 256 * 4, 256);
         context.fillText(text, 5, 120);
 
         nodeNameMap.needsUpdate = true;
-        var pos = glyphs[nodeIndex].position;
+        //var pos = glyphs[nodeIndex].position;
+        var pos = nodeObject.point;
         nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
-        nodeLabelSprite.needsUpdate = true;
+        if(previewAreaLeft.labelsVisible || previewAreaRight.labelsVisible) {
+            nodeLabelSprite.needsUpdate = true;
+        }
     };
 
     // Adding Node label Sprite
@@ -3253,7 +3409,9 @@ function PreviewArea(canvas_, model_, name_) {
         nodeLabelSprite = new THREE.Sprite(mat);
         nodeLabelSprite.scale.set(100, 50, 1);
         nodeLabelSprite.position.set(0, 0, 0);
-        brain.add(nodeLabelSprite);
+        if(previewAreaLeft.labelsVisible) {
+            brain.add(nodeLabelSprite);
+        }
     };
 
     this.getCamera = function () {
@@ -3290,6 +3448,7 @@ function PreviewArea(canvas_, model_, name_) {
     this.createCanvas();
     this.initXR();
     this.drawRegions();
+    this.initEdgeFlare();
 }
 
 export {PreviewArea}

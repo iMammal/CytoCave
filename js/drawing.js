@@ -91,19 +91,19 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     if(intersectedObject === undefined)
         return;
     //check if name is defined, if not, it is not a node
-    if (intersectedObject.name === undefined) {
+    if (intersectedObject.object.name === undefined) {
         return;
     }
     //it's also not a valid node if it has no name
-    if (intersectedObject.name === '') {
+    if (intersectedObject.object.name === '') {
         return;
     }
     console.log("intersected Object Moveover: ");
     console.log(intersectedObject);
     //check if the intersected object is a node, if it is the name.type will be 'region'
     //if it is a node, get the node index and the region name
-    if (intersectedObject.name.type == 'region') {
-        nodeIdx = intersectedObject.object.getDatasetIndex(intersectedObject.instanceId);
+    if (intersectedObject.object.name.type == 'region') {
+        nodeIdx = intersectedObject.object.getDatasetIndex(intersectedObject); //.instanceId);
         if (intersectedObject) {
             //nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
             region = model.getRegionByIndex(nodeIdx);
@@ -122,8 +122,9 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     if (nodeExistAndVisible) {
         setNodeInfoPanel(region, nodeIdx);
         // if (vr) {  //todo: this can be used outside of VR to help get node label info next to the node itself, not in the screen corner
-             previewAreaLeft.updateNodeLabel(region.name, nodeIdx);
-             previewAreaRight.updateNodeLabel(region.name, nodeIdx);
+            let labeltext = region.group+" "+region.name+" "+region.label;
+             previewAreaLeft.updateNodeLabel(labeltext,  intersectedObject);
+             previewAreaRight.updateNodeLabel(labeltext, intersectedObject);
         // }
     }
 
@@ -146,7 +147,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
         }
     } else {
         if (pointedObject ) {
-            nodeIdx = glyphNodeDictionary[pointedObject.uuid];
+            nodeIdx = intersectedObject.object; //glyphNodeDictionary[pointedObject.uuid];
             if (nodeIdx === undefined)
                 return;
             hoverMode = hoverMode & ~mode; // clear the hover mode that triggered this function
@@ -175,7 +176,7 @@ function onMiddleClick(event) {
 
     var intersectedObject = getIntersectedObject(event);
     if (intersectedObject) {
-        var nodeIndex = glyphNodeDictionary[intersectedObject.object.uuid];
+        var nodeIndex = intersectedObject.instanceId; //glyphNodeDictionary[intersectedObject.object.uuid];
         if (nodeIndex == undefined || nodeIndex < 0)
             return;
         if (root == nodeIndex) { // disable spt and reset nodes visibility
@@ -183,6 +184,7 @@ function onMiddleClick(event) {
             root = undefined;
             visibleNodes.fill(true);
         } else { // enable spt
+            spt = true;
             spt = true;
             // compute the shortest path for the two models
             previewAreaLeft.computeShortestPathForNode(nodeIndex);
@@ -213,6 +215,8 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
     // console.log(`isLeft: ${isLeft}`);
 
     if (!objectIntersected) return;
+
+
 
     const instanceId = objectIntersected.instanceId;
     const group = objectIntersected.object.name.group;
@@ -264,6 +268,28 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         console.log("switched to selected");
         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         //previewArea.drawSelectedNode(objectIntersected);
+
+        if(spt) {
+            //previewArea.getShortestPathFromRootToNode(nodeIndex);
+            //return;
+            let pathArray = isLeft? modelLeft.getPathArray(getRoot(), nodeIndex) : modelRight.getPathArray(getRoot(), nodeIndex);
+            //console.log("pathArray: ", pathArray);
+            //console.log("pathArray.length: ", pathArray.length);
+            //console.log("pathArray[0]: ", pathArray[0]);
+            for (let i = 0; i < pathArray.length; i++) {
+                if (thresholdModality) {
+                    previewAreaLeft.drawEdgesGivenNode(pathArray[i]);//,activeEdges);
+                    previewAreaRight.drawEdgesGivenNode(pathArray[i]);//,activeEdges);
+
+                } else {
+                    //const n = model.getNumberOfEdges();
+                    //previewArea.drawTopNEdgesByNode(nodeIndex, n);
+                    previewAreaLeft.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
+                    previewAreaRight.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
+                }
+
+            }
+        }
 
         let activeEdges = previewArea.drawConnections(); //do we want to draw the connections there or here in drawing? My vote is here.
         // draw connections does not draw connections, but it does returs the lists of the connections to be drawn, filtered by the threshold.
@@ -410,10 +436,10 @@ var initControls = function () {
     addTopologyMenu(modelLeft, 'Left');
     addTopologyMenu(modelRight, 'Right');
 
-    //addShortestPathFilterButton();
-    //addDistanceSlider();
-    //addShortestPathHopsSlider();
-    //enableShortestPathFilterButton(false);
+    // addShortestPathFilterButton();
+    // addDistanceSlider();
+    // addShortestPathHopsSlider();
+    // enableShortestPathFilterButton(false);
 
     //addDimensionFactorSlider();
     addDimensionFactorSliderLeft('Left');
@@ -422,8 +448,8 @@ var initControls = function () {
     addDimensionFactorSliderRight('Right');
     // addFslRadioButton();
     addSearchPanel();
-    addAnimationSlider();
-    addFlashRateSlider();
+    //addAnimationSlider();
+    //addFlashRateSlider();
     addSkyboxButton();
 
     modelLeft.setAllRegionsActivated();
@@ -642,9 +668,12 @@ var getIntersectedObject = function (event) {
 
 // This now only changes the Right color group
 var changeColorGroup = function (name, side) {
+    console.log("Change color group: " + name + " " + side);
+    let tempNodesSelected = getNodesSelected();
+
     if (side !== "Right") {
-        modelLeft.setActiveGroup(name);
         previewAreaLeft.removeAllInstances();
+        modelLeft.setActiveGroup(name);
         modelLeft.setAllRegionsActivated();
         modelLeft.getDataset(true);
         previewAreaLeft.drawRegions();
@@ -652,11 +681,12 @@ var changeColorGroup = function (name, side) {
         previewAreaLeft.updateNodesColor();
         createLegend(modelLeft, "Left");
         //redrawScene("Left")   // This is not needed as the redrawScene is called in the updateNodesVisibility
+        previewAreaLeft.setSelectedNodes(tempNodesSelected);
     }
 
     if (side !== "Left") {
-        modelRight.setActiveGroup(name);
         previewAreaRight.removeAllInstances();
+        modelRight.setActiveGroup(name);
         modelRight.setAllRegionsActivated();
         modelRight.getDataset(true);
         previewAreaRight.drawRegions();
@@ -664,9 +694,8 @@ var changeColorGroup = function (name, side) {
         previewAreaRight.updateNodesColor();
         createLegend(modelRight, "Right");
         //redrawScene("Right")  // This is not needed as the redrawScene is called in the updateNodesVisibility
+        previewAreaRight.setSelectedNodes(tempNodesSelected);
     }
-
-    //todo: getNodesSelected before removeAllInstances and set them selected again
 
     setColorGroupScale(side);
     redrawEdges();
@@ -707,9 +736,28 @@ var redrawScene = function (side) {
 // change the active geometry
 var changeActiveGeometry = function (model, side, type) {
     console.log("Change Active Geometry to: ", type);
+    let tempNodesSelected = getNodesSelected();
     model.setActiveTopology(type);
-    redrawScene(side);
-};
+
+    if(side !== "Left") {
+        previewAreaRight.removeAllInstances();
+        modelRight.setAllRegionsActivated();
+        modelRight.getDataset(true);
+        previewAreaRight.drawRegions();
+        previewAreaRight.updateNodesVisibility();
+        previewAreaRight.setSelectedNodes(tempNodesSelected);
+
+    } else {
+        previewAreaLeft.removeAllInstances();
+        modelLeft.setAllRegionsActivated();
+        modelLeft.getDataset(true);
+        previewAreaLeft.drawRegions();
+        previewAreaLeft.updateNodesVisibility();
+        previewAreaLeft.setSelectedNodes(tempNodesSelected);
+
+    }
+    model.computeEdgesForTopology(model.getActiveTopology());
+    redrawScene(side);};
 
 // draw shortest path for the left and right scenes = prepare the edges and plot them
 var updateShortestPathEdges = function (side) {
@@ -734,6 +782,14 @@ var changeSceneToSubject = function (subjectId, model, previewArea, side) {
     var fileNames = dataFiles[subjectId];
     removeGeometryButtons(side);
     var info = model.getCurrentRegionsInformation();
+    var type = model.getActiveTopology();
+    if(side !== "Left") {
+        type = modelRight.getActiveTopology();
+    }
+    if(side !== "Right") {
+        type = modelLeft.getActiveTopology();
+    }
+    let tempNodesSelected = getNodesSelected();
     model.clearModel();
 
     queue()
@@ -748,13 +804,16 @@ var changeSceneToSubject = function (subjectId, model, previewArea, side) {
                     var level1 = model.getClusteringLevel();
                     var level2 = model.getClusteringGroupLevel();
                     model.createGroups();
-                    addTopologyMenu(model, side);
+                    addTopologyMenu(model, side, type);
                     model.setActiveGroup(activeGroup);
                     model.setClusteringLevel(level1);
                     model.updateClusteringGroupLevel(level2);
                     model.setAllRegionsActivated();
                     model.setCurrentRegionsInformation(info);
-                    model.computeEdgesForTopology(model.getActiveTopology());
+                    model.computeEdgesForTopology(type); //model.getActiveTopology());
+                    changeActiveGeometry(model, side, type);
+                    if (side !== "right") previewAreaLeft.setSelectedNodes(tempNodesSelected);
+                    if (side !== "left") previewAreaRight.setSelectedNodes(tempNodesSelected);
                     redrawScene(side);
                 })
             ;

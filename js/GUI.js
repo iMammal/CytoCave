@@ -143,10 +143,10 @@ var addDimensionFactorSliderLeft = function (side) {
         .attr("for", "dimensionSlider")
         .attr("id", "dimensionSliderLabel"+side)
         .text(side+" Sphere Size");
-    panel.append("label")
-        .attr("for", "dimensionSlider")
-        .attr("id", "dimensionSliderLabel"+side)
-        .text(side+" Box Size");
+    // panel.append("label")
+    //     .attr("for", "dimensionSlider")
+    //     .attr("id", "dimensionSliderLabel"+side)
+    //     .text(side+" Box Size");
 
     panel.append("br");
 };
@@ -313,17 +313,20 @@ var addSkyboxButton = function (side) {
 };
 
 // adds a text label showing: label - region name - nodal strength
-var setNodeInfoPanel = function (region, index) {
+var setNodeInfoPanel = function (region, index, text = null) {
 
     var panel = d3.select('#nodeInfoPanel');
-
+    var para = document.createElement("p");
     panel.selectAll("p").remove();
 
-    var nodalStrengthLeft = Math.floor(modelLeft.getNodalStrength(index)*100)/100;
-    var nodalStrengthRight = Math.floor(modelRight.getNodalStrength(index)*100)/100;
+    if(!text) {
 
-    var para = document.createElement("p");
-    var node = document.createTextNode(region.label + " " + region.name + " " + nodalStrengthLeft + " / " + nodalStrengthRight);
+        var nodalStrengthLeft = Math.floor(modelLeft.getNodalStrength(index) * 100) / 100;
+        var nodalStrengthRight = Math.floor(modelRight.getNodalStrength(index) * 100) / 100;
+
+        text = region.label + " " + region.name + " " + nodalStrengthLeft + " / " + nodalStrengthRight;
+    }
+    var node = document.createTextNode(text); //region.label + " " + region.name + " " + nodalStrengthLeft + " / " + nodalStrengthRight);
 
     panel.node().appendChild(para).appendChild(node);
 };
@@ -840,14 +843,25 @@ var addColorGroupList = function() {
     }
 
     var hierarchicalClusteringExist = false;
-    if (modelLeft.hasClusteringData() && modelRight.hasClusteringData()) {
+    if ((modelLeft.hasClusteringData() || modelLeft.hasHeatmapData() ) &&
+        (modelRight.hasClusteringData() || modelRight.hasHeatmapData() )) {
         //var clusterNames = modelLeft.getClusteringTopologiesNames();
-        var clusterNames = modelRight.getClusteringTopologiesNames();
+        let clusterNames = modelRight.getClusteringTopologiesNames();
+        let heatmapNames = modelRight.getHeatmapTopologiesNames();
 
         for (var i = 0; i < clusterNames.length; ++i) {
             var name = clusterNames[i];
             var isHierarchical = name == "PLACE" || name == "PACE";
             hierarchicalClusteringExist |= isHierarchical;
+
+            var el = document.createElement("option");
+            el.textContent = name;
+            el.value = name;
+            select.appendChild(el);
+        }
+
+        for (var i = 0; i < heatmapNames.length; ++i) {
+            var name = heatmapNames[i];
 
             var el = document.createElement("option");
             el.textContent = name;
@@ -881,6 +895,7 @@ var addColorGroupList = function() {
         //previewAreaRight.syncCameraWith(previewAreaLeft.getCamera());
         if (this.innerHTML === "Unlock") {
             document.getElementById("colorCodingLeft").hidden = false;
+            document.getElementById("allToggleLeft").hidden = false;
             document.getElementById("colorCodingMenu").label = "Right ColorCoding:";
             document.getElementById("legendLeft").hidden = false;
             var selection = document.getElementById("colorCodingMenu");
@@ -894,6 +909,7 @@ var addColorGroupList = function() {
             document.getElementById("colorCodingLeft").hidden = true;
             document.getElementById("colorCodingMenu").label = "ColorCoding:";
             document.getElementById("legendLeft").hidden = true;
+            document.getElementById("allToggleLeft").hidden = true;
             this.value = 'Locked';
             this.innerHTML = "Unlock";
             var selection = document.getElementById("colorCodingMenu");
@@ -908,7 +924,6 @@ var addColorGroupList = function() {
         }
     };
 };
-
 
 /* Color coding area for Left Viewport at upload */
 // add "Color Coding" radio button group containing: Anatomy, Embeddedness ...
@@ -987,8 +1002,49 @@ var addColorGroupListLeft = function () {
             */
 
     };
-};
 
+
+    document.getElementById("allToggleRight").onclick = function () {
+
+        //todo: toggle all regions in the right viewport or both if sync locked
+        var activeGroup = modelRight.getActiveGroup();
+        for (var i = 0; i < activeGroup.length; ++i) {
+            let groupid = activeGroup[i];
+
+            if (false && modelRight.getRegionActivation(activeGroup[i])) {
+                model.setRegionActivation(activeGroup[i], false);
+            }
+            if (lockLegend) {
+                modelLeft.toggleRegion(groupid);
+            }
+            let side = "right";
+            console.log("RIGHTmodel:" + side + modelRight.getName());
+            modelRight.toggleRegion(groupid);//,"Right");
+            if (modelRight.getRegionState(groupid) == 'transparent')
+                updateNodesVisiblity(lockLegend ? "Both" : "Right");
+            else
+                updateScenes(lockLegend ? "Both" : "Right");
+        }
+    }
+
+    document.getElementById("allToggleLeft").onclick = function () {
+
+        //todo: toggle all regions in the right viewport or both if sync locked
+        var activeGroup = modelLeft.getActiveGroup();
+        for (var i = 0; i < activeGroup.length; ++i) {
+            let groupid = activeGroup[i];
+
+            let side = "left";
+            console.log("LEFTmodel:" + side + modelLeft.getName());
+            modelLeft.toggleRegion(groupid);//,"Left");
+            if (modelLeft.getRegionState(groupid) == 'transparent')
+                updateNodesVisiblity(lockLegend ? "Both" : "Left");
+            else
+                updateScenes(lockLegend ? "Both" : "Left");
+        }
+    };
+
+};
 
 var addColorClusteringSlider = function () {
     var menu = d3.select("#colorCoding");
@@ -1024,7 +1080,7 @@ var setColorClusteringSliderVisibility = function (value) {
 /* Topology options at viewLeft and viewRight */
 // add "Topological Spaces" menu for scene containing:
 // Isomap, MDS, tSNE and anatomy spaces
-var addTopologyMenu = function (model, side) {
+var addTopologyMenu = function (model, side, type="anatomy") {
 
     var topologies = model.getTopologies();
     var hierarchicalClusteringExist = false;
@@ -1037,7 +1093,7 @@ var addTopologyMenu = function (model, side) {
         var el = document.createElement("option");
         el.textContent = topology;
         el.value = topology;
-        el.selected = (i == 0);
+        el.selected = (topology === type); // (i == 0);
         select.appendChild(el);
     }
     select.onchange = function () {
@@ -1380,7 +1436,10 @@ var toggleMenus = function (e) {
     $('#viewLeft').toggle();
     $('#viewRight').toggle();
     $('#legend').toggle();
-    // $('#nodeInfoPanel').toggle();
+    $('#legendLeft').toggle();
+    //$('#nodeInfoPanel').toggle();
+    //$('#nodeInfoPanelLeft').toggle();
+    //$('#nodeInfoPanelRight').toggle();
     $('#colorCoding').toggle();
     $('#edgeInfoPanel').toggle();
     $('#search').toggle();
