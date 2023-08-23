@@ -551,41 +551,41 @@ var enableContralaterality = function (enable) {
     previewAreaRight.drawConnections();
 
 }
-
-//enable Ipsilaterality
-var enableIpsilaterality = function (enable) {
-    //if (!enableIpsi && enable) {}
-    enableIpsi = enable;
-
-	console.log("IPSI:"+enable);
-
-    modelLeft.computeEdgesForTopology(modelLeft.getActiveTopology());
-    modelRight.computeEdgesForTopology(modelRight.getActiveTopology());
-
-    previewAreaLeft.removeEdgesFromScene();
-    previewAreaRight.removeEdgesFromScene();
-
-    previewAreaLeft.drawConnections();
-    previewAreaRight.drawConnections();
-
-}
-
-//enable Contralaterality
-var enableContralaterality = function (enable) {
-	enableContra = enable;
-
-	console.log("CONTRA:"+enable);
-
-    modelLeft.computeEdgesForTopology(modelLeft.getActiveTopology());
-    modelRight.computeEdgesForTopology(modelRight.getActiveTopology());
-
-    previewAreaLeft.removeEdgesFromScene();
-    previewAreaRight.removeEdgesFromScene();
-
-    previewAreaLeft.drawConnections();
-    previewAreaRight.drawConnections();
-
-}
+//
+// //enable Ipsilaterality
+// var enableIpsilaterality = function (enable) {
+//     //if (!enableIpsi && enable) {}
+//     enableIpsi = enable;
+//
+// 	console.log("IPSI:"+enable);
+//
+//     modelLeft.computeEdgesForTopology(modelLeft.getActiveTopology());
+//     modelRight.computeEdgesForTopology(modelRight.getActiveTopology());
+//
+//     previewAreaLeft.removeEdgesFromScene();
+//     previewAreaRight.removeEdgesFromScene();
+//
+//     previewAreaLeft.drawConnections();
+//     previewAreaRight.drawConnections();
+//
+// }
+//
+// //enable Contralaterality
+// var enableContralaterality = function (enable) {
+// 	enableContra = enable;
+//
+// 	console.log("CONTRA:"+enable);
+//
+//     modelLeft.computeEdgesForTopology(modelLeft.getActiveTopology());
+//     modelRight.computeEdgesForTopology(modelRight.getActiveTopology());
+//
+//     previewAreaLeft.removeEdgesFromScene();
+//     previewAreaRight.removeEdgesFromScene();
+//
+//     previewAreaLeft.drawConnections();
+//     previewAreaRight.drawConnections();
+//
+// }
 
 
 // enable edge bundling
@@ -952,6 +952,7 @@ export {
     getEnableEB,
     getEnableIpsi, //todo: couldn't find definition
     getEnableContra,
+    enableIpsilaterality, enableContralaterality,
     setThresholdModality,
     getThresholdModality
 }

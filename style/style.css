@@ -129,6 +129,15 @@ button > input[type="checkbox"] {
     position: absolute;
     width: 175px;
     height: 100px;
+    top: 10px;
+    right: 230px;
+    z-index: 3
+}
+
+#shortestPathORIG {
+    position: absolute;
+    width: 175px;
+    height: 100px;
     top: 200px;
     right: 30px
 }
@@ -220,6 +229,20 @@ button > input[type="checkbox"] {
 }
 
 #syncRight {
+    position: relative;
+    height: 25px;
+    top: 5px;
+    left: 20px;
+}
+
+#allToggleRight {
+    position: relative;
+    height: 25px;
+    top: 5px;
+    left: 20px;
+}
+
+#allToggleLeft {
     position: relative;
     height: 25px;
     top: 5px;

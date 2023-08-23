@@ -431,15 +431,15 @@ var addEdgeBundlingCheck = function () {
 };
 
 // add laterality checkboxes
-var addLateralityCheck = function () {
+var addMyLateralityCheck = function () {
     var menu = d3.select("#edgeInfoPanel");
     menu.append("br");
 
-    if (true) {
+    if (true || false) {
         menu.append("label")
             .attr("for", "enableIpsiCheck")
             .attr("id", "enableIpsiCheckLabel")
-            .text(neuro ? "Ipsilateral" : "Intra-group");
+            .text(neuro ? "Ipsilateral" : "Intra-");
 
 
         menu.append("input")
@@ -463,7 +463,7 @@ var addLateralityCheck = function () {
         menu.append("label")
             .attr("for", "enableContraCheck")
             .attr("id", "enableContraCheckLabel")
-            .text(neuro ? "Contralateral" : "Inter-group");
+            .text(neuro ? "Contralateral" : "Inter-");
         menu.append("input")
             .attr("type", "checkbox")
             .attr("checked", false)
@@ -500,7 +500,7 @@ var addLateralityCheck = function () {
     menu.append("label")
         .attr("for", "enableIpsiCheck")
         .attr("id", "enableIpsiCheckLabel")
-        .text("Ipsilateral");
+        .text(neuro ? "Ipsilateral" : "Intra-");
     menu.append("input")
         .attr("type", "checkbox")
         .attr("checked", false)
@@ -512,7 +512,7 @@ var addLateralityCheck = function () {
     menu.append("label")
         .attr("for", "enableContraCheck")
         .attr("id", "enableContraCheckLabel")
-        .text("Contralateral");
+        .text(neuro ? "Contralateral" : "Inter-");
     menu.append("input")
         .attr("type", "checkbox")
         .attr("checked", false)
