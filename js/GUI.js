@@ -26,6 +26,7 @@ import {
     redrawEdges,
     updateOpacity,
     updateNodesVisiblity,
+    updateNodeSelection,
     getSpt,
     getNodesSelected,
     previewAreaLeft,
@@ -1379,8 +1380,62 @@ var enableRightSearching = function (value) {
     rightSearching = value;
 }
 
-// search by index callback
+ // search by text index or substring callback
 var searchElement = function(intext,side) {
+
+    let index = -1;
+    let teststri,isLeft = false;
+
+    console.log("Search Text" + intext);
+
+    // if search field is text search regions for match and continue with index
+    // if it is a number search by index
+    if ((typeof (parseInt(intext)) != 'number') || isNaN(parseInt(intext))) {
+        // alert("The value inserted is not a number");
+
+        for (let i  = 0; i < Math.max(modelLeft.getDataset().length,modelRight.getDataset().length); i++) {
+            if (i < modelLeft.getDataset().length) {
+                teststri = modelLeft.getRegionByIndex(i);
+
+                if (teststri && teststri.name.includes(intext) && !getNodesSelected().includes(i)) {
+                    index = i;
+                    isLeft = true;
+                    break;
+                }
+            }
+            if (i < modelRight.getDataset().length) {
+                teststri = modelRight.getRegionByIndex(i);
+
+                if (teststri && teststri.name.includes(intext) && !getNodesSelected().includes(i)) {
+                    index = i;
+                    isLeft = false;
+                    break;
+                }
+            }
+
+        }
+
+
+    } else { // It is a number
+        index = parseInt(intext)-1;
+    }
+
+    let modelSide = (isLeft) ? modelLeft : modelRight;
+    if (index < 0 || index > modelSide.getDataset().length) {
+        alert("Node not found");
+    } else {
+        setNodeInfoPanel(teststri.name,index,"FOUND: " + index + ":" + teststri.name);
+        //setNodesFocused(getNodesFocused().length,index);
+        updateNodeSelection(modelSide, null, isLeft, index);
+        setNodesFocused(getNodesFocused().length,index);
+
+    }
+
+
+}
+
+// search by index callback
+var searchElementOLD = function(intext,side) {
     var index = -1;
 
     console.log("Search Text" + intext);

@@ -209,24 +209,34 @@ function onLeftClick(model, event) {
     updateNodeSelection(model, objectIntersected, isLeft);
 }
 
-const updateNodeSelection = (model, objectIntersected, isLeft) => {
+const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null) => {
     // console.log("model: ", model);
     // console.log("objectIntersected: ", objectIntersected);
     // console.log(`isLeft: ${isLeft}`);
 
-    if (!objectIntersected) return;
+    if (!objectIntersected && !nodeIndex) {
+            return false;
+    }
 
+    const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
+
+    if (nodeIndex && !objectIntersected) {
+        objectIntersected = previewArea.getNodeInstanceByIndex(nodeIndex);
+        if (!objectIntersected ) {
+            return false;
+        }
+    }
 
 
     const instanceId = objectIntersected.instanceId;
     const group = objectIntersected.object.name.group;
     const hemisphere = objectIntersected.object.name.hemisphere;
     // check if name is blank empty or undefined
-    if (group === "" || group === undefined) return;
-    if (hemisphere === "" || hemisphere === undefined) return;
-    if (instanceId === "" || instanceId === undefined) return;
+    if (group === "" || group === undefined) return false;
+    if (hemisphere === "" || hemisphere === undefined) return false;
+    if (instanceId === "" || instanceId === undefined) return false;
 
-    const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
+    //const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
     //console.log("previewArea instances: ");
     //console.log(previewArea.instances);
     // if
@@ -240,19 +250,24 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         console.log("hemisphere: ", hemisphere);
         console.log("instanceId: ", instanceId);
 
-        return;
-        }
+        return false;
+    }
+
     //if selected make unselected, if unselected make selected
     //objectIntersected.object.userData.selected = !objectIntersected.object.userData.selected;
+
+
     // check if object is selected or not
     let isSelected = objectIntersected.object.isSelected(objectIntersected);
-    let nodeIndex = objectIntersected.object.getDatasetIndex(objectIntersected);
+    nodeIndex = objectIntersected.object.getDatasetIndex(objectIntersected);
+
     if (!isSelected) {
         //mark object selected
         objectIntersected.object.select(objectIntersected);
         //previewArea.updateNodeGeometry(objectIntersected, 'selected');
         //set the object geometry to selected in both scenes
         // this if statement is to handle different active groups in the left and right preview areas
+
         let nodeIndex = -1;
         if (isLeft) {
             nodeIndex = previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected');
@@ -292,7 +307,7 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         }
 
         let activeEdges = previewArea.drawConnections(); //do we want to draw the connections there or here in drawing? My vote is here.
-        // draw connections does not draw connections, but it does returs the lists of the connections to be drawn, filtered by the threshold.
+        // draw connections does not draw connections, but it does returNs the lists of the connections to be drawn, filtered by the threshold.
 
         //todo: work out the below.
         if (thresholdModality) {
@@ -449,8 +464,8 @@ var initControls = function () {
     // addFslRadioButton();
     addSearchPanel();
     //addAnimationSlider();
-    //addFlashRateSlider();
-    addSkyboxButton();
+    addFlashRateSlider();
+     addSkyboxButton();
 
     modelLeft.setAllRegionsActivated();
     modelRight.setAllRegionsActivated();
@@ -524,14 +539,17 @@ var enableIpsilaterality = function (enable) {
 
         console.log("IPSI:"+enable);
 
-    modelLeft.computeEdgesForTopology(modelLeft.getActiveTopology());
-    modelRight.computeEdgesForTopology(modelRight.getActiveTopology());
+    // modelLeft.computeEdgesForTopology(modelLeft.getActiveTopology());
+    // modelRight.computeEdgesForTopology(modelRight.getActiveTopology());
+    //
+    // previewAreaLeft.removeEdgesFromScene();
+    // previewAreaRight.removeEdgesFromScene();
+    //
+    // previewAreaLeft.drawConnections();
+    // previewAreaRight.drawConnections();
 
-    previewAreaLeft.removeEdgesFromScene();
-    previewAreaRight.removeEdgesFromScene();
-
-    previewAreaLeft.drawConnections();
-    previewAreaRight.drawConnections();
+    previewAreaLeft.updateConnections();
+    previewAreaRight.updateConnections();
 
 }
 
@@ -541,14 +559,23 @@ var enableContralaterality = function (enable) {
 
         console.log("CONTRA:"+enable);
 
-    modelLeft.computeEdgesForTopology(modelLeft.getActiveTopology());
-    modelRight.computeEdgesForTopology(modelRight.getActiveTopology());
+    // modelLeft.computeEdgesForTopology(modelLeft.getActiveTopology());
+    // modelRight.computeEdgesForTopology(modelRight.getActiveTopology());
+    //
+    // previewAreaLeft.removeEdgesFromScene();
+    // previewAreaRight.removeEdgesFromScene();
+    //
+    // previewAreaLeft.drawConnections();
+    // previewAreaRight.drawConnections();
+    //
+    // for ( selectedNode in getNodesSelected()) {
+    //     console.log("selectedNode: ", selectedNode);
+    //     //removeEdgesGivenNodeFromScenes(selectedNode);
+    // }
 
-    previewAreaLeft.removeEdgesFromScene();
-    previewAreaRight.removeEdgesFromScene();
+    previewAreaLeft.updateConnections();
+    previewAreaRight.updateConnections();
 
-    previewAreaLeft.drawConnections();
-    previewAreaRight.drawConnections();
 
 }
 //
@@ -867,7 +894,7 @@ var clrNodesFocused = function () {
     nodesFocused = [];
 }
 
-//todo: probably shouldn't always be true. what is this for?
+//todo: No, this shouldn't always be true. Need to fix the else branch and remove the true
 var setNodesFocused = function (arrIndex, newNodeVal) {
     if(true || newNodeVal) {
         nodesFocused[arrIndex] = newNodeVal;

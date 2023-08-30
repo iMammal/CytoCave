@@ -4,7 +4,7 @@
 
 /**
  * This class controls the preview 3D area. It controls the creation of glyphs (nodes), edges, shortest path edges. It
- * also executes the update requests to those objects. It init the VR environment when requested.
+ * also executes the update requests to those objects. It inits the VR environment when requested.
  * @param canvas_ a WebGl canvas
  * @param model_ a Model object
  * @constructor
@@ -29,7 +29,7 @@ import {
     setRoot,
     getSpt,
     glyphNodeDictionary,
-    //getNodesSelected,
+    getNodesSelected,
     clrNodesSelected,
     setNodesSelected,
     getNodesFocused,
@@ -55,7 +55,7 @@ import {scaleColorGroup} from './utils/scale'
 import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
 //import { XRControllerModelFactory } from './external-libraries/vr/XRControllerModelFactory.js';
 import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory.js";
-import {nodeObject, timerDelta} from "three/examples/jsm/nodes/shadernode/ShaderNodeElements";
+import {func, nodeObject, timerDelta} from "three/examples/jsm/nodes/shadernode/ShaderNodeElements";
 import {WebXRManager} from "three/src/renderers/webxr/WebXRManager";
 import {abs, sign} from "mathjs";
 import {NODE_STREAM_INPUT} from "papaparse";
@@ -1623,7 +1623,7 @@ function PreviewArea(canvas_, model_, name_) {
 
         //this.drawConnections
 
-        var nodeIdx;
+        var nodeIdx = -1, nodeObject = null
         for (var i = 0; i < nodeList.length; i++) {
             nodeIdx = nodeList[i];
             // draw only edges belonging to active nodes
@@ -1640,6 +1640,16 @@ function PreviewArea(canvas_, model_, name_) {
                 }
                 //glyphs[nodeIdx].material.color = tempColor; //new THREE.Color(baseColor[0] + delta * 12, baseColor[1]+delta * 2, baseColor[2]+delta * 5);
                 //console.log(elapsedTime, baseColor, deltaColor, tempColor)
+
+                let previewArea = name === 'Left' ? previewAreaLeft : previewAreaRight;
+
+                if(nodeIdx) {
+                    nodeObject = previewArea.getNodeInstanceByIndex(nodeIdx);
+                }
+                if(!nodeObject || !nodeObject.object || !nodeObject.object.name) { //todo: why is this happening?
+                    return;
+                }
+                nodeObject.object.material.color = tempColor;
             }
         }
     };
@@ -1774,7 +1784,7 @@ function PreviewArea(canvas_, model_, name_) {
         }
         //todo: update to account for instancing.
         //animateNodeShimmer(getNodesSelected(), 0.5);
-        //animateNodeShimmer(getNodesFocused(), 4);//, "#ffffff")
+        animateNodeShimmer(getNodesFocused(), 4);//, "#ffffff")
         //animateNodeBreathing(getNodesSelected());
         //shimmerEdgeNodeColors();
         //updateNodesColor();
@@ -2535,6 +2545,49 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
 
+    this.updateConnections = function () {
+        // update the connections between the selected nodes
+        // get the selected nodes
+        // get the connections for each node
+        // draw the connections
+        // let selectedNodes = this.getSelectedNodes();
+        // let numNodesSelected = selectedNodes.length;
+        // for (var i = 0; i < numNodesSelected; i++) {
+        //     let node = selectedNodes[i];
+        //     let edges = this.getEdges(node);
+        //     // draw the edges
+        //     for (var j = 0; j < edges.length; j++) {
+        //         let edge = edges[j];
+        //         // draw the edge
+        //     }
+
+        // for (edge in this.displayedEdges) { console.log(dataset[this.displayedEdges[edge].nodes[1]].hemisphere); }
+
+        for (let edge = 0; edge  < this.displayedEdges.length; edge++) {
+            // remove the edge from the scene
+            // brain.remove(this.displayedEdges[edge]);
+
+            // there shouldn't be any of these self connections but just in case...
+            if ( this.displayedEdges[edge].nodes[0] == this.displayedEdges[edge].nodes[1] ) {
+                // if the edge is a self connection, don't draw it
+                continue;
+            }
+
+// get the nodes for the edge
+            let edgeNodes = this.displayedEdges[edge].nodes;
+
+            if ( model.getDataset()[edgeNodes[0]].hemisphere == model.getDataset()[edgeNodes[1]].hemisphere ) {
+                this.displayedEdges[edge].visible = ( getEnableIpsi() );
+                // if the edge is within a hemisphere, don't draw it
+                // continue;
+            } else {
+                this.displayedEdges[edge].visible = ( getEnableContra() );
+            }
+
+        }
+        scene.needsUpdate = true;
+
+    }
 
     // draw all connections between the selected nodes, needs the connection matrix.
     // don't draw edges belonging to inactive nodes

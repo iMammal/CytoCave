@@ -1091,6 +1091,7 @@ function Model(side) {
 
         return;
         //edges array is no longer used. Data is stored in node instance userdata
+        //and that is updated when the topology or subject changes
 
         connectionMatrix.forEach(function (value, index) {
             var i = index[0];
