@@ -27,6 +27,5 @@ Live Demo of CytoCave with Bio+MedVis Challenge Data: https://src.dogstarlabs.co
 
 [Short Video introducing the main features of CytoCave](https://youtu.be/8x6G1FqFLNY)
 
-For more detaila about NeuroCave, which CytoCave is based on, click here:
-
+For more detaila about NeuroCave, which CytoCave is based on, click [here]:https://creativecodinglab.github.io/NeuroCave/
 
