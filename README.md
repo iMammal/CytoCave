@@ -21,7 +21,7 @@ high-dimensional biological data with cluster membership highlighting,
 as well as scalability upgrades to support visualizing and interacting 
 with large scale proteomics and multi-omics data.
 
-CytoCave is a work in progress, this prototype was developed for the IEEE 2023 Bio+MedVis Challenge. (http://biovis.net/2023/biovisChallenges_vis).
+CytoCave was developed for the IEEE 2023 Bio+MedVis Challenge. (http://biovis.net/2023/biovisChallenges_vis).
 
 Live Demo of CytoCave with Bio+MedVis Challenge Data: https://src.dogstarlabs.com/morris/CytoCave/visualization.html?dataset=BioVisIEEE2023&load=0&neuro=0&lut=BioMedVis2023drugs2f
 
