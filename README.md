@@ -23,7 +23,7 @@ interacting with large scale brain simulations.
 
 NeuroCavePlus is a work in progress, this prototype was developed for the IEEE 2023 SciVis Contest. (https://sciviscontest2023.github.io).
 
-Live Demo of NeuroCavePlus with ScuVis Contest Data: https://src.dogstarlabs.com/morris/NeuroCave/visualization.html?dataset=SciVisIEEE2023&load=0&lut=viznonet
+Live Demo of NeuroCavePlus with SciVis Contest Data: https://src.dogstarlabs.com/morris/NeuroCave/visualization.html?dataset=SciVisIEEE2023&load=0&lut=viznonet
 
 [1] G. Conte, A. Q. Ye, A. G. Forbes, O. Ajilore, and A. Leow. Braintrinsic:
 A virtual reality-compatible tool for exploring intrinsic topologies of
