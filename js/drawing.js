@@ -320,6 +320,8 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         console.log("end switch");
         removeEdgesGivenNodeFromScenes(nodeIndex);
     }
+    previewAreaRight.reInitEdgeFlare();
+    previewAreaLeft.reInitEdgeFlare();
     //log the currently selected nodes
     let selectedNodes = getNodesSelected(); // local to drawing, returns a list from both preview areas
     console.log("selectedNodes: ", selectedNodes);

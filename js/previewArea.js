@@ -110,6 +110,7 @@ function PreviewArea(canvas_, model_, name_) {
     this.edgeFlareVertices = [];
     this.edgeFlareGeometry = null;
     this.edgeFlareMaterial = null;
+    this.edgeFlarePoints = null;
     //this.edgeFlareMesh = null;
     this.displayedEdgeFlareTravelPercentages = [];
 
@@ -1282,9 +1283,32 @@ function PreviewArea(canvas_, model_, name_) {
         camera.position.set(0, 0, -50);
     };
 
+    this.reInitEdgeFlare = function () {
+      console.log("reInitEdgeFlare");
+      this.edgeFlareGeometry.dispose();
+        this.edgeFlareMaterial.dispose();
+        scene.remove(this.edgeFlarePoints);
+        this.edgeFlareVertices = [];
+        this.displayedEdgeFlareTravelPercentages = [];
+
+        this.initEdgeFlare();
+    }
+
     this.initEdgeFlare = function () {
 
-        for ( let i = 0; i < 1000; i ++ ) {
+        //count active edges in each node from get active edges function
+      let count = 0;
+      let edges = this.getActiveEdges();
+      console.log("Edges: ");
+      console.log(edges);
+
+      for (let i = 0; i < edges.length; i++) {
+        count += edges[i][1].length;
+      }
+
+      console.log("Count: ", count);
+
+        for ( let i = 0; i < count; i ++ ) {
             const x = THREE.MathUtils.randFloatSpread( 0 );
             const y = THREE.MathUtils.randFloatSpread( 0 );
             const z = THREE.MathUtils.randFloatSpread( 0 );
@@ -1296,9 +1320,9 @@ function PreviewArea(canvas_, model_, name_) {
         this.edgeFlareGeometry = new THREE.BufferGeometry();
         this.edgeFlareGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( this.edgeFlareVertices, 3 ) );
         this.edgeFlareMaterial = new THREE.PointsMaterial( { color: 0x888888, size: 3.0 } );
-        const points = new THREE.Points( this.edgeFlareGeometry, this.edgeFlareMaterial );
-        scene.add( points );
-
+        this.edgeFlarePoints = new THREE.Points( this.edgeFlareGeometry, this.edgeFlareMaterial );
+        this.edgeFlarePoints.name = "EdgeFlare";
+        scene.add( this.edgeFlarePoints );
     }
 
     this.resetBrainPosition = function () {
@@ -1828,15 +1852,16 @@ function PreviewArea(canvas_, model_, name_) {
 
     this.redrawEdges = function () {
         this.removeEdgesFromScene();
+
         if (getSpt())
             this.updateShortestPathEdges();
-        const activeEdges = this.drawConnections();
+        const activeEdges = this.getActiveEdges();
 
         let matrix = new THREE.Matrix4();
         let targetPosition = new THREE.Vector3();
         let instancePosition = new THREE.Vector3();
 
-        for (var i = 0; i < activeEdges.length; ++i) {
+        for (var i = 0; i < activeEdges.length; i++) {
 
             let indexNode = activeEdges[i][0];
             indexNode.object.getMatrixAt(indexNode.instanceId, matrix);
@@ -1851,7 +1876,6 @@ function PreviewArea(canvas_, model_, name_) {
                 targetPosition.setFromMatrixPosition(matrix);
                 edge.push(targetPosition);
                 this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode.instanceId, targetNodeId]);
-
             }
         }
     };
@@ -1866,6 +1890,7 @@ function PreviewArea(canvas_, model_, name_) {
         //updateNodesPositions(); // todo: update to account for instancing
         this.updateNodesVisibility(true);
         this.redrawEdges();
+        this.reInitEdgeFlare();
     };
 
     this.removeAllInstances = function () {
@@ -2028,6 +2053,7 @@ function PreviewArea(canvas_, model_, name_) {
             if (instance.userData.selectedNodes === undefined) {
                 instance.userData.selectedNodes = [];
             }
+
             /*Get dataset index of given node. */
             instance.getDatasetIndex = function(nodeObject) {
                 // get object parent
@@ -2631,7 +2657,7 @@ function PreviewArea(canvas_, model_, name_) {
         var nodeIdx;
         let nodesSelected = this.getSelectedNodes();
         let numNodesSelected = nodesSelected.length;
-        console.log("numNodesSelected: " + numNodesSelected);
+        //console.log("numNodesSelected: " + numNodesSelected);
         let activeEdges = [];
         let groups = this.listGroups();
         let threshold = model.getThreshold();
@@ -2640,8 +2666,8 @@ function PreviewArea(canvas_, model_, name_) {
             // consider all selected nodes active
             threshold = 0;
         }
-        console.log("active edges nodesSelected: ");
-        console.log(nodesSelected);
+        //console.log("active edges nodesSelected: ");
+        //console.log(nodesSelected);
 // for each node in nodesSelected look it up in instances and get the edges
         for (var i = 0; i < numNodesSelected; i++) {
             // check through the instances for the index and then return the node
@@ -2679,8 +2705,8 @@ function PreviewArea(canvas_, model_, name_) {
                     //console.log("Node not found in " + leftorright + " hemisphere");
                     continue;
                 }
-                console.log("Node: ");
-                console.log(node);
+                //console.log("Node: ");
+                //console.log(node);
                 // get the edges
                 let edges = node.object.getEdgesFromIndex(nodesSelected[i]);
                 if (!edges) {
@@ -2752,6 +2778,7 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     var updateNodesColor = function () {
+        //todo update to handle instnce and change individual node
         const elapsedTime = clock.getElapsedTime();
         var dataset = model.getDataset();
 
@@ -2870,13 +2897,12 @@ function PreviewArea(canvas_, model_, name_) {
 
     // draw the top n edges connected to a specific node
     this.drawTopNEdgesByNode = function (nodeIndex, n) {
-
-        var row = [];
-	if(false && (!getEnableContra() && !getEnableIpsi())) { //todo: evaluate best action for neither ipsi nor contra
-		console.log("Neither ipsi nor contra: this should not be able to be accessed.")
-        row = model.getTopConnectionsByNode(nodeIndex, n );
-        } else {
-		if(getEnableContra()) {
+      var row = [];
+	    if(false && (!getEnableContra() && !getEnableIpsi())) { //todo: evaluate best action for neither ipsi nor contra
+		  console.log("Neither ipsi nor contra: this should not be able to be accessed.")
+          row = model.getTopConnectionsByNode(nodeIndex, n );
+      } else {
+		  if(getEnableContra()) {
             console.log("contra");
 			row = row.concat(model.getTopContraLateralConnectionsByNode(nodeIndex, n ));
             }
@@ -3110,6 +3136,7 @@ function PreviewArea(canvas_, model_, name_) {
             updatedDisplayEdges[updatedDisplayEdges.length] = shortestPathEdges[i];
         }
         this.displayedEdges = updatedDisplayEdges;
+        this.reInitEdgeFlare();
     };
 
     // draw skybox from images
