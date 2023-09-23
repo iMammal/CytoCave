@@ -98,8 +98,8 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     if (intersectedObject.object.name === '') {
         return;
     }
-    console.log("intersected Object Moveover: ");
-    console.log(intersectedObject);
+    //console.log("intersected Object Moveover: ");
+    //console.log(intersectedObject);
     //check if the intersected object is a node, if it is the name.type will be 'region'
     //if it is a node, get the node index and the region name
     if (intersectedObject.object.name.type == 'region') {

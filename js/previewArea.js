@@ -18,7 +18,6 @@ import {FlyControls} from "three/examples/jsm/controls/FlyControls";
 import {TrackballControls} from "three/examples/jsm/controls/TrackballControls";
 import {TransformControls} from "three/examples/jsm/controls/TransformControls";
 
-
 //import * as quat from "./external-libraries/gl-matrix/quat.js";
 
 // import {isLoaded, dataFiles  , mobile} from "./globals";
@@ -48,7 +47,7 @@ import {
     updateNodeMoveOver,
     getActiveEdges, previewAreaLeft,previewAreaRight
 } from './drawing'
-import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS} from './GUI'
+import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, removeGeometryButtons} from './GUI'
 import {scaleColorGroup} from './utils/scale'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
@@ -1296,17 +1295,28 @@ function PreviewArea(canvas_, model_, name_) {
 
     this.initEdgeFlare = function () {
 
-        //count active edges in each node from get active edges function
+      //count active edges in each node from get active edges function
       let count = 0;
       let edges = this.getActiveEdges();
-      console.log("Edges: ");
+      console.log("init Edge Flare Edges: ");
       console.log(edges);
-
+      let colorMatchMap = [];
+      let instanceGroup = undefined;
       for (let i = 0; i < edges.length; i++) {
-        count += edges[i][1].length;
-      }
 
+        count += edges[i][1].length;
+        instanceGroup = this.instances[edges[i][0].group][edges[i][0].hemisphere];
+        console.log("instanceGroup: ")
+        console.log(instanceGroup);
+        // index, length, and color, should be enough...
+        colorMatchMap[i] = [ edges[i][1].length, instanceGroup.material.color ];
+        //log out the color
+        // console.log("hex color: ");
+        // console.log(tempColor.getHexString());
+      }
       console.log("Count: ", count);
+
+
 
         for ( let i = 0; i < count; i ++ ) {
             const x = THREE.MathUtils.randFloatSpread( 0 );
@@ -1319,9 +1329,34 @@ function PreviewArea(canvas_, model_, name_) {
 
         this.edgeFlareGeometry = new THREE.BufferGeometry();
         this.edgeFlareGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( this.edgeFlareVertices, 3 ) );
-        this.edgeFlareMaterial = new THREE.PointsMaterial( { color: 0x888888, size: 3.0 } );
+        this.edgeFlareMaterial = new THREE.PointsMaterial( {vertexColors: true,size: 3.0 } );
+        this.edgeFlareColors = new Float32Array( count * 3 );
+
+        // populate the color array from the colorMatchMap
+        // colorMatchMap.count in each object in the map is the basis number for
+        // how many vertices to colorize with the color in that object
+        let colorIndex = 0;
+
+        for ( let i= 0; i < colorMatchMap.length; i++ ) {
+          let color = colorMatchMap[i][1];
+          let count = colorMatchMap[i][0];
+          for (let j = 0; j < count; j++) {
+            this.edgeFlareColors[3 * colorIndex] = color.r;
+            this.edgeFlareColors[3 * colorIndex + 1] = color.g;
+            this.edgeFlareColors[3 * colorIndex + 2] = color.b;
+            //log color in rgb
+            console.log("color: ", color.r, color.g, color.b);
+            colorIndex++;
+          }
+        }
+        //log color list
+        this.edgeFlareGeometry.setAttribute( 'color', new THREE.Float32BufferAttribute( this.edgeFlareColors, 3 ) );
+        this.edgeFlareGeometry.colorsNeedUpdate = true;
         this.edgeFlarePoints = new THREE.Points( this.edgeFlareGeometry, this.edgeFlareMaterial );
         this.edgeFlarePoints.name = "EdgeFlare";
+
+
+
         scene.add( this.edgeFlarePoints );
     }
 
@@ -1707,8 +1742,8 @@ function PreviewArea(canvas_, model_, name_) {
             }
 
             positions.setXYZ(i, this.edgeFlareVertices[i*3], this.edgeFlareVertices[3*i+1], this.edgeFlareVertices[3*i+2]);
-            let fromNodeColor = this.displayedEdges[i].geometry.attributes.color.array.slice(0, 3);
-            material.color.setRGB(i, fromNodeColor[0], fromNodeColor[1], fromNodeColor[2]);
+      //      let fromNodeColor = this.displayedEdges[i].geometry.attributes.color.array.slice(0, 3);
+    //        material.color.setRGB(i, fromNodeColor[0], fromNodeColor[1], fromNodeColor[2]);
 
 
         }
@@ -1872,6 +1907,14 @@ function PreviewArea(canvas_, model_, name_) {
                 edge.push(instancePosition);
                 let targetNodeId = activeEdges[i][1][j].targetNodeId;
                 let targetNode = this.index2node(targetNodeId);
+                //test if targetNode is valid and has instanceId
+                if(!targetNode || !targetNode.instanceId) {
+                    console.log("targetNode is invalid or has no instanceId");
+                    console.log("TargetNode: ");
+                    console.log(targetNode);
+                    continue;
+                }
+
                 targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
                 targetPosition.setFromMatrixPosition(matrix);
                 edge.push(targetPosition);
@@ -2872,8 +2915,8 @@ function PreviewArea(canvas_, model_, name_) {
 
         // geometry.colors = colorGradient;
         var line = new THREE.Line(geometry, material);
-        console.log("ownerNode: ");
-        console.log(ownerNode);
+        //console.log("ownerNode: ");
+        //console.log(ownerNode);
         line.name = ownerNode;
         line.nPoints = n;
         line.nodes = nodes;
@@ -2885,11 +2928,11 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     var drawEdgeWithName = function (edge, ownerNode, nodes) {
-        console.log("Edge: ");
-        console.log(edge);
-        console.log("ownerNode: " + ownerNode);
-        console.log("nodes: ");
-        console.log(nodes);
+        // console.log("Edge: ");
+        // console.log(edge);
+        // console.log("ownerNode: " + ownerNode);
+        // console.log("nodes: ");
+        // console.log(nodes);
         var line = createLine(edge, ownerNode, nodes);
         brain.add(line);
         return line;
