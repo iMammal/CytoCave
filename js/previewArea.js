@@ -1476,6 +1476,7 @@ function PreviewArea(canvas_, model_, name_) {
             //this.hideEdgeFlare();
         } else {
             this.edgeFlareVisible = true;
+            this.reInitEdgeFlare();
             //this.showEdgeFlare();
         }
     }
@@ -1697,6 +1698,7 @@ function PreviewArea(canvas_, model_, name_) {
                     var newColor = new THREE.Color(color);
                     tempColor.lerpColors(tempColor, newColor, colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime));
                 }
+                //todo apply color to correct instance nodes
                 //glyphs[nodeIdx].material.color = tempColor; //new THREE.Color(baseColor[0] + delta * 12, baseColor[1]+delta * 2, baseColor[2]+delta * 5);
                 //console.log(elapsedTime, baseColor, deltaColor, tempColor)
             }
@@ -1728,7 +1730,7 @@ function PreviewArea(canvas_, model_, name_) {
             let groupVal = null;
             if(model.getDataset()[nodeIdx] != undefined) groupVal = model.getDataset()[nodeIdx].group;
             let firerate = 0.01;
-            if (typeof (groupVal) === 'number') {
+            if (typeof (groupVal) !== 'string' && !isNaN(groupVal)) {
                 firerate = (groupVal % 10) / 100;
             }
 
@@ -1918,6 +1920,7 @@ function PreviewArea(canvas_, model_, name_) {
                 targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
                 targetPosition.setFromMatrixPosition(matrix);
                 edge.push(targetPosition);
+                // todo might need to dispose before replacing, look into it. this.displayedEdges.dispose();
                 this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode.instanceId, targetNodeId]);
             }
         }
@@ -1964,31 +1967,10 @@ function PreviewArea(canvas_, model_, name_) {
         }
     };
 
-    // this.removeAllInstances = function () {
-    //     // free all material and geometry for all instance objects in this.instances
-    //     let groups = this.listGroups();
-    //     for (let i = 0; i < groups.length; i++) {
-    //         let group = groups[i];
-    //         let groupObject = this.instances[group];
-    //         let left = groupObject.left;
-    //         let right = groupObject.right;
-    //         if(left && left.geometry && left.material) {
-    //             left.geometry.dispose();
-    //             left.material.dispose();
-    //             brain.remove(left);
-    //         }
-    //         if(right && right.geometry && right.material) {
-    //             right.geometry.dispose();
-    //             right.material.dispose();
-    //             brain.remove(right);
-    //         }
-    //         this.instances[group] = {left: null, right: null};
-    //     }
-    // };
-
 
     // list groups in the dataset
     this.listGroups = function () {
+      //todo there is probably a better way to do this
         var dataset = model.getDataset();
         var groups = {};
         for (var i = 0; i < dataset.length; i++) {
@@ -2012,8 +1994,7 @@ function PreviewArea(canvas_, model_, name_) {
     // assumes all nodes are visible, nothing is selected
     this.drawRegions = function() {
         var dataset = model.getDataset();
-        console.log("Dataset: ");
-        console.log(dataset);
+        console.log("Drawing All Regions");
 
         // for each group and hemisphere in the dataset, create an instance mesh
         var groups = this.listGroups();
@@ -2144,6 +2125,7 @@ function PreviewArea(canvas_, model_, name_) {
                 return instance.userData.selectedNodes;
             }
 
+            /* accepts an array of indexes, sets these indexes as selected if they exist within this instance group. */
             instance.setSelectedNodes = function(selectedNodes) {
                 //accepts an array of indexes, only set
                 //only set select if index is in the indexList
@@ -2186,7 +2168,6 @@ function PreviewArea(canvas_, model_, name_) {
                 }
                 //return instance.userData.selectedNodes.includes(index);
             }
-
             instance.select = function(nodeObject) {
                 let index = instance.getDatasetIndex(nodeObject);
                 // push the index into the selectedNodes array, if it doesn't exist
@@ -3080,7 +3061,7 @@ function PreviewArea(canvas_, model_, name_) {
         }
 
         // todo: get back to this after edge thresholding is re-implemented
-
+        // thresholding is implemented in getActiveEdges.
         //console.log("contra: "+getEnableContra()+"...ipsi: "+getEnableIpsi());
 
         // todo: evaluate this: For now, If neither ipsi nor contra are selected, then don't draw any edges
