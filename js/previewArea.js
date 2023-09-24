@@ -1471,14 +1471,14 @@ function PreviewArea(canvas_, model_, name_) {
 
     // toggle between showing and hiding edge flares
     this.toggleFlare = function () {
-        if (this.edgeFlareVisible) {
-            this.edgeFlareVisible = false;
-            //this.hideEdgeFlare();
-        } else {
-            this.edgeFlareVisible = true;
+        // if (this.edgeFlareVisible) {
+        //     this.edgeFlareVisible = false;
+        //     //this.hideEdgeFlare();
+        // } else {
+        //     this.edgeFlareVisible = true;
             this.reInitEdgeFlare();
             //this.showEdgeFlare();
-        }
+        //}
     }
 
     // toggle between showing and hiding particles
