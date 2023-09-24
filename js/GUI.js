@@ -181,6 +181,8 @@ var addDimensionFactorSliderRight = function (side) {
                 setDimensionFactorRightSphere(this.value);
                 document.getElementById("dimensionSliderLeftRight").value = this.value;
             }
+            previewAreaLeft.updateScene();
+            previewAreaRight.updateScene();
         });
     } else {
         panel.append("label")
@@ -216,7 +218,8 @@ var addDimensionFactorSliderRight = function (side) {
                 setDimensionFactorLeftSphere(this.value);
                 document.getElementById("dimensionSliderLeftLeft").value = this.value;
             }
-
+            previewAreaLeft.updateScene();
+            previewAreaRight.updateScene();
         });
     }
 
@@ -257,6 +260,8 @@ var addAnimationSlider = function () {
             previewAreaLeft.setAnimation(Math.floor(this.value)/10000);
             previewAreaRight.setAnimation(Math.floor(this.value)/10000);
             document.getElementById("animationSliderLabel").innerHTML = "Animation @ " + this.value/1.00;
+            previewAreaLeft.updateScene();
+            previewAreaRight.updateScene();
         });
     menu.append("br");
 
@@ -281,6 +286,8 @@ var addFlashRateSlider = function () {
             previewAreaLeft.setFlahRate(Math.floor(this.value)/100);
             previewAreaRight.setFlahRate(Math.floor(this.value)/100);
             document.getElementById("flashRateSliderLabel").innerHTML = "Flash rate @ " + this.value/100.00;
+            previewAreaLeft.updateScene();
+            previewAreaRight.updateScene();
         });
     menu.append("br");
 };
@@ -301,7 +308,8 @@ var addSkyboxButton = function (side) {
             //if (side !== "Right")
             previewAreaLeft.setSkyboxVisibility(checked);
             previewAreaRight.setSkyboxVisibility(checked);
-            updateScenes();
+            previewAreaLeft.updateScene();
+            previewAreaRight.updateScene();
         })
         // .append("input")
         // .attr("type","checkbox")
@@ -353,6 +361,8 @@ var addThresholdSlider = function () {
             modelRight.setThreshold(this.value/thresholdMultiplier);
             redrawEdges();
             document.getElementById("thresholdSliderLabel").innerHTML = neuro?"Ipsi-Threshold @ ":"Intra-Threshold @ " + this.value/thresholdMultiplier;
+            previewAreaLeft.updateScene();
+            previewAreaRight.updateScene();
         });
     menu.append("label")
         .attr("for", "thresholdSlider")
@@ -384,6 +394,8 @@ var addConThresholdSlider = function () {
             modelRight.setConThreshold(this.value / thresholdMultiplier);
             redrawEdges();
             document.getElementById("conThresholdSliderLabel").innerHTML = neuro?"Contra-Threshold @ ":"Inter-Threshold @ " + this.value / thresholdMultiplier;
+            previewAreaLeft.updateScene();
+            previewAreaRight.updateScene();
         });
     menu.append("label")
         .attr("for", "conThresholdSlider")
