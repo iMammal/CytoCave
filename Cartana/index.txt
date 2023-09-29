@@ -1,2 +1,0 @@
-subjectID,network,topology
-PciSeq,Network.csv,Topology.csv
