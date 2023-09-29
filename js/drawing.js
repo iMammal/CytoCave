@@ -98,8 +98,8 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     if (intersectedObject.object.name === '') {
         return;
     }
-    console.log("intersected Object Moveover: ");
-    console.log(intersectedObject);
+    //console.log("intersected Object Moveover: ");
+    //console.log(intersectedObject);
     //check if the intersected object is a node, if it is the name.type will be 'region'
     //if it is a node, get the node index and the region name
     if (intersectedObject.object.name.type == 'region') {
@@ -316,10 +316,13 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         previewAreaLeft.updateNodeGeometry(objectIntersected, 'normal');
         previewAreaRight.updateNodeGeometry(objectIntersected, 'normal');
         objectIntersected.object.unSelect(objectIntersected);
+      previewAreaLeft.updateScene();
+      previewAreaRight.updateScene();
         //probably want to remove the edges from the scene here.
         console.log("end switch");
         removeEdgesGivenNodeFromScenes(nodeIndex);
     }
+
     //log the currently selected nodes
     let selectedNodes = getNodesSelected(); // local to drawing, returns a list from both preview areas
     console.log("selectedNodes: ", selectedNodes);
@@ -606,6 +609,7 @@ var enableEdgeBundling = function (enable) {
 };
 
 // updating scenes: redrawing glyphs and displayed edges
+//todo compare with redrawScene
 var updateScenes = function (side) {
     console.log("Scene update "+side);
     if (side !== "Right") {
@@ -719,6 +723,7 @@ var changeColorGroupLeft = function (name) {
     createLegend(modelLeft);
 };*/
 
+//todo compare with updateScene
 var redrawScene = function (side) {
     setUpdateNeeded(true);
     switch (side) {
@@ -754,6 +759,7 @@ var changeActiveGeometry = function (model, side, type) {
         previewAreaLeft.drawRegions();
         previewAreaLeft.updateNodesVisibility();
         previewAreaLeft.setSelectedNodes(tempNodesSelected);
+
 
     }
     model.computeEdgesForTopology(model.getActiveTopology());
@@ -840,8 +846,8 @@ var getNodesSelected = function () {
     // previewAreaLeft.setSelectedNodes(nodesSelected);
     // previewAreaRight.setSelectedNodes(nodesSelected);
     // an ok idea that didn't account for unselecting nodes
-    console.log("nodesSelected: ");
-    console.log(nodesSelected);
+    // console.log("nodesSelected: ");
+    // console.log(nodesSelected);
     return nodesSelected;
 }
 

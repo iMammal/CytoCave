@@ -18,7 +18,6 @@ import {FlyControls} from "three/examples/jsm/controls/FlyControls";
 import {TrackballControls} from "three/examples/jsm/controls/TrackballControls";
 import {TransformControls} from "three/examples/jsm/controls/TransformControls";
 
-
 //import * as quat from "./external-libraries/gl-matrix/quat.js";
 
 // import {isLoaded, dataFiles  , mobile} from "./globals";
@@ -48,7 +47,7 @@ import {
     updateNodeMoveOver,
     getActiveEdges, previewAreaLeft,previewAreaRight
 } from './drawing'
-import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS} from './GUI'
+import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, removeGeometryButtons} from './GUI'
 import {scaleColorGroup} from './utils/scale'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
@@ -110,6 +109,7 @@ function PreviewArea(canvas_, model_, name_) {
     this.edgeFlareVertices = [];
     this.edgeFlareGeometry = null;
     this.edgeFlareMaterial = null;
+    this.edgeFlarePoints = null;
     //this.edgeFlareMesh = null;
     this.displayedEdgeFlareTravelPercentages = [];
 
@@ -1232,17 +1232,14 @@ function PreviewArea(canvas_, model_, name_) {
     // draw a pointing line
     function drawPointer(start, end) {
         var material = new THREE.LineBasicMaterial();
-        var points = [];
-        points.push(start);
-        points.push(end);
-
-        var geometry = new THREE.BufferGeometry().setFromPoints(points);
+        var geometry = new THREE.BufferGeometry().setFromPoints([start,end]);
         return new THREE.Line(geometry, material);
     }
 
 
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
     var initScene = function () {
+        console.log("init scene");
         renderer.setSize(canvas.clientWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         canvas.appendChild(renderer.domElement);
@@ -1282,9 +1279,43 @@ function PreviewArea(canvas_, model_, name_) {
         camera.position.set(0, 0, -50);
     };
 
+    this.reInitEdgeFlare = function () {
+      console.log("reInitEdgeFlare");
+      this.edgeFlareGeometry.dispose();
+        this.edgeFlareMaterial.dispose();
+        scene.remove(this.edgeFlarePoints);
+        this.edgeFlareVertices = [];
+        this.displayedEdgeFlareTravelPercentages = [];
+
+        this.initEdgeFlare();
+    }
+
     this.initEdgeFlare = function () {
 
-        for ( let i = 0; i < 1000; i ++ ) {
+      //count active edges in each node from get active edges function
+      let count = 0;
+      let edges = this.getActiveEdges();
+      console.log("init Edge Flare Edges: ");
+      console.log(edges);
+      let colorMatchMap = [];
+      let instanceGroup = undefined;
+      for (let i = 0; i < edges.length; i++) {
+
+        count += edges[i][1].length;
+        instanceGroup = this.instances[edges[i][0].group][edges[i][0].hemisphere];
+        console.log("instanceGroup: ")
+        console.log(instanceGroup);
+        // index, length, and color, should be enough...
+        colorMatchMap[i] = [ edges[i][1].length, instanceGroup.material.color ];
+        //log out the color
+        // console.log("hex color: ");
+        // console.log(tempColor.getHexString());
+      }
+      console.log("Count: ", count);
+
+
+
+        for ( let i = 0; i < count; i ++ ) {
             const x = THREE.MathUtils.randFloatSpread( 0 );
             const y = THREE.MathUtils.randFloatSpread( 0 );
             const z = THREE.MathUtils.randFloatSpread( 0 );
@@ -1295,10 +1326,35 @@ function PreviewArea(canvas_, model_, name_) {
 
         this.edgeFlareGeometry = new THREE.BufferGeometry();
         this.edgeFlareGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( this.edgeFlareVertices, 3 ) );
-        this.edgeFlareMaterial = new THREE.PointsMaterial( { color: 0x888888, size: 3.0 } );
-        const points = new THREE.Points( this.edgeFlareGeometry, this.edgeFlareMaterial );
-        scene.add( points );
+        this.edgeFlareMaterial = new THREE.PointsMaterial( {vertexColors: true,size: 3.0 } );
+        this.edgeFlareColors = new Float32Array( count * 3 );
 
+        // populate the color array from the colorMatchMap
+        // colorMatchMap.count in each object in the map is the basis number for
+        // how many vertices to colorize with the color in that object
+        let colorIndex = 0;
+
+        for ( let i= 0; i < colorMatchMap.length; i++ ) {
+          let [count,color] = colorMatchMap[i];
+          const colorR = color.r;
+          const colorG = color.g;
+          const colorB = color.b;
+          for (let j = 0; j < count; j++) {
+            this.edgeFlareColors[3 * colorIndex] = colorR;
+            this.edgeFlareColors[3 * colorIndex + 1] = colorG;
+            this.edgeFlareColors[3 * colorIndex + 2] = colorB;
+            colorIndex++;
+          }
+        }
+        //log color list
+        this.edgeFlareGeometry.setAttribute( 'color', new THREE.Float32BufferAttribute( this.edgeFlareColors, 3 ) );
+        this.edgeFlareGeometry.colorsNeedUpdate = true;
+        this.edgeFlarePoints = new THREE.Points( this.edgeFlareGeometry, this.edgeFlareMaterial );
+        this.edgeFlarePoints.name = "EdgeFlare";
+
+
+
+        scene.add( this.edgeFlarePoints );
     }
 
     this.resetBrainPosition = function () {
@@ -1399,7 +1455,7 @@ function PreviewArea(canvas_, model_, name_) {
 
     // toggle between showing and hiding labels
     this.toggleLabels = function () {
-        if (this.labelsVisible) {
+      if (this.labelsVisible) {
             this.labelsVisible = false;
             //this.hideLabels();
             //addNodeLabel();
@@ -1412,13 +1468,14 @@ function PreviewArea(canvas_, model_, name_) {
 
     // toggle between showing and hiding edge flares
     this.toggleFlare = function () {
-        if (this.edgeFlareVisible) {
-            this.edgeFlareVisible = false;
-            //this.hideEdgeFlare();
-        } else {
-            this.edgeFlareVisible = true;
+        // if (this.edgeFlareVisible) {
+        //     this.edgeFlareVisible = false;
+        //     //this.hideEdgeFlare();
+        // } else {
+        //     this.edgeFlareVisible = true;
+            this.reInitEdgeFlare();
             //this.showEdgeFlare();
-        }
+        //}
     }
 
     // toggle between showing and hiding particles
@@ -1509,6 +1566,7 @@ function PreviewArea(canvas_, model_, name_) {
                 objectParent.userData.selectedNodes = objectParent.userData.selectedNodes.filter(id => id != datasetIndex);
                 // set the matrix dirty
                 objectParent.instanceColor.needsUpdate = true;
+                this.updateScene();
                 break;
 
             case 'mouseover':
@@ -1522,7 +1580,7 @@ function PreviewArea(canvas_, model_, name_) {
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0)));
                 objectParent.instanceColor.needsUpdate = true;
 
-                break;
+                return;
 
             case 'selected':
                 console.log("selected state");
@@ -1546,7 +1604,7 @@ function PreviewArea(canvas_, model_, name_) {
 
                 objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( 1, 1, 1));
                 objectParent.instanceColor.needsUpdate = true;
-
+                this.updateScene();
                 break;
 
             case 'root':
@@ -1638,6 +1696,7 @@ function PreviewArea(canvas_, model_, name_) {
                     var newColor = new THREE.Color(color);
                     tempColor.lerpColors(tempColor, newColor, colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime));
                 }
+                //todo apply color to correct instance nodes
                 //glyphs[nodeIdx].material.color = tempColor; //new THREE.Color(baseColor[0] + delta * 12, baseColor[1]+delta * 2, baseColor[2]+delta * 5);
                 //console.log(elapsedTime, baseColor, deltaColor, tempColor)
             }
@@ -1669,7 +1728,7 @@ function PreviewArea(canvas_, model_, name_) {
             let groupVal = null;
             if(model.getDataset()[nodeIdx] != undefined) groupVal = model.getDataset()[nodeIdx].group;
             let firerate = 0.01;
-            if (typeof (groupVal) === 'number') {
+            if (typeof (groupVal) !== 'string' && !isNaN(groupVal)) {
                 firerate = (groupVal % 10) / 100;
             }
 
@@ -1683,8 +1742,8 @@ function PreviewArea(canvas_, model_, name_) {
             }
 
             positions.setXYZ(i, this.edgeFlareVertices[i*3], this.edgeFlareVertices[3*i+1], this.edgeFlareVertices[3*i+2]);
-            let fromNodeColor = this.displayedEdges[i].geometry.attributes.color.array.slice(0, 3);
-            material.color.setRGB(i, fromNodeColor[0], fromNodeColor[1], fromNodeColor[2]);
+      //      let fromNodeColor = this.displayedEdges[i].geometry.attributes.color.array.slice(0, 3);
+    //        material.color.setRGB(i, fromNodeColor[0], fromNodeColor[1], fromNodeColor[2]);
 
 
         }
@@ -1828,15 +1887,16 @@ function PreviewArea(canvas_, model_, name_) {
 
     this.redrawEdges = function () {
         this.removeEdgesFromScene();
+
         if (getSpt())
             this.updateShortestPathEdges();
-        const activeEdges = this.drawConnections();
+        const activeEdges = this.getActiveEdges();
 
         let matrix = new THREE.Matrix4();
         let targetPosition = new THREE.Vector3();
         let instancePosition = new THREE.Vector3();
 
-        for (var i = 0; i < activeEdges.length; ++i) {
+        for (var i = 0; i < activeEdges.length; i++) {
 
             let indexNode = activeEdges[i][0];
             indexNode.object.getMatrixAt(indexNode.instanceId, matrix);
@@ -1847,11 +1907,19 @@ function PreviewArea(canvas_, model_, name_) {
                 edge.push(instancePosition);
                 let targetNodeId = activeEdges[i][1][j].targetNodeId;
                 let targetNode = this.index2node(targetNodeId);
+                //test if targetNode is valid and has instanceId
+                if(!targetNode || !targetNode.instanceId) {
+                    console.log("targetNode is invalid or has no instanceId");
+                    console.log("TargetNode: ");
+                    console.log(targetNode);
+                    continue;
+                }
+
                 targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
                 targetPosition.setFromMatrixPosition(matrix);
                 edge.push(targetPosition);
+                // todo might need to dispose before replacing, look into it. this.displayedEdges.dispose();
                 this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode.instanceId, targetNodeId]);
-
             }
         }
     };
@@ -1863,9 +1931,11 @@ function PreviewArea(canvas_, model_, name_) {
 
     // updating scenes: redrawing glyphs and displayed edges
     this.updateScene = function () {
+      console.log('%c  ' + 'updateScene', 'background: #222; color: #bada55');
         //updateNodesPositions(); // todo: update to account for instancing
         this.updateNodesVisibility(true);
         this.redrawEdges();
+        this.reInitEdgeFlare();
     };
 
     this.removeAllInstances = function () {
@@ -1896,31 +1966,10 @@ function PreviewArea(canvas_, model_, name_) {
         }
     };
 
-    // this.removeAllInstances = function () {
-    //     // free all material and geometry for all instance objects in this.instances
-    //     let groups = this.listGroups();
-    //     for (let i = 0; i < groups.length; i++) {
-    //         let group = groups[i];
-    //         let groupObject = this.instances[group];
-    //         let left = groupObject.left;
-    //         let right = groupObject.right;
-    //         if(left && left.geometry && left.material) {
-    //             left.geometry.dispose();
-    //             left.material.dispose();
-    //             brain.remove(left);
-    //         }
-    //         if(right && right.geometry && right.material) {
-    //             right.geometry.dispose();
-    //             right.material.dispose();
-    //             brain.remove(right);
-    //         }
-    //         this.instances[group] = {left: null, right: null};
-    //     }
-    // };
-
 
     // list groups in the dataset
     this.listGroups = function () {
+      //todo there is probably a better way to do this
         var dataset = model.getDataset();
         var groups = {};
         for (var i = 0; i < dataset.length; i++) {
@@ -1944,8 +1993,7 @@ function PreviewArea(canvas_, model_, name_) {
     // assumes all nodes are visible, nothing is selected
     this.drawRegions = function() {
         var dataset = model.getDataset();
-        console.log("Dataset: ");
-        console.log(dataset);
+        console.log("Drawing All Regions");
 
         // for each group and hemisphere in the dataset, create an instance mesh
         var groups = this.listGroups();
@@ -2028,6 +2076,7 @@ function PreviewArea(canvas_, model_, name_) {
             if (instance.userData.selectedNodes === undefined) {
                 instance.userData.selectedNodes = [];
             }
+
             /*Get dataset index of given node. */
             instance.getDatasetIndex = function(nodeObject) {
                 // get object parent
@@ -2075,6 +2124,7 @@ function PreviewArea(canvas_, model_, name_) {
                 return instance.userData.selectedNodes;
             }
 
+            /* accepts an array of indexes, sets these indexes as selected if they exist within this instance group. */
             instance.setSelectedNodes = function(selectedNodes) {
                 //accepts an array of indexes, only set
                 //only set select if index is in the indexList
@@ -2117,7 +2167,6 @@ function PreviewArea(canvas_, model_, name_) {
                 }
                 //return instance.userData.selectedNodes.includes(index);
             }
-
             instance.select = function(nodeObject) {
                 let index = instance.getDatasetIndex(nodeObject);
                 // push the index into the selectedNodes array, if it doesn't exist
@@ -2494,7 +2543,6 @@ function PreviewArea(canvas_, model_, name_) {
                     //mark node as selected
                     node.object.select(node);
                     this.updateNodeGeometry(node, 'selected');
-
                 }
             }
         }
@@ -2631,7 +2679,7 @@ function PreviewArea(canvas_, model_, name_) {
         var nodeIdx;
         let nodesSelected = this.getSelectedNodes();
         let numNodesSelected = nodesSelected.length;
-        console.log("numNodesSelected: " + numNodesSelected);
+        //console.log("numNodesSelected: " + numNodesSelected);
         let activeEdges = [];
         let groups = this.listGroups();
         let threshold = model.getThreshold();
@@ -2640,8 +2688,8 @@ function PreviewArea(canvas_, model_, name_) {
             // consider all selected nodes active
             threshold = 0;
         }
-        console.log("active edges nodesSelected: ");
-        console.log(nodesSelected);
+        //console.log("active edges nodesSelected: ");
+        //console.log(nodesSelected);
 // for each node in nodesSelected look it up in instances and get the edges
         for (var i = 0; i < numNodesSelected; i++) {
             // check through the instances for the index and then return the node
@@ -2679,16 +2727,16 @@ function PreviewArea(canvas_, model_, name_) {
                     //console.log("Node not found in " + leftorright + " hemisphere");
                     continue;
                 }
-                console.log("Node: ");
-                console.log(node);
+                //console.log("Node: ");
+                //console.log(node);
                 // get the edges
                 let edges = node.object.getEdgesFromIndex(nodesSelected[i]);
                 if (!edges) {
                     console.log("Edges not found");
                     continue;
                 }
-                console.log("Edges: ");
-                console.log(edges);
+                // console.log("Edges: ");
+                // console.log(edges);
                 // get the edges that are above the threshold
                 let edgesAboveThreshold = [];
                 if (!topN) {
@@ -2709,8 +2757,8 @@ function PreviewArea(canvas_, model_, name_) {
                 activeEdges.push([node, edgesAboveThreshold]);
             }
         }
-        console.log("fresh active edges: ");
-        console.log(activeEdges);
+        // console.log("fresh active edges: ");
+        // console.log(activeEdges);
         return activeEdges;
     };
 
@@ -2752,6 +2800,7 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     var updateNodesColor = function () {
+        //todo update to handle instnce and change individual node
         const elapsedTime = clock.getElapsedTime();
         var dataset = model.getDataset();
 
@@ -2845,8 +2894,8 @@ function PreviewArea(canvas_, model_, name_) {
 
         // geometry.colors = colorGradient;
         var line = new THREE.Line(geometry, material);
-        console.log("ownerNode: ");
-        console.log(ownerNode);
+        //console.log("ownerNode: ");
+        //console.log(ownerNode);
         line.name = ownerNode;
         line.nPoints = n;
         line.nodes = nodes;
@@ -2858,11 +2907,11 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     var drawEdgeWithName = function (edge, ownerNode, nodes) {
-        console.log("Edge: ");
-        console.log(edge);
-        console.log("ownerNode: " + ownerNode);
-        console.log("nodes: ");
-        console.log(nodes);
+        // console.log("Edge: ");
+        // console.log(edge);
+        // console.log("ownerNode: " + ownerNode);
+        // console.log("nodes: ");
+        // console.log(nodes);
         var line = createLine(edge, ownerNode, nodes);
         brain.add(line);
         return line;
@@ -2870,13 +2919,12 @@ function PreviewArea(canvas_, model_, name_) {
 
     // draw the top n edges connected to a specific node
     this.drawTopNEdgesByNode = function (nodeIndex, n) {
-
-        var row = [];
-	if(false && (!getEnableContra() && !getEnableIpsi())) { //todo: evaluate best action for neither ipsi nor contra
-		console.log("Neither ipsi nor contra: this should not be able to be accessed.")
-        row = model.getTopConnectionsByNode(nodeIndex, n );
-        } else {
-		if(getEnableContra()) {
+      var row = [];
+	    if(false && (!getEnableContra() && !getEnableIpsi())) { //todo: evaluate best action for neither ipsi nor contra
+		  console.log("Neither ipsi nor contra: this should not be able to be accessed.")
+          row = model.getTopConnectionsByNode(nodeIndex, n );
+      } else {
+		  if(getEnableContra()) {
             console.log("contra");
 			row = row.concat(model.getTopContraLateralConnectionsByNode(nodeIndex, n ));
             }
@@ -2899,20 +2947,20 @@ function PreviewArea(canvas_, model_, name_) {
         for (var i = 0; i < row.length; ++i) {
             if ((nodeIndex != row[i]) && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i)) {
                 //display debug info for each variable above.
-                console.log("Displayed Edges Length: ");
-                console.log(this.displayedEdges.length);
-                console.log("Edges: ");
-                console.log(edges);
-                console.log("edgeIdx: ");
-                console.log(edgeIdx);
-                console.log("this.displayedEdges: ");
-                console.log(this.displayedEdges);
-                console.log("nodeIndex: ");
-                console.log(nodeIndex);
-                console.log("row: ");
-                console.log(row);
-                console.log("i: ");
-                console.log(i);
+                // console.log("Displayed Edges Length: ");
+                // console.log(this.displayedEdges.length);
+                // console.log("Edges: ");
+                // console.log(edges);
+                // console.log("edgeIdx: ");
+                // console.log(edgeIdx);
+                // console.log("this.displayedEdges: ");
+                // console.log(this.displayedEdges);
+                // console.log("nodeIndex: ");
+                // console.log(nodeIndex);
+                // console.log("row: ");
+                // console.log(row);
+                // console.log("i: ");
+                // console.log(i);
                 //let edix = edgeIdx[nodeIndex][row[i]];
                 let edix = model.getEdgesIndeces().get([nodeIndex, row[i]]);
                 if(edix < 0) continue;
@@ -2974,8 +3022,8 @@ function PreviewArea(canvas_, model_, name_) {
 
         var edges = instanceObj.object.getEdges(instanceObj);
         //var edges = this.getActiveEdges(); //this gets all active edges.
-        console.log("drawEdgesGivenNode: Active edges: ");
-        console.log(edges);
+        // console.log("drawEdgesGivenNode: Active edges: ");
+        // console.log(edges);
 
         if(!topN) {
             edges = edges.filter(edge => edge.weight >= model.getThreshold());
@@ -2984,8 +3032,8 @@ function PreviewArea(canvas_, model_, name_) {
         }
 
         for(let i = 0; i < edges.length; i++) {
-            console.log("edge: ");
-            console.log(edges[i]);
+            // console.log("edge: ");
+            // console.log(edges[i]);
 
             let edge  = [];
             edge.push(instancePosition);
@@ -3011,7 +3059,7 @@ function PreviewArea(canvas_, model_, name_) {
         }
 
         // todo: get back to this after edge thresholding is re-implemented
-
+        // thresholding is implemented in getActiveEdges.
         //console.log("contra: "+getEnableContra()+"...ipsi: "+getEnableIpsi());
 
         // todo: evaluate this: For now, If neither ipsi nor contra are selected, then don't draw any edges
@@ -3110,6 +3158,7 @@ function PreviewArea(canvas_, model_, name_) {
             updatedDisplayEdges[updatedDisplayEdges.length] = shortestPathEdges[i];
         }
         this.displayedEdges = updatedDisplayEdges;
+        this.reInitEdgeFlare();
     };
 
     // draw skybox from images
