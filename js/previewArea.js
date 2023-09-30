@@ -131,8 +131,10 @@ class PreviewArea {
       this.displayedEdgeFlareTravelPercentages = [];
       this.particlesVisible = false;
       //this.edgeFlaresVisible = true;  //particles or flares?
+
+    this.edgeFlaresVisible = 0; //true;
       this.labelsVisible = false;
-      this.particlesVisible = false;
+      //this.particlesVisible = false;
       this.objectsIntersected = [];
       this.controlMode = '';
       this.imageSlices = null;
@@ -1424,9 +1426,22 @@ class PreviewArea {
 
 
         for ( let i = 0; i < count; i ++ ) {
-            const x = THREE.MathUtils.randFloatSpread( 0 );
-            const y = THREE.MathUtils.randFloatSpread( 0 );
-            const z = THREE.MathUtils.randFloatSpread( 0 );
+            let x = THREE.MathUtils.randFloatSpread(0);
+            let y = THREE.MathUtils.randFloatSpread(0);
+            let z = THREE.MathUtils.randFloatSpread(0);
+
+            if (this.edgeFlareVisible && this.displayedEdges && this.displayedEdges[i]) {
+                //this.edgeFlareVertices[i * 3]
+                x = this.displayedEdges[i].geometry.attributes.position.array[0];
+                //x = edges[i].geometry.attributes.position.array[0];
+                //this.edgeFlareVertices[i * 3 + 1]
+                y = this.displayedEdges[i].geometry.attributes.position.array[1];
+                //y = edges[i].geometry.attributes.position.array[1];
+                //this.edgeFlareVertices[i * 3 + 2]
+                z = this.displayedEdges[i].geometry.attributes.position.array[2];
+                //z = edges[i].geometry.attributes.position.array[2];
+            }
+
 
             this.edgeFlareVertices.push( x, y, z );
             this.displayedEdgeFlareTravelPercentages[i] = 0.0
@@ -1598,11 +1613,11 @@ class PreviewArea {
 
     // toggle between showing and hiding edge flares
     toggleFlare() {
-        if (this.edgeFlareVisible) {
-             this.edgeFlareVisible = false;
-             //this.hideEdgeFlare();
-         } else {
-            this.edgeFlareVisible = true;
+        if (!(this.edgeFlareVisible < 9)) {
+            this.edgeFlareVisible = -1;// false;
+            //this.hideEdgeFlare();
+        } else {
+            this.edgeFlareVisible += 1;// true;;
             this.reInitEdgeFlare();
             //this.showEdgeFlare();
         }
@@ -1886,13 +1901,53 @@ class PreviewArea {
                 firerate = (groupVal % 10) / 100;
             }
 
-            this.displayedEdgeFlareTravelPercentages[i] += firerate;
-            //brain.remove(this.displayedEdges[i]);
-            this.edgeFlareVertices[i*3] = this.displayedEdges[i].geometry.attributes.position.array[0] + this.displayedEdgeFlareTravelPercentages[i] * (this.displayedEdges[i].geometry.attributes.position.array[3] - this.displayedEdges[i].geometry.attributes.position.array[0]);
-            this.edgeFlareVertices[i*3+1] = this.displayedEdges[i].geometry.attributes.position.array[1] + this.displayedEdgeFlareTravelPercentages[i] * (this.displayedEdges[i].geometry.attributes.position.array[4] - this.displayedEdges[i].geometry.attributes.position.array[1]);
-            this.edgeFlareVertices[i*3+2] = this.displayedEdges[i].geometry.attributes.position.array[2] + this.displayedEdgeFlareTravelPercentages[i] * (this.displayedEdges[i].geometry.attributes.position.array[5] - this.displayedEdges[i].geometry.attributes.position.array[2]);
-            if (this.displayedEdgeFlareTravelPercentages[i] > 1.0) {
-                this.displayedEdgeFlareTravelPercentages[i] = 0.0;
+            if (this.edgeFlareVisible < 0) { return; }
+
+            if (!this.edgeFlareVisible) {
+                this.displayedEdgeFlareTravelPercentages[i] += firerate;
+                //brain.remove(this.displayedEdges[i]);
+                this.edgeFlareVertices[i * 3] = this.displayedEdges[i].geometry.attributes.position.array[0] + this.displayedEdgeFlareTravelPercentages[i] * (this.displayedEdges[i].geometry.attributes.position.array[3] - this.displayedEdges[i].geometry.attributes.position.array[0]);
+                this.edgeFlareVertices[i * 3 + 1] = this.displayedEdges[i].geometry.attributes.position.array[1] + this.displayedEdgeFlareTravelPercentages[i] * (this.displayedEdges[i].geometry.attributes.position.array[4] - this.displayedEdges[i].geometry.attributes.position.array[1]);
+                this.edgeFlareVertices[i * 3 + 2] = this.displayedEdges[i].geometry.attributes.position.array[2] + this.displayedEdgeFlareTravelPercentages[i] * (this.displayedEdges[i].geometry.attributes.position.array[5] - this.displayedEdges[i].geometry.attributes.position.array[2]);
+                if (this.displayedEdgeFlareTravelPercentages[i] > 1.0) {
+                    this.displayedEdgeFlareTravelPercentages[i] = 0.0;
+                }
+            } else {
+                let dX = this.displayedEdges[i].geometry.attributes.position.array[3] - this.displayedEdges[i].geometry.attributes.position.array[0];
+                let dY = this.displayedEdges[i].geometry.attributes.position.array[4] - this.displayedEdges[i].geometry.attributes.position.array[1];
+                let dZ = this.displayedEdges[i].geometry.attributes.position.array[5] - this.displayedEdges[i].geometry.attributes.position.array[2];
+
+                // Create a new vector with components dX, dY, dZ
+                var vector = new THREE.Vector3(dX, dY, dZ);
+
+                // Normalize the vector
+                vector.normalize();
+
+
+                this.edgeFlareVertices[i * 3] += vector.x * firerate * this.edgeFlareVisible; // this.displayedEdges[i].geometry.attributes.position.array[0];
+                this.edgeFlareVertices[i * 3 + 1] += vector.y * firerate * this.edgeFlareVisible; // this.displayedEdges[i].geometry.attributes.position.array[1];
+                this.edgeFlareVertices[i * 3 + 2] += vector.z * firerate * this.edgeFlareVisible; // this.displayedEdges[i].geometry.attributes.position.array[2];
+
+                // Create a new vector with components edgeFlareVertices (X, Y, Z
+                var vectorFlare = new THREE.Vector3(this.edgeFlareVertices[i * 3], this.edgeFlareVertices[i * 3 + 1], this.edgeFlareVertices[i * 3 + 2]);
+
+                let endX = this.displayedEdges[i].geometry.attributes.position.array[3]; // - this.displayedEdges[i].geometry.attributes.position.array[0];
+                let endY = this.displayedEdges[i].geometry.attributes.position.array[4]; // - this.displayedEdges[i].geometry.attributes.position.array[1];
+                let endZ = this.displayedEdges[i].geometry.attributes.position.array[5]; // - this.displayedEdges[i].geometry.attributes.position.array[2];
+
+                // Create a new vector with components endX, endY, endZ
+                var vectorEnd = new THREE.Vector3(endX, endY, endZ);
+
+                var difference = new THREE.Vector3().subVectors(vectorFlare, vectorEnd);
+
+                if (difference.length() <= firerate * this.edgeFlareVisible) {
+                    console.log("vectorFlare and vectorEnd are within 1 unit of each other.");
+                    this.edgeFlareVertices[i * 3] = this.displayedEdges[i].geometry.attributes.position.array[0];
+                    this.edgeFlareVertices[i * 3 + 1] = this.displayedEdges[i].geometry.attributes.position.array[1];
+                    this.edgeFlareVertices[i * 3 + 2] = this.displayedEdges[i].geometry.attributes.position.array[2];
+                } // else {
+                //     console.log("vectorM and vectorN are more than 1 unit apart.");
+                // }
             }
 
             positions.setXYZ(i, this.edgeFlareVertices[i*3], this.edgeFlareVertices[3*i+1], this.edgeFlareVertices[3*i+2]);
