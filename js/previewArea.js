@@ -17,7 +17,8 @@ import {ArcballControls} from "three/examples/jsm/controls/ArcballControls";
 import {FlyControls} from "three/examples/jsm/controls/FlyControls";
 import {TrackballControls} from "three/examples/jsm/controls/TrackballControls";
 import {TransformControls} from "three/examples/jsm/controls/TransformControls";
-
+//createWebglContext is deprecated, put here to explain why the gl context thing is broken.
+//import {CreateWebGLContext} from "three/examples/jsm/webgl/WebGL";
 //import * as quat from "./external-libraries/gl-matrix/quat.js";
 
 // import {isLoaded, dataFiles  , mobile} from "./globals";
@@ -45,7 +46,7 @@ import {
     activeVR,
     updateNodeSelection,
     updateNodeMoveOver,
-    getActiveEdges, previewAreaLeft,previewAreaRight
+    previewAreaLeft,previewAreaRight
 } from './drawing'
 import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, removeGeometryButtons} from './GUI'
 import {scaleColorGroup} from './utils/scale'
@@ -54,79 +55,175 @@ import {scaleColorGroup} from './utils/scale'
 import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
 //import { XRControllerModelFactory } from './external-libraries/vr/XRControllerModelFactory.js';
 import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory.js";
-import {nodeObject, timerDelta} from "three/examples/jsm/nodes/shadernode/ShaderNodeElements";
-import {WebXRManager} from "three/src/renderers/webxr/WebXRManager";
-import {abs, sign} from "mathjs";
-import {NODE_STREAM_INPUT} from "papaparse";
-import {modelLeft} from "./model";
-import node from "three/addons/nodes/core/Node";
-
+// import {nodeObject, timerDelta} from "three/examples/jsm/nodes/shadernode/ShaderNodeElements";
+// import {WebXRManager} from "three/src/renderers/webxr/WebXRManager";
+// import {abs, sign} from "mathjs";
+// import {NODE_STREAM_INPUT} from "papaparse";
+// import {modelLeft} from "./model";
+// import node from "three/addons/nodes/core/Node";
+import NeuroSlice from "./NeuroSlice";
 //import * as d3 from '../external-libraries/d3'
 
-function PreviewArea(canvas_, model_, name_) {
-    var name = name_;
-    var model = model_;
-    var canvas = canvas_;
-    var camera = null, renderer = null, controls = null, scene = null, raycaster = null, gl = null;
-    var nodeLabelSprite = null, nodeNameMap = null, nspCanvas = null;
-    var clock = new THREE.Clock();
+class PreviewArea {
+  constructor(canvas_, model_, name_) {
+
+    this.name = name_;
+    this.model = model_;
+    this.canvas = canvas_;
+    // check if canvas model and name are all valid otherwise abort.
+    if (!this.canvas || !this.model || !this.name) {
+      console.log('PreviewArea: Invalid parameters');
+      return;
+    }
+    this.camera = null;
+    this.renderer = null;
+    this.controls = null;
+    this.scene = null;
+    this.raycaster = null;
+    this.controlMode = '';
+    this.clock = new THREE.Clock(true);
+    this.instances = {};
+
+      this.controllerLeft = null;
+      this.controllerRight = null;
+      this.xrInputLeft = null;
+      this.xrInputRight = null;
+      this.enableRender = true;
+
+      this.pointerLeft = null;
+      this.pointerRight = null;      // left and right controller pointers for pointing at things
+      this.enableVR = false;
+      this.activateVR = false;
+      this.vrButton = null;
+      this.controllerLeftSelectState = false;
+      this.controllerRightSelectState = false;
+
+      //todo evaluate if needed.
+    this.vrControl = null;
+    this.effect = null;
+
+      // XR stuff
+      this.xrButton = null;
+      this.xrRefSpace = null;
+      this.xrImmersiveRefSpace = null;
+      this.xrInlineRefSpace = null;
+      this.inlineSession = null;
+      this.controller = null;
+          this.controllerGrip = null;
+          this.controllerGripLeft = null;
+          this.controllerGripRight = null;
+
+      // nodes and edges
+      this.brain = null; // three js group housing all glyphs and edges
+      this.glyphs = [];
+      this.displayedEdges = [];
+      // shortest path
+      this.shortestPathEdges = [];
+      this.edgeOpacity = 1.0;
+      this.amplitude =  0.0015;
+      this.frequency =  0.5;
+
+      this.edgeFlareVertices = [];
+      this.edgeFlareGeometry = null;
+      this.edgeFlareMaterial = null;
+      this.edgeFlarePoints = null;
+      //this.edgeFlareMesh = null;
+      this.displayedEdgeFlareTravelPercentages = [];
+      this.particlesVisible = false;
+      //this.edgeFlaresVisible = true;  //particles or flares?
+      this.labelsVisible = false;
+      this.particlesVisible = false;
+      this.objectsIntersected = [];
+      this.controlMode = '';
+      this.imageSlices = null;
+      this.skybox = null;
+      console.log("canvas: ");
+      console.log(this.canvas);
+      //this.gl = null;
+      // possably need this.gl to be set to the canvas context
+      // I didn't see it created anywhere except some commented code.
+      this.gl = this.canvas.getContext('webgl2',{alpha: true, antialias: true, xrCompatible: true});
+
+    // PreviewArea construction
+    this.createCanvas();
+      this.initCamera();
+      this.initScene();
+      this.initControls();
+
+      this.initXR();
+      this.drawRegions();
+
+    this.renderer.setAnimationLoop(this.animatePV.bind(this)); // todo: this is the new way to do it in WebXR
+
+      this.addSkybox();
+    this.initEdgeFlare();
+
+      window.addEventListener('resize', this.resizeScene.bind(this), false);
+      window.addEventListener('keypress', this.keyPress.bind(this), false);
+      this.nspCanvas = document.createElement('canvas');
+      this.nodeNameMap = null;
+      this.nodeLabelSprite = null;
+      this.xrDolly = new THREE.Object3D();
+      this.imageSlices = new NeuroSlice('public/images','data/Cartana/SliceDepth0.csv',this.imagesLoadedCallback.bind(this));
+
+  }
+
+    //var name = name_;
+    //var model = model_;
+    //var canvas = canvas_;
+    //var camera = null, renderer = null, controls = null, scene = null, raycaster = null, gl = null;
+    //var nodeLabelSprite = null, nodeNameMap = null, nspCanvas = null;
+    //var clock = new THREE.Clock();
     //var instances = {}; //for tracking instanced meshes
     // make instances public so we can access them from another class
     //this.instances = instances;
-    this.instances = {};
+    //this.instances = {};
     // VR stuff
-    var vrControl = null, effect = null;
-    var controllerLeft = null, controllerRight = null, xrInputLeft = null, xrInputRight = null,
-        enableRender = true;
-    var pointerLeft = null, pointerRight = null;      // left and right controller pointers for pointing at things
-    var enableVR = false;
-    var activateVR = false;
-    var vrButton = null;
-    let controllerLeftSelectState = false, controllerRightSelectState = false;
+    // var vrControl = null, effect = null;
+    // var controllerLeft = null, controllerRight = null, xrInputLeft = null, xrInputRight = null,
+    //     enableRender = true;
+    // var pointerLeft = null, pointerRight = null;      // left and right controller pointers for pointing at things
+    // var enableVR = false;
+    // var activateVR = false;
+    // var vrButton = null;
+    // let controllerLeftSelectState = false, controllerRightSelectState = false;
 
-    // XR stuff
-    var xrButton = null;
-    let xrRefSpace = null;
-    let xrImmersiveRefSpace = null;
-    let xrInlineRefSpace = null;
-    let inlineSession = null;
-    let controller, controllerGrip, controllerGripLeft, controllerGripRight;
+    // // XR stuff
+    // var xrButton = null;
+    // let xrRefSpace = null;
+    // let xrImmersiveRefSpace = null;
+    // let xrInlineRefSpace = null;
+    // let inlineSession = null;
+    // let controller, controllerGrip, controllerGripLeft, controllerGripRight;
 
-    // nodes and edges
-    var brain = null; // three js group housing all glyphs and edges
-    var glyphs = [];
-    this.displayedEdges = [];
+    // // nodes and edges
+    // var brain = null; // three js group housing all glyphs and edges
+    // var glyphs = [];
+    // this.displayedEdges = [];
 
-    // shortest path
-    var shortestPathEdges = [];
+    // // shortest path
+    // var shortestPathEdges = [];
+    //
+    // var edgeOpacity = 1.0;
 
-    var edgeOpacity = 1.0;
+    // // animation settings
+    // var amplitude =  0.0015;
+    // var frequency =  0.5;
 
-    // animation settings
-    var amplitude =  0.0015;
-    var frequency =  0.5;
 
-    this.edgeFlareVertices = [];
-    this.edgeFlareGeometry = null;
-    this.edgeFlareMaterial = null;
-    this.edgeFlarePoints = null;
-    //this.edgeFlareMesh = null;
-    this.displayedEdgeFlareTravelPercentages = [];
 
-    this.edgeFlaresVisible = true;
-    this.labelsVisible = false;
-    this.particlesVisible = false;
 
-    this.initXR = function () {
+
+    initXR() {
         //init VR //todo: this is stub now
 
-        document.addEventListener('keypress', this.keyPress.bind(this), false);
+
         console.log("Init XR for PV: " + name);
-        enableVR = true;
-        activateVR = false;
+        this.enableVR = true;
+        this.activateVR = false;
 
         //renderer.outputEncoding = THREE.sRGBEncoding; //The robot says this makes the colors look better in VR but it makes the colors look worse in the browser
-        renderer.xr.enabled = true;
+        this.renderer.xr.enabled = true;
 
 
         function onSelectStart() {
@@ -144,65 +241,71 @@ function PreviewArea(canvas_, model_, name_) {
         var v3Origin = new THREE.Vector3(0, 0, 0);
         var v3UnitUp = new THREE.Vector3(0, 0, -100);
 
-        controllerLeft = renderer.xr.getController( 0 );
-        controllerLeft.addEventListener( 'selectstart', onSelectStart );
-        controllerLeft.addEventListener( 'selectend', onSelectEnd );
-        controllerLeft.addEventListener( 'connected', function ( event ) {
-            controllerLeft.gamepad = event.data.gamepad;
+        this.controllerLeft = this.renderer.xr.getController( 0 );
+        this.controllerLeft.addEventListener( 'selectstart', onSelectStart );
+        this.controllerLeft.addEventListener( 'selectend', onSelectEnd );
+        this.controllerLeft.addEventListener( 'connected',  ( event ) => {
+            this.controllerLeft.gamepad = event.data.gamepad;
             console.log("Left controller connected");
             console.log("event data: ");
             console.log(event.data);
-            xrInputLeft = event.data;
+            this.xrInputLeft = event.data;
             //  this.add( buildController( event.data ) );
-            this.add( drawPointer(v3Origin, v3UnitUp) );
+            //todo this is no longer the gamepad as we used ()=> {} instead of function() {}
+            // in order to draw the pointer we need to add it to the controller probably, test this.
+            this.controllerLeft.add( this.drawPointer(v3Origin, v3UnitUp) );
+            //this.add( drawPointer(v3Origin, v3UnitUp) );
 
         } );
 
-        controllerLeft.addEventListener( 'disconnected', function () {
+        this.controllerLeft.addEventListener( 'disconnected', function () {
 
             this.remove( this.children[ 0 ] );
 
         } );
-        scene.add( controllerLeft );
+        this.scene.add( this.controllerLeft );
 
-        controllerRight = renderer.xr.getController( 1 );
-        controllerRight.addEventListener( 'selectstart', onSelectStart );
-        controllerRight.addEventListener( 'selectend', onSelectEnd );
-        controllerRight.addEventListener( 'connected', function ( event ) {
-            controllerRight.gamepad = event.data.gamepad;
+        this.controllerRight = this.renderer.xr.getController( 1 );
+        this.controllerRight.addEventListener( 'selectstart', onSelectStart );
+        this.controllerRight.addEventListener( 'selectend', onSelectEnd );
+        this.controllerRight.addEventListener( 'connected', ( event ) => {
+            this.controllerRight.gamepad = event.data.gamepad;
             //this.add( buildController( event.data ) );
             console.log("Right controller connected: ");
             console.log("event data: ");
-            xrInputRight = event.data;
+            this.xrInputRight = event.data;
             console.log(event.data);
-
-            this.add(drawPointer(v3Origin, v3UnitUp));//
+            //todo this is no longer the gamepad as we used ()=> {} instead of function() {}
+            // in order to draw the pointer we need to add it to the controller probably, test this.
+            this.controllerRight.add( this.drawPointer(v3Origin, v3UnitUp) );
+            //this.add(this.drawPointer(v3Origin, v3UnitUp));//
         });
-        controllerRight.addEventListener('disconnected', function () {
+
+        this.controllerRight.addEventListener('disconnected', function () {
 
             this.remove(this.children[0]);
 
         });
-        scene.add(controllerRight);
+        this.scene.add(this.controllerRight);
 
         const controllerModelFactory = new XRControllerModelFactory();
 
-        controllerGripLeft = renderer.xr.getControllerGrip(0);
-        controllerGripLeft.add(controllerModelFactory.createControllerModel(controllerGripLeft));
-        scene.add(controllerGripLeft);
+        this.controllerGripLeft = this.renderer.xr.getControllerGrip(0);
+        this.controllerGripLeft.add(controllerModelFactory.createControllerModel(this.controllerGripLeft));
+        this.scene.add(this.controllerGripLeft);
 
-        controllerGripRight = renderer.xr.getControllerGrip(1);
-        controllerGripRight.add(controllerModelFactory.createControllerModel(controllerGripRight));
-        scene.add(controllerGripRight);
+        this.controllerGripRight = this.renderer.xr.getControllerGrip(1);
+        this.controllerGripRight.add(controllerModelFactory.createControllerModel(this.controllerGripRight));
+        this.scene.add(this.controllerGripRight);
 
 
         //document.body
-        document.getElementById('vrButton' + name).appendChild(VRButton.createButton(renderer));
+        document.getElementById('vrButton' + this.name).appendChild(VRButton.createButton(this.renderer));
 
     }
 
 
-    function buildController(data) {
+    buildController(data) {
 
         let geometry, material;
 
@@ -229,94 +332,94 @@ function PreviewArea(canvas_, model_, name_) {
 
     }
 
-
-    // animation settings
-    var amplitude = 0.0015;
-    var frequency = 0.5;
-
-    this.initXR = function () {
-        //init VR //todo: this is stub now
-
-        document.addEventListener('keypress', this.keyPress.bind(this), false);
-        console.log("Init XR for PV: " + name);
-        enableVR = true;
-        activateVR = false;
-
-        //renderer.outputEncoding = THREE.sRGBEncoding; //The robot says this makes the colors look better in VR but it makes the colors look worse in the browser
-        renderer.xr.enabled = true;
-
-
-        function onSelectStart() {
-
-            this.userData.isSelecting = true;
-            console.log("Select start");
-        }
-
-        function onSelectEnd() {
-
-            this.userData.isSelecting = false;
-            console.log("Select end");
-        }
-
-        var v3Origin = new THREE.Vector3(0, 0, 0);
-        var v3UnitUp = new THREE.Vector3(0, 0, -100);
-
-        controllerLeft = renderer.xr.getController(0);
-        controllerLeft.addEventListener('selectstart', onSelectStart);
-        controllerLeft.addEventListener('selectend', onSelectEnd);
-        controllerLeft.addEventListener('connected', function (event) {
-            controllerLeft.gamepad = event.data.gamepad;
-            console.log("Left controller connected");
-            console.log("event data: ");
-            console.log(event.data);
-            xrInputLeft = event.data;
-            //  this.add( buildController( event.data ) );
-            this.add(drawPointer(v3Origin, v3UnitUp));
-
-        });
-
-        controllerLeft.addEventListener('disconnected', function () {
-
-            this.remove(this.children[0]);
-
-        });
-        scene.add(controllerLeft);
-
-        controllerRight = renderer.xr.getController(1);
-        controllerRight.addEventListener('selectstart', onSelectStart);
-        controllerRight.addEventListener('selectend', onSelectEnd);
-        controllerRight.addEventListener('connected', function (event) {
-            controllerRight.gamepad = event.data.gamepad;
-            //this.add( buildController( event.data ) );
-            console.log("Right controller connected: ");
-            console.log("event data: ");
-            xrInputRight = event.data;
-            console.log(event.data);
-
-            this.add(drawPointer(v3Origin, v3UnitUp));//
-        });
-        controllerRight.addEventListener('disconnected', function () {
-
-            this.remove(this.children[0]);
-
-        });
-        scene.add(controllerRight);
-
-        const controllerModelFactory = new XRControllerModelFactory();
-
-        controllerGripLeft = renderer.xr.getControllerGrip(0);
-        controllerGripLeft.add(controllerModelFactory.createControllerModel(controllerGripLeft));
-        scene.add(controllerGripLeft);
-
-        controllerGripRight = renderer.xr.getControllerGrip(1);
-        controllerGripRight.add(controllerModelFactory.createControllerModel(controllerGripRight));
-        scene.add(controllerGripRight);
-
-
-        //document.body
-        document.getElementById('vrButton' + name).appendChild(VRButton.createButton(renderer));
-
-    }
+    //todo say no to globals pollution
+    // // animation settings
+    // var amplitude = 0.0015;
+    // var frequency = 0.5;
+    // todo compare this initXR to the one above
+    // this.initXR = function () {
+    //     //init VR //todo: this is stub now
+    //
+    //     document.addEventListener('keypress', this.keyPress.bind(this), false);
+    //     console.log("Init XR for PV: " + name);
+    //     enableVR = true;
+    //     activateVR = false;
+    //
+    //     //renderer.outputEncoding = THREE.sRGBEncoding; //The robot says this makes the colors look better in VR but it makes the colors look worse in the browser
+    //     renderer.xr.enabled = true;
+    //
+    //
+    //     function onSelectStart() {
+    //
+    //         this.userData.isSelecting = true;
+    //         console.log("Select start");
+    //     }
+    //
+    //     function onSelectEnd() {
+    //
+    //         this.userData.isSelecting = false;
+    //         console.log("Select end");
+    //     }
+    //
+    //     var v3Origin = new THREE.Vector3(0, 0, 0);
+    //     var v3UnitUp = new THREE.Vector3(0, 0, -100);
+    //
+    //     controllerLeft = renderer.xr.getController(0);
+    //     controllerLeft.addEventListener('selectstart', onSelectStart);
+    //     controllerLeft.addEventListener('selectend', onSelectEnd);
+    //     controllerLeft.addEventListener('connected', function (event) {
+    //         controllerLeft.gamepad = event.data.gamepad;
+    //         console.log("Left controller connected");
+    //         console.log("event data: ");
+    //         console.log(event.data);
+    //         xrInputLeft = event.data;
+    //         //  this.add( buildController( event.data ) );
+    //         this.add(drawPointer(v3Origin, v3UnitUp));
+    //
+    //     });
+    //
+    //     controllerLeft.addEventListener('disconnected', function () {
+    //
+    //         this.remove(this.children[0]);
+    //
+    //     });
+    //     scene.add(controllerLeft);
+    //
+    //     controllerRight = renderer.xr.getController(1);
+    //     controllerRight.addEventListener('selectstart', onSelectStart);
+    //     controllerRight.addEventListener('selectend', onSelectEnd);
+    //     controllerRight.addEventListener('connected', function (event) {
+    //         controllerRight.gamepad = event.data.gamepad;
+    //         //this.add( buildController( event.data ) );
+    //         console.log("Right controller connected: ");
+    //         console.log("event data: ");
+    //         xrInputRight = event.data;
+    //         console.log(event.data);
+    //
+    //         this.add(drawPointer(v3Origin, v3UnitUp));//
+    //     });
+    //     controllerRight.addEventListener('disconnected', function () {
+    //
+    //         this.remove(this.children[0]);
+    //
+    //     });
+    //     scene.add(controllerRight);
+    //
+    //     const controllerModelFactory = new XRControllerModelFactory();
+    //
+    //     controllerGripLeft = renderer.xr.getControllerGrip(0);
+    //     controllerGripLeft.add(controllerModelFactory.createControllerModel(controllerGripLeft));
+    //     scene.add(controllerGripLeft);
+    //
+    //     controllerGripRight = renderer.xr.getControllerGrip(1);
+    //     controllerGripRight.add(controllerModelFactory.createControllerModel(controllerGripRight));
+    //     scene.add(controllerGripRight);
+    //
+    //
+    //     //document.body
+    //     document.getElementById('vrButton' + name).appendChild(VRButton.createButton(renderer));
+    //
+    // }
 
 // duplicate declaration. unused function. todo: remove
     // function buildController( data ) {
@@ -726,18 +829,16 @@ function PreviewArea(canvas_, model_, name_) {
     // }
 //    };
 
-    //on resize
-    this.onWindowResize = function () {
-        if (enableVR)  //todo: Is this still required in WebXR model?
-            return;
-        camera.aspect = canvas.clientWidth / canvas.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    //on resize, used resizeScene instead.
+    // onWindowResize() {
+    //     if (this.enableVR)  //todo: Is this still required in WebXR model?
+    //         return;
+    //     this.camera.aspect = canvas.clientWidth / canvas.clientHeight;
+    //     this.camera.updateProjectionMatrix();
+    //     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    // };
 
-    };
-
-    //listen for resize event
-    window.addEventListener('resize', this.onWindowResize, false);
+    //event listener for resize moved to constructor.
 
 
     // init Oculus Touch controllers
@@ -887,15 +988,15 @@ function PreviewArea(canvas_, model_, name_) {
     //         pointerRight = null;
     //     }
     // };
-    function getNearestNodes(controller) {
-        if (!controller) return;
-        if (!controller.position) return;
-        if (!brain) return;
-        if (!brain.children) return;
+    getNearestNodes(controller) {
+        if (!this.controller) return;
+        if (!this.controller.position) return;
+        if (!this.brain) return;
+        if (!this.brain.children) return;
         // Find all nodes within 0.1 distance from given Touch Controller
-        var closestNodeIndex = 0, closestNodeDistance = 99999.9;
-        for (var i = 0; i < brain.children.length; i++) {
-            var distToNodeI = controller.position.distanceTo(brain.children[i].position);
+        let closestNodeIndex = 0, closestNodeDistance = 99999.9;
+        for (let i = 0; i < this.brain.children.length; i++) {
+            let distToNodeI = controller.position.distanceTo(this.brain.children[i].position);
             if ((distToNodeI < closestNodeDistance)) {
                 closestNodeDistance = distToNodeI;
                 closestNodeIndex = i;
@@ -905,51 +1006,50 @@ function PreviewArea(canvas_, model_, name_) {
         return {closestNodeIndex: closestNodeIndex, closestNodeDistance: closestNodeDistance};
 
     }
-
-
     // scan the Oculus Touch for controls
 
-    var xrDolly = new THREE.Object3D();
 
-    var scanOculusTouch = function () {
+
+    scanOculusTouch() {
+      //todo this returns immediately right now, is it supposed to do more?
     return;
         //exit if no controllers
-        if (!controllerLeft || !controllerRight) return;
+        if (!this.controllerLeft || !thiscontrollerRight) return;
         //exit if no brain
-        if (!brain) return;
+        if (!this.brain) return;
 
 
         //check if in VR mode
-        if (renderer.xr.isPresenting && xrInputLeft && xrInputRight) {
+        if (this.renderer.xr.isPresenting && this.xrInputLeft && this.xrInputRight) {
             //disable the mouse controls
-            controls.enabled = false;
+            this.controls.enabled = false;
 
             //check if camera is the same as the webxr camera
-            if (camera !== renderer.xr.getCamera()) {
+            if (this.camera !== this.renderer.xr.getCamera()) {
                 //if not, set the camera to the webxr camera
-                camera = renderer.xr.getCamera();
+                this.camera = this.renderer.xr.getCamera();
                 //display console, camera changed
                 console.log("camera changed to vr camera");
             }
 
             //check if the camera is a child of the xrDolly
-            if (!camera.parent) {
+            if (!this.camera.parent) {
                 //if not, add the camera to the xrDolly
-                xrDolly.add(camera);
+                this.xrDolly.add(this.camera);
                 //add controllers to dolly
-                xrDolly.add(controllerLeft);
-                xrDolly.add(controllerRight);
-                xrDolly.add(controllerGripLeft);
-                xrDolly.add(controllerGripRight);
+                this.xrDolly.add(this.controllerLeft);
+                this.xrDolly.add(this.controllerRight);
+                this.xrDolly.add(this.controllerGripLeft);
+                this.xrDolly.add(this.controllerGripRight);
                 //add the xrDolly to the scene
-                scene.add(xrDolly);
+                this.scene.add(this.xrDolly);
                 //move xrDolly back to fit brain in view
-                xrDolly.position.z = -100;
+                this.xrDolly.position.z = -100;
                 console.log("xrDolly moved back to fit brain in view");
                 console.log("camera added to dolly, dolly added to scene");
             }
 
-
+            //todo say no to globals. remake the below. use either let or use this or init in constructor
             var cameraMaxTranslationSpeed = 1;
             var cameraMaxRotationSpeed = 0.01;
             var translationDecay = 0.01;
@@ -959,9 +1059,10 @@ function PreviewArea(canvas_, model_, name_) {
 
             var currentTranslationSpeed = new THREE.Vector3(0, 0, 0);
             var currentRotationSpeed = new THREE.Vector3(0, 0, 0);
-            let delta = clock.getDelta();
+            let delta = this.clock.getDelta();
             //get value of left thumbstick x axis
-            if (xrInputLeft.gamepad.axes.length > 0) {
+            if (this.xrInputLeft.gamepad.axes.length > 0) {
+              // todo say no to globals. remake the below. use either let or use this or init in constructor
                 var leftThumbstickX = controllerLeft.gamepad.axes[2];
                 var leftThumbstickY = controllerLeft.gamepad.axes[3];
                 //multiply by max increment
@@ -987,10 +1088,10 @@ function PreviewArea(canvas_, model_, name_) {
 
             }
             //get value of right thumbstick x axis
-            if (xrInputRight.gamepad.axes.length > 0) {
+            if (this.xrInputRight.gamepad.axes.length > 0) {
                 //use to rotate left right up or down
-                var rightThumbstickX = controllerRight.gamepad.axes[3];
-                var rightThumbstickY = controllerRight.gamepad.axes[2];
+                var rightThumbstickX = this.controllerRight.gamepad.axes[3];
+                var rightThumbstickY = this.controllerRight.gamepad.axes[2];
                 //multiply by max increment
                 var rightThumbstickXIncrement = rightThumbstickX * cameraMaxRotationSpeed;
                 var rightThumbstickYIncrement = rightThumbstickY * cameraMaxRotationSpeed;
@@ -1054,13 +1155,13 @@ function PreviewArea(canvas_, model_, name_) {
             }
 
             //apply the translation speed to the xrDolly
-            xrDolly.translateX(currentTranslationSpeed.x);
-            xrDolly.translateY(currentTranslationSpeed.y);
-            xrDolly.translateZ(currentTranslationSpeed.z);
+            this.xrDolly.translateX(currentTranslationSpeed.x);
+            this.xrDolly.translateY(currentTranslationSpeed.y);
+            this.xrDolly.translateZ(currentTranslationSpeed.z);
             //apply the rotation speed to the camera
-            xrDolly.rotateX(currentRotationSpeed.x);
-            xrDolly.rotateY(currentRotationSpeed.y);
-            xrDolly.rotateZ(currentRotationSpeed.z);
+            this.xrDolly.rotateX(currentRotationSpeed.x);
+            this.xrDolly.rotateY(currentRotationSpeed.y);
+            this.xrDolly.rotateZ(currentRotationSpeed.z);
 
             // //if current speeds are not 0, log to console
             // if(currentTranslationSpeed.x != 0 || currentTranslationSpeed.y != 0 || currentTranslationSpeed.z != 0 || currentRotationSpeed.x != 0 || currentRotationSpeed.y != 0 || currentRotationSpeed.z != 0) {
@@ -1075,8 +1176,8 @@ function PreviewArea(canvas_, model_, name_) {
             //every minute or so, log the controller object to the console if we still don't have inputs
             var lastControllerLog = new Date();
             if (Date.now() - lastControllerLog > 60000) {
-                console.log(controllerLeft);
-                console.log(controllerRight);
+                console.log(this.controllerLeft);
+                console.log(this.controllerRight);
                 lastControllerLog = Date.now();
             }
         }
@@ -1112,8 +1213,8 @@ function PreviewArea(canvas_, model_, name_) {
         //     var v3UnitUp = new THREE.Vector3(0, 0, -100.0);
         //     // var v3UnitFwd = new THREE.Vector3(0,0,1);
 
-        var nearLeft = getNearestNodes(controllerLeft);
-        var nearRight = getNearestNodes(controllerRight);
+        var nearLeft = this.getNearestNodes(this.controllerLeft);
+        var nearRight = this.getNearestNodes(this.controllerRight);
         var closestNodeIndexLeft = nearLeft.closestNodeIndex;
         var closestNodeDistanceLeft = nearLeft.closestNodeDistance;
         var closestNodeIndexRight = nearRight.closestNodeIndex;
@@ -1125,47 +1226,47 @@ function PreviewArea(canvas_, model_, name_) {
         // changed the always on true statement here because it was causing the nodes to be selected when the user was not touching the controller
 
         if (VRButton.xrSessionIsGranted) {
-            if (controllerLeftSelectState && !controllerLeft.userData.isSelecting) {  //release Left Trigger
+            if (this.controllerLeftSelectState && !this.controllerLeft.userData.isSelecting) {  //release Left Trigger
                 var isLeft = true;
-                var pointedObject = getPointedObject(controllerLeft);
-                updateNodeSelection(model, pointedObject, isLeft);
-                updateNodeMoveOver(model, pointedObject, 2); //2 is for left touch controller
+                var pointedObject = this.getPointedObject(this.controllerLeft);
+                updateNodeSelection(this.model, pointedObject, isLeft);
+                updateNodeMoveOver(this.model, pointedObject, 2); //2 is for left touch controller
 
                 //log event to console
-                console.log("Left controller: " + controllerLeft.userData.isSelecting);
+                console.log("Left controller: " + this.controllerLeft.userData.isSelecting);
                 //log selection to console
                 console.log("Left controller: ");
                 console.log(pointedObject);
 
 
             }
-            if (controllerRightSelectState && !controllerRight.userData.isSelecting) {  //release Right Trigger
+            if (this.controllerRightSelectState && !this.controllerRight.userData.isSelecting) {  //release Right Trigger
                 var isLeft = true; //false;
-                var pointedObject = getPointedObject(controllerRight);
-                updateNodeSelection(model, pointedObject, isLeft);
-                updateNodeMoveOver(model, pointedObject, 4); //4 is for right touch controller
+                var pointedObject = thhis.getPointedObject(this.controllerRight);
+                updateNodeSelection(this.model, pointedObject, isLeft);
+                updateNodeMoveOver(this.model, pointedObject, 4); //4 is for right touch controller
 
                 //log event to console
-                console.log("Right controller: " + controllerRight.userData.isSelecting);
+                console.log("Right controller: " + this.controllerRight.userData.isSelecting);
                 //log selection to console
                 console.log("Right controller: ")
                 console.log(pointedObject);
             }
 
             //updatenodemoveover
-            var pointedObjectLeft = getPointedObject(controllerLeft);
-            updateNodeMoveOver(model, pointedObjectLeft, 2); //todo: enum for hover mode type
-            var pointedObjectRight = getPointedObject(controllerRight);
-            updateNodeMoveOver(model, pointedObjectRight, 4);
+            var pointedObjectLeft = this.getPointedObject(controllerLeft);
+            updateNodeMoveOver(this.model, pointedObjectLeft, 2); //todo: enum for hover mode type
+            var pointedObjectRight = this.getPointedObject(this.controllerRight);
+            updateNodeMoveOver(this.model, pointedObjectRight, 4);
             if (!pointedObjectLeft && !pointedObjectRight) {
-                updateNodeMoveOver(model, null, 6);
+                updateNodeMoveOver(this.model, null, 6);
             }
 
         }
 
 
-        controllerLeftSelectState = controllerLeft.userData.isSelecting;
-        controllerRightSelectState = controllerRight.userData.isSelecting;
+        this.controllerLeftSelectState = this.controllerLeft.userData.isSelecting;
+        this.controllerRightSelectState = this.controllerRight.userData.isSelecting;
 
 
         //     // Find all nodes within 0.1 distance from left Touch Controller
@@ -1206,11 +1307,11 @@ function PreviewArea(canvas_, model_, name_) {
         //         pointerLeft = null;
         //     }
         //
-        if (controllerRight.userData.isSelecting) {  //getButtonState('trigger')) {
+        if (this.controllerRight.userData.isSelecting) {  //getButtonState('trigger')) {
             //         pointedNodeIdx = (closestNodeDistanceRight < 2.0) ? closestNodeIndexRight : -1;
 
             //
-            console.log("Right controller Trigger: " + controllerRight.userData.isSelecting);
+            console.log("Right controller Trigger: " + this.controllerRight.userData.isSelecting);
             //         if (pointerRight) {
             //             // Touch Controller pointer already on! scan for selection
             //             if (controllerRight.getButtonState('grips')) {
@@ -1225,72 +1326,79 @@ function PreviewArea(canvas_, model_, name_) {
             //         if (pointerRight) {
             //             controllerRight.remove(pointerRight);
             //         }
-            pointerRight = null;
+            this.pointerRight = null;
         }
     }; // scanOculusTouch
 
     // draw a pointing line
-    function drawPointer(start, end) {
+    drawPointer(start, end) {
         var material = new THREE.LineBasicMaterial();
         var geometry = new THREE.BufferGeometry().setFromPoints([start,end]);
         return new THREE.Line(geometry, material);
     }
 
-
+    initControls = () => {
+        console.log("init controls");
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.25;
+        this.controls.enableZoom = true;
+        this.controls.autoRotate = true;
+        this.controls.autoRotateSpeed = 0.5;
+        this.controls.enablePan = true;
+        this.controls.enableKeys = true;
+        this.controls.minDistance = 10;
+        this.controls.maxDistance = 1000;
+        this.controls.listenToKeyEvents(this.renderer.domElement);
+    }
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
-    var initScene = function () {
+    initScene() {
         console.log("init scene");
-        renderer.setSize(canvas.clientWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        canvas.appendChild(renderer.domElement);
-        raycaster = new THREE.Raycaster();
-        camera.position.z = 50;
 
-        brain = new THREE.Group();
-        scene.add(brain);
+        //this.raycaster = new THREE.Raycaster();
+
+
+        this.brain = new THREE.Group();
+        this.scene.add(this.brain);
 
         //Adding light
-        scene.add(new THREE.HemisphereLight(0x606060, 0x080820, 1.5));
-        scene.add(new THREE.AmbientLight(0x606060, 1.5));
-        var light = new THREE.PointLight(0xffffff, 1.0, 10000);
+        this.scene.add(new THREE.HemisphereLight(0x606060, 0x080820, 1.5));
+        this.scene.add(new THREE.AmbientLight(0x606060, 1.5));
+        let light = new THREE.PointLight(0xffffff, 1.0, 10000);
         light.position.set(1000, 1000, 100);
-        scene.add(light);
+        this.scene.add(light);
 
-        var axeshelper = new THREE.AxesHelper(5);
-        scene.add(axeshelper);
-        controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.25;
-        controls.enableZoom = true;
-        controls.autoRotate = false;
-        controls.autoRotateSpeed = 0.5;
-        controls.enablePan = true;
-        controls.enableKeys = true;
-        controls.minDistance = 10;
-        controls.maxDistance = 1000;
-
-
+        this.axeshelper = new THREE.AxesHelper(5);
+        this.scene.add(this.axeshelper);
 
         //addNodeLabel();
     };
 
-    this.resetCamera = function () {
+    resetCamera() {
         console.log("reset camera");
-        camera.position.set(0, 0, -50);
+        this.camera.position.set(0, 0, -50);
     };
 
-    this.reInitEdgeFlare = function () {
+    reInitEdgeFlare() {
       console.log("reInitEdgeFlare");
+      this.edgeFlareGeometry.dispose();
+        this.edgeFlareMaterial.dispose();
+        this.scene.remove(this.edgeFlarePoints);
+        this.edgeFlareVertices = [];
+        this.displayedEdgeFlareTravelPercentages = [];
+        this.initEdgeFlare();
+    }
+
+    removeEdgeFlare() {
+      console.log("removeEdgeFlare");
       this.edgeFlareGeometry.dispose();
         this.edgeFlareMaterial.dispose();
         scene.remove(this.edgeFlarePoints);
         this.edgeFlareVertices = [];
         this.displayedEdgeFlareTravelPercentages = [];
-
-        this.initEdgeFlare();
     }
 
-    this.initEdgeFlare = function () {
+    initEdgeFlare() {
 
       //count active edges in each node from get active edges function
       let count = 0;
@@ -1354,76 +1462,94 @@ function PreviewArea(canvas_, model_, name_) {
 
 
 
-        scene.add( this.edgeFlarePoints );
+        this.scene.add( this.edgeFlarePoints );
     }
 
-    this.resetBrainPosition = function () {
-        brain.updateMatrix();
-        brain.position.set(0, 0, 0);
-        brain.rotation.set(0, 0, 0);
-        brain.rotation.x = -Math.PI / 2;
-        brain.scale.set(1, 1, 1);
-        brain.updateMatrix();
-        brain.matrixWorldNeedsUpdate = true;
+    resetBrainPosition = function () {
+        this.brain.updateMatrix();
+        this.brain.position.set(0, 0, 0);
+        this.brain.rotation.set(0, 0, 0);
+        this.brain.rotation.x = -Math.PI / 2;
+        this.brain.scale.set(1, 1, 1);
+        this.brain.updateMatrix();
+        this.brain.matrixWorldNeedsUpdate = true;
     };
 
+    initCamera() {
+        console.log("init camera");
+        this.camera = new THREE.PerspectiveCamera(75, this.canvas.width / this.canvas.height, 0.1, 3000);
+        this.camera.position.z = 50;
+    }
     // create 3js elements: scene, canvas, camera and controls; and init them and add skybox to the scene
-    this.createCanvas = function () {
-        scene = new THREE.Scene();
-        renderer = new THREE.WebGLRenderer({
-            antialias: true,
-            context: gl,
-            alpha: true
-        });
-        camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / window.innerHeight, 0.1, 3000);
-        initScene();
+    createCanvas() {
         console.log("createCanvas");
-        addSkybox();
+        this.scene = new THREE.Scene();
+
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            context: this.gl,
+            alpha: true,
+            canvas: this.canvas,
+        });
+        //this.renderer.setSize(this.canvas.width, this.canvas.height);
+        //todo window.devicepixelratio can change.
+        // need to write a listener to handle when it does.
+        // matching pixel ratio to window.devicepixelratio
+        // makes the canvas look its best on across all devices
+        // https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
+        this.renderer.setPixelRatio(window.devicePixelRatio*10);
+        //this.canvas.appendChild(this.renderer.domElement);
+
+
     };
-    var controlMode = '';
+
+
+
+
     //toggle between control modes when 'c' is pressed
-    this.toggleControlMode = function () {
-        if (controlMode == '') {
-            controls = new OrbitControls(camera, renderer.domElement);
-            controlMode = 'orbit';
-            console.log("controlMode: " + controlMode);
+    toggleControlMode()  {
+        this.controls.dispose();
+        if (this.controlMode == '') {
+            this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+            this.controlMode = 'orbit';
+            console.log("controlMode: " + this.controlMode);
             return;
         }
 
-        if (controlMode == 'orbit') {
-            controls = new TrackballControls(camera, renderer.domElement);
-            controlMode = 'trackball';
-            console.log("controlMode: " + controlMode);
+        if (this.controlMode == 'orbit') {
+            this.controls = new TrackballControls(this.camera, this.renderer.domElement);
+            this.controlMode = 'trackball'
+            console.log("controlMode: " + this.controlMode);
             return;
         }
-        if (controlMode == 'trackball') {
-            controls = new FlyControls(camera, renderer.domElement);
-            controlMode = 'fly';
-            console.log("controlMode: " + controlMode);
+        // if (this.controlMode == 'trackball') {
+        //     this.controls = new FlyControls(this.camera, this.renderer.domElement);
+        //     this.controlMode = 'fly';
+        //     console.log("controlMode: " + this.controlMode);
+        //     return;
+        // }
+        if (this.controlMode == 'trackball') {
+            this.controls = new FirstPersonControls(this.camera, this.renderer.domElement);
+            this.controlMode = 'firstPerson';
+            console.log("controlMode: " + this.controlMode);
             return;
         }
-        if (controlMode == 'fly') {
-            controls = new FirstPersonControls(camera, renderer.domElement);
-            controlMode = 'firstperson';
-            console.log("controlMode: " + controlMode);
+        if (this.controlMode == 'firstPerson') {
+            this.controls = new ArcballControls(this.camera, this.renderer.domElement);
+            this.controlMode = 'arcball';
+            console.log("controlMode: " + this.controlMode);
             return;
         }
-        if (controlMode == 'firstperson') {
-            controls = new ArcballControls(camera, renderer.domElement);
-            controlMode = 'arcball';
-            console.log("controlMode: " + controlMode);
+        if (this.controlMode == 'arcball') {
+            this.controls = new TransformControls(this.camera, this.renderer.domElement);
+            this.controlMode = 'transform';
+            console.log("controlMode: " + this.controlMode);
             return;
         }
-        if (controlMode == 'arcball') {
-            controls = new TransformControls(camera, renderer.domElement);
-            controlMode = 'transform';
-            console.log("controlMode: " + controlMode);
-            return;
-        }
-        if (controlMode == 'transform') {
-            controls = new OrbitControls(camera, renderer.domElement);
-            controlMode = 'orbit';
-            console.log("controlMode: " + controlMode);
+        if (this.controlMode == 'transform') {
+            this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+            this.controlMode = 'orbit';
+            console.log("controlMode: " + this.controlMode);
             return;
         }
 
@@ -1431,7 +1557,7 @@ function PreviewArea(canvas_, model_, name_) {
     }
 
     //listen for key presses
-    this.keyPress = function (event) {
+    keyPress = (event) => {
         if (event.key == 'c') {
             console.log("toggle control mode");
             this.toggleControlMode();
@@ -1439,7 +1565,7 @@ function PreviewArea(canvas_, model_, name_) {
         if (event.key == 'r') {
             this.resetCamera();
         }
-        if (event.key == 's') {
+        if (event.key == 'b') {
             this.resetBrainPosition();
         }
         if (event.key == 'l') {
@@ -1451,10 +1577,14 @@ function PreviewArea(canvas_, model_, name_) {
         if (event.key == 'p') {
             this.toggleParticles();
         }
+        if (event.key == 's') {
+          //toggle slice images.
+          this.imageSlices.toggleSlices();
+        }
     }
 
     // toggle between showing and hiding labels
-    this.toggleLabels = function () {
+    toggleLabels() {
       if (this.labelsVisible) {
             this.labelsVisible = false;
             //this.hideLabels();
@@ -1462,24 +1592,24 @@ function PreviewArea(canvas_, model_, name_) {
         } else {
             this.labelsVisible = true;
             //this.showLabels();
-            addNodeLabel();
+            this.addNodeLabel();
         }
     }
 
     // toggle between showing and hiding edge flares
-    this.toggleFlare = function () {
-        // if (this.edgeFlareVisible) {
-        //     this.edgeFlareVisible = false;
-        //     //this.hideEdgeFlare();
-        // } else {
-        //     this.edgeFlareVisible = true;
+    toggleFlare() {
+        if (this.edgeFlareVisible) {
+             this.edgeFlareVisible = false;
+             //this.hideEdgeFlare();
+         } else {
+            this.edgeFlareVisible = true;
             this.reInitEdgeFlare();
             //this.showEdgeFlare();
-        //}
+        }
     }
 
     // toggle between showing and hiding particles
-    this.toggleParticles = function () {
+    toggleParticles() {
         if (this.particlesVisible) {
             this.particlesVisible = false;
               //this.hideParticles();
@@ -1491,18 +1621,21 @@ function PreviewArea(canvas_, model_, name_) {
 
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
     //todo is this sort of infinite recursion intentional?
-    this.setEventListeners = function (onMouseDown, onMouseUp, onDocumentMouseMove) {
-        canvas.addEventListener('mousedown', onMouseDown, true);
-        canvas.addEventListener('mouseup', function (e) {
-            onMouseUp(model, e);
+
+    // using => instead of function(){} to preserve this context
+    // there are a few other places where this could be done as well
+    setEventListeners = (onMouseDown, onMouseUp, onDocumentMouseMove)=> {
+        this.canvas.addEventListener('mousedown', onMouseDown, true);
+        this.canvas.addEventListener('mouseup', function (e) {
+            onMouseUp(this.model, e);
         });
-        canvas.addEventListener('mousemove', function (e) {
-            onDocumentMouseMove(model, e);
+        this.canvas.addEventListener('mousemove', function (e) {
+            onDocumentMouseMove(this.model, e);
         }, true);
     };
 
     // update node scale according to selection status
-    this.updateNodeGeometry = function (nodeObject, status, nodeIndex) {
+    updateNodeGeometry(nodeObject, status, nodeIndex) {
         // console.log("updateNodeGeometry");
         // console.log("new status: " + status);
         // console.log("nodeObject: ");
@@ -1525,7 +1658,7 @@ function PreviewArea(canvas_, model_, name_) {
 
 
         let scale = 1.0;
-        let delta = clock.getDelta();
+        let delta = this.clock.getDelta();
         let matrix = new THREE.Matrix4();
         //console.log("NodeObject: ");
         //console.log(nodeObject);
@@ -1552,7 +1685,7 @@ function PreviewArea(canvas_, model_, name_) {
                         " call");
                 }
                 console.log("normal");
-                let color = new THREE.Color(scaleColorGroup(model,nodeObject.object.name.group));
+                let color = new THREE.Color(scaleColorGroup(this.model,nodeObject.object.name.group));
                 // restore nodeObject to original scale and color
                 objectParent.setColorAt(nodeObject.instanceId, color);
                 //if object was scaled, restore it
@@ -1619,9 +1752,9 @@ function PreviewArea(canvas_, model_, name_) {
                 let oldColor = new THREE.Color();
                 objectParent.getColorAt(nodeObject.instanceId, oldColor);
 
-                objectParent.setColorAt(nodeObject.instanceId, new THREE.Color(scaleColorGroup(model, nodeObject.object.name.group)));
+                objectParent.setColorAt(nodeObject.instanceId, new THREE.Color(scaleColorGroup(this.model, nodeObject.object.name.group)));
                 console.log("newColor: ");
-                console.log(scaleColorGroup(model, nodeObject.object.name.group));
+                console.log(scaleColorGroup(this.model, nodeObject.object.name.group));
                 objectParent.instanceColor.needsUpdate = true;
 
                 break;
@@ -1636,14 +1769,14 @@ function PreviewArea(canvas_, model_, name_) {
         return datasetIndex;
     };
 
-    var animateNodeBreathing = function (nodeList) {
+    animateNodeBreathing(nodeList) {
         return;
         //const amplitude =  0.015;
         var scaleFrequency = frequency; //0.5;
         var scaleAmplitude = amplitude;
-        var delta = clock.getDelta();
-        var elapsedTime = clock.getElapsedTime();
-        var dataset = model.getDataset()
+        var delta = this.clock.getDelta();
+        var elapsedTime = this.clock.getElapsedTime();
+        var dataset = this.model.getDataset()
 
         //this.drawConnections
 
@@ -1651,10 +1784,10 @@ function PreviewArea(canvas_, model_, name_) {
         for (var i = 0; i < nodeList.length; i++) {
             nodeIdx = nodeList[i];
             // draw only edges belonging to active nodes
-            if ((nodeIdx >= 0) && model.isRegionActive(model.getGroupNameByNodeIndex(nodeIdx))) {
+            if ((nodeIdx >= 0) && model.isRegionActive(this.model.getGroupNameByNodeIndex(nodeIdx))) {
                 // two ways to draw edges
                 //glyphs[nodeIdx].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
-
+                //todo update to use instance nodes
                 var glyphscale = glyphs[nodeIdx].scale.toArray();//.get();
                 var newscale0 = glyphscale[0] + scaleAmplitude * Math.sin(2 * Math.PI * scaleFrequency * elapsedTime);
                 var newscale1 = glyphscale[1] + scaleAmplitude * Math.sin(2 * Math.PI * scaleFrequency * elapsedTime);
@@ -1670,14 +1803,14 @@ function PreviewArea(canvas_, model_, name_) {
 
 
     // update node scale according to selection status
-    var animateNodeShimmer = function (nodeList, freq = 0.5, color) { //nodeIndex, status) {
+    animateNodeShimmer(nodeList, freq = 0.5, color) { //nodeIndex, status) {
         //var clock = new THREE.Clock();
         // Set up an oscillating size animation
-        var colorAmplitude = amplitude * 500; // 0.75;
-        var colorFrequency = frequency * freq / 0.5;
-        var delta = clock.getDelta();
-        var elapsedTime = clock.getElapsedTime();
-        var dataset = model.getDataset()
+        var colorAmplitude = this.amplitude * 500; // 0.75;
+        var colorFrequency = this.frequency * freq / 0.5;
+        var delta = this.clock.getDelta();
+        var elapsedTime = this.clock.getElapsedTime();
+        var dataset = this.model.getDataset()
 
         //this.drawConnections
 
@@ -1685,10 +1818,10 @@ function PreviewArea(canvas_, model_, name_) {
         for (var i = 0; i < nodeList.length; i++) {
             nodeIdx = nodeList[i];
             // draw only edges belonging to active nodes
-            if ((nodeIdx >= 0) && model.isRegionActive(model.getGroupNameByNodeIndex(nodeIdx))) {
+            if ((nodeIdx >= 0) && this.model.isRegionActive(this.model.getGroupNameByNodeIndex(nodeIdx))) {
                 // two ways to draw edges
                 //glyphs[nodeIdx].material.color = new THREE.Color(scaleColorGroup(model, dataset[nodeIndex].group));
-                var baseColor = new THREE.Color(scaleColorGroup(model, dataset[nodeIdx].group));
+                var baseColor = new THREE.Color(scaleColorGroup(this.model, dataset[nodeIdx].group));
                 var deltaColor = new THREE.Color(colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime), 0, 0);      //delta * 180, delta * 10, delta * 10);
                 var tempColor = new THREE.Color();
                 tempColor.lerpColors(baseColor, deltaColor, 0.5);
@@ -1703,30 +1836,51 @@ function PreviewArea(canvas_, model_, name_) {
         }
     };
 
-    this.updateNodesColor = function () {
-        var dataset = model.getDataset();
-        for (var i = 0; i < glyphs.length; ++i) {
-            //glyphs[i].material.color = new THREE.Color(scaleColorGroup(model, dataset[i].group));
-        }
+    // updateNodesColor() {
+    //   //todo disabled as duplicate.
+    //   let dataset = this.model.getDataset();
+    //     for (let i = 0; i < dataset.length; ++i) {
+    //         //glyphs[i].material.color = new THREE.Color(scaleColorGroup(model, dataset[i].group));
+    //         //todo apply color to correct instance nodes, also a good reason to write an instance node getter
+    //         //   and setter function
+    //     }
+    // };
+
+    removeNodesFromScene() {
+        // for (var i = 0; i < glyphs.length; ++i) {
+        //     brain.remove(glyphs[i]);
+        //     delete glyphNodeDictionary[glyphs[i].uuid];
+        // }
+        // glyphs = [];
+
+        // this is the same as removing all the instance nodes now.
+        this.removeInstanceNodesFromScene();
     };
 
-    var removeNodesFromScene = function () {
-        for (var i = 0; i < glyphs.length; ++i) {
-            brain.remove(glyphs[i]);
-            delete glyphNodeDictionary[glyphs[i].uuid];
-        }
-        glyphs = [];
-    };
+    removeInstanceNodesFromScene() {
+        for (let key in this.instances) {
+            for (let key2 in this.instances[key]) {
+                const instance = this.instances[key][key2];
+                this.scene.remove(instance);
 
-    this.animateEdges = function () {
+                // Assuming instances have a .dispose() method to release resources
+                if (typeof instance.dispose === 'function') {
+                    instance.dispose();
+                }
+            }
+        }
+        this.instances = {}; // Reset instances
+    }
+
+    animateEdges() {
         const positions = this.edgeFlareGeometry.attributes.position;
         const material = this.edgeFlareMaterial;
 
-        for (var i = 0; i < this.displayedEdges.length; ++i) {
+        for (let i = 0; i < this.displayedEdges.length; ++i) {
             let nodeIdx = this.displayedEdges[i].name.instanceId;
 
             let groupVal = null;
-            if(model.getDataset()[nodeIdx] != undefined) groupVal = model.getDataset()[nodeIdx].group;
+            if(this.model.getDataset()[nodeIdx] != undefined) groupVal = this.model.getDataset()[nodeIdx].group;
             let firerate = 0.01;
             if (typeof (groupVal) !== 'string' && !isNaN(groupVal)) {
                 firerate = (groupVal % 10) / 100;
@@ -1755,7 +1909,7 @@ function PreviewArea(canvas_, model_, name_) {
         //this.animateShortestPathEdges();
     };
 
-    this.animateStars = function () {
+    animateStars() {
         const positions = this.edgeFlareGeometry.attributes.position;
 
         for (var i = 0; i < this.edgeFlareVertices.length; i++) {  //} displayedEdges.length; ++i) {
@@ -1777,25 +1931,26 @@ function PreviewArea(canvas_, model_, name_) {
         //this.animateShortestPathEdges();
     };
 
-    this.removeEdgesFromScene = function () {
-        for (var i = 0; i < this.displayedEdges.length; ++i) {
-            brain.remove(this.displayedEdges[i]);
+    removeEdgesFromScene() {
+        for (let i = 0; i < this.displayedEdges.length; ++i) {
+            this.brain.remove(this.displayedEdges[i]);
         }
         this.displayedEdges = [];
 
         this.removeShortestPathEdgesFromScene();
     };
 
-    this.removeShortestPathEdgesFromScene = function () {
-        for (var i = 0; i < shortestPathEdges.length; i++) {
-            brain.remove(shortestPathEdges[i]);
+    removeShortestPathEdgesFromScene() {
+        for (var i = 0; i < this.shortestPathEdges.length; i++) {
+            this.brain.remove(this.shortestPathEdges[i]);
         }
-        shortestPathEdges = [];
+        this.shortestPathEdges = [];
     };
-    var lastTime = 0;
+
+    //say no to globals var lastTime = 0;
     //   var fps = 240;
     //todo: add fps slider
-    var animatePV = function () {
+    animatePV() {
         //limit this function to (fps)fps)
         // if (Date.now() - lastTime < 1000 / fps) {
         //     return;
@@ -1807,7 +1962,8 @@ function PreviewArea(canvas_, model_, name_) {
         //     // if (oculusTouchExist) { //todo: Change old WebVR code to WebXR
         //     //     controllerLeft.update();
         //     //     controllerRight.update();
-        scanOculusTouch();
+        //todo re-enable scanOculusTouch when WebXR is working 100%
+        //this.scanOculusTouch();
         //     console.log("scanOculusTouch");
         //     // }
         //     //vrControl.update(); //todo: Change old WebVR code to WebXR
@@ -1823,14 +1979,35 @@ function PreviewArea(canvas_, model_, name_) {
         // } else {
         //calculate delta for controls
 
-        var delta = clock.getDelta();
-
-        //update controls
-        if (controlMode !== 'transform') {
-            controls.update(delta);
+        let delta = null;
+        if (this && this.clock && this.clock.getDelta === 'function') {
+            delta = this.clock.getDelta();
         } else {
-            controls.update();
+            delta = 0;
         }
+
+        //check if controls has an update function
+        if (this.controls && this.controls.update && typeof this.controls.update === 'function') {
+            //if we have delta
+            if (delta) {
+                //update controls with delta
+                this.controls.update(delta);
+            } else {
+                //update controls without delta
+                //check how many arguments controls.update takes
+                if (this.controls.update.length > 0) {
+                    //controls.update takes arguments
+                    this.controls.update(0);
+                }
+                this.controls.update();
+            }
+        }
+        // //update controls
+        // if (this.controlMode !== 'transform' && delta) {
+        //     this.controls.update(delta);
+        // } else {
+        //     this.controls.update();
+        // }
         //todo: update to account for instancing.
         //animateNodeShimmer(getNodesSelected(), 0.5);
         //animateNodeShimmer(getNodesFocused(), 4);//, "#ffffff")
@@ -1838,54 +2015,69 @@ function PreviewArea(canvas_, model_, name_) {
         //shimmerEdgeNodeColors();
         //updateNodesColor();
 
-        if(previewAreaLeft ) {
-            previewAreaLeft.animateEdges();
-        }
-        if(previewAreaRight ) {
-            previewAreaRight.animateEdges();
-        }
+        //todo left this here out of curiosity. since this function is now a class
+        //tod this should probably be called from drawing since it cares about previewAreaLeft and previewAreaRight
+        //  we are within previewArea proper though and unless defined as a static
+        //  class function it will not be able to access previewAreaLeft and previewAreaRight except
+        //  through a callback or something. Regardles of which previewArea is active, this function
+        //  should be called from the previewArea class, of which we are within the scope of.
+        // if(previewAreaLeft ) {
+        //     previewAreaLeft.animateEdges();
+        // }
+        // if(previewAreaRight ) {
+        //     previewAreaRight.animateEdges();
+        // }
+
+        this.animateEdges();
 
         //update camera position
-        camera.updateProjectionMatrix();
+        this.camera.updateProjectionMatrix();
 
         //console.log("controls.update() called");
 
 
-        if (enableRender)
+        if (this.enableRender)
             //changed from effect.render to renderer.render
-            renderer.render(scene, camera);
+            this.renderer.render(this.scene, this.camera);
 
 
         //effect.requestAnimationFrame(animatePV); //effect no longer has this function. Maybe it is no longer required
 
         //window.requestAnimationFrame(animatePV); // todo: this is the old way of doing it. Consider in WebXR
-        renderer.setAnimationLoop(animatePV); // todo: this is the new way to do it in WebXR
+
     }
 
-    this.requestAnimate = function () {
-        //effect.requestAnimationFrame(animatePV); //effect no longer has this function. Maybe it is no longer required
-        //window.requestAnimationFrame(animatePV);
+    // requestAnimate() {
+    //     //effect.requestAnimationFrame(animatePV); //effect no longer has this function. Maybe it is no longer required
+    //     //window.requestAnimationFrame(animatePV);
+    //     this.animatePV();
+    //     // controls.update()
+    //     // renderer.render(scene, camera);
+    //     console.log("requestAnimate called");
+    // };
 
-
-        animatePV();
-        // controls.update()
-        // renderer.render(scene, camera);
-        console.log("requestAnimate called");
+    enableRender() {
+        this.enableRender = true;
     };
 
-    this.enableRender = function (state) {
-        enableRender = state;
-    };
+    disableRender() {
+        this.enableRender = false;
+    }
 
-    this.isVRAvailable = function () {
-        return enableVR;
+    toggleRender() {
+        this.enableRender = !this.enableRender;
+    }
+
+    isVRAvailable() {
+        //todo change to WebXR style and set variable appropriately
+        return this.enableVR;
     };
 
     // this.isPresenting = function () {
     //     vrButton.isPresenting();
     // };
 
-    this.redrawEdges = function () {
+    redrawEdges() {
         this.removeEdgesFromScene();
 
         if (getSpt())
@@ -1896,7 +2088,7 @@ function PreviewArea(canvas_, model_, name_) {
         let targetPosition = new THREE.Vector3();
         let instancePosition = new THREE.Vector3();
 
-        for (var i = 0; i < activeEdges.length; i++) {
+        for (let i = 0; i < activeEdges.length; i++) {
 
             let indexNode = activeEdges[i][0];
             indexNode.object.getMatrixAt(indexNode.instanceId, matrix);
@@ -1919,18 +2111,18 @@ function PreviewArea(canvas_, model_, name_) {
                 targetPosition.setFromMatrixPosition(matrix);
                 edge.push(targetPosition);
                 // todo might need to dispose before replacing, look into it. this.displayedEdges.dispose();
-                this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode.instanceId, targetNodeId]);
+                this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, indexNode, [indexNode.instanceId, targetNodeId]);
             }
         }
     };
 
     // determine if a region should be drawn
-    var shouldDrawRegion = function (region) {
-        return (model.isRegionActive(region.group) && atlas.getLabelVisibility(region.label));
+    shouldDrawRegion(region) {
+        return (this.model.isRegionActive(region.group) && atlas.getLabelVisibility(region.label));
     };
 
     // updating scenes: redrawing glyphs and displayed edges
-    this.updateScene = function () {
+    updateScene() {
       console.log('%c  ' + 'updateScene', 'background: #222; color: #bada55');
         //updateNodesPositions(); // todo: update to account for instancing
         this.updateNodesVisibility(true);
@@ -1938,7 +2130,7 @@ function PreviewArea(canvas_, model_, name_) {
         this.reInitEdgeFlare();
     };
 
-    this.removeAllInstances = function () {
+    removeAllInstances = function () {
         // Loop through all group names in this.instances
         for (let group in this.instances) {
             // Check if the group has hemispheres
@@ -1951,7 +2143,7 @@ function PreviewArea(canvas_, model_, name_) {
                 if (left && left.geometry && left.material) {
                     left.geometry.dispose();
                     left.material.dispose();
-                    brain.remove(left);
+                    this.brain.remove(left);
                     this.instances[group].left = null;
                 }
 
@@ -1959,7 +2151,7 @@ function PreviewArea(canvas_, model_, name_) {
                 if (right && right.geometry && right.material) {
                     right.geometry.dispose();
                     right.material.dispose();
-                    brain.remove(right);
+                    this.brain.remove(right);
                     this.instances[group].right = null;
                 }
             }
@@ -1968,72 +2160,74 @@ function PreviewArea(canvas_, model_, name_) {
 
 
     // list groups in the dataset
-    this.listGroups = function () {
-      //todo there is probably a better way to do this
-        var dataset = model.getDataset();
-        var groups = {};
-        for (var i = 0; i < dataset.length; i++) {
-            groups[dataset[i].group] = 1;
+    listGroups() {
+        const dataset = this.model.getDataset();
+        const groupSet = new Set();
+
+        for (let i = 0; i < dataset.length; i++) {
+            groupSet.add(dataset[i].group);
         }
-        return Object.keys(groups);
+
+        return Array.from(groupSet); // Convert the Set to an array
     }
 
-    this.countGroupMembers = function (group, hemisphere) {
-        // count the number of members in given group and hemisphere
-        var dataset = model.getDataset();
-        var count = 0;
-        for (var i = 0; i < dataset.length; i++) {
-            if ( dataset[i].group && (dataset[i].group === group  || dataset[i].group.toString() === group) && dataset[i].hemisphere === hemisphere) {
-                count++;
+    countGroupMembers(group, hemisphere) {
+        const dataset = this.model.getDataset();
+
+        const count = dataset.reduce((accumulator, data) => {
+            if (data.group && (data.group === group || data.group.toString() === group) && data.hemisphere === hemisphere) {
+                return accumulator + 1;
             }
-        }
+            return accumulator;
+        }, 0);
+
         return count;
     }
     // draw the brain regions as glyphs (the nodes)
     // assumes all nodes are visible, nothing is selected
-    this.drawRegions = function() {
-        var dataset = model.getDataset();
+    drawRegions() {
+        let dataset = this.model.getDataset();
         console.log("Drawing All Regions");
 
         // for each group and hemisphere in the dataset, create an instance mesh
-        var groups = this.listGroups();
+        this.groups = this.listGroups(); //updates the list of groups
 
-        for (let i = 0; i < groups.length; i++) {
-            let leftCount = this.countGroupMembers(groups[i], 'left');
-            let rightCount = this.countGroupMembers(groups[i], 'right');
-            this.instances[groups[i]] = {
+        for (let i = 0; i < this.groups.length; i++) {
+            let leftCount = this.countGroupMembers(this.groups[i], 'left');
+            let rightCount = this.countGroupMembers(this.groups[i], 'right');
+            this.instances[this.groups[i]] = {
                 left: null,
                 right: null
             };
 
             // create instance mesh for each group and hemisphere
-            let geometry = getNormalGeometry('left',name);
-            let material = getNormalMaterial(model, groups[i]);
+            let geometry = getNormalGeometry('left');
+            let material = getNormalMaterial(this.model, this.groups[i]);
             // create the instance mesh with the number of nodes in the group
-            this.instances[groups[i]].left = new THREE.InstancedMesh(geometry, material, leftCount);
+            this.instances[this.groups[i]].left = new THREE.InstancedMesh(geometry, material, leftCount);
             // set the color of the first instance to the group color
-            this.instances[groups[i]].left.setColorAt(0, material.color);
+            this.instances[this.groups[i]].left.setColorAt(0, material.color);
 
-            geometry = getNormalGeometry('right',name);
-            material = getNormalMaterial(model, groups[i]);
-            this.instances[groups[i]].right = new THREE.InstancedMesh(geometry, material, rightCount);
-            this.instances[groups[i]].right.setColorAt(0, material.color);
+            geometry = getNormalGeometry('right');
+            material = getNormalMaterial(this.model, this.groups[i]);
+            this.instances[this.groups[i]].right = new THREE.InstancedMesh(geometry, material, rightCount);
+            this.instances[this.groups[i]].right.setColorAt(0, material.color);
 
             // name the instance with group_hemisphere
-            this.instances[groups[i]].left.name = {
-                group: groups[i],
+            this.instances[this.groups[i]].left.name = {
+                group: this.groups[i],
                 hemisphere: 'left',
                 type: 'region'
             };
-            this.instances[groups[i]].right.name = {
-                group: groups[i],
+            this.instances[this.groups[i]].right.name = {
+                group: this.groups[i],
                 hemisphere: 'right',
                 type: 'region'
             };
         }
 
         // populate the instance meshes
-        var topIndexes = {};
+        let topIndexes = {};
         for (let i = 0; i < dataset.length; i++) {
             // check if region is already in the topIndexes object
             if (topIndexes[dataset[i].group] === undefined) {
@@ -2117,7 +2311,7 @@ function PreviewArea(canvas_, model_, name_) {
                 return null;
             }
 
-            instance.getSelectedNodes = function() {
+            instance.getSelectedNodes = ()=> {
                 if(instance.userData.selectedNodes === undefined) {
                     instance.userData.selectedNodes = [];
                 }
@@ -2125,7 +2319,7 @@ function PreviewArea(canvas_, model_, name_) {
             }
 
             /* accepts an array of indexes, sets these indexes as selected if they exist within this instance group. */
-            instance.setSelectedNodes = function(selectedNodes) {
+            instance.setSelectedNodes = (selectedNodes)=> {
                 //accepts an array of indexes, only set
                 //only set select if index is in the indexList
 
@@ -2147,12 +2341,12 @@ function PreviewArea(canvas_, model_, name_) {
                 }
             }
 
-            instance.getData = function(nodeObject) {
+            instance.getData = (nodeObject) => {
                 let index = instance.getDatasetIndex(nodeObject);
-                return model.getDataset()[index];
+                return this.model.getDataset()[index];
             }
 
-            instance.isSelected = function(nodeObject) {
+            instance.isSelected = (nodeObject) => {
                 // check if the index is in the selectedNodes array
                 let index = instance.getDatasetIndex(nodeObject);
                 if (instance.userData.selectedNodes === undefined) {
@@ -2167,7 +2361,7 @@ function PreviewArea(canvas_, model_, name_) {
                 }
                 //return instance.userData.selectedNodes.includes(index);
             }
-            instance.select = function(nodeObject) {
+            instance.select = (nodeObject) => {
                 let index = instance.getDatasetIndex(nodeObject);
                 // push the index into the selectedNodes array, if it doesn't exist
                 if (instance.userData.selectedNodes === undefined) {
@@ -2182,7 +2376,7 @@ function PreviewArea(canvas_, model_, name_) {
 
             }
 
-            instance.unSelect = function(nodeObject) {
+            instance.unSelect = (nodeObject) => {
                 // check if index is in selectedNodes array and remove it if it is
                 let index = instance.getDatasetIndex(nodeObject);
                 if (!instance.userData.selectedNodes === undefined) {
@@ -2196,7 +2390,7 @@ function PreviewArea(canvas_, model_, name_) {
 
                 }
 
-            instance.toggleSelect = function(nodeObject) {
+            instance.toggleSelect = (nodeObject) => {
                 if (instance.isSelected(nodeObject)) {
                     instance.unSelect(nodeObject);
                 } else {
@@ -2204,19 +2398,19 @@ function PreviewArea(canvas_, model_, name_) {
                 }
             }
 
-            instance.clearSelection = function() {
+            instance.clearSelection = ()=> {
                 // clear the selectedNodes array
                 instance.userData.selectedNodes = [];
             }
 
             /*Get edges for instanced node.*/
-            instance.getEdges = function(nodeObject) {
+            instance.getEdges = (nodeObject)=> {
                 console.log("Getting edges for instance node: " + nodeObject.instanceId);
                 console.log(nodeObject);
                 let object = nodeObject.object;
                 let index = object.getDatasetIndex(nodeObject);
                 //console.log("Index: " + index);
-                let row = model.getConnectionMatrixRow(index);
+                let row = this.model.getConnectionMatrixRow(index);
                 //console.log("Row: ");
                 //console.log(row);
                 let edges = [];
@@ -2233,8 +2427,8 @@ function PreviewArea(canvas_, model_, name_) {
                 return edges;
             };
             // overload the getEdges to also take a standard index
-            instance.getEdgesFromIndex = function(index) {
-                let row = model.getConnectionMatrixRow(index);
+            instance.getEdgesFromIndex = (index)=> {
+                let row = this.model.getConnectionMatrixRow(index);
                 let edges = [];
                 row.forEach(function(weight, targetIndex) {
                     if (weight > 0) {
@@ -2251,9 +2445,9 @@ function PreviewArea(canvas_, model_, name_) {
         }
 
         // mark instances as dirty
-        for (let i = 0; i < groups.length; i++) {
-            this.instances[groups[i]].left.instanceMatrix.needsUpdate = true;
-            this.instances[groups[i]].right.instanceMatrix.needsUpdate = true;
+        for (let i = 0; i < this.groups.length; i++) {
+            this.instances[this.groups[i]].left.instanceMatrix.needsUpdate = true;
+            this.instances[this.groups[i]].right.instanceMatrix.needsUpdate = true;
         }
         // display count for each hemisphere
         // for (let i = 0; i < groups.length; i++) {
@@ -2262,9 +2456,9 @@ function PreviewArea(canvas_, model_, name_) {
         //     console.log("Group: " + groups[i] + " Left: " + leftCount + " Right: " + rightCount);
         // }
         // add the instance meshes to the scene
-        for (let i = 0; i < groups.length; i++) {
-            brain.add(this.instances[groups[i]].left);
-            brain.add(this.instances[groups[i]].right);
+        for (let i = 0; i < this.groups.length; i++) {
+            this.brain.add(this.instances[this.groups[i]].left);
+            this.brain.add(this.instances[this.groups[i]].right);
         }
     };
 
@@ -2441,9 +2635,9 @@ function PreviewArea(canvas_, model_, name_) {
     //};
 
     // update the nodes positions according to the latest in the model
-    var updateNodesPositions = function () {
+    updateNodesPositions() {
         //todo:
-        var dataset = model.getDataset();
+        var dataset = this.model.getDataset();
         var instance = null;
         var index = null;
         // randoms for x,y,z small offsets to make nodes less likely to overlap
@@ -2456,9 +2650,9 @@ function PreviewArea(canvas_, model_, name_) {
         // zRandom = (Math.random() * 10) + 10;
 
 
-        for (var i = 0; i < dataset.length; i++) {
+        for (let i = 0; i < dataset.length; i++) {
             instance = this.instances[dataset[i].group][dataset[i].hemisphere];
-            index = instance.userData.nodeIndex;
+            index = instance.nodeID;
             instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z));
             // set matrix needs update to true
             instance.instanceMatrix.needsUpdate = true;
@@ -2468,16 +2662,18 @@ function PreviewArea(canvas_, model_, name_) {
         // }
     };
 
-    this.updateNodesVisibility = function (updateDataset = false) {
-        var dataset = model.getDataset(updateDataset);
-        for (var i = 0; i < dataset.length; i++) {
-            var opacity = 1.0;
+    updateNodesVisibility(updateDataset = false) {
+
+        let dataset = this.model.getDataset();
+
+        for (let i = 0; i < dataset.length; i++) {
+            let opacity = 1.0;
             if (getRoot && getRoot == i) { // root node
                 opacity = 1.0;
             }
 
-            if (shouldDrawRegion(dataset[i])) {
-                switch (model.getRegionState(dataset[i].group)) {
+            if (this.shouldDrawRegion(dataset[i])) {
+                switch (this.model.getRegionState(dataset[i].group)) {
                     case 'active':
                         opacity = 1.0;
                         break;
@@ -2495,10 +2691,12 @@ function PreviewArea(canvas_, model_, name_) {
             //todo: this.instances["area_43"]["left"]  <--- would work
             this.instances[dataset[i].group][dataset[i].hemisphere].material.opacity = opacity;
             //glyphs[i].material.opacity = opacity;
+            // mark dirty for update
+            this.instances[dataset[i].group][dataset[i].hemisphere].material.needsUpdate = true;
         }
     };
 
-    this.getSelectedNodes = function () {
+    getSelectedNodes() {
         let groups = this.listGroups();
         let selectedNodes = [];
 
@@ -2516,11 +2714,11 @@ function PreviewArea(canvas_, model_, name_) {
             if (rightSelectedNodes) selectedNodes = selectedNodes.concat(rightSelectedNodes);
         }
 
-        selectedNodes = selectedNodes.filter(Boolean);
+        this.selectedNodes = selectedNodes.filter(Boolean);
         return selectedNodes;
     }
 
-    this.setSelectedNodes = function (nodes) {
+    setSelectedNodes (nodes) {
         //accepts an array of dataset indexes and sets the selected flag to true for each node
         //sets selections globally across all instances
         let groups= this.listGroups();
@@ -2548,9 +2746,9 @@ function PreviewArea(canvas_, model_, name_) {
         }
     }
 
-    this.clrNodesSelected = function () {
+    clrNodesSelected() {
         // remove the selected flag from all nodes
-        var groups = this.listGroups();
+        this.groups = this.listGroups();
         //clear selected nodes from each instance
         for (let i = 0; i < groups.length; i++) {
             // only log errors
@@ -2574,9 +2772,6 @@ function PreviewArea(canvas_, model_, name_) {
             } else {
                 this.instances[groups[i]]['right'].clearSelection();
             }
-
-
-
         }
     };
 
@@ -2584,20 +2779,20 @@ function PreviewArea(canvas_, model_, name_) {
 
     // draw all connections between the selected nodes, needs the connection matrix.
     // don't draw edges belonging to inactive nodes
-    this.drawConnections = function () {
+    drawConnections() {
 
         let activeEdges = this.getActiveEdges();
         console.log("drawconnections: Active Edges: ");
         console.log(activeEdges);
 
 
-        for (var i = 0; i <  activeEdges.length; i++) {
+        for (let i = 0; i <  activeEdges.length; i++) {
             let node = activeEdges[i][0];
             //log the node
             console.log("Node: ");
             console.log(node);
 
-            for (var j = 0; j < activeEdges[i][1].length; j++) {
+            for (let j = 0; j < activeEdges[i][1].length; j++) {
                 let targetNode = this.index2node(activeEdges[i][1][j].targetNodeId);
                 if (!targetNode) {
                     continue;
@@ -2632,8 +2827,8 @@ function PreviewArea(canvas_, model_, name_) {
         return activeEdges;
     }
 
-    this.getNodeInstanceByIndex = function (index) {
-        let groups = this.listGroups();
+    getNodeInstanceByIndex(index) {
+        this.groups = this.listGroups();
         for (let j = 0; j < groups.length; j++) {
             // each group may have a left and right hemisphere
             const groupOf = this.instances[groups[j]];
@@ -2675,14 +2870,14 @@ function PreviewArea(canvas_, model_, name_) {
         }
     }
 
-    this.getActiveEdges = function (topN = null) {
-        var nodeIdx;
+    getActiveEdges(topN = null) {
+        //var nodeIdx;
         let nodesSelected = this.getSelectedNodes();
         let numNodesSelected = nodesSelected.length;
         //console.log("numNodesSelected: " + numNodesSelected);
         let activeEdges = [];
         let groups = this.listGroups();
-        let threshold = model.getThreshold();
+        let threshold = this.model.getThreshold();
         if (threshold === undefined) {
             console.log("Threshold undefined");
             // consider all selected nodes active
@@ -2691,7 +2886,7 @@ function PreviewArea(canvas_, model_, name_) {
         //console.log("active edges nodesSelected: ");
         //console.log(nodesSelected);
 // for each node in nodesSelected look it up in instances and get the edges
-        for (var i = 0; i < numNodesSelected; i++) {
+        for (let i = 0; i < numNodesSelected; i++) {
             // check through the instances for the index and then return the node
             for (let j = 0; j < groups.length; j++) {
                 // each group may have a left and right hemisphere
@@ -2762,18 +2957,19 @@ function PreviewArea(canvas_, model_, name_) {
         return activeEdges;
     };
 
-    this.setEdgesColor = function () {
-
+    setEdgesColor = function () {
+            //todo stub return for now.
+            return;
     }
     // skew the color distributio n according to the nodes strength
-    var computeColorGradient = function (c1, c2, n, p) {
-        var gradient = new Float32Array(n * 3);
-        var p1 = p;
-        var p2 = 1 - p1;
-        for (var i = 0; i < n; ++i) {
+    computeColorGradient(c1, c2, n, p) {
+        let gradient = new Float32Array(n * 3);
+        let p1 = p;
+        let p2 = 1 - p1;
+        for (let i = 0; i < n; ++i) {
             // skew the color distribution according to the nodes strength
-            var r = i / (n - 1);
-            var rr = (r * r * (p2 - 0.5) + r * (0.5 - p2 * p2)) / (p1 * p2);
+            let r = i / (n - 1);
+            let rr = (r * r * (p2 - 0.5) + r * (0.5 - p2 * p2)) / (p1 * p2);
             gradient[i * 3] = c2.r + (c1.r - c2.r) * rr;
             gradient[i * 3 + 1] = c2.g + (c1.g - c2.g) * rr;
             gradient[i * 3 + 2] = c2.b + (c1.b - c2.b) * rr
@@ -2782,27 +2978,31 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     // set the color of displayed edges
-    this.updateEdgeColors = function () {
+    updateEdgeColors() {
+        //todo this is currently not used but could be if updated to handle instanced nodes
+        return;
         var edge, c1, c2;
         for (var i = 0; i < this.displayedEdges.length; i++) {
             edge = this.displayedEdges[i];
-            c1 = glyphs[edge.nodes[0]].material.color;
-            c2 = glyphs[edge.nodes[1]].material.color;
-            edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
+            //todo update for instancing
+            // c1 = glyphs[edge.nodes[0]].material.color;
+            // c2 = glyphs[edge.nodes[1]].material.color;
+            edge.geometry.setAttribute('color', new THREE.BufferAttribute(this.computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
         }
 
-        for (i = 0; i < shortestPathEdges.length; i++) {
+        for (i = 0; i < this.shortestPathEdges.length; i++) {
             edge = this.displayedEdges[i];
-            c1 = glyphs[edge.nodes[0]].material.color;
-            c2 = glyphs[edge.nodes[1]].material.color;
-            edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
+            //todo update for instancing
+            // c1 = glyphs[edge.nodes[0]].material.color;
+            // c2 = glyphs[edge.nodes[1]].material.color;
+            edge.geometry.setAttribute('color', new THREE.BufferAttribute(this.computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
         }
     };
 
-    var updateNodesColor = function () {
-        //todo update to handle instnce and change individual node
-        const elapsedTime = clock.getElapsedTime();
-        var dataset = model.getDataset();
+    updateNodesColor() {
+        //todo update to handle instance and change individual node
+        const elapsedTime = this.clock.getElapsedTime();
+        let dataset = this.model.getDataset();
 
         if ((elapsedTime % 30) < 29.8) {
             return;
@@ -2813,25 +3013,28 @@ function PreviewArea(canvas_, model_, name_) {
         console.log(getNodesFocused());
         clrNodesFocused();
 
+
+        //todo update to handle instances.
+        return;
         for (var i = 0; i < glyphs.length; ++i) {
-            glyphs[i].material.color = new THREE.Color(scaleColorGroup(model, dataset[i].group));
+            glyphs[i].material.color = new THREE.Color(scaleColorGroup(this.model, dataset[i].group));
         }
     };
 
     // set the color of displayed edges
-    var shimmerEdgeNodeColors = function () {
-        var dataset = model.getDataset();
-        var colorAmplitude = amplitude * 16.6;  // 0.25;
-        var colorFrequency = 3 * frequency;
-        const elapsedTime = clock.getElapsedTime();
+    shimmerEdgeNodeColors() {
+        let dataset = this.model.getDataset();
+        let colorAmplitude = this.amplitude * 16.6;  // 0.25;
+        let colorFrequency = 3 * this.frequency;
+        const elapsedTime = this.clock.getElapsedTime();
         const deltaRadius = colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime);
         var edge, c1, c2, tempColor = new THREE.Color(), targetColor = new THREE.Color();
-        for (var i = 0; i < previewAreaLeft.displayedEdges.length; i++) {
+        for (let i = 0; i < previewAreaLeft.displayedEdges.length; i++) {
             edge = previewAreaLeft.displayedEdges[i];
             c1 = edge.nodes[0]; //.material.color;
             c2 = edge.nodes[1]; //.material.color;
-            var baseColor = new THREE.Color(scaleColorGroup(model, dataset[c2].group));
-            var deltaColor = new THREE.Color(scaleColorGroup(model, dataset[c1].group)); //1,0.6,0.3);
+            let baseColor = new THREE.Color(scaleColorGroup(this.model, dataset[c2].group));
+            var deltaColor = new THREE.Color(scaleColorGroup(this.model, dataset[c1].group)); //1,0.6,0.3);
             //amplitude * Math.sin(2 * Math.PI * frequency * elapsedTime),0,0 );      //delta * 180, delta * 10, delta * 10);
             tempColor = new THREE.Color();
             targetColor = new THREE.Color();
@@ -2843,20 +3046,22 @@ function PreviewArea(canvas_, model_, name_) {
             // glyphs[edge.nodes[1]].material.color = targetColor; //todo:instancize this
         }
 
-        for (i = 0; i < shortestPathEdges.length; i++) {
+        for (let i = 0; i < this.shortestPathEdges.length; i++) {
             edge = this.displayedEdges[i];
-            c1 = glyphs[edge.nodes[0]].material.color;
-            c2 = glyphs[edge.nodes[1]].material.color;
-            edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
+            // //todo instancize this
+            // c1 = glyphs[edge.nodes[0]].material.color;
+            // c2 = glyphs[edge.nodes[1]].material.color;
+            edge.geometry.setAttribute('color', new THREE.BufferAttribute(this.computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
 
         }
     };
 
-    this.updateEdgeOpacity = function (opacity) {
-        var edgeOpacity = opacity;
+    updateEdgeOpacity(opacity) {
         for (var i = 0; i < this.displayedEdges.length; i++) {
             this.displayedEdges[i].material.opacity = opacity;
         }
+        // mark dirty for update
+        this.displayedEdges[i].material.needsUpdate = true;
     };
 
     // create a line using start and end points and give it a name
@@ -2867,33 +3072,33 @@ function PreviewArea(canvas_, model_, name_) {
     // line.setGeometry( geometry );
     // material = new THREE.MeshLineMaterial();
     // var mesh  = new THREE.Mesh(line.geometry, material);
-    var createLine = function (edge, ownerNode, nodes) {
-        var material = new THREE.LineBasicMaterial({
+    createLine(edge, ownerNode, nodes) {
+        let material = new THREE.LineBasicMaterial({
             transparent: true,
-            opacity: edgeOpacity,
+            opacity: this.edgeOpacity,
             vertexColors: true //THREE.VertexColors
             // Due to limitations in the ANGLE layer on Windows platforms linewidth will always be 1.
         });
 
-        var geometry = new THREE.BufferGeometry();
-        var n = edge.length;
+        let geometry = new THREE.BufferGeometry();
+        let n = edge.length;
 
-        var positions = new Float32Array(n * 3);
-        for (var i = 0; i < n; i++) {
+        let positions = new Float32Array(n * 3);
+        for (let i = 0; i < n; i++) {
             positions[i * 3] = edge[i].x;
             positions[i * 3 + 1] = edge[i].y;
             positions[i * 3 + 2] = edge[i].z;
         }
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-        var s1 = model.getNodalStrength(nodes[0]), s2 = model.getNodalStrength(nodes[1]);
+        var s1 = this.model.getNodalStrength(nodes[0]), s2 = this.model.getNodalStrength(nodes[1]);
         var p1 = s1 / (s1 + s2);
-        var c1 = new THREE.Color(scaleColorGroup(model, model.getGroupNameByNodeIndex(nodes[0]))),// glyphs[nodes[0]].material.color,
-            c2 = new THREE.Color(scaleColorGroup(model, model.getGroupNameByNodeIndex(nodes[1])));// glyphs[nodes[1]].material.color;
+        var c1 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[0]))),// glyphs[nodes[0]].material.color,
+            c2 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[1])));// glyphs[nodes[1]].material.color;
         geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, n, p1), 3));
 
         // geometry.colors = colorGradient;
-        var line = new THREE.Line(geometry, material);
+        let line = new THREE.Line(geometry, material);
         //console.log("ownerNode: ");
         //console.log(ownerNode);
         line.name = ownerNode;
@@ -2906,46 +3111,46 @@ function PreviewArea(canvas_, model_, name_) {
         return line;
     };
 
-    var drawEdgeWithName = function (edge, ownerNode, nodes) {
+    drawEdgeWithName(edge, ownerNode, nodes) {
         // console.log("Edge: ");
         // console.log(edge);
         // console.log("ownerNode: " + ownerNode);
         // console.log("nodes: ");
         // console.log(nodes);
-        var line = createLine(edge, ownerNode, nodes);
-        brain.add(line);
+        let line = this.createLine(edge, ownerNode, nodes);
+        this.brain.add(line);
         return line;
     };
 
     // draw the top n edges connected to a specific node
-    this.drawTopNEdgesByNode = function (nodeIndex, n) {
-      var row = [];
+    drawTopNEdgesByNode = function (nodeIndex, n) {
+      let row = [];
 	    if(false && (!getEnableContra() && !getEnableIpsi())) { //todo: evaluate best action for neither ipsi nor contra
 		  console.log("Neither ipsi nor contra: this should not be able to be accessed.")
-          row = model.getTopConnectionsByNode(nodeIndex, n );
+          row = this.model.getTopConnectionsByNode(nodeIndex, n );
       } else {
 		  if(getEnableContra()) {
             console.log("contra");
-			row = row.concat(model.getTopContraLateralConnectionsByNode(nodeIndex, n ));
+			row = row.concat(this.model.getTopContraLateralConnectionsByNode(nodeIndex, n ));
             }
             if (getEnableIpsi()) {
             console.log("ipsi!");
-			row = row.concat(model.getTopIpsiLateralConnectionsByNode(nodeIndex, n ));
+			row = row.concat(this.model.getTopIpsiLateralConnectionsByNode(nodeIndex, n ));
             }
         }
 	    console.log("contra: "+getEnableContra());
 	    console.log("ipsi: "+getEnableIpsi());
 
-        var edges = this.getActiveEdges();
+        let edges = this.getActiveEdges();
         console.log("drawtopNedges Active edges: ");
         console.log(edges);
-        var edgeIdx = model.getEdgesIndeces();
+        let edgeIdx = this.model.getEdgesIndeces();
         if (getEnableEB()) {
             console.log("EB point");
-            model.performEBOnNode(nodeIndex);
+            this.model.performEBOnNode(nodeIndex);
         }
-        for (var i = 0; i < row.length; ++i) {
-            if ((nodeIndex != row[i]) && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i)) {
+        for (let i = 0; i < row.length; ++i) {
+            if ((nodeIndex != row[i]) && this.model.isRegionActive(this.model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i)) {
                 //display debug info for each variable above.
                 // console.log("Displayed Edges Length: ");
                 // console.log(this.displayedEdges.length);
@@ -2962,7 +3167,7 @@ function PreviewArea(canvas_, model_, name_) {
                 // console.log("i: ");
                 // console.log(i);
                 //let edix = edgeIdx[nodeIndex][row[i]];
-                let edix = model.getEdgesIndeces().get([nodeIndex, row[i]]);
+                let edix = this.model.getEdgesIndeces().get([nodeIndex, row[i]]);
                 if(edix < 0) continue;
                 if(edix > edges.length) continue;
                 this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edges[ edix ], nodeIndex, [nodeIndex, row[i]]);
@@ -2972,31 +3177,33 @@ function PreviewArea(canvas_, model_, name_) {
 
         //setEdgesColor();
     };
-    this.index2node = function (index) {
+    index2node(index)  {
         let instanceObj = null;
         for(let group in this.instances) {
             for(let side in this.instances[group]) {
                 if(this.instances[group][side] == null || this.instances[group][side] === undefined) continue;
                 if(this.instances[group][side].getNodesInstanceFromDatasetIndex === undefined) continue;
                 let temp = this.instances[group][side].getNodesInstanceFromDatasetIndex(index);
+
                 if(temp != null) {
-                    instanceObj = {
-                        object: this.instances[group][side],
-                        instanceId: temp.instanceId,
-                        group: group,
-                        side: side
-                    };
-                    return instanceObj;
+                    return temp;
+                    // instanceObj = {
+                    //     object: this.instances[group][side],
+                    //     instanceId: temp.instanceId,
+                    //     group: group,
+                    //     side: side
+                    // };
+                    //return instanceObj;
                 }
             }
         }
         return null;
     }
     // draw edges given a node following edge threshold
-    this.drawEdgesGivenNode = function (indexNode, topN = null) {
+    drawEdgesGivenNode(indexNode, topN = null) {
         console.log("Attempting to draw edges given node: " + indexNode);
-        var dataset = model.getDataset();
-        var row = model.getConnectionMatrixRow(indexNode);
+        var dataset = this.model.getDataset();
+        var row = this.model.getConnectionMatrixRow(indexNode);
 
         //let instanceObj = this.instances[dataset[indexNode].group]["left"].getNodesInstanceFromDatasetIndex(indexNode);
         //instanceObj may be in any group (left or right) so we need to find it. getnodesinstancefromdatasetindex returns null if not found in that group.
@@ -3020,13 +3227,13 @@ function PreviewArea(canvas_, model_, name_) {
         //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
         instancePosition.setFromMatrixPosition(matrix);
 
-        var edges = instanceObj.object.getEdges(instanceObj);
+        let edges = instanceObj.object.getEdges(instanceObj);
         //var edges = this.getActiveEdges(); //this gets all active edges.
         // console.log("drawEdgesGivenNode: Active edges: ");
         // console.log(edges);
 
         if(!topN) {
-            edges = edges.filter(edge => edge.weight >= model.getThreshold());
+            edges = edges.filter(edge => edge.weight >= this.model.getThreshold());
         } else {
             edges = edges.sort((a, b) => b.weight - a.weight).slice(0, topN);
         }
@@ -3047,15 +3254,16 @@ function PreviewArea(canvas_, model_, name_) {
             targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
             targetPosition.setFromMatrixPosition(matrix);
             edge.push(targetPosition);
-            this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode, targetNodeId]);
+            this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, indexNode, [indexNode, targetNodeId]);
         }
 
         return;
 
-        // unreachable code beyond this point
-        var edgeIdx = model.getEdgesIndeces();
+        // unreachable code beyond this point some of it is updated to support the previewArea change to a class structure
+        // but I'm sure more of it needs to be updated in other ways.
+        let edgeIdx = this.model.getEdgesIndeces();
         if (getEnableEB()) {
-            model.performEBOnNode(indexNode);
+            this.model.performEBOnNode(indexNode);
         }
 
         // todo: get back to this after edge thresholding is re-implemented
@@ -3068,14 +3276,14 @@ function PreviewArea(canvas_, model_, name_) {
             // It can get too cluttered if both ipsi-
         if (getEnableIpsi() && getEnableContra()) {
             console.log("edges: ipsi or contra enabled")
-            for (var i = 0; i < row.length; i++) {
+            for (let i = 0; i < row.length; i++) {
                 //console.log("Row length: ");
                 //console.log(row.length);
-                var myThreshold = model.getThreshold();
+                let myThreshold = this.model.getThreshold();
                 //console.log("myThreshold: ");
                 //console.log(myThreshold);
                 if (dataset[indexNode].hemisphere !== dataset[i].hemisphere) {
-                    myThreshold = model.getConThreshold();
+                    myThreshold = this.model.getConThreshold();
                     //console.log("myThreshold overwritten by ConThreshold: ");
                     //console.log(myThreshold);
                 }
@@ -3084,7 +3292,7 @@ function PreviewArea(canvas_, model_, name_) {
                 }
                 if ((i != indexNode) &&
                     (Math.abs(row[i]) >= myThreshold) &&
-                    model.isRegionActive(model.getGroupNameByNodeIndex(i)) &&
+                    this.model.isRegionActive(this.model.getGroupNameByNodeIndex(i)) &&
                     getVisibleNodes(i) ) {
                     //displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
                     // //display debug info for each variable above.
@@ -3102,97 +3310,107 @@ function PreviewArea(canvas_, model_, name_) {
                     // console.log("i: ");
                     // console.log(i);
                     //let edix = edgeIdx[nodeIndex][row[i]];
-                    let edix = model.getEdgesIndeces().get([indexNode, i]);
+                    let edix = this.model.getEdgesIndeces().get([indexNode, i]);
                     if(edix < 0) continue;
                     if(edix > edges.length) continue;
                     console.log("Edix");
                     console.log(edix);
                     console.log("this.displayedEdges before: ");
                     console.log(this.displayedEdges);
-                    this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edges[ edix ], indexNode, [indexNode, i]);
+                    this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edges[ edix ], indexNode, [indexNode, i]);
                     console.log("this.displayedEdges after: ");
                     console.log(this.displayedEdges);
                 }
             }
         } else {
             console.log("edges: ipsi or contra not enabled")
-            for (var i = 0; i < row.length; i++) {
-                if ((i != indexNode) && Math.abs(row[i]) > model.getThreshold() && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i) &&
+            for (let i = 0; i < row.length; i++) {
+                if ((i != indexNode) && Math.abs(row[i]) > this.model.getThreshold() && this.model.isRegionActive(this.model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i) &&
                     ((getEnableIpsi() && (dataset[indexNode].hemisphere === dataset[i].hemisphere)) ||
                         (getEnableContra() && (dataset[indexNode].hemisphere !== dataset[i].hemisphere)) ||
                         (!getEnableIpsi() && !getEnableContra()) ) ) {
-                    let edix = model.getEdgesIndeces().get([indexNode, i]);
-                    this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edges[edix], indexNode, [indexNode, i]);
+                    let edix = this.model.getEdgesIndeces().get([indexNode, i]);
+                    this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(this.edges[edix], indexNode, [indexNode, i]);
                 }
             }
         }
     };
 
     // give a specific node index, remove all edges from a specific node in a specific scene
-    this.removeEdgesGivenNode = function (indexNode) {
-        var l = this.displayedEdges.length;
+    removeEdgesGivenNode(indexNode) {
+        let l = this.displayedEdges.length;
 
         // keep a list of removed edges indexes
-        var removedEdges = [];
-        for (var i = 0; i < l; i++) {
-            var edge = this.displayedEdges[i];
+        let removedEdges = [];
+        for (let i = 0; i < l; i++) {
+            let edge = this.displayedEdges[i];
             //removing only the edges that starts from that node
             console.log("removing edge: ");
             console.log(edge);
             if (edge.name == indexNode) {
                 removedEdges[removedEdges.length] = i;
-                brain.remove(edge);
+                this.brain.remove(edge);
             }
         }
 
         // update the displayedEdges array
-        var updatedDisplayEdges = [];
-        for (i = 0; i < this.displayedEdges.length; i++) {
+        let updatedDisplayEdges = [];
+        for (let i = 0; i < this.displayedEdges.length; i++) {
             //if the edge should not be removed
             if (removedEdges.indexOf(i) == -1) {
                 updatedDisplayEdges[updatedDisplayEdges.length] = this.displayedEdges[i];
             }
         }
 
-        for (i = 0; i < shortestPathEdges.length; i++) {
-            updatedDisplayEdges[updatedDisplayEdges.length] = shortestPathEdges[i];
+        for (let i = 0; i < this.shortestPathEdges.length; i++) {
+            updatedDisplayEdges[updatedDisplayEdges.length] = this.shortestPathEdges[i];
         }
         this.displayedEdges = updatedDisplayEdges;
         this.reInitEdgeFlare();
     };
 
+
+  skyboxLoadedCallback = (texture) => {
+    //set the scene background property with the resulting texture
+    this.skybox.name = "skybox";
+    this.scene.background = this.skybox;
+    //activate background
+    this.scene.background.needsUpdate = true;
+    // todo, draw three lines at the center, this is blocking some things.
+    // var geometry = new THREE.SphereGeometry(5000, 60, 40);
+    // geometry.scale(-1, 1, 1);
+    // var material = new THREE.MeshBasicMaterial({
+    //     map: new THREE.TextureLoader().load('./images/' + folder + '/posy.png')
+    // });
+    // var mesh = new THREE.Mesh(geometry, material);
+    // scene.add(mesh);
+  };
     // draw skybox from images
-    var addSkybox = function () {
-        console.log("Adding skybox");
-        var folder = 'darkgrid';
-        var images = [
-            './images/' + folder + '/negx.png',
-            './images/' + folder + '/negy.png',
-            './images/' + folder + '/negz.png',
-            './images/' + folder + '/posx.png',
-            './images/' + folder + '/posy.png',
-            './images/' + folder + '/posz.png'
-        ];
-        //create skybox using images
-        var skybox = new THREE.CubeTextureLoader().load(images);
-        //set the scene background property with the resulting texture
-        skybox.name = "skybox";
-        scene.background = skybox;
-        //activate background
-        scene.background.needsUpdate = true;
-        // todo, draw three lines at the center, this is blocking some things.
-        // var geometry = new THREE.SphereGeometry(5000, 60, 40);
-        // geometry.scale(-1, 1, 1);
-        // var material = new THREE.MeshBasicMaterial({
-        //     map: new THREE.TextureLoader().load('./images/' + folder + '/posy.png')
-        // });
-        // var mesh = new THREE.Mesh(geometry, material);
-        // scene.add(mesh);
-    }; // end addSkybox
+    addSkybox(){
+      console.log("Adding skybox");
+      let folder = 'darkgrid';
+      let paths = [
+        './images/' + folder + '/negx.png',
+        './images/' + folder + '/negy.png',
+        './images/' + folder + '/negz.png',
+        './images/' + folder + '/posx.png',
+        './images/' + folder + '/posy.png',
+        './images/' + folder + '/posz.png'
+      ];
+      //create skybox using images
+      try {
+        this.skybox = new THREE.CubeTextureLoader().load(paths, this.skyboxLoadedCallback);
+      } catch (e) {
+        console.log("Error loading skybox: " + e);
+        return;
+      }
+
+    };
+
 
 
     // toggle skybox visibility
-    this.setSkyboxVisibility = function (visible) {
+    setSkyboxVisibility(visible) {
         // var results = scene.children.filter(function (d) {
         //     return d.name === "skybox"
         // });
@@ -3200,18 +3418,17 @@ function PreviewArea(canvas_, model_, name_) {
         //var skybox = scene.background; // results[0];
         //skybox.visible = visible;
         // check if scene.background is of type THREE.Color
-        if(scene.background === undefined || scene.background === null || scene.background.isColor){
-
-            addSkybox();
+        if(this.scene.background === undefined || this.scene.background === null || this.scene.background.isColor){
+            this.addSkybox();
         } else {
-            scene.background = null;
+            this.scene.background = null;
             // create blank black background
-            scene.background = new THREE.Color(0x000000);
+            this.scene.background = new THREE.Color(0x000000);
         }
         // console.log("skybox: ");
         // console.log(skybox);
         // mark scene as dirty
-        scene.needsUpdate = true;
+        this.scene.needsUpdate = true;
     };
 
     // draw a selected node: increase it's size
@@ -3250,102 +3467,107 @@ function PreviewArea(canvas_, model_, name_) {
     // detects which scene: left or right
     // return undefined if no object was found
 
-    this.getIntersectedObject = function (vector) {
+    getIntersectedObject = function (vector) {
         // check if raycaster is defined
-        if (!raycaster) {
-            raycaster = new THREE.Raycaster();
-        }
+        //if (!raycaster) {
+        let raycaster = new THREE.Raycaster();
+        //}
         // set the raycaster from the camera position and mouse position
-        raycaster.setFromCamera(vector, camera);
+        raycaster.setFromCamera(vector, this.camera);
         // get the list of objects the ray intersected
-        var objectsIntersected = raycaster.intersectObjects(scene.children, true);
+        this.objectsIntersected = raycaster.intersectObjects(this.scene.children, true);
         // return the first object. It's the closest one
-
-        return (objectsIntersected[0]) ? objectsIntersected[0] : undefined;
+        // console.log("objectsIntersected: ");
+        // console.log(objectsIntersected);
+        return (this.objectsIntersected[0]) ? this.objectsIntersected[0] : undefined;
     };
 
     // callback when window is resized
-    this.resizeScene = function () {
+    resizeScene() {
         //todo disabled for now straight to else  vrButton.isPresenting() ...  actually removing all WebVR for now
         // if (vrButton && 0) {
         //     camera.aspect = window.innerWidth / window.innerHeight;
         //     renderer.setSize(window.innerWidth, window.innerHeight);
         //     console.log("Resize for Mobile VR");
         // } else {
-        camera.aspect = window.innerWidth / 2.0 / window.innerHeight;
-        renderer.setSize(window.innerWidth / 2.0, window.innerHeight);
+        if(!this.camera) {
+            console.log("resize failed to find camera.");
+            return;
+        }
+        this.camera.aspect = this.canvas.width / this.canvas.height;
+        this.renderer.setSize(this.canvas.width, this.canvas.height);
         console.log("Resize");
         //}
-        camera.updateProjectionMatrix();
+        this.camera.updateProjectionMatrix();
     };
 
     // compute shortest path info for a node
-    this.computeShortestPathForNode = function (nodeIndex) {
+    computeShortestPathForNode(nodeIndex) {
         console.log("Compute Shortest Path for node " + nodeIndex);
         setRoot(nodeIndex);
-        model.computeShortestPathDistances(nodeIndex);
+        this.model.computeShortestPathDistances(nodeIndex);
     };
 
     // draw shortest path from root node up to a number of hops
-    this.updateShortestPathBasedOnHops = function () {
-        var hops = model.getNumberOfHops();
-        var hierarchy = model.getHierarchy(getRoot);
-        var edges = model.getActiveEdges();
-        var edgeIdx = model.getEdgesIndeces();
-        var previousMap = model.getPreviousMap();
+    updateShortestPathBasedOnHops() {
+        let hops = this.model.getNumberOfHops();
+        let hierarchy = this.model.getHierarchy(getRoot);
+        let edges = this.model.getActiveEdges();
+        let edgeIdx = this.model.getEdgesIndeces();
+        let previousMap = this.model.getPreviousMap();
         if(!previousMap) {
             return;
         }
 
         this.removeShortestPathEdgesFromScene();
 
-        for (var i = 0; i < hierarchy.length; ++i) {
+        for (let i = 0; i < hierarchy.length; ++i) {
             if (i < hops + 1) {
                 //Visible node branch
-                for (var j = 0; j < hierarchy[i].length; j++) {
+                for (let j = 0; j < hierarchy[i].length; j++) {
                     setVisibleNodes(hierarchy[i][j], true);
-                    var prev = previousMap[hierarchy[i][j]];
+                    let prev = previousMap[hierarchy[i][j]];
                     if (prev) {
-                        shortestPathEdges[shortestPathEdges.length] = createLine(edges[edgeIdx[prev][hierarchy[i][j]]], prev, [prev, i]);
+                        this.shortestPathEdges[this.shortestPathEdges.length] = this.createLine(edges[edgeIdx[prev][hierarchy[i][j]]], prev, [prev, i]);
                     }
                 }
             } else {
-                for (var j = 0; j < hierarchy[i].length; ++j) {
+                for (let j = 0; j < hierarchy[i].length; ++j) {
                     setVisibleNodes(hierarchy[i][j], false);
                 }
             }
         }
     };
 
-    this.updateShortestPathBasedOnDistance = function () {
+    updateShortestPathBasedOnDistance() {
         clrNodesSelected();
         this.removeShortestPathEdgesFromScene();
 
         // show only nodes with shortest paths distance less than a threshold
-        var threshold = model.getDistanceThreshold() / 100. * model.getMaximumDistance();
-        var distanceArray = model.getDistanceArray();
-        for (var i = 0; i < getVisibleNodesLength(); i++) {
+        let threshold = this.model.getDistanceThreshold() / 100. * this.model.getMaximumDistance();
+        let distanceArray = this.model.getDistanceArray();
+        for (let i = 0; i < getVisibleNodesLength(); i++) {
             setVisibleNodes(i, (distanceArray[i] <= threshold));
         }
 
-        var edges = model.getActiveEdges();
-        var edgeIdx = model.getEdgesIndeces();
-        var previousMap = model.getPreviousMap();
+        let edges = this.model.getActiveEdges();
+        let edgeIdx = this.model.getEdgesIndeces();
+        let previousMap = model.getPreviousMap();
         if(!previousMap) {
             return;
         }
 
-        for (i = 0; i < getVisibleNodesLength(); ++i) {
+        for (let i = 0; i < getVisibleNodesLength(); ++i) {
             if (getVisibleNodes(i)) {
-                var prev = previousMap[i];
+                let prev = previousMap[i];
                 if (prev) {
-                    shortestPathEdges[shortestPathEdges.length] = createLine(edges[edgeIdx[prev][i]], prev, [prev, i]);
+                    this.shortestPathEdges[this.shortestPathEdges.length] = this.createLine(edges[edgeIdx[prev][i]], prev, [prev, i]);
                 }
             }
         }
     };
 
-    this.updateShortestPathEdges = function () {
+    updateShortestPathEdges() {
         switch (getShortestPathVisMethod()) {
             case (SHORTEST_DISTANCE):
                 this.updateShortestPathBasedOnDistance();
@@ -3357,20 +3579,20 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     // prepares the shortest path from a = root to node b
-    this.getShortestPathFromRootToNode = function (target) {
+    getShortestPathFromRootToNode(target) {
         this.removeShortestPathEdgesFromScene();
 
-        var i = target;
-        var prev; // previous node
-        var edges = model.getActiveEdges();
-        var edgeIdx = model.getEdgesIndeces();
-        //var previousMap = model.getPreviousMap();
+        let i = target;
+        let prev; // previous node
+        let edges = this.model.getActiveEdges();
+        let edgeIdx = this.model.getEdgesIndeces();
+        let previousMap = this.model.getPreviousMap();
 
         setVisibleNodes(getVisibleNodes().fill(true));
         while (previousMap[i] != null) {
             prev = previousMap[i];
             setVisibleNodes(prev, true);
-            shortestPathEdges[shortestPathEdges.length] = createLine(edges[edgeIdx[prev][i]], prev, [prev, i]);
+            this.shortestPathEdges[this.shortestPathEdges.length] = this.createLine(this.edges[edgeIdx[prev][i]], prev, [prev, i]);
             i = prev;
         }
 
@@ -3379,13 +3601,17 @@ function PreviewArea(canvas_, model_, name_) {
 
     // get intersected object pointed to by Vive/Touch Controller pointer
     // return undefined if no object was found
-    var getPointedObject = function (controller) {
-        var controllerPosition = controller.position;
-        var forwardVector = new THREE.Vector3(0, 0, -1);
+    //todo this looks familiar, maybe it can be combined with getIntersectedObject
+    // main difference between this and getIntersectedObject is this is for a controller
+    // while getIntersectedObject is for the mouse or flat screen vector.
+    getPointedObject(controller) {
+        let raycaster = new THREE.Raycaster();
+        let controllerPosition = controller.position;
+        let forwardVector = new THREE.Vector3(0, 0, -1);
         //get object in front of controller
         forwardVector.applyQuaternion(controller.quaternion);
         raycaster = new THREE.Raycaster(controllerPosition, forwardVector);
-        var objectsIntersected = raycaster.intersectObjects(glyphs);
+        let objectsIntersected = raycaster.intersectObjects(this.scene);
         return (objectsIntersected[0]) ? objectsIntersected[0] : undefined;
     }
 
@@ -3406,96 +3632,113 @@ function PreviewArea(canvas_, model_, name_) {
     // Update the text and position according to selected node
     // The alignment, size and offset parameters are set by experimentation
     // TODO needs more experimentation
-    this.updateNodeLabel = function (text, nodeObject) {    ///Index) {
-        if(this.labelsVisible == false) return;
+    updateNodeLabel(text, nodeObject) {    ///Index) {
+        if(this.labelsVisible === false) return;
 
-        var context = nspCanvas.getContext('2d');
+        let context = nspCanvas.getContext('2d');
         context.textAlign = 'left';
         // Find the length of the text and add enough _s to fill half of the canvas
-        var textLength = context.measureText(text).width;
-        var numUnderscores = Math.ceil((nspCanvas.width/2 - textLength) / context.measureText("_").width);
-        for (var i = 0; i < numUnderscores; i++) {
+        let textLength = context.measureText(text).width;
+        let numUnderscores = Math.ceil((nspCanvas.width/2 - textLength) / context.measureText("_").width);
+        for (let i = 0; i < numUnderscores; i++) {
             text = text + "_";
         }
         //text = text + "___________________________";
         context.clearRect(0, 0, 256 * 4, 256);
         context.fillText(text, 5, 120);
 
-        nodeNameMap.needsUpdate = true;
+        this.nodeNameMap.needsUpdate = true;
         //var pos = glyphs[nodeIndex].position;
-        var pos = nodeObject.point;
-        nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
+        let pos = nodeObject.point;
+        this.nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
         if(previewAreaLeft.labelsVisible || previewAreaRight.labelsVisible) {
-            nodeLabelSprite.needsUpdate = true;
+            this.nodeLabelSprite.needsUpdate = true;
         }
     };
 
     // Adding Node label Sprite
-    var addNodeLabel = function () {
-
-        nspCanvas = document.createElement('canvas');
-        var size = 256;
-        nspCanvas.width = size * 4;
-        nspCanvas.height = size;
-        var context = nspCanvas.getContext('2d');
+    addNodeLabel() {
+        //this.nspCanvas = document.createElement('canvas');
+        //moved to constructor.
+        let size = 256;
+        this.nspCanvas.width = size * 4;
+        this.nspCanvas.height = size;
+        let context = this.nspCanvas.getContext('2d');
         context.fillStyle = '#ffffff';
         context.textAlign = 'left';
         context.font = '24px Arial';
         context.fillText("", 0, 0);
 
-        nodeNameMap = new THREE.Texture(nspCanvas);
-        nodeNameMap.needsUpdate = true;
+        this.nodeNameMap = new THREE.Texture(this.nspCanvas);
+        this.nodeNameMap.needsUpdate = true;
 
         var mat = new THREE.SpriteMaterial({
-            map: nodeNameMap,
+            map: this.nodeNameMap,
             transparent: true,
             useScreenCoordinates: false,
             color: 0xffffff
         });
 
-        nodeLabelSprite = new THREE.Sprite(mat);
-        nodeLabelSprite.scale.set(100, 50, 1);
-        nodeLabelSprite.position.set(0, 0, 0);
-        if(previewAreaLeft.labelsVisible) {
-            brain.add(nodeLabelSprite);
+        this.nodeLabelSprite = new THREE.Sprite(mat);
+        this.nodeLabelSprite.scale.set(100, 50, 1);
+        this.nodeLabelSprite.position.set(0, 0, 0);
+        // if(previewAreaLeft.labelsVisible) {
+        //     this.brain.add(this.nodeLabelSprite);
+        // }
+        if(this.labelsVisible) {
+            this.brain.add(this.nodeLabelSprite);
         }
+        //todo why are we ignoring the right brain? also while we are here we can avoid
+        // the global previewAreaLeft by using this instead.
     };
 
-    this.getCamera = function () {
-        return camera;
+    getCamera() {
+        return this.camera;
     };
 
-    this.syncCameraWith = function (cam) {
-        camera.copy(cam);
-        camera.position.copy(cam.position);
-        camera.zoom = cam.zoom;
+    syncCameraWith(cam) {
+        this.camera.copy(cam);
+        this.camera.position.copy(cam.position);
+        this.camera.zoom = cam.zoom;
     };
 
-    this.getGlyph = function (nodeIndex) {
-        if (nodeIndex) {
-            return glyphs[nodeIndex];
-        } else {
-            return null;
+    // //todo archive or update this
+    // getGlyph(nodeIndex) {
+    //     if (nodeIndex) {
+    //         return glyphs[nodeIndex];
+    //     } else {
+    //         return null;
+    //     }
+    // }
+    //
+    // getGlyphCount() {
+    //     return glyphs.length;
+    // }
+
+    setAnimation(amp) {
+        this.amplitude = amp;
+    }
+
+    setFlahRate(freq) {
+        this.frequency = freq;
+    }
+
+    imagesLoadedCallback = () => {
+        console.log("Images loaded, placing slice images.");
+        let slices = this.imageSlices.exportSlices();
+        for(let i = 0; i < slices.length; i++) {
+          //scale slice to fit brain
+            // really shouldn't do this here put in a
+            // scale method on the class.
+          slices[i].scale.set(1,1,1);
+          this.brain.add(slices[i]);
+          //this.addSkybox();
         }
     }
 
-    this.getGlyphCount = function () {
-        return glyphs.length;
-    }
 
-    this.setAnimation = function (amp) {
-        amplitude = amp;
-    }
 
-    this.setFlahRate = function (freq) {
-        frequency = freq;
-    }
-
-    // PreviewArea construction
-    this.createCanvas();
-    this.initXR();
-    this.drawRegions();
-    this.initEdgeFlare();
 }
+
 
 export {PreviewArea}

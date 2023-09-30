@@ -67,10 +67,11 @@ import {setColorGroupScale} from './utils/scale'
 function onDocumentMouseMove(model, event) {
     // the following line would stop any other event handler from firing
     // (such as the mouse's TrackballControls)
-    event.preventDefault();
-    var intersectedObject = getIntersectedObject(event);
+    // do we want that?
+   // event.preventDefault();
+    let intersectedObject = getIntersectedObject(event);
     // var isLeft = event.clientX < window.innerWidth/2;
-    updateNodeMoveOver(model, intersectedObject, 1); // 1 = mouse hover
+    updateNodeMoveOver(previewAreaLeft.model, intersectedObject, 1); // 1 = mouse hover
 
 }
 
@@ -172,7 +173,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
 // callback to interact with objects in scene with double click
 // selected nodes are drawn bigger
 function onMiddleClick(event) {
-    event.preventDefault();
+    //event.preventDefault();
 
     var intersectedObject = getIntersectedObject(event);
     if (intersectedObject) {
@@ -199,7 +200,7 @@ function onMiddleClick(event) {
 // callback to select a node on mouse click
 function onLeftClick(model, event) {
 
-    event.preventDefault();
+    //event.preventDefault();
     var objectIntersected = getIntersectedObject(event);
     // console.log("onLeftClick event: ");
     // console.log(event);
@@ -316,8 +317,8 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
         previewAreaLeft.updateNodeGeometry(objectIntersected, 'normal');
         previewAreaRight.updateNodeGeometry(objectIntersected, 'normal');
         objectIntersected.object.unSelect(objectIntersected);
-      previewAreaLeft.updateScene();
-      previewAreaRight.updateScene();
+        previewAreaLeft.updateScene();
+        previewAreaRight.updateScene();
         //probably want to remove the edges from the scene here.
         console.log("end switch");
         removeEdgesGivenNodeFromScenes(nodeIndex);
@@ -332,6 +333,7 @@ const updateNodeSelection = (model, objectIntersected, isLeft) => {
 function onMouseDown(event) {
     click = true;
     switch (event.button) { // middle button
+        //todo less then 200 msec for what?
         case 2: // right click -> should be < 200 msec
             setTimeout(function () {
                 click = false;
@@ -360,6 +362,8 @@ function onMouseUp(model, event) {
 
 function onKeyPress(event) {
     // todo: this is now a stub. no move keyboard activated VR
+    // todo: not sure if the above todo is still valid
+    // todo: this is still a stub since previewArea does it's own keyhandling.
 }
 
 // if (event.key === 'v' || event.keyCode === 118) {
@@ -478,23 +482,23 @@ var initCanvas = function () {
     previewAreaRight = new PreviewArea(document.getElementById('canvasRight'), modelRight, 'Right');
 
     // Get the button, and when the user clicks on it, execute myFunction
-    document.getElementById("syncLeft").onclick = function () {
-        previewAreaLeft.syncCameraWith(previewAreaRight.getCamera());
-    };
-    document.getElementById("syncRight").onclick = function () {
-        previewAreaRight.syncCameraWith(previewAreaLeft.getCamera());
-    };
+    // document.getElementById("syncLeft").onclick = function () {
+    //     previewAreaLeft.syncCameraWith(previewAreaRight.getCamera());
+    // };
+    // document.getElementById("syncRight").onclick = function () {
+    //     previewAreaRight.syncCameraWith(previewAreaLeft.getCamera());
+    // };
     // pass mouse events controllers
     previewAreaLeft.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
     previewAreaRight.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
     window.addEventListener("keypress", onKeyPress, true);
 
-    $(window).resize(function (e) {
-        //e.preventDefault();
-        console.log("on resize event");
-        previewAreaLeft.resizeScene();
-        previewAreaRight.resizeScene();
-    });
+    // $(window).resize( (e) => {
+    //     //e.preventDefault();
+    //     console.log("on resize event");
+    //     previewAreaLeft.resizeScene();
+    //     previewAreaRight.resizeScene();
+    // });
 
     // todo: Not sure how this will be handled in WebXR, adding or removing a headset or controller in mid-session
     // window.addEventListener('vrdisplaypresentchange', function(e){
@@ -503,9 +507,9 @@ var initCanvas = function () {
     //         previewAreaLeft.resizeScene();
     //         previewAreaRight.resizeScene();}
     //     , true);
-
-    previewAreaLeft.requestAnimate();
-    previewAreaRight.requestAnimate();
+    // previewAreas constructor will kick off the rendering loop.
+    // previewAreaLeft.requestAnimate();
+    // previewAreaRight.requestAnimate();
 };
 
 // set the threshold for both models
