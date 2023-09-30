@@ -2884,19 +2884,19 @@ class PreviewArea {
 
     getNodeInstanceByIndex(index) {
         this.groups = this.listGroups();
-        for (let j = 0; j < groups.length; j++) {
+        for (let j = 0; j < this.groups.length; j++) {
             // each group may have a left and right hemisphere
-            const groupOf = this.instances[groups[j]];
+            const groupOf = this.instances[this.groups[j]];
             if (!groupOf) continue;
             if (groupOf['left'] === undefined && groupOf['right'] === undefined) {
-                console.log("groupOf left and right undefined: " + groups[j]);
+                console.log("groupOf left and right undefined: " + this.groups[j]);
                 continue;
             }
             if (groupOf['left'] === undefined) {
-                console.log("groupOf left undefined: " + groups[j]);
+                console.log("groupOf left undefined: " + this.groups[j]);
             }
             if (groupOf['right'] === undefined) {
-                console.log("groupOf right undefined: " + groups[j]);
+                console.log("groupOf right undefined: " + this.groups[j]);
             }
             const leftHemisphere = groupOf['left'];
             const rightHemisphere = groupOf['right'];
@@ -3096,7 +3096,7 @@ class PreviewArea {
             tempColor.lerpColors(baseColor, deltaColor, 0.5*deltaRadius);
             targetColor = tempColor.offsetHSL(0, 0.5*deltaRadius, deltaRadius);  //new THREE.Color();
             //0.5*deltaRadius+0.5);
-            edge.geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
+            edge.geometry.setAttribute('color', new THREE.BufferAttribute(this.computeColorGradient(c1, c2, edge.nPoints, edge.p1), 3));
             tempColor.lerpHSL(targetColor, 0.5*deltaRadius+0.5);
             // glyphs[edge.nodes[1]].material.color = targetColor; //todo:instancize this
         }
@@ -3150,7 +3150,7 @@ class PreviewArea {
         var p1 = s1 / (s1 + s2);
         var c1 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[0]))),// glyphs[nodes[0]].material.color,
             c2 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[1])));// glyphs[nodes[1]].material.color;
-        geometry.setAttribute('color', new THREE.BufferAttribute(computeColorGradient(c1, c2, n, p1), 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(this.computeColorGradient(c1, c2, n, p1), 3));
 
         // geometry.colors = colorGradient;
         let line = new THREE.Line(geometry, material);
