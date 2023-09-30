@@ -1506,7 +1506,7 @@ class PreviewArea {
             alpha: true,
             canvas: this.canvas,
         });
-        //this.renderer.setSize(this.canvas.width, this.canvas.height);
+        this.renderer.setSize(window.width/2, window.height);
         //todo window.devicepixelratio can change.
         // need to write a listener to handle when it does.
         // matching pixel ratio to window.devicepixelratio
@@ -3549,9 +3549,15 @@ class PreviewArea {
             console.log("resize failed to find camera.");
             return;
         }
-        this.camera.aspect = this.canvas.width / this.canvas.height;
-        this.renderer.setSize(this.canvas.width, this.canvas.height);
-        console.log("Resize");
+        let width = window.innerWidth / 2;
+        let height = window.innerHeight
+        if(width<1 || height<1) {
+            // something has gone wrong.
+            return;
+        }
+        this.camera.aspect = width / height;
+        this.renderer.setSize(width, height);
+        console.log("Resize x " + width + " y " + height);
         //}
         this.camera.updateProjectionMatrix();
     };
