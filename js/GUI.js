@@ -359,10 +359,9 @@ var addThresholdSlider = function () {
         .on("change", function () {
             modelLeft.setThreshold(this.value/thresholdMultiplier);
             modelRight.setThreshold(this.value/thresholdMultiplier);
-            redrawEdges();
+
             document.getElementById("thresholdSliderLabel").innerHTML = neuro?"Ipsi-Threshold @ ":"Intra-Threshold @ " + this.value/thresholdMultiplier;
-            previewAreaLeft.updateScene();
-            previewAreaRight.updateScene();
+          redrawEdges();
         });
     menu.append("label")
         .attr("for", "thresholdSlider")

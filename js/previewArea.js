@@ -44,9 +44,9 @@ import {
     getThresholdModality,
     vr,
     activeVR,
-    updateNodeSelection,
+   // updateNodeSelection,
     updateNodeMoveOver,
-    previewAreaLeft,previewAreaRight
+    previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove
 } from './drawing'
 import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, removeGeometryButtons} from './GUI'
 import {scaleColorGroup} from './utils/scale'
@@ -63,7 +63,7 @@ import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerMod
 // import node from "three/addons/nodes/core/Node";
 import NeuroSlice from "./NeuroSlice";
 //import * as d3 from '../external-libraries/d3'
-
+import NodeManager from "./NodeManager";
 class PreviewArea {
   constructor(canvas_, model_, name_) {
 
@@ -77,10 +77,10 @@ class PreviewArea {
     }
     this.camera = null;
     this.renderer = null;
-    this.controls = null;
+    this.lastResizeTime = 0;
     this.scene = null;
-    this.raycaster = null;
-    this.controlMode = '';
+    this.controls = null;
+    this.controlMode = 'trackball';  // tracks type of control currently in use if mode is changed by keypress.
     this.clock = new THREE.Clock(true);
     this.instances = {};
 
@@ -88,7 +88,7 @@ class PreviewArea {
       this.controllerRight = null;
       this.xrInputLeft = null;
       this.xrInputRight = null;
-      this.enableRender = true;
+      this.enableRender = true; //stops animate loop render calls when false
 
       this.pointerLeft = null;
       this.pointerRight = null;      // left and right controller pointers for pointing at things
@@ -114,7 +114,7 @@ class PreviewArea {
           this.controllerGripRight = null;
 
       // nodes and edges
-      this.brain = null; // three js group housing all glyphs and edges
+      this.brain = null; // three js group housing all instances and edges
       this.glyphs = [];
       this.displayedEdges = [];
       // shortest path
@@ -132,43 +132,79 @@ class PreviewArea {
       this.particlesVisible = false;
       //this.edgeFlaresVisible = true;  //particles or flares?
 
-    this.edgeFlaresVisible = 0; //true;
+      this.edgeFlareVisible = 1; //true;
       this.labelsVisible = false;
       //this.particlesVisible = false;
       this.objectsIntersected = [];
-      this.controlMode = '';
+
       this.imageSlices = null;
+
       this.skybox = null;
-      console.log("canvas: ");
-      console.log(this.canvas);
+
       //this.gl = null;
       // possably need this.gl to be set to the canvas context
       // I didn't see it created anywhere except some commented code.
-      this.gl = this.canvas.getContext('webgl2',{alpha: true, antialias: true, xrCompatible: true});
+
 
     // PreviewArea construction
-    this.createCanvas();
+      this.createCanvas();
       this.initCamera();
       this.initScene();
       this.initControls();
 
       this.initXR();
-      this.drawRegions();
+      //this.drawRegions();  //replaced with nodeManager
+      this.NodeManager = new NodeManager(this);
+      this.rebindNodeManagerCallbacks();
 
-    this.renderer.setAnimationLoop(this.animatePV.bind(this)); // todo: this is the new way to do it in WebXR
+      this.renderer.setAnimationLoop(this.animatePV); // todo: this is the new way to do it in WebXR
 
       this.addSkybox();
-    this.initEdgeFlare();
+      this.initEdgeFlare();
+      this.setEventListeners();
 
-      window.addEventListener('resize', this.resizeScene.bind(this), false);
-      window.addEventListener('keypress', this.keyPress.bind(this), false);
       this.nspCanvas = document.createElement('canvas');
       this.nodeNameMap = null;
       this.nodeLabelSprite = null;
       this.xrDolly = new THREE.Object3D();
-      this.imageSlices = new NeuroSlice('public/images','data/Cartana/SliceDepth0.csv',this.imagesLoadedCallback.bind(this));
+      //this.imageSlices = new NeuroSlice('public/images','data/Cartana/SliceDepth0.csv',this.imagesLoadedCallback.bind(this));
 
   }
+
+  //reset previewArea to state
+  reset = () => {
+    this.removeAllInstances();
+    this.NodeManager = new NodeManager(this);
+    this.rebindNodeManagerCallbacks();
+    this.removeEdgesFromScene();
+    this.edgeFlarePoints = null;
+
+  }
+
+  appearUnselected = (node) => {
+        previewAreaLeft.NodeManager.deselectNode(node);
+        previewAreaRight.NodeManager.deselectNode(node);
+
+      this.NodeManager.restoreNode(node);
+      this.removeEdgeGivenNode(node);
+      this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class
+  }
+
+  appearSelected = (node) => {
+      previewAreaLeft.NodeManager.selectNode(node);
+      previewAreaRight.NodeManager.selectNode(node);
+        this.NodeManager.scaleNode(node, 4/3);
+        //just to sync up clicks between the two preview areas for now until more control updates.
+
+        //theory being that the select does nothing if it's already selected in that previewarea.
+        this.drawEdgesGivenNode(node);
+        this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.
+  }
+
+  GroupSelectedCallback() {
+      //only use for things that effect every selected node, can be cpu intensive.
+      return;
+   }
 
     //var name = name_;
     //var model = model_;
@@ -212,11 +248,16 @@ class PreviewArea {
     // var amplitude =  0.0015;
     // var frequency =  0.5;
 
+    getSceneObject() {
+        return this.scene;
+    }
+
+    getModel() {
+        return this.model;
+    }
 
 
-
-
-    initXR() {
+    initXR = () => {
         //init VR //todo: this is stub now
 
 
@@ -307,7 +348,7 @@ class PreviewArea {
     }
 
 
-    buildController(data) {
+    buildController = (data) => {
 
         let geometry, material;
 
@@ -990,7 +1031,7 @@ class PreviewArea {
     //         pointerRight = null;
     //     }
     // };
-    getNearestNodes(controller) {
+    getNearestNodes = (controller) => {
         if (!this.controller) return;
         if (!this.controller.position) return;
         if (!this.brain) return;
@@ -1012,11 +1053,11 @@ class PreviewArea {
 
 
 
-    scanOculusTouch() {
+    scanOculusTouch = () => {
       //todo this returns immediately right now, is it supposed to do more?
     return;
         //exit if no controllers
-        if (!this.controllerLeft || !thiscontrollerRight) return;
+        if (!this.controllerLeft || !this.controllerRight) return;
         //exit if no brain
         if (!this.brain) return;
 
@@ -1231,9 +1272,10 @@ class PreviewArea {
             if (this.controllerLeftSelectState && !this.controllerLeft.userData.isSelecting) {  //release Left Trigger
                 var isLeft = true;
                 var pointedObject = this.getPointedObject(this.controllerLeft);
-                updateNodeSelection(this.model, pointedObject, isLeft);
-                updateNodeMoveOver(this.model, pointedObject, 2); //2 is for left touch controller
-
+                //updateNodeSelection(this.model, pointedObject, isLeft);
+                //updateNodeMoveOver(this.model, pointedObject, 2); //2 is for left touch controller
+                this.NodeManager.toggleSelectNode(pointedObject);
+                this.NodeManager.highlightNode(pointedObject);
                 //log event to console
                 console.log("Left controller: " + this.controllerLeft.userData.isSelecting);
                 //log selection to console
@@ -1245,9 +1287,10 @@ class PreviewArea {
             if (this.controllerRightSelectState && !this.controllerRight.userData.isSelecting) {  //release Right Trigger
                 var isLeft = true; //false;
                 var pointedObject = thhis.getPointedObject(this.controllerRight);
-                updateNodeSelection(this.model, pointedObject, isLeft);
-                updateNodeMoveOver(this.model, pointedObject, 4); //4 is for right touch controller
-
+                //updateNodeSelection(this.model, pointedObject, isLeft);
+                //updateNodeMoveOver(this.model, pointedObject, 4); //4 is for right touch controller
+                this.NodeManager.toggleSelectNode(pointedObject);
+                this.NodeManager.highlightNode(pointedObject);
                 //log event to console
                 console.log("Right controller: " + this.controllerRight.userData.isSelecting);
                 //log selection to console
@@ -1256,7 +1299,7 @@ class PreviewArea {
             }
 
             //updatenodemoveover
-            var pointedObjectLeft = this.getPointedObject(controllerLeft);
+            var pointedObjectLeft = this.getPointedObject(this.controllerLeft);
             updateNodeMoveOver(this.model, pointedObjectLeft, 2); //todo: enum for hover mode type
             var pointedObjectRight = this.getPointedObject(this.controllerRight);
             updateNodeMoveOver(this.model, pointedObjectRight, 4);
@@ -1333,31 +1376,38 @@ class PreviewArea {
     }; // scanOculusTouch
 
     // draw a pointing line
-    drawPointer(start, end) {
+    drawPointer = (start, end) => {
         var material = new THREE.LineBasicMaterial();
         var geometry = new THREE.BufferGeometry().setFromPoints([start,end]);
         return new THREE.Line(geometry, material);
     }
 
     initControls = () => {
-        console.log("init controls");
-        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.25;
-        this.controls.enableZoom = true;
-        this.controls.autoRotate = true;
-        this.controls.autoRotateSpeed = 0.5;
-        this.controls.enablePan = true;
-        this.controls.enableKeys = true;
-        this.controls.minDistance = 10;
-        this.controls.maxDistance = 1000;
-        this.controls.listenToKeyEvents(this.renderer.domElement);
+        // console.log("init controls");
+        // this.controls = new OrbitControls(this.camera, this.canvas);
+        // this.controls.enableDamping = true;
+        // this.controls.dampingFactor = 0.25;
+        // this.controls.enableZoom = true;
+        // this.controls.autoRotate = false;
+        // this.controls.autoRotateSpeed = 0.5;
+        // this.controls.enablePan = true;
+        // this.controls.enableKeys = true;
+        // this.controls.minDistance = 10;
+        // this.controls.maxDistance = 1000;
+        // this.controls.listenToKeyEvents(this.renderer.domElement);
+        // //the point in which orbit controls orbits.
+        // this.controls.target = new THREE.Vector3(150, 150, 0);
+        // this.resetCamera();
+        // this.controls.update();
+        this.controls = new TrackballControls(this.camera, this.canvas.parentNode);
+        // orient controls to camera
+        return this.controls;
+
     }
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
-    initScene() {
+    initScene = ()=> {
         console.log("init scene");
 
-        //this.raycaster = new THREE.Raycaster();
 
 
         this.brain = new THREE.Group();
@@ -1376,76 +1426,96 @@ class PreviewArea {
         //addNodeLabel();
     };
 
-    resetCamera() {
+    resetCamera = () => {
         console.log("reset camera");
-        this.camera.position.set(0, 0, -50);
+        this.camera.position.set(150, 150, -50);
+        this.camera.lookAt(150,150,0)
+        //set camera rotation to 0
+        this.camera.rotation.set(0,0,0);
+        //set camera forward to positive z
+        this.camera.up.set(0,1,0);
+        if(this.controls) {
+            // reset the orientation of the controls
+            this.controls.reset();
+        }
+        this.camera.updateProjectionMatrix();
     };
 
-    reInitEdgeFlare() {
+    reInitEdgeFlare = () => {
       console.log("reInitEdgeFlare");
+        this.removeEdgeFlare();
+        this.initEdgeFlare();
+    }
+
+    removeEdgeFlare = () => {
+      console.log("removeEdgeFlare");
       this.edgeFlareGeometry.dispose();
         this.edgeFlareMaterial.dispose();
         this.scene.remove(this.edgeFlarePoints);
         this.edgeFlareVertices = [];
         this.displayedEdgeFlareTravelPercentages = [];
-        this.initEdgeFlare();
     }
 
-    removeEdgeFlare() {
-      console.log("removeEdgeFlare");
-      this.edgeFlareGeometry.dispose();
-        this.edgeFlareMaterial.dispose();
-        scene.remove(this.edgeFlarePoints);
-        this.edgeFlareVertices = [];
-        this.displayedEdgeFlareTravelPercentages = [];
-    }
-
-    initEdgeFlare() {
-
+    initEdgeFlare = () => {
+    console.log("initEdgeFlare");
+    console.log("Current value of  this.edgeFlareVisible: " + this.edgeFlareVisible);
       //count active edges in each node from get active edges function
-      let count = 0;
+       let count = 0;
       let edges = this.getActiveEdges();
       console.log("init Edge Flare Edges: ");
       console.log(edges);
       let colorMatchMap = [];
-      let instanceGroup = undefined;
-      for (let i = 0; i < edges.length; i++) {
+      let instanceGroup = null;
 
+      for (let i = 0; i < edges.length; i++) {
         count += edges[i][1].length;
-        instanceGroup = this.instances[edges[i][0].group][edges[i][0].hemisphere];
-        console.log("instanceGroup: ")
-        console.log(instanceGroup);
+        instanceGroup = this.NodeManager.instances[edges[i][0].object.name.group][edges[i][0].object.name.hemisphere];
+          let material = getNormalMaterial(this.model, edges[i][0].object.name.group);
         // index, length, and color, should be enough...
-        colorMatchMap[i] = [ edges[i][1].length, instanceGroup.material.color ];
+        colorMatchMap[i] = [ edges[i][1].length, material.color ];
         //log out the color
         // console.log("hex color: ");
         // console.log(tempColor.getHexString());
       }
-      console.log("Count: ", count);
+      //console.log("Count: ", count);
 
-
-
-        for ( let i = 0; i < count; i ++ ) {
-            let x = THREE.MathUtils.randFloatSpread(0);
-            let y = THREE.MathUtils.randFloatSpread(0);
-            let z = THREE.MathUtils.randFloatSpread(0);
-
-            if (this.edgeFlareVisible && this.displayedEdges && this.displayedEdges[i]) {
-                //this.edgeFlareVertices[i * 3]
-                x = this.displayedEdges[i].geometry.attributes.position.array[0];
-                //x = edges[i].geometry.attributes.position.array[0];
-                //this.edgeFlareVertices[i * 3 + 1]
-                y = this.displayedEdges[i].geometry.attributes.position.array[1];
-                //y = edges[i].geometry.attributes.position.array[1];
-                //this.edgeFlareVertices[i * 3 + 2]
-                z = this.displayedEdges[i].geometry.attributes.position.array[2];
-                //z = edges[i].geometry.attributes.position.array[2];
-            }
-
-
-            this.edgeFlareVertices.push( x, y, z );
-            this.displayedEdgeFlareTravelPercentages[i] = 0.0
+      for (let i = 0; i < edges.length; i++) {
+        for (let j = 0; j < edges[i][1].length; j++) {
+          let x = 0.0;
+        let y = 0.0;
+        let z = 0.0;
+        let positions = this.NodeManager.getNodePosition(edges[i][0]);
+        x = positions.x;
+        y = positions.y;
+        z = positions.z;
+        this.edgeFlareVertices.push( x, y, z );
+        this.displayedEdgeFlareTravelPercentages[i] = 0.0
         }
+      }
+
+        // for ( let i = 0; i < count; i ++ ) {
+        //     // let x = THREE.MathUtils.randFloatSpread(0);
+        //     // let y = THREE.MathUtils.randFloatSpread(0);
+        //     // let z = THREE.MathUtils.randFloatSpread(0);
+        //     let x = 0.0;
+        //     let y = 0.0;
+        //     let z = 0.0;
+        //     if (this.edgeFlareVisible && this.displayedEdges && this.displayedEdges[i]) {
+        //         //this.edgeFlareVertices[i * 3]
+        //         x = this.displayedEdges[i].geometry.attributes.position.array[0];
+        //         //x = edges[i].geometry.attributes.position.array[0];
+        //         //this.edgeFlareVertices[i * 3 + 1]
+        //         y = this.displayedEdges[i].geometry.attributes.position.array[1];
+        //         //y = edges[i].geometry.attributes.position.array[1];
+        //         //this.edgeFlareVertices[i * 3 + 2]
+        //         z = this.displayedEdges[i].geometry.attributes.position.array[2];
+        //         //z = edges[i].geometry.attributes.position.array[2];
+        //     }
+        //
+        //
+        //     this.edgeFlareVertices.push( x, y, z );
+        //     this.displayedEdgeFlareTravelPercentages[i] = 0.0
+        // }
 
         this.edgeFlareGeometry = new THREE.BufferGeometry();
         this.edgeFlareGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( this.edgeFlareVertices, 3 ) );
@@ -1469,6 +1539,11 @@ class PreviewArea {
             colorIndex++;
           }
         }
+        if(colorIndex !== count) {
+          console.log("colorIndex should equal count");
+          throw new Error("colorIndex should equal count");
+        }
+
         //log color list
         this.edgeFlareGeometry.setAttribute( 'color', new THREE.Float32BufferAttribute( this.edgeFlareColors, 3 ) );
         this.edgeFlareGeometry.colorsNeedUpdate = true;
@@ -1480,7 +1555,7 @@ class PreviewArea {
         this.scene.add( this.edgeFlarePoints );
     }
 
-    resetBrainPosition = function () {
+    resetBrainPosition = () => {
         this.brain.updateMatrix();
         this.brain.position.set(0, 0, 0);
         this.brain.rotation.set(0, 0, 0);
@@ -1490,61 +1565,71 @@ class PreviewArea {
         this.brain.matrixWorldNeedsUpdate = true;
     };
 
-    initCamera() {
+    initCamera = () => {
         console.log("init camera");
-        this.camera = new THREE.PerspectiveCamera(75, this.canvas.width / this.canvas.height, 0.1, 3000);
-        this.camera.position.z = 50;
+        this.camera = new THREE.PerspectiveCamera(75, (window.innerWidth/2) / window.innerHeight, 0.1, 3000);
+        this.camera.updateProjectionMatrix();
+        this.resetCamera();
+        return this.camera;
     }
     // create 3js elements: scene, canvas, camera and controls; and init them and add skybox to the scene
-    createCanvas() {
+    createCanvas = () => {
         console.log("createCanvas");
         this.scene = new THREE.Scene();
-
+        let gl = this.canvas.getContext('webgl2',{alpha: true, antialias: true, xrCompatible: true});
         this.renderer = new THREE.WebGLRenderer({
             antialias: true,
-            context: this.gl,
+            context: gl,
             alpha: true,
             canvas: this.canvas,
         });
-        this.renderer.setSize(window.width/2, window.height);
+        // set size of this.canvas to match half the window size
+        this.canvas.width = window.innerWidth/2;
+        this.canvas.height = window.innerHeight;
+        this.renderer.setSize(window.innerWidth/2, window.innerHeight);
         //todo window.devicepixelratio can change.
         // need to write a listener to handle when it does.
         // matching pixel ratio to window.devicepixelratio
         // makes the canvas look its best on across all devices
         // https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
-        this.renderer.setPixelRatio(window.devicePixelRatio*10);
+        this.updatePixelRatio();
         //this.canvas.appendChild(this.renderer.domElement);
 
 
     };
 
 
+    updatePixelRatio = () => {
+        if (this.stopListeningForPixelChange != null) {
+            this.stopListeningForPixelChange();
+        }
+        const mqString = `(resolution: ${window.devicePixelRatio}dppx)`;
+        const media = matchMedia(mqString);
+        media.addEventListener("change", this.updatePixelRatio);
+        this.stopListeningForPixelChange = () => {
+            media.removeEventListener("change", this.updatePixelRatio);
+        };
 
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+    }
 
     //toggle between control modes when 'c' is pressed
-    toggleControlMode()  {
-        this.controls.dispose();
-        if (this.controlMode == '') {
-            this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-            this.controlMode = 'orbit';
-            console.log("controlMode: " + this.controlMode);
-            return;
-        }
+    toggleControlMode = () =>  {
 
         if (this.controlMode == 'orbit') {
-            this.controls = new TrackballControls(this.camera, this.renderer.domElement);
+            this.controls = new TrackballControls(this.camera, this.canvas);
             this.controlMode = 'trackball'
             console.log("controlMode: " + this.controlMode);
             return;
         }
-        // if (this.controlMode == 'trackball') {
-        //     this.controls = new FlyControls(this.camera, this.renderer.domElement);
-        //     this.controlMode = 'fly';
-        //     console.log("controlMode: " + this.controlMode);
-        //     return;
-        // }
-        if (this.controlMode == 'trackball') {
-            this.controls = new FirstPersonControls(this.camera, this.renderer.domElement);
+         if (this.controlMode == 'trackball') {
+             this.controls = new FlyControls(this.camera, this.canvas);
+             this.controlMode = 'fly';
+             console.log("controlMode: " + this.controlMode);
+             return;
+         }
+        if (this.controlMode == 'fly') {
+            this.controls = new FirstPersonControls(this.camera, this.canvas);
             this.controlMode = 'firstPerson';
             console.log("controlMode: " + this.controlMode);
             return;
@@ -1563,6 +1648,7 @@ class PreviewArea {
         }
         if (this.controlMode == 'transform') {
             this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+            this.resetCamera(); //this is our default camera mode.
             this.controlMode = 'orbit';
             console.log("controlMode: " + this.controlMode);
             return;
@@ -1593,13 +1679,24 @@ class PreviewArea {
             this.toggleParticles();
         }
         if (event.key == 's') {
-          //toggle slice images.
-          this.imageSlices.toggleSlices();
+            //toggle slice images.
+            if (this.imageSlices) {
+
+                this.imageSlices.toggleSlices();
+            }
+        }
+        if (event.key == 'd') {
+          // dump camera and controller to console.
+            console.log("Camera: ");
+            console.log(this.camera);
+            console.log("2D Controls: ");
+            console.log(this.controls);
+
         }
     }
 
     // toggle between showing and hiding labels
-    toggleLabels() {
+    toggleLabels = () => {
       if (this.labelsVisible) {
             this.labelsVisible = false;
             //this.hideLabels();
@@ -1612,9 +1709,10 @@ class PreviewArea {
     }
 
     // toggle between showing and hiding edge flares
-    toggleFlare() {
+    toggleFlare = () => {
         if (!(this.edgeFlareVisible < 9)) {
             this.edgeFlareVisible = -1;// false;
+            this.reInitEdgeFlare();
             //this.hideEdgeFlare();
         } else {
             this.edgeFlareVisible += 1;// true;;
@@ -1624,7 +1722,7 @@ class PreviewArea {
     }
 
     // toggle between showing and hiding particles
-    toggleParticles() {
+    toggleParticles = () => {
         if (this.particlesVisible) {
             this.particlesVisible = false;
               //this.hideParticles();
@@ -1639,156 +1737,169 @@ class PreviewArea {
 
     // using => instead of function(){} to preserve this context
     // there are a few other places where this could be done as well
-    setEventListeners = (onMouseDown, onMouseUp, onDocumentMouseMove)=> {
-        this.canvas.addEventListener('mousedown', onMouseDown, true);
-        this.canvas.addEventListener('mouseup', function (e) {
-            onMouseUp(this.model, e);
+    setEventListeners = ()=> {
+        window.addEventListener('mousedown', onMouseDown, true);
+        window.addEventListener('mouseup',  (e) => {
+            onMouseUp(this, e);
         });
-        this.canvas.addEventListener('mousemove', function (e) {
+        window.addEventListener('mousemove', (e) => {
             onDocumentMouseMove(this.model, e);
         }, true);
+        window.addEventListener('resize', this.resizeScene, false);
+        window.addEventListener('keypress', this.keyPress, false);
     };
 
     // update node scale according to selection status
-    updateNodeGeometry(nodeObject, status, nodeIndex) {
-        // console.log("updateNodeGeometry");
-        // console.log("new status: " + status);
-        // console.log("nodeObject: ");
-        // console.log(nodeObject);
-        //let objectParent = nodeObject.object;
+    //replacing updateNodeGeometry to NodeManager calls.
+    //if you see a lot of NodeManager calls outside this file, it is because
+    //I am trying to replace the old updateNodeGeometry function with NodeManager calls.
+    //however drawing is handling a lot of behavior that should be handled by NodeManager
+    // or vice versa depending on how you look at it.
 
-        if(nodeIndex) {
-            nodeObject = this.getNodeInstanceByIndex(nodeIndex);
-        }
-        if(!nodeObject || !nodeObject.object || !nodeObject.object.name) { //todo why is this happening?
-            return;
-        }
-        let objectParent = this.instances[nodeObject.object.name.group][nodeObject.object.name.hemisphere];
+    // updateNodeGeometry = (nodeObject, status, nodeIndex) => {
+    //     // console.log("updateNodeGeometry");
+    //     // console.log("new status: " + status);
+    //     // console.log("nodeObject: ");
+    //     // console.log(nodeObject);
+    //     //let objectParent = nodeObject.object;
+    //
+    //
+    //
+    //     if(nodeIndex) {
+    //         nodeObject = this.NodeManager.index2node(nodeIndex);
+    //     }
+    //
+    //     if(!nodeObject || !nodeObject.object || !nodeObject.object.name) { //todo why is this happening?
+    //         console.log('please do not feed non nodeObjects to updateNodeGeometry');
+    //         return;
+    //     }
+    //     // }
+    //     // let objectParent = this.instances[nodeObject.object.name.group][nodeObject.object.name.hemisphere];
+    //     //
+    //     // //do the above two lines reference the same object?
+    //     // //log them both, while they are the same if a nodeobject from another preview window is passed in they will be different in some ways.
+    //     // // using this.instances[objectParent.name.group][objectParent.name.hemisphere] is the correct way to get the objectParent
+    //     // console.log("objectParent: ");
+    //     // console.log(objectParent);
+    //
+    //
+    //     let scale = 1.0;
+    //     let delta = this.clock.getDelta();
+    //     let matrix = new THREE.Matrix4();
+    //     //console.log("NodeObject: ");
+    //     //console.log(nodeObject);
+    //     let position = new THREE.Vector3();
+    //     let quaternion = new THREE.Quaternion();
+    //     let scaleVector = new THREE.Vector3();
+    //
+    //     // get the position of the instanced node, not sure here which to use or if identical.
+    //     nodeObject.object.getMatrixAt(nodeObject.instanceId, matrix);
+    //     //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+    //     position.setFromMatrixPosition(matrix);
+    //     //matrix.decompose(position, quaternion, scaleVector);
+    //
+    //     //log position, quaternion and scaleVector
+    //     // console.log("position: ");
+    //     // console.log(position);
+    //     let datasetIndex = this.NodeManager.node2index(nodeObject);
+    //     switch (status) {
+    //         case 'normal':
+    //             //check if datasetIndex is in selectedNodes already if it is not, then do nothing
+    //             if (!objectParent.isSelected(nodeObject)) {
+    //                 console.log("setting normal, but datasetIndex not in selectedNodes," +
+    //                     "may be normalizing unhandled state. Recommend unselecting directly following this" +
+    //                     " call");
+    //             }
+    //             console.log("normal");
+    //             let color = new THREE.Color(scaleColorGroup(this.model,nodeObject.object.name.group));
+    //             // restore nodeObject to original scale and color
+    //             objectParent.setColorAt(nodeObject.instanceId, color);
+    //             //if object was scaled, restore it
+    //             //if (nodeObject.object.userData.scaledBy != 1.0) {
+    //                 //restore scale
+    //             scale = 1.0;
+    //             matrix.identity();
+    //             matrix.makeTranslation(position.x, position.y, position.z);
+    //             objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+    //             objectParent.instanceMatrix.needsUpdate = true;
+    //             objectParent.userData.selectedNodes = objectParent.userData.selectedNodes.filter(id => id != datasetIndex);
+    //             // set the matrix dirty
+    //             objectParent.instanceColor.needsUpdate = true;
+    //             //this.updateScene();
+    //             break;
+    //
+    //         case 'mouseover':
+    //             console.log("mouseover");
+    //             //todo track mouseover.
+    //             //break;
+    //             scale = 1.72;
+    //             matrix.scale(new THREE.Vector3(scale, scale, scale));
+    //             objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+    //             objectParent.instanceMatrix.needsUpdate = true;
+    //             objectParent.setColorAt(nodeObject.instanceId, new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0)));
+    //             objectParent.instanceColor.needsUpdate = true;
+    //
+    //             return;
+    //
+    //         case 'selected':
+    //             console.log("selected state");
+    //             if (!objectParent.isSelected(nodeObject)) {
+    //                 objectParent.select(nodeObject);
+    //                 console.log("Added to selectedNodes: " + datasetIndex);
+    //                 console.log("Please adjust calling function to check if node is already selected.");
+    //                 console.log("Applying scale and translation may cause problems if node is already selected.");
+    //                 console.log("it may have been called from an event on another preview window.");
+    //             }
+    //             //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
+    //             scale = 8 / 3;
+    //             //nodeObject.object.userData.scaledBy = scale;
+    //             matrix.identity();
+    //             matrix.makeTranslation(position.x, position.y, position.z);
+    //             matrix.scale(new THREE.Vector3(scale, scale, scale));
+    //             objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+    //             objectParent.instanceMatrix.needsUpdate = true;
+    //             // if node is not on list of selectedNodes, add it
+    //             //this.drawConnections();//better done in mouseclick
+    //
+    //             objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( 1, 1, 1));
+    //             objectParent.instanceColor.needsUpdate = true;
+    //             //this.updateScene();
+    //             break;
+    //
+    //         case 'root':
+    //             console.log("root");
+    //
+    //             scale = 10 / 3;
+    //
+    //
+    //             matrix.scale(new THREE.Vector3(scale, scale, scale));
+    //             objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+    //             objectParent.instanceMatrix.needsUpdate = true;
+    //             let oldColor = new THREE.Color();
+    //             objectParent.getColorAt(nodeObject.instanceId, oldColor);
+    //
+    //             objectParent.setColorAt(nodeObject.instanceId, new THREE.Color(scaleColorGroup(this.model, nodeObject.object.name.group)));
+    //             console.log("newColor: ");
+    //             console.log(scaleColorGroup(this.model, nodeObject.object.name.group));
+    //             objectParent.instanceColor.needsUpdate = true;
+    //
+    //             break;
+    //
+    //         default:
+    //             console.log("default");
+    //             console.log("status: " + status);
+    //     }
+    //
+    //     objectParent.needsUpdate = true;
+    //
+    //     return datasetIndex;
+    // };
 
-        //do the above two lines reference the same object?
-        //log them both, while they are the same if a nodeobject from another preview window is passed in they will be different in some ways.
-        // using this.instances[objectParent.name.group][objectParent.name.hemisphere] is the correct way to get the objectParent
-        console.log("objectParent: ");
-        console.log(objectParent);
-
-
-        let scale = 1.0;
-        let delta = this.clock.getDelta();
-        let matrix = new THREE.Matrix4();
-        //console.log("NodeObject: ");
-        //console.log(nodeObject);
-        let position = new THREE.Vector3();
-        let quaternion = new THREE.Quaternion();
-        let scaleVector = new THREE.Vector3();
-
-        // get the position of the instanced node, not sure here which to use or if identical.
-        nodeObject.object.getMatrixAt(nodeObject.instanceId, matrix);
-        //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
-        position.setFromMatrixPosition(matrix);
-        //matrix.decompose(position, quaternion, scaleVector);
-
-        //log position, quaternion and scaleVector
-        console.log("position: ");
-        console.log(position);
-        let datasetIndex = objectParent.getDatasetIndex(nodeObject);
-        switch (status) {
-            case 'normal':
-                //check if datasetIndex is in selectedNodes already if it is not, then do nothing
-                if (!objectParent.isSelected(nodeObject)) {
-                    console.log("setting normal, but datasetIndex not in selectedNodes," +
-                        "may be normalizing unhandled state. Recommend unselecting directly following this" +
-                        " call");
-                }
-                console.log("normal");
-                let color = new THREE.Color(scaleColorGroup(this.model,nodeObject.object.name.group));
-                // restore nodeObject to original scale and color
-                objectParent.setColorAt(nodeObject.instanceId, color);
-                //if object was scaled, restore it
-                //if (nodeObject.object.userData.scaledBy != 1.0) {
-                    //restore scale
-                scale = 1.0;
-                matrix.identity();
-                matrix.makeTranslation(position.x, position.y, position.z);
-                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
-                objectParent.instanceMatrix.needsUpdate = true;
-                objectParent.userData.selectedNodes = objectParent.userData.selectedNodes.filter(id => id != datasetIndex);
-                // set the matrix dirty
-                objectParent.instanceColor.needsUpdate = true;
-                this.updateScene();
-                break;
-
-            case 'mouseover':
-                console.log("mouseover");
-                //todo track mouseover.
-                //break;
-                scale = 1.72;
-                matrix.scale(new THREE.Vector3(scale, scale, scale));
-                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
-                objectParent.instanceMatrix.needsUpdate = true;
-                objectParent.setColorAt(nodeObject.instanceId, new THREE.Color((delta * 10.0), (1.0 - delta * 10.0), (0.5 + delta * 5.0)));
-                objectParent.instanceColor.needsUpdate = true;
-
-                return;
-
-            case 'selected':
-                console.log("selected state");
-                if (!objectParent.isSelected(nodeObject)) {
-                    objectParent.select(nodeObject);
-                    console.log("Added to selectedNodes: " + datasetIndex);
-                    console.log("Please adjust calling function to check if node is already selected.");
-                    console.log("Applying scale and translation may cause problems if node is already selected.");
-                    console.log("it may have been called from an event on another preview window.");
-                }
-                //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
-                scale = 8 / 3;
-                //nodeObject.object.userData.scaledBy = scale;
-                matrix.identity();
-                matrix.makeTranslation(position.x, position.y, position.z);
-                matrix.scale(new THREE.Vector3(scale, scale, scale));
-                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
-                objectParent.instanceMatrix.needsUpdate = true;
-                // if node is not on list of selectedNodes, add it
-                //this.drawConnections();//better done in mouseclick
-
-                objectParent.setColorAt(nodeObject.instanceId, new THREE.Color( 1, 1, 1));
-                objectParent.instanceColor.needsUpdate = true;
-                this.updateScene();
-                break;
-
-            case 'root':
-                console.log("root");
-
-                scale = 10 / 3;
-
-
-                matrix.scale(new THREE.Vector3(scale, scale, scale));
-                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
-                objectParent.instanceMatrix.needsUpdate = true;
-                let oldColor = new THREE.Color();
-                objectParent.getColorAt(nodeObject.instanceId, oldColor);
-
-                objectParent.setColorAt(nodeObject.instanceId, new THREE.Color(scaleColorGroup(this.model, nodeObject.object.name.group)));
-                console.log("newColor: ");
-                console.log(scaleColorGroup(this.model, nodeObject.object.name.group));
-                objectParent.instanceColor.needsUpdate = true;
-
-                break;
-
-            default:
-                console.log("default");
-                console.log("status: " + status);
-        }
-
-        objectParent.needsUpdate = true;
-
-        return datasetIndex;
-    };
-
-    animateNodeBreathing(nodeList) {
+    animateNodeBreathing = (nodeList)=> {
         return;
         //const amplitude =  0.015;
-        var scaleFrequency = frequency; //0.5;
-        var scaleAmplitude = amplitude;
+        var scaleFrequency = this.frequency; //0.5;
+        var scaleAmplitude = this.amplitude;
         var delta = this.clock.getDelta();
         var elapsedTime = this.clock.getElapsedTime();
         var dataset = this.model.getDataset()
@@ -1818,7 +1929,7 @@ class PreviewArea {
 
 
     // update node scale according to selection status
-    animateNodeShimmer(nodeList, freq = 0.5, color) { //nodeIndex, status) {
+    animateNodeShimmer = (nodeList, freq = 0.5, color) => { //nodeIndex, status) {
         //var clock = new THREE.Clock();
         // Set up an oscillating size animation
         var colorAmplitude = this.amplitude * 500; // 0.75;
@@ -1861,7 +1972,7 @@ class PreviewArea {
     //     }
     // };
 
-    removeNodesFromScene() {
+    removeNodesFromScene = () => {
         // for (var i = 0; i < glyphs.length; ++i) {
         //     brain.remove(glyphs[i]);
         //     delete glyphNodeDictionary[glyphs[i].uuid];
@@ -1872,7 +1983,7 @@ class PreviewArea {
         this.removeInstanceNodesFromScene();
     };
 
-    removeInstanceNodesFromScene() {
+    removeInstanceNodesFromScene = () => {
         for (let key in this.instances) {
             for (let key2 in this.instances[key]) {
                 const instance = this.instances[key][key2];
@@ -1887,15 +1998,16 @@ class PreviewArea {
         this.instances = {}; // Reset instances
     }
 
-    animateEdges() {
+    animateEdges = () => {
         const positions = this.edgeFlareGeometry.attributes.position;
         const material = this.edgeFlareMaterial;
 
         for (let i = 0; i < this.displayedEdges.length; ++i) {
-            let nodeIdx = this.displayedEdges[i].name.instanceId;
+            let nodeIdx = this.displayedEdges[i].name;
 
             let groupVal = null;
-            if(this.model.getDataset()[nodeIdx] != undefined) groupVal = this.model.getDataset()[nodeIdx].group;
+            if(this.model.getDataset()[nodeIdx] !== undefined)
+                groupVal = this.model.getDataset()[nodeIdx].group;
             let firerate = 0.01;
             if (typeof (groupVal) !== 'string' && !isNaN(groupVal)) {
                 firerate = (groupVal % 10) / 100;
@@ -1964,7 +2076,7 @@ class PreviewArea {
         //this.animateShortestPathEdges();
     };
 
-    animateStars() {
+    animateStars = () => {
         const positions = this.edgeFlareGeometry.attributes.position;
 
         for (var i = 0; i < this.edgeFlareVertices.length; i++) {  //} displayedEdges.length; ++i) {
@@ -1986,7 +2098,7 @@ class PreviewArea {
         //this.animateShortestPathEdges();
     };
 
-    removeEdgesFromScene() {
+    removeEdgesFromScene = () => {
         for (let i = 0; i < this.displayedEdges.length; ++i) {
             this.brain.remove(this.displayedEdges[i]);
         }
@@ -1995,7 +2107,23 @@ class PreviewArea {
         this.removeShortestPathEdgesFromScene();
     };
 
-    removeShortestPathEdgesFromScene() {
+    removeEdgeGivenNode = (node) => {
+        console.log("RemoveEdges from a node.");
+        console.log(this.displayedEdges);
+        //get all edges from brain with name index
+        let index = this.NodeManager.node2index(node);
+        //from this.displayedEdges get all edges with name index
+        let edges = this.displayedEdges.filter(edge => edge.name == index);
+        //remove all edges from brain
+        for (let i = 0; i < edges.length; ++i) {
+            this.brain.remove(edges[i]);
+        }
+        //remove all edges from displayedEdges
+        this.displayedEdges = this.displayedEdges.filter(edge => edge.name != index);
+
+    }
+
+    removeShortestPathEdgesFromScene = () => {
         for (var i = 0; i < this.shortestPathEdges.length; i++) {
             this.brain.remove(this.shortestPathEdges[i]);
         }
@@ -2005,7 +2133,9 @@ class PreviewArea {
     //say no to globals var lastTime = 0;
     //   var fps = 240;
     //todo: add fps slider
-    animatePV() {
+    // calls the animation updates.
+    animatePV = () => {
+        this.NodeManager.update();
         //limit this function to (fps)fps)
         // if (Date.now() - lastTime < 1000 / fps) {
         //     return;
@@ -2018,7 +2148,7 @@ class PreviewArea {
         //     //     controllerLeft.update();
         //     //     controllerRight.update();
         //todo re-enable scanOculusTouch when WebXR is working 100%
-        //this.scanOculusTouch();
+        this.scanOculusTouch();
         //     console.log("scanOculusTouch");
         //     // }
         //     //vrControl.update(); //todo: Change old WebVR code to WebXR
@@ -2034,29 +2164,8 @@ class PreviewArea {
         // } else {
         //calculate delta for controls
 
-        let delta = null;
-        if (this && this.clock && this.clock.getDelta === 'function') {
-            delta = this.clock.getDelta();
-        } else {
-            delta = 0;
-        }
-
         //check if controls has an update function
-        if (this.controls && this.controls.update && typeof this.controls.update === 'function') {
-            //if we have delta
-            if (delta) {
-                //update controls with delta
-                this.controls.update(delta);
-            } else {
-                //update controls without delta
-                //check how many arguments controls.update takes
-                if (this.controls.update.length > 0) {
-                    //controls.update takes arguments
-                    this.controls.update(0);
-                }
-                this.controls.update();
-            }
-        }
+        this.controls.update();
         // //update controls
         // if (this.controlMode !== 'transform' && delta) {
         //     this.controls.update(delta);
@@ -2074,7 +2183,7 @@ class PreviewArea {
         //tod this should probably be called from drawing since it cares about previewAreaLeft and previewAreaRight
         //  we are within previewArea proper though and unless defined as a static
         //  class function it will not be able to access previewAreaLeft and previewAreaRight except
-        //  through a callback or something. Regardles of which previewArea is active, this function
+        //  through a callback or something (dirty global). Regardless of which previewArea is active, this function
         //  should be called from the previewArea class, of which we are within the scope of.
         // if(previewAreaLeft ) {
         //     previewAreaLeft.animateEdges();
@@ -2085,8 +2194,8 @@ class PreviewArea {
 
         this.animateEdges();
 
-        //update camera position
-        this.camera.updateProjectionMatrix();
+        // //update camera position, controls do this though so not sure if this is needed.
+        // this.camera.updateProjectionMatrix();
 
         //console.log("controls.update() called");
 
@@ -2111,19 +2220,19 @@ class PreviewArea {
     //     console.log("requestAnimate called");
     // };
 
-    enableRender() {
+    enableRender = () => {
         this.enableRender = true;
     };
 
-    disableRender() {
+    disableRender = () => {
         this.enableRender = false;
     }
 
-    toggleRender() {
+    toggleRender = () => {
         this.enableRender = !this.enableRender;
     }
 
-    isVRAvailable() {
+    isVRAvailable = () => {
         //todo change to WebXR style and set variable appropriately
         return this.enableVR;
     };
@@ -2132,52 +2241,61 @@ class PreviewArea {
     //     vrButton.isPresenting();
     // };
 
-    redrawEdges() {
-        this.removeEdgesFromScene();
-
-        if (getSpt())
-            this.updateShortestPathEdges();
-        const activeEdges = this.getActiveEdges();
-
-        let matrix = new THREE.Matrix4();
-        let targetPosition = new THREE.Vector3();
-        let instancePosition = new THREE.Vector3();
-
-        for (let i = 0; i < activeEdges.length; i++) {
-
-            let indexNode = activeEdges[i][0];
-            indexNode.object.getMatrixAt(indexNode.instanceId, matrix);
-            instancePosition.setFromMatrixPosition(matrix);
-
-            for (var j = 0; j < activeEdges[i][1].length; ++j) {
-                let edge  = [];
-                edge.push(instancePosition);
-                let targetNodeId = activeEdges[i][1][j].targetNodeId;
-                let targetNode = this.index2node(targetNodeId);
-                //test if targetNode is valid and has instanceId
-                if(!targetNode || !targetNode.instanceId) {
-                    console.log("targetNode is invalid or has no instanceId");
-                    console.log("TargetNode: ");
-                    console.log(targetNode);
-                    continue;
-                }
-
-                targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
-                targetPosition.setFromMatrixPosition(matrix);
-                edge.push(targetPosition);
-                // todo might need to dispose before replacing, look into it. this.displayedEdges.dispose();
-                this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, indexNode, [indexNode.instanceId, targetNodeId]);
-            }
+    redrawEdges = () => {
+        this.removeEdgesFromScene(); // todo: works now?
+        // should only be removing the edges then calling drawEdgesGivenNodes based
+        // on return of getActiveEdges, get Active edges applies the rules.
+        let activeEdges = this.getActiveEdges();  //remember already filtered.
+        //filter activeEdges[0] to unique values
+        for(let [edge,targets] of activeEdges) {
+          this.drawEdgesGivenNode(edge);
         }
-    };
+
+    }
+
+    //     if (getSpt())
+    //         this.updateShortestPathEdges();
+    //     //const activeEdges = this.getActiveEdges();
+    //
+    //     let matrix = new THREE.Matrix4();
+    //     let targetPosition = new THREE.Vector3();
+    //     let instancePosition = new THREE.Vector3();
+    //
+    //     for (let i = 0; i < activeEdges.length; i++) {
+    //
+    //         let indexNode = activeEdges[i][0];
+    //         indexNode.object.getMatrixAt(indexNode.instanceId, matrix);
+    //         instancePosition.setFromMatrixPosition(matrix);
+    //
+    //         for (let j = 0; j < activeEdges[i][1].length; ++j) {
+    //             let edge  = [];
+    //             edge.push(instancePosition);
+    //             let targetNodeId = activeEdges[i][1][j].targetNodeId;
+    //             let targetNode = this.NodeManager.index2node(targetNodeId);
+    //             //test if targetNode is valid and has instanceId
+    //             if(!targetNode || !targetNode.instanceId) {
+    //                 console.log("targetNode is invalid or has no instanceId");
+    //                 console.log("TargetNode: ");
+    //                 console.log(targetNode);
+    //                 continue;
+    //             }
+    //
+    //             targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
+    //             targetPosition.setFromMatrixPosition(matrix);
+    //             edge.push(targetPosition);
+    //             // todo might need to dispose before replacing, look into it. this.displayedEdges.dispose();
+    //             this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, indexNode, [indexNode.instanceId, targetNodeId]);
+    //         }
+    //     }
+    // };
 
     // determine if a region should be drawn
-    shouldDrawRegion(region) {
+    shouldDrawRegion = (region) => {
         return (this.model.isRegionActive(region.group) && atlas.getLabelVisibility(region.label));
     };
 
     // updating scenes: redrawing glyphs and displayed edges
-    updateScene() {
+    updateScene = () => {
       console.log('%c  ' + 'updateScene', 'background: #222; color: #bada55');
         //updateNodesPositions(); // todo: update to account for instancing
         this.updateNodesVisibility(true);
@@ -2185,37 +2303,40 @@ class PreviewArea {
         this.reInitEdgeFlare();
     };
 
-    removeAllInstances = function () {
-        // Loop through all group names in this.instances
-        for (let group in this.instances) {
-            // Check if the group has hemispheres
-            if (this.instances.hasOwnProperty(group)) {
-                // Get the left and right hemisphere objects
-                let left = this.instances[group].left;
-                let right = this.instances[group].right;
-
-                // Clear memory associated with the left hemisphere if it exists
-                if (left && left.geometry && left.material) {
-                    left.geometry.dispose();
-                    left.material.dispose();
-                    this.brain.remove(left);
-                    this.instances[group].left = null;
-                }
-
-                // Clear memory associated with the right hemisphere if it exists
-                if (right && right.geometry && right.material) {
-                    right.geometry.dispose();
-                    right.material.dispose();
-                    this.brain.remove(right);
-                    this.instances[group].right = null;
-                }
-            }
-        }
+    removeAllInstances = () => {
+        //redirect to this.NodeManager destructor
+        this.NodeManager.destructor();
+        return;
+        // // Loop through all group names in this.instances
+        // for (let group in this.instances) {
+        //     // Check if the group has hemispheres
+        //     if (this.instances.hasOwnProperty(group)) {
+        //         // Get the left and right hemisphere objects
+        //         let left = this.instances[group].left;
+        //         let right = this.instances[group].right;
+        //
+        //         // Clear memory associated with the left hemisphere if it exists
+        //         if (left && left.geometry && left.material) {
+        //             left.geometry.dispose();
+        //             left.material.dispose();
+        //             this.brain.remove(left);
+        //             this.instances[group].left = null;
+        //         }
+        //
+        //         // Clear memory associated with the right hemisphere if it exists
+        //         if (right && right.geometry && right.material) {
+        //             right.geometry.dispose();
+        //             right.material.dispose();
+        //             this.brain.remove(right);
+        //             this.instances[group].right = null;
+        //         }
+        //     }
+        // }
     };
 
 
     // list groups in the dataset
-    listGroups() {
+    listGroups = () => {
         const dataset = this.model.getDataset();
         const groupSet = new Set();
 
@@ -2226,7 +2347,7 @@ class PreviewArea {
         return Array.from(groupSet); // Convert the Set to an array
     }
 
-    countGroupMembers(group, hemisphere) {
+    countGroupMembers = (group, hemisphere) => {
         const dataset = this.model.getDataset();
 
         const count = dataset.reduce((accumulator, data) => {
@@ -2240,282 +2361,283 @@ class PreviewArea {
     }
     // draw the brain regions as glyphs (the nodes)
     // assumes all nodes are visible, nothing is selected
-    drawRegions() {
-        let dataset = this.model.getDataset();
-        console.log("Drawing All Regions");
-
-        // for each group and hemisphere in the dataset, create an instance mesh
-        this.groups = this.listGroups(); //updates the list of groups
-
-        for (let i = 0; i < this.groups.length; i++) {
-            let leftCount = this.countGroupMembers(this.groups[i], 'left');
-            let rightCount = this.countGroupMembers(this.groups[i], 'right');
-            this.instances[this.groups[i]] = {
-                left: null,
-                right: null
-            };
-
-            // create instance mesh for each group and hemisphere
-            let geometry = getNormalGeometry('left');
-            let material = getNormalMaterial(this.model, this.groups[i]);
-            // create the instance mesh with the number of nodes in the group
-            this.instances[this.groups[i]].left = new THREE.InstancedMesh(geometry, material, leftCount);
-            // set the color of the first instance to the group color
-            this.instances[this.groups[i]].left.setColorAt(0, material.color);
-
-            geometry = getNormalGeometry('right');
-            material = getNormalMaterial(this.model, this.groups[i]);
-            this.instances[this.groups[i]].right = new THREE.InstancedMesh(geometry, material, rightCount);
-            this.instances[this.groups[i]].right.setColorAt(0, material.color);
-
-            // name the instance with group_hemisphere
-            this.instances[this.groups[i]].left.name = {
-                group: this.groups[i],
-                hemisphere: 'left',
-                type: 'region'
-            };
-            this.instances[this.groups[i]].right.name = {
-                group: this.groups[i],
-                hemisphere: 'right',
-                type: 'region'
-            };
-        }
-
-        // populate the instance meshes
-        let topIndexes = {};
-        for (let i = 0; i < dataset.length; i++) {
-            // check if region is already in the topIndexes object
-            if (topIndexes[dataset[i].group] === undefined) {
-                topIndexes[dataset[i].group] = {
-                    left: 0,
-                    right: 0
-                };
-            }
-
-            // get the index of the instance mesh to add to
-            let index = topIndexes[dataset[i].group][dataset[i].hemisphere];
-            // get the instance mesh to add to
-            let instance = this.instances[dataset[i].group][dataset[i].hemisphere];
-            // instance.userData = {
-            //     nodeIndex: i
-            // }
-
-            //console.log("dataset[i].group: " + dataset[i].group);
-            //console.log("index: " + i);
-
-            // get the position of the region
-            let position = dataset[i].position;
-            // set the position of the instance
-            instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
-            instance.setColorAt(index, instance.material.color);
-            // increment the index
-            topIndexes[dataset[i].group][dataset[i].hemisphere]++;
-
-            /////////////////////////////////
-            // IMPORTANT: Any variable in userData must be prototypes here before being used
-            // if there is no userData on the instance create it.
-            // check if userData.indexList exists if it does push a new index into it at the end, the position should match the instanceId
-            // if it doesn't exist create it and push the index into it
-            if (instance.userData.indexList === undefined) {
-                instance.userData.indexList = [];
-            }
-            instance.userData.indexList.push(i); // +1 because the index starts at 0
-            // userData will need a list of selected since individual objects don't track this.
-            // check if selectedNodes exists, if it doesn't, create it. Empty by default.
-            if (instance.userData.selectedNodes === undefined) {
-                instance.userData.selectedNodes = [];
-            }
-
-            /*Get dataset index of given node. */
-            instance.getDatasetIndex = function(nodeObject) {
-                // get object parent
-                let object = nodeObject.object;
-                // correlate the dataset[].label to the instanceId
-                // return parent.userData.indexList[nodeObject.instanceId];
-                // add some error checking
-                if (object.userData.indexList[nodeObject.instanceId] === undefined) {
-                    console.log("Error: Could not find index for instanceId: " + nodeObject.instanceId);
-                    return -1;
-                } else {
-                    return object.userData.indexList[nodeObject.instanceId];
-                }
-            };
-            instance.getNodesInstanceFromDatasetIndex = function(index) {
-                // search through all instances for the index in the userData.indexList
-                // return the instanceId and the object
-                // if the index is not found return -1
-                /////console.log("Searching for index: " + index);
-                //console.log(this);
-                //check that userData.indexList exists
-                if (this.userData.indexList === undefined) {
-                    console.log("Error: userData.indexList is undefined");
-                    return null;
-                }
-                for (let i = 0; i < this.userData.indexList.length; i++) {
-                    if (this.userData.indexList[i] === index) {
-                        /////console.log("Found index: " + index + " at instanceId: " + i);
-                        return {
-                            instanceId: i,
-                            hemisphere: this.name.hemisphere,
-                            group: this.name.group,
-                            object: this
-                        };
-                    }
-                }
-                //console.log("Error: Could not find index: " + index);
-                return null;
-            }
-
-            instance.getSelectedNodes = ()=> {
-                if(instance.userData.selectedNodes === undefined) {
-                    instance.userData.selectedNodes = [];
-                }
-                return instance.userData.selectedNodes;
-            }
-
-            /* accepts an array of indexes, sets these indexes as selected if they exist within this instance group. */
-            instance.setSelectedNodes = (selectedNodes)=> {
-                //accepts an array of indexes, only set
-                //only set select if index is in the indexList
-
-                //loop through the selectedNodes array
-                // node = this.index2node(index);
-                // if(node !== null) {
-                //     node.object.select(node);
-                // }
-                for (let i = 0; i < selectedNodes.length; i++) {
-                    //check if index is in indexList
-                    if (instance.userData.indexList.includes(selectedNodes[i])) {
-                        //check if it is already in the selectedNodes array
-                        if (!instance.userData.selectedNodes.includes(selectedNodes[i])) {
-                            //if not, push it in
-                            instance.userData.selectedNodes.push(selectedNodes[i]);
-                        }
-
-                    }
-                }
-            }
-
-            instance.getData = (nodeObject) => {
-                let index = instance.getDatasetIndex(nodeObject);
-                return this.model.getDataset()[index];
-            }
-
-            instance.isSelected = (nodeObject) => {
-                // check if the index is in the selectedNodes array
-                let index = instance.getDatasetIndex(nodeObject);
-                if (instance.userData.selectedNodes === undefined) {
-                    return false;
-                }
-                // return true if it is, false if it isn't
-                if(instance.userData.selectedNodes.includes(index)){
-                    /////console.log("Yes Node is selected");
-                    return true;
-                } else {
-                    return false;
-                }
-                //return instance.userData.selectedNodes.includes(index);
-            }
-            instance.select = (nodeObject) => {
-                let index = instance.getDatasetIndex(nodeObject);
-                // push the index into the selectedNodes array, if it doesn't exist
-                if (instance.userData.selectedNodes === undefined) {
-                    instance.userData.selectedNodes = [];
-                }
-                //check if index is already in selectedNodes
-                if (instance.userData.selectedNodes.includes(index)) {
-                    // do nothing
-                } else {
-                    instance.userData.selectedNodes.push(index);
-                }
-
-            }
-
-            instance.unSelect = (nodeObject) => {
-                // check if index is in selectedNodes array and remove it if it is
-                let index = instance.getDatasetIndex(nodeObject);
-                if (!instance.userData.selectedNodes === undefined) {
-                    let i = instance.userData.selectedNodes.indexOf(index);
-                    if (i > -1) {
-                        instance.userData.selectedNodes.splice(i, 1);
-                    }
-                }
-
-
-
-                }
-
-            instance.toggleSelect = (nodeObject) => {
-                if (instance.isSelected(nodeObject)) {
-                    instance.unSelect(nodeObject);
-                } else {
-                    instance.select(nodeObject);
-                }
-            }
-
-            instance.clearSelection = ()=> {
-                // clear the selectedNodes array
-                instance.userData.selectedNodes = [];
-            }
-
-            /*Get edges for instanced node.*/
-            instance.getEdges = (nodeObject)=> {
-                console.log("Getting edges for instance node: " + nodeObject.instanceId);
-                console.log(nodeObject);
-                let object = nodeObject.object;
-                let index = object.getDatasetIndex(nodeObject);
-                //console.log("Index: " + index);
-                let row = this.model.getConnectionMatrixRow(index);
-                //console.log("Row: ");
-                //console.log(row);
-                let edges = [];
-
-                row.forEach(function(weight, targetIndex) {
-                    if (weight > 0) {
-                        let edge = {
-                            weight: weight,
-                            targetNodeId: targetIndex[0] //1] // subset was 1 but multiply is 0
-                        };
-                        edges.push(edge);
-                    }
-                }, true); // true: skip zeros
-                return edges;
-            };
-            // overload the getEdges to also take a standard index
-            instance.getEdgesFromIndex = (index)=> {
-                let row = this.model.getConnectionMatrixRow(index);
-                let edges = [];
-                row.forEach(function(weight, targetIndex) {
-                    if (weight > 0) {
-                        let edge = {
-                            weight: weight,
-                            targetNodeId: targetIndex[0]  //1]  // subset was 1 but multiply is 0
-                        };
-                        edges.push(edge);
-                    }
-                }, true); // true: skip zeros
-                return edges;
-            }
-
-        }
-
-        // mark instances as dirty
-        for (let i = 0; i < this.groups.length; i++) {
-            this.instances[this.groups[i]].left.instanceMatrix.needsUpdate = true;
-            this.instances[this.groups[i]].right.instanceMatrix.needsUpdate = true;
-        }
-        // display count for each hemisphere
-        // for (let i = 0; i < groups.length; i++) {
-        //     let leftCount = this.countGroupMembers(groups[i], 'left');
-        //     let rightCount = this.countGroupMembers(groups[i], 'right');
-        //     console.log("Group: " + groups[i] + " Left: " + leftCount + " Right: " + rightCount);
-        // }
-        // add the instance meshes to the scene
-        for (let i = 0; i < this.groups.length; i++) {
-            this.brain.add(this.instances[this.groups[i]].left);
-            this.brain.add(this.instances[this.groups[i]].right);
-        }
-    };
+    //replaced with NodeManager
+    //  drawRegions = () => {
+    //     let dataset = this.model.getDataset();
+    //     console.log("Drawing All Regions");
+    //
+    //     // for each group and hemisphere in the dataset, create an instance mesh
+    //     this.groups = this.listGroups(); //updates the list of groups
+    //
+    //     for (let i = 0; i < this.groups.length; i++) {
+    //         let leftCount = this.countGroupMembers(this.groups[i], 'left');
+    //         let rightCount = this.countGroupMembers(this.groups[i], 'right');
+    //         this.instances[this.groups[i]] = {
+    //             left: null,
+    //             right: null
+    //         };
+    //
+    //         // create instance mesh for each group and hemisphere
+    //         let geometry = getNormalGeometry('left');
+    //         let material = getNormalMaterial(this.model, this.groups[i]);
+    //         // create the instance mesh with the number of nodes in the group
+    //         this.instances[this.groups[i]].left = new THREE.InstancedMesh(geometry, material, leftCount);
+    //         // set the color of the first instance to the group color
+    //         this.instances[this.groups[i]].left.setColorAt(0, material.color);
+    //
+    //         geometry = getNormalGeometry('right');
+    //         material = getNormalMaterial(this.model, this.groups[i]);
+    //         this.instances[this.groups[i]].right = new THREE.InstancedMesh(geometry, material, rightCount);
+    //         this.instances[this.groups[i]].right.setColorAt(0, material.color);
+    //
+    //         // name the instance with group_hemisphere
+    //         this.instances[this.groups[i]].left.name = {
+    //             group: this.groups[i],
+    //             hemisphere: 'left',
+    //             type: 'region'
+    //         };
+    //         this.instances[this.groups[i]].right.name = {
+    //             group: this.groups[i],
+    //             hemisphere: 'right',
+    //             type: 'region'
+    //         };
+    //     }
+    //
+    //     // populate the instance meshes
+    //     let topIndexes = {};
+    //     for (let i = 0; i < dataset.length; i++) {
+    //         // check if region is already in the topIndexes object
+    //         if (topIndexes[dataset[i].group] === undefined) {
+    //             topIndexes[dataset[i].group] = {
+    //                 left: 0,
+    //                 right: 0
+    //             };
+    //         }
+    //
+    //         // get the index of the instance mesh to add to
+    //         let index = topIndexes[dataset[i].group][dataset[i].hemisphere];
+    //         // get the instance mesh to add to
+    //         let instance = this.instances[dataset[i].group][dataset[i].hemisphere];
+    //         // instance.userData = {
+    //         //     nodeIndex: i
+    //         // }
+    //
+    //         //console.log("dataset[i].group: " + dataset[i].group);
+    //         //console.log("index: " + i);
+    //
+    //         // get the position of the region
+    //         let position = dataset[i].position;
+    //         // set the position of the instance
+    //         instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
+    //         instance.setColorAt(index, instance.material.color);
+    //         // increment the index
+    //         topIndexes[dataset[i].group][dataset[i].hemisphere]++;
+    //
+    //         /////////////////////////////////
+    //         // IMPORTANT: Any variable in userData must be prototypes here before being used
+    //         // if there is no userData on the instance create it.
+    //         // check if userData.indexList exists if it does push a new index into it at the end, the position should match the instanceId
+    //         // if it doesn't exist create it and push the index into it
+    //         if (instance.userData.indexList === undefined) {
+    //             instance.userData.indexList = [];
+    //         }
+    //         instance.userData.indexList.push(i); // +1 because the index starts at 0
+    //         // userData will need a list of selected since individual objects don't track this.
+    //         // check if selectedNodes exists, if it doesn't, create it. Empty by default.
+    //         if (instance.userData.selectedNodes === undefined) {
+    //             instance.userData.selectedNodes = [];
+    //         }
+    //
+    //         /*Get dataset index of given node. */
+    //         instance.getDatasetIndex = function(nodeObject) {
+    //             // get object parent
+    //             let object = nodeObject.object;
+    //             // correlate the dataset[].label to the instanceId
+    //             // return parent.userData.indexList[nodeObject.instanceId];
+    //             // add some error checking
+    //             if (object.userData.indexList[nodeObject.instanceId] === undefined) {
+    //                 console.log("Error: Could not find index for instanceId: " + nodeObject.instanceId);
+    //                 return -1;
+    //             } else {
+    //                 return object.userData.indexList[nodeObject.instanceId];
+    //             }
+    //         };
+    //         instance.getNodesInstanceFromDatasetIndex = function(index) {
+    //             // search through all instances for the index in the userData.indexList
+    //             // return the instanceId and the object
+    //             // if the index is not found return -1
+    //             /////console.log("Searching for index: " + index);
+    //             //console.log(this);
+    //             //check that userData.indexList exists
+    //             if (this.userData.indexList === undefined) {
+    //                 console.log("Error: userData.indexList is undefined");
+    //                 return null;
+    //             }
+    //             for (let i = 0; i < this.userData.indexList.length; i++) {
+    //                 if (this.userData.indexList[i] === index) {
+    //                     /////console.log("Found index: " + index + " at instanceId: " + i);
+    //                     return {
+    //                         instanceId: i,
+    //                         hemisphere: this.name.hemisphere,
+    //                         group: this.name.group,
+    //                         object: this
+    //                     };
+    //                 }
+    //             }
+    //             //console.log("Error: Could not find index: " + index);
+    //             return null;
+    //         }
+    //
+    //         instance.getSelectedNodes = ()=> {
+    //             if(instance.userData.selectedNodes === undefined) {
+    //                 instance.userData.selectedNodes = [];
+    //             }
+    //             return instance.userData.selectedNodes;
+    //         }
+    //
+    //         /* accepts an array of indexes, sets these indexes as selected if they exist within this instance group. */
+    //         instance.setSelectedNodes = (selectedNodes)=> {
+    //             //accepts an array of indexes, only set
+    //             //only set select if index is in the indexList
+    //
+    //             //loop through the selectedNodes array
+    //             // node = this.index2node(index);
+    //             // if(node !== null) {
+    //             //     node.object.select(node);
+    //             // }
+    //             for (let i = 0; i < selectedNodes.length; i++) {
+    //                 //check if index is in indexList
+    //                 if (instance.userData.indexList.includes(selectedNodes[i])) {
+    //                     //check if it is already in the selectedNodes array
+    //                     if (!instance.userData.selectedNodes.includes(selectedNodes[i])) {
+    //                         //if not, push it in
+    //                         instance.userData.selectedNodes.push(selectedNodes[i]);
+    //                     }
+    //
+    //                 }
+    //             }
+    //         }
+    //
+    //         instance.getData = (nodeObject) => {
+    //             let index = instance.getDatasetIndex(nodeObject);
+    //             return this.model.getDataset()[index];
+    //         }
+    //
+    //         instance.isSelected = (nodeObject) => {
+    //             // check if the index is in the selectedNodes array
+    //             let index = instance.getDatasetIndex(nodeObject);
+    //             if (instance.userData.selectedNodes === undefined) {
+    //                 return false;
+    //             }
+    //             // return true if it is, false if it isn't
+    //             if(instance.userData.selectedNodes.includes(index)){
+    //                 /////console.log("Yes Node is selected");
+    //                 return true;
+    //             } else {
+    //                 return false;
+    //             }
+    //             //return instance.userData.selectedNodes.includes(index);
+    //         }
+    //         instance.select = (nodeObject) => {
+    //             let index = instance.getDatasetIndex(nodeObject);
+    //             // push the index into the selectedNodes array, if it doesn't exist
+    //             if (instance.userData.selectedNodes === undefined) {
+    //                 instance.userData.selectedNodes = [];
+    //             }
+    //             //check if index is already in selectedNodes
+    //             if (instance.userData.selectedNodes.includes(index)) {
+    //                 // do nothing
+    //             } else {
+    //                 instance.userData.selectedNodes.push(index);
+    //             }
+    //
+    //         }
+    //
+    //         instance.unSelect = (nodeObject) => {
+    //             // check if index is in selectedNodes array and remove it if it is
+    //             let index = instance.getDatasetIndex(nodeObject);
+    //             if (!instance.userData.selectedNodes === undefined) {
+    //                 let i = instance.userData.selectedNodes.indexOf(index);
+    //                 if (i > -1) {
+    //                     instance.userData.selectedNodes.splice(i, 1);
+    //                 }
+    //             }
+    //
+    //
+    //
+    //             }
+    //
+    //         instance.toggleSelect = (nodeObject) => {
+    //             if (instance.isSelected(nodeObject)) {
+    //                 instance.unSelect(nodeObject);
+    //             } else {
+    //                 instance.select(nodeObject);
+    //             }
+    //         }
+    //
+    //         instance.clearSelection = ()=> {
+    //             // clear the selectedNodes array
+    //             instance.userData.selectedNodes = [];
+    //         }
+    //
+    //         /*Get edges for instanced node.*/
+    //         instance.getEdges = (nodeObject)=> {
+    //             console.log("Getting edges for instance node: " + nodeObject.instanceId);
+    //             console.log(nodeObject);
+    //             let object = nodeObject.object;
+    //             let index = object.getDatasetIndex(nodeObject);
+    //             //console.log("Index: " + index);
+    //             let row = this.model.getConnectionMatrixRow(index);
+    //             //console.log("Row: ");
+    //             //console.log(row);
+    //             let edges = [];
+    //
+    //             row.forEach(function(weight, targetIndex) {
+    //                 if (weight > 0) {
+    //                     let edge = {
+    //                         weight: weight,
+    //                         targetNodeId: targetIndex[0] //1] // subset was 1 but multiply is 0
+    //                     };
+    //                     edges.push(edge);
+    //                 }
+    //             }, true); // true: skip zeros
+    //             return edges;
+    //         };
+    //         // overload the getEdges to also take a standard index
+    //         instance.getEdgesFromIndex = (index)=> {
+    //             let row = this.model.getConnectionMatrixRow(index);
+    //             let edges = [];
+    //             row.forEach(function(weight, targetIndex) {
+    //                 if (weight > 0) {
+    //                     let edge = {
+    //                         weight: weight,
+    //                         targetNodeId: targetIndex[0]  //1]  // subset was 1 but multiply is 0
+    //                     };
+    //                     edges.push(edge);
+    //                 }
+    //             }, true); // true: skip zeros
+    //             return edges;
+    //         }
+    //
+    //     }
+    //
+    //     // mark instances as dirty
+    //     for (let i = 0; i < this.groups.length; i++) {
+    //         this.instances[this.groups[i]].left.instanceMatrix.needsUpdate = true;
+    //         this.instances[this.groups[i]].right.instanceMatrix.needsUpdate = true;
+    //     }
+    //     // display count for each hemisphere
+    //     // for (let i = 0; i < groups.length; i++) {
+    //     //     let leftCount = this.countGroupMembers(groups[i], 'left');
+    //     //     let rightCount = this.countGroupMembers(groups[i], 'right');
+    //     //     console.log("Group: " + groups[i] + " Left: " + leftCount + " Right: " + rightCount);
+    //     // }
+    //     // add the instance meshes to the scene
+    //     for (let i = 0; i < this.groups.length; i++) {
+    //         this.brain.add(this.instances[this.groups[i]].left);
+    //         this.brain.add(this.instances[this.groups[i]].right);
+    //     }
+    // };
 
 
 //     this.drawRegions = function () {
@@ -2690,7 +2812,7 @@ class PreviewArea {
     //};
 
     // update the nodes positions according to the latest in the model
-    updateNodesPositions() {
+    updateNodesPositions = () => {
         //todo:
         var dataset = this.model.getDataset();
         var instance = null;
@@ -2717,7 +2839,7 @@ class PreviewArea {
         // }
     };
 
-    updateNodesVisibility(updateDataset = false) {
+    updateNodesVisibility = (updateDataset = false) => {
 
         let dataset = this.model.getDataset();
 
@@ -2742,277 +2864,282 @@ class PreviewArea {
             } else {
                 opacity = 0.0;
             }
-
+            this.NodeManager.ChangeOpacityByGroupAndHemisphere(dataset[i].group,dataset[i].hemisphere,opacity);
             //todo: this.instances["area_43"]["left"]  <--- would work
-            this.instances[dataset[i].group][dataset[i].hemisphere].material.opacity = opacity;
-            //glyphs[i].material.opacity = opacity;
-            // mark dirty for update
-            this.instances[dataset[i].group][dataset[i].hemisphere].material.needsUpdate = true;
+            // this.instances[dataset[i].group][dataset[i].hemisphere].material.opacity = opacity;
+            // //glyphs[i].material.opacity = opacity;
+            // // mark dirty for update
+            // this.instances[dataset[i].group][dataset[i].hemisphere].material.needsUpdate = true;
         }
     };
 
-    getSelectedNodes() {
-        let groups = this.listGroups();
-        let selectedNodes = [];
-
-        for (let i = 0; i < groups.length; i++) {
-            const instance = this.instances[groups[i]];
-            if (!instance) continue;
-
-            const leftHemisphere = instance['left'];
-            const rightHemisphere = instance['right'];
-            if (!leftHemisphere || !rightHemisphere) continue;
-
-            const leftSelectedNodes = leftHemisphere.getSelectedNodes && leftHemisphere.getSelectedNodes();
-            const rightSelectedNodes = rightHemisphere.getSelectedNodes && rightHemisphere.getSelectedNodes();
-            if (leftSelectedNodes) selectedNodes = selectedNodes.concat(leftSelectedNodes);
-            if (rightSelectedNodes) selectedNodes = selectedNodes.concat(rightSelectedNodes);
-        }
-
-        this.selectedNodes = selectedNodes.filter(Boolean);
+    getSelectedNodes = () => {
+        let selectedNodes = this.NodeManager.getSelectedNodes();
         return selectedNodes;
     }
 
-    setSelectedNodes (nodes) {
-        //accepts an array of dataset indexes and sets the selected flag to true for each node
-        //sets selections globally across all instances
-        let groups= this.listGroups();
-        for (let i = 0; i < groups.length; i++) {
-            const instance = this.instances[groups[i]];
-            // if (!instance) continue;
-            //
-            // const leftHemisphere = instance['left'];
-            // const rightHemisphere = instance['right'];
-            // if (!leftHemisphere || !rightHemisphere) continue;
-            //
-            // const leftSelectedNodes = leftHemisphere.setSelectedNodes && leftHemisphere.setSelectedNodes(nodes);
-            // const rightSelectedNodes = rightHemisphere.setSelectedNodes && rightHemisphere.setSelectedNodes(nodes);
-            //batching seems great until you realise you need some side effects during the change
-            //call updateNodeGeometry to update the visual state to selected
-            for(let j=0;j<nodes.length;j++){
-                const node = this.index2node(nodes[j]);
-                //check if nodes is already selected
-                if(!node.object.isSelected(node)) {
-                    //mark node as selected
-                    node.object.select(node);
-                    this.updateNodeGeometry(node, 'selected');
-                }
-            }
-        }
+    setSelectedNodes = (nodes) => {
+        //todo update to use NodeManager mass assignment NodeManager.SetSelectedNodes([#indexs],clear: bool).
+        this.NodeManager.setSelectedNodes(nodes,true);
+        // return;
+        // //accepts an array of dataset indexes and sets the selected flag to true for each node
+        // //sets selections globally across all instances
+        // let groups= this.listGroups();
+        // for (let i = 0; i < groups.length; i++) {
+        //     const instance = this.instances[groups[i]];
+        //     // if (!instance) continue;
+        //     //
+        //     // const leftHemisphere = instance['left'];
+        //     // const rightHemisphere = instance['right'];
+        //     // if (!leftHemisphere || !rightHemisphere) continue;
+        //     //
+        //     // const leftSelectedNodes = leftHemisphere.setSelectedNodes && leftHemisphere.setSelectedNodes(nodes);
+        //     // const rightSelectedNodes = rightHemisphere.setSelectedNodes && rightHemisphere.setSelectedNodes(nodes);
+        //     //batching seems great until you realise you need some side effects during the change
+        //     //call updateNodeGeometry to update the visual state to selected
+        //     for(let j=0;j<nodes.length;j++){
+        //         const node = this.NodeManager.index2node(nodes[j]);
+        //         //check if nodes is already selected
+        //         if(!this.NodeManager.isSelected(node)) {
+        //             //mark node as selected
+        //             this.NodeManager.selectNode(node);
+        //             //this.updateNodeGeometry(node, 'selected');
+        //         }
+        //     }
+        // }
     }
 
-    clrNodesSelected() {
-        // remove the selected flag from all nodes
-        this.groups = this.listGroups();
-        //clear selected nodes from each instance
-        for (let i = 0; i < groups.length; i++) {
-            // only log errors
-            if (this.instances[groups[i]] === undefined) {
-                console.log("instance group undefined: " + groups[i]);
-                continue;
-            }
-            if (this.instances[groups[i]]['left'] === undefined) {
-                console.log("instance left undefined: " + groups[i]);
-            }
-            if (this.instances[groups[i]]['right'] === undefined) {
-                console.log("instance right undefined: " + groups[i]);
-            }
-            if (this.instances[groups[i]]['left'].clearSelection === undefined) {
-                console.log("instance clearSelection left undefined: " + groups[i]);
-            } else {
-                this.instances[groups[i]]['left'].clearSelection();
-            }
-            if (this.instances[groups[i]]['right'].clearSelection === undefined) {
-                console.log("instance clearSelection right undefined: " + groups[i]);
-            } else {
-                this.instances[groups[i]]['right'].clearSelection();
-            }
-        }
+    clrNodesSelected = () => {
+        this.NodeManager.deselectAll();
+        // // remove the selected flag from all nodes
+        // this.groups = this.listGroups();
+        // //clear selected nodes from each instance
+        // for (let i = 0; i < this.groups.length; i++) {
+        //     // only log errors
+        //     if (this.instances[this.groups[i]] === undefined) {
+        //         console.log("instance group undefined: " + this.groups[i]);
+        //         continue;
+        //     }
+        //     if (this.instances[this.groups[i]]['left'] === undefined) {
+        //         console.log("instance left undefined: " + this.groups[i]);
+        //     }
+        //     if (this.instances[this.groups[i]]['right'] === undefined) {
+        //         console.log("instance right undefined: " + this.groups[i]);
+        //     }
+        //     if (this.instances[this.groups[i]]['left'].clearSelection === undefined) {
+        //         console.log("instance clearSelection left undefined: " + this.groups[i]);
+        //     } else {
+        //         this.instances[this.groups[i]]['left'].clearSelection();
+        //     }
+        //     if (this.instances[this.groups[i]]['right'].clearSelection === undefined) {
+        //         console.log("instance clearSelection right undefined: " + this.groups[i]);
+        //     } else {
+        //         this.instances[this.groups[i]]['right'].clearSelection();
+        //     }
+        // }
     };
 
 
 
     // draw all connections between the selected nodes, needs the connection matrix.
     // don't draw edges belonging to inactive nodes
-    drawConnections() {
+    // drawConnections = () => {
+    //
+    //     let activeEdges = this.getActiveEdges();
+    //     console.log("drawconnections: Active Edges: ");
+    //     console.log(activeEdges);
+    //
+    //
+    //     for (let i = 0; i <  activeEdges.length; i++) {
+    //         let node = activeEdges[i][0];
+    //         //log the node
+    //         console.log("Node: ");
+    //         console.log(node);
+    //
+    //         for (let j = 0; j < activeEdges[i][1].length; j++) {
+    //             let targetNode = this.NodeManager.index2node(activeEdges[i][1][j].targetNodeId);
+    //             if (!targetNode) {
+    //                 continue;
+    //             }
+    //
+    //
+    //             //let edge = createLine();
+    //         }
+    //         // do create line logic here
+    //
+    //         //let targetNode = this.getNodeByIndex(activeEdges[i][1].targetNodeId);
+    //
+    //
+    //         // // draw only edges belonging to active nodes
+    //         // if ((nodeIdx >= 0) && model.isRegionActive(model.getGroupNameByNodeIndex(nodeIdx))) {
+    //         //     // two ways to draw edges
+    //         //     if (getThresholdModality()) {
+    //         //         // 1) filter edges according to threshold
+    //         //         this.drawEdgesGivenNode(nodeIdx);
+    //         //     } else {
+    //         //         // 2) draw top n edges connected to the selected node
+    //         //         this.drawTopNEdgesByNode(nodeIdx, model.getNumberOfEdges());
+    //         //     }
+    //         }
+    //     //letting drawing do the work here, it just needs the data
+    //     return activeEdges;
+    // }
 
-        let activeEdges = this.getActiveEdges();
-        console.log("drawconnections: Active Edges: ");
-        console.log(activeEdges);
+    // getNodeInstanceByIndex = (index) => {
+    //     this.groups = this.listGroups();
+    //     for (let j = 0; j < this.groups.length; j++) {
+    //         // each group may have a left and right hemisphere
+    //         const groupOf = this.instances[this.groups[j]];
+    //         if (!groupOf) continue;
+    //         if (groupOf['left'] === undefined && groupOf['right'] === undefined) {
+    //             console.log("groupOf left and right undefined: " + this.groups[j]);
+    //             continue;
+    //         }
+    //         if (groupOf['left'] === undefined) {
+    //             console.log("groupOf left undefined: " + this.groups[j]);
+    //         }
+    //         if (groupOf['right'] === undefined) {
+    //             console.log("groupOf right undefined: " + this.groups[j]);
+    //         }
+    //         const leftHemisphere = groupOf['left'];
+    //         const rightHemisphere = groupOf['right'];
+    //         if (!leftHemisphere || !rightHemisphere) continue;
+    //         // check which hemisphere is valid
+    //         let node = null;
+    //         let leftorright = "";
+    //         if (leftHemisphere.getNodesInstanceFromDatasetIndex) {
+    //             node = leftHemisphere.getNodesInstanceFromDatasetIndex(index);
+    //             leftorright = "left";
+    //         } else if (rightHemisphere.getNodesInstanceFromDatasetIndex) {
+    //             node = rightHemisphere.getNodesInstanceFromDatasetIndex(index);
+    //             leftorright = "right";
+    //         } else {
+    //             console.log("No hemisphere found");
+    //             continue;
+    //         }
+    //         if (node === null) {
+    //             //console.log("Node not found in " + leftorright + " hemisphere");
+    //             continue;
+    //         }
+    //         console.log("Node: ");
+    //         console.log(node);
+    //
+    //         return node;
+    //     }
+    // }
 
-
-        for (let i = 0; i <  activeEdges.length; i++) {
-            let node = activeEdges[i][0];
-            //log the node
-            console.log("Node: ");
-            console.log(node);
-
-            for (let j = 0; j < activeEdges[i][1].length; j++) {
-                let targetNode = this.index2node(activeEdges[i][1][j].targetNodeId);
-                if (!targetNode) {
-                    continue;
-                }
-                if(!targetNode) {
-                    console.log("No target node found");
-                    console.log(activeEdges[i][1][j].targetNodeId);
-                } else {
-                    console.log("Target Node: ");
-                    console.log(targetNode);
-                }
-
-                //let edge = createLine();
-            }
-            // do create line logic here
-
-            //let targetNode = this.getNodeByIndex(activeEdges[i][1].targetNodeId);
-
-
-            // // draw only edges belonging to active nodes
-            // if ((nodeIdx >= 0) && model.isRegionActive(model.getGroupNameByNodeIndex(nodeIdx))) {
-            //     // two ways to draw edges
-            //     if (getThresholdModality()) {
-            //         // 1) filter edges according to threshold
-            //         this.drawEdgesGivenNode(nodeIdx);
-            //     } else {
-            //         // 2) draw top n edges connected to the selected node
-            //         this.drawTopNEdgesByNode(nodeIdx, model.getNumberOfEdges());
-            //     }
-            }
-        //letting drawing do the work here, it just needs the data
-        return activeEdges;
-    }
-
-    getNodeInstanceByIndex(index) {
-        this.groups = this.listGroups();
-        for (let j = 0; j < this.groups.length; j++) {
-            // each group may have a left and right hemisphere
-            const groupOf = this.instances[this.groups[j]];
-            if (!groupOf) continue;
-            if (groupOf['left'] === undefined && groupOf['right'] === undefined) {
-                console.log("groupOf left and right undefined: " + this.groups[j]);
-                continue;
-            }
-            if (groupOf['left'] === undefined) {
-                console.log("groupOf left undefined: " + this.groups[j]);
-            }
-            if (groupOf['right'] === undefined) {
-                console.log("groupOf right undefined: " + this.groups[j]);
-            }
-            const leftHemisphere = groupOf['left'];
-            const rightHemisphere = groupOf['right'];
-            if (!leftHemisphere || !rightHemisphere) continue;
-            // check which hemisphere is valid
-            let node = null;
-            let leftorright = "";
-            if (leftHemisphere.getNodesInstanceFromDatasetIndex) {
-                node = leftHemisphere.getNodesInstanceFromDatasetIndex(index);
-                leftorright = "left";
-            } else if (rightHemisphere.getNodesInstanceFromDatasetIndex) {
-                node = rightHemisphere.getNodesInstanceFromDatasetIndex(index);
-                leftorright = "right";
-            } else {
-                console.log("No hemisphere found");
-                continue;
-            }
-            if (node === null) {
-                //console.log("Node not found in " + leftorright + " hemisphere");
-                continue;
-            }
-            console.log("Node: ");
-            console.log(node);
-
-            return node;
-        }
-    }
-
-    getActiveEdges(topN = null) {
+    // get the active edges, right now this is the same as the selected nodes but will be seperated in the future.
+    getActiveEdges = (topN = null) => {
         //var nodeIdx;
-        let nodesSelected = this.getSelectedNodes();
+        let nodesSelected = this.NodeManager.getSelectedNodes();
         let numNodesSelected = nodesSelected.length;
         //console.log("numNodesSelected: " + numNodesSelected);
         let activeEdges = [];
-        let groups = this.listGroups();
+        //let groups = this.listGroups();
         let threshold = this.model.getThreshold();
         if (threshold === undefined) {
             console.log("Threshold undefined");
             // consider all selected nodes active
             threshold = 0;
         }
-        //console.log("active edges nodesSelected: ");
-        //console.log(nodesSelected);
-// for each node in nodesSelected look it up in instances and get the edges
-        for (let i = 0; i < numNodesSelected; i++) {
-            // check through the instances for the index and then return the node
-            for (let j = 0; j < groups.length; j++) {
-                // each group may have a left and right hemisphere
-                const groupOf = this.instances[groups[j]];
-                if (!groupOf) continue;
-                if (groupOf['left'] === undefined && groupOf['right'] === undefined) {
-                    console.log("groupOf left and right undefined: " + groups[j]);
-                    continue;
-                }
-                if (groupOf['left'] === undefined) {
-                    console.log("groupOf left undefined: " + groups[j]);
-                }
-                if (groupOf['right'] === undefined) {
-                    console.log("groupOf right undefined: " + groups[j]);
-                }
-                const leftHemisphere = groupOf['left'];
-                const rightHemisphere = groupOf['right'];
-                if (!leftHemisphere || !rightHemisphere) continue;
-                // check which hemisphere is valid
-                let node = null;
-                let leftorright = "";
-                if (leftHemisphere.getNodesInstanceFromDatasetIndex) {
-                    node = leftHemisphere.getNodesInstanceFromDatasetIndex(nodesSelected[i]);
-                    leftorright = "left";
-                } else if (rightHemisphere.getNodesInstanceFromDatasetIndex) {
-                    node = rightHemisphere.getNodesInstanceFromDatasetIndex(nodesSelected[i]);
-                    leftorright = "right";
-                } else {
-                    console.log("No hemisphere found");
-                    continue;
-                }
-                if (node === null) {
-                    //console.log("Node not found in " + leftorright + " hemisphere");
-                    continue;
-                }
-                //console.log("Node: ");
-                //console.log(node);
-                // get the edges
-                let edges = node.object.getEdgesFromIndex(nodesSelected[i]);
-                if (!edges) {
-                    console.log("Edges not found");
-                    continue;
-                }
-                // console.log("Edges: ");
-                // console.log(edges);
-                // get the edges that are above the threshold
-                let edgesAboveThreshold = [];
-                if (!topN) {
-                    edgesAboveThreshold = edges.filter(edge => edge.weight >= threshold);
-                } else {
-                    edgesAboveThreshold = edges.sort((a, b) => b.weight - a.weight).slice(0, topN);
-                }
-                if (edgesAboveThreshold.length === 0) {
-                    console.log("Edges above threshold not found");
-                    continue;
-                }
-                console.log("adding edges to active edges:");
-                console.log(edgesAboveThreshold);
-                //console log the length of edges vs edges above threshold
-                console.log("edges length: " + edges.length);
-                console.log("edges above threshold length: " + edgesAboveThreshold.length);
-                //add the node and the edges to the active edges array if the edges are above the threshold
-                activeEdges.push([node, edgesAboveThreshold]);
-            }
-        }
-        // console.log("fresh active edges: ");
-        // console.log(activeEdges);
-        return activeEdges;
-    };
 
-    setEdgesColor = function () {
+        // for each index in nodes selected, get the edges, rules are automatically applied
+        // based if threshhold topN or both are supplied.
+        for (let i = 0; i < numNodesSelected; i++) {
+            let node = this.NodeManager.index2node(nodesSelected[i]);
+            if (!node) {
+                //throw an error
+                //console.log("Node not found for index: " + nodesSelected[i]);
+                throw new Error("Node not found for index: " + nodesSelected[i]);
+            }
+            let edges = this.NodeManager.getEdges(node, threshold, topN);
+            if (!edges) {
+                //throw an error
+                throw new Error("Edges not found for node: " + node);
+            }
+            // add the edges to active edges
+            activeEdges.push([node, edges]);
+        }
+        return activeEdges;
+    }
+        //todo go over the code below at some point, figure out what was supposed to be happening. it looks broken
+        // the above should do what is intended.
+//
+//         //console.log("active edges nodesSelected: ");
+//         //console.log(nodesSelected);
+// // for each node in nodesSelected look it up in instances and get the edges
+//         for (let i = 0; i < numNodesSelected; i++) {
+//             // check through the instances for the index and then return the node
+//             for (let j = 0; j < groups.length; j++) {
+//                 // each group may have a left and right hemisphere
+//                 const groupOf = this.instances[groups[j]];
+//                 if (!groupOf) continue;
+//                 if (groupOf['left'] === undefined && groupOf['right'] === undefined) {
+//                     console.log("groupOf left and right undefined: " + groups[j]);
+//                     continue;
+//                 }
+//                 if (groupOf['left'] === undefined) {
+//                     console.log("groupOf left undefined: " + groups[j]);
+//                 }
+//                 if (groupOf['right'] === undefined) {
+//                     console.log("groupOf right undefined: " + groups[j]);
+//                 }
+//                 const leftHemisphere = groupOf['left'];
+//                 const rightHemisphere = groupOf['right'];
+//                 if (!leftHemisphere || !rightHemisphere) continue;
+//                 // check which hemisphere is valid
+//                 let node = null;
+//                 let leftorright = "";
+//                 if (leftHemisphere.getNodesInstanceFromDatasetIndex) {
+//                     node = leftHemisphere.getNodesInstanceFromDatasetIndex(nodesSelected[i]);
+//                     leftorright = "left";
+//                 } else if (rightHemisphere.getNodesInstanceFromDatasetIndex) {
+//                     node = rightHemisphere.getNodesInstanceFromDatasetIndex(nodesSelected[i]);
+//                     leftorright = "right";
+//                 } else {
+//                     console.log("No hemisphere found");
+//                     continue;
+//                 }
+//                 if (node === null) {
+//                     //console.log("Node not found in " + leftorright + " hemisphere");
+//                     continue;
+//                 }
+//                 //console.log("Node: ");
+//                 //console.log(node);
+//                 // get the edges
+//                 let edges = this.NodeManager.getEdgesByIndex(nodesSelected[i]);
+//                 if (!edges) {
+//                     console.log("Edges not found");
+//                     continue;
+//                 }
+//                 // console.log("Edges: ");
+//                 // console.log(edges);
+//                 // get the edges that are above the threshold
+//                 let edgesAboveThreshold = [];
+//                 if (!topN) {
+//                     edgesAboveThreshold = edges.filter(edge => edge.weight >= threshold);
+//                 } else {
+//                     edgesAboveThreshold = edges.sort((a, b) => b.weight - a.weight).slice(0, topN);
+//                 }
+//                 if (edgesAboveThreshold.length === 0) {
+//                     //console.log("Edges above threshold not found");
+//                     continue;
+//                 }
+//                 // console.log("adding edges to active edges:");
+//                 // console.log(edgesAboveThreshold);
+//                 //console log the length of edges vs edges above threshold
+//                 // console.log("edges length: " + edges.length);
+//                 // console.log("edges above threshold length: " + edgesAboveThreshold.length);
+//                 //add the node and the edges to the active edges array if the edges are above the threshold
+//                 activeEdges.push([node, edgesAboveThreshold]);
+//             }
+//         }
+//         // console.log("fresh active edges: ");
+//         // console.log(activeEdges);
+//         return activeEdges;
+//     };
+
+    setEdgesColor = () => {
             //todo stub return for now.
             return;
     }
@@ -3033,7 +3160,7 @@ class PreviewArea {
     };
 
     // set the color of displayed edges
-    updateEdgeColors() {
+    updateEdgeColors = () => {
         //todo this is currently not used but could be if updated to handle instanced nodes
         return;
         var edge, c1, c2;
@@ -3054,7 +3181,7 @@ class PreviewArea {
         }
     };
 
-    updateNodesColor() {
+    updateNodesColor = () => {
         //todo update to handle instance and change individual node
         const elapsedTime = this.clock.getElapsedTime();
         let dataset = this.model.getDataset();
@@ -3077,15 +3204,15 @@ class PreviewArea {
     };
 
     // set the color of displayed edges
-    shimmerEdgeNodeColors() {
+    shimmerEdgeNodeColors = () => {
         let dataset = this.model.getDataset();
         let colorAmplitude = this.amplitude * 16.6;  // 0.25;
         let colorFrequency = 3 * this.frequency;
         const elapsedTime = this.clock.getElapsedTime();
         const deltaRadius = colorAmplitude * Math.sin(2 * Math.PI * colorFrequency * elapsedTime);
         var edge, c1, c2, tempColor = new THREE.Color(), targetColor = new THREE.Color();
-        for (let i = 0; i < previewAreaLeft.displayedEdges.length; i++) {
-            edge = previewAreaLeft.displayedEdges[i];
+        for (let i = 0; i < this.displayedEdges.length; i++) {
+            edge = this.displayedEdges[i];
             c1 = edge.nodes[0]; //.material.color;
             c2 = edge.nodes[1]; //.material.color;
             let baseColor = new THREE.Color(scaleColorGroup(this.model, dataset[c2].group));
@@ -3111,12 +3238,13 @@ class PreviewArea {
         }
     };
 
-    updateEdgeOpacity(opacity) {
+    updateEdgeOpacity = (opacity) => {
         for (var i = 0; i < this.displayedEdges.length; i++) {
             this.displayedEdges[i].material.opacity = opacity;
+            this.displayedEdges[i].material.needsUpdate = true;
         }
-        // mark dirty for update
-        this.displayedEdges[i].material.needsUpdate = true;
+
+
     };
 
     // create a line using start and end points and give it a name
@@ -3127,7 +3255,15 @@ class PreviewArea {
     // line.setGeometry( geometry );
     // material = new THREE.MeshLineMaterial();
     // var mesh  = new THREE.Mesh(line.geometry, material);
-    createLine(edge, ownerNode, nodes) {
+    /**
+     * Creates a line geometry with given edge points and attributes.
+     *
+     * @param {Array} edge - An array of Vector3 points representing the line's vertices.
+     * @param {string} ownerNode - The name or identifier of the owner node for this line.
+     * @param {Array} nodes - An array of node identifiers connected by this line.
+     * @returns {THREE.Line} - A Three.js Line object representing the created line.
+     */
+    createLine = (edge, ownerNode, nodes) => {
         let material = new THREE.LineBasicMaterial({
             transparent: true,
             opacity: this.edgeOpacity,
@@ -3166,7 +3302,7 @@ class PreviewArea {
         return line;
     };
 
-    drawEdgeWithName(edge, ownerNode, nodes) {
+    drawEdgeWithName = (edge, ownerNode, nodes) => {
         // console.log("Edge: ");
         // console.log(edge);
         // console.log("ownerNode: " + ownerNode);
@@ -3178,91 +3314,103 @@ class PreviewArea {
     };
 
     // draw the top n edges connected to a specific node
-    drawTopNEdgesByNode = function (nodeIndex, n) {
-      let row = [];
-	    if(false && (!getEnableContra() && !getEnableIpsi())) { //todo: evaluate best action for neither ipsi nor contra
-		  console.log("Neither ipsi nor contra: this should not be able to be accessed.")
-          row = this.model.getTopConnectionsByNode(nodeIndex, n );
-      } else {
-		  if(getEnableContra()) {
-            console.log("contra");
-			row = row.concat(this.model.getTopContraLateralConnectionsByNode(nodeIndex, n ));
-            }
-            if (getEnableIpsi()) {
-            console.log("ipsi!");
-			row = row.concat(this.model.getTopIpsiLateralConnectionsByNode(nodeIndex, n ));
-            }
-        }
-	    console.log("contra: "+getEnableContra());
-	    console.log("ipsi: "+getEnableIpsi());
+    // unused, drawedgesgivennode will sort if given the right arguments.
+    // drawTopNEdgesByNode = (nodeIndex, n) => {
+    //   let row = [];
+	//     if(false && (!getEnableContra() && !getEnableIpsi())) { //todo: evaluate best action for neither ipsi nor contra
+	// 	  console.log("Neither ipsi nor contra: this should not be able to be accessed.")
+    //       row = this.model.getTopConnectionsByNode(nodeIndex, n );
+    //   } else {
+	// 	  if(getEnableContra()) {
+    //         console.log("contra");
+	// 		row = row.concat(this.model.getTopContraLateralConnectionsByNode(nodeIndex, n ));
+    //         }
+    //         if (getEnableIpsi()) {
+    //         console.log("ipsi!");
+	// 		row = row.concat(this.model.getTopIpsiLateralConnectionsByNode(nodeIndex, n ));
+    //         }
+    //     }
+	//     console.log("contra: "+getEnableContra());
+	//     console.log("ipsi: "+getEnableIpsi());
+    //
+    //     let edges = this.getActiveEdges();
+    //     console.log("drawtopNedges Active edges: ");
+    //     console.log(edges);
+    //     let edgeIdx = this.model.getEdgesIndeces();
+    //     if (getEnableEB()) {
+    //         console.log("EB point");
+    //         this.model.performEBOnNode(nodeIndex);
+    //     }
+    //     for (let i = 0; i < row.length; ++i) {
+    //         if ((nodeIndex != row[i]) && this.model.isRegionActive(this.model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i)) {
+    //             //display debug info for each variable above.
+    //             // console.log("Displayed Edges Length: ");
+    //             // console.log(this.displayedEdges.length);
+    //             // console.log("Edges: ");
+    //             // console.log(edges);
+    //             // console.log("edgeIdx: ");
+    //             // console.log(edgeIdx);
+    //             // console.log("this.displayedEdges: ");
+    //             // console.log(this.displayedEdges);
+    //             // console.log("nodeIndex: ");
+    //             // console.log(nodeIndex);
+    //             // console.log("row: ");
+    //             // console.log(row);
+    //             // console.log("i: ");
+    //             // console.log(i);
+    //             //let edix = edgeIdx[nodeIndex][row[i]];
+    //             let edix = this.model.getEdgesIndeces().get([nodeIndex, row[i]]);
+    //             if(edix < 0) continue;
+    //             if(edix > edges.length) continue;
+    //             this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edges[ edix ], nodeIndex, [nodeIndex, row[i]]);
+    //
+    //         }
+    //     }
+    //
+    //     //setEdgesColor();
+    // };
+    // //moved to NodeManager
+    // index2node = (index) =>  {
+    //     let instanceObj = null;
+    //     for(let group in this.instances) {
+    //         for(let side in this.instances[group]) {
+    //             if(this.instances[group][side] == null || this.instances[group][side] === undefined) continue;
+    //             if(this.instances[group][side].getNodesInstanceFromDatasetIndex === undefined) continue;
+    //             let temp = this.instances[group][side].getNodesInstanceFromDatasetIndex(index);
+    //
+    //             if(temp != null) {
+    //                 return temp;
+    //                 instanceObj = {
+    //                     object: this.instances[group][side],
+    //                     instanceId: temp.instanceId,
+    //                     group: group,
+    //                     side: side
+    //                 };
+    //                 return instanceObj;
+    //             }
+    //         }
+    //     }
+    //     return null;
+    // }
 
-        let edges = this.getActiveEdges();
-        console.log("drawtopNedges Active edges: ");
-        console.log(edges);
-        let edgeIdx = this.model.getEdgesIndeces();
-        if (getEnableEB()) {
-            console.log("EB point");
-            this.model.performEBOnNode(nodeIndex);
-        }
-        for (let i = 0; i < row.length; ++i) {
-            if ((nodeIndex != row[i]) && this.model.isRegionActive(this.model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i)) {
-                //display debug info for each variable above.
-                // console.log("Displayed Edges Length: ");
-                // console.log(this.displayedEdges.length);
-                // console.log("Edges: ");
-                // console.log(edges);
-                // console.log("edgeIdx: ");
-                // console.log(edgeIdx);
-                // console.log("this.displayedEdges: ");
-                // console.log(this.displayedEdges);
-                // console.log("nodeIndex: ");
-                // console.log(nodeIndex);
-                // console.log("row: ");
-                // console.log(row);
-                // console.log("i: ");
-                // console.log(i);
-                //let edix = edgeIdx[nodeIndex][row[i]];
-                let edix = this.model.getEdgesIndeces().get([nodeIndex, row[i]]);
-                if(edix < 0) continue;
-                if(edix > edges.length) continue;
-                this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edges[ edix ], nodeIndex, [nodeIndex, row[i]]);
+    drawEdgesGivenIndex = (index, topN = null) => {
+        //if index is NaN the throw an error.
+        if(isNaN(index)) {
+            throw new Error("index is not a number");
 
-            }
         }
-
-        //setEdgesColor();
-    };
-    index2node(index)  {
-        let instanceObj = null;
-        for(let group in this.instances) {
-            for(let side in this.instances[group]) {
-                if(this.instances[group][side] == null || this.instances[group][side] === undefined) continue;
-                if(this.instances[group][side].getNodesInstanceFromDatasetIndex === undefined) continue;
-                let temp = this.instances[group][side].getNodesInstanceFromDatasetIndex(index);
-
-                if(temp != null) {
-                    return temp;
-                    // instanceObj = {
-                    //     object: this.instances[group][side],
-                    //     instanceId: temp.instanceId,
-                    //     group: group,
-                    //     side: side
-                    // };
-                    //return instanceObj;
-                }
-            }
-        }
-        return null;
+        let node = this.NodeManager.index2node(index);
+        this.drawEdgesGivenNode(node, topN);
     }
     // draw edges given a node following edge threshold
-    drawEdgesGivenNode(indexNode, topN = null) {
-        console.log("Attempting to draw edges given node: " + indexNode);
-        var dataset = this.model.getDataset();
-        var row = this.model.getConnectionMatrixRow(indexNode);
+    drawEdgesGivenNode = (instanceObj, topN = null) => {
+        console.log("Attempting to draw edges given node: " + instanceObj.object.name.group + " " + instanceObj.object.name.hemisphere + " " + instanceObj.instanceId);
+        //var dataset = this.model.getDataset();
+        //var row = this.model.getConnectionMatrixRow(indexNode);
 
         //let instanceObj = this.instances[dataset[indexNode].group]["left"].getNodesInstanceFromDatasetIndex(indexNode);
         //instanceObj may be in any group (left or right) so we need to find it. getnodesinstancefromdatasetindex returns null if not found in that group.
-        let instanceObj = this.index2node(indexNode);
+
 
         if(instanceObj == null) {
             console.log("instanceObj is null");
@@ -3282,7 +3430,7 @@ class PreviewArea {
         //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
         instancePosition.setFromMatrixPosition(matrix);
 
-        let edges = instanceObj.object.getEdges(instanceObj);
+        let edges = this.NodeManager.getEdges(instanceObj);
         //var edges = this.getActiveEdges(); //this gets all active edges.
         // console.log("drawEdgesGivenNode: Active edges: ");
         // console.log(edges);
@@ -3300,7 +3448,7 @@ class PreviewArea {
             let edge  = [];
             edge.push(instancePosition);
             let targetNodeId = edges[i].targetNodeId;
-            let targetNode = this.index2node(targetNodeId);
+            let targetNode = this.NodeManager.index2node(targetNodeId);
             if(targetNode == null) {
                 console.log("targetNode is null");
                 continue;
@@ -3309,7 +3457,8 @@ class PreviewArea {
             targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
             targetPosition.setFromMatrixPosition(matrix);
             edge.push(targetPosition);
-            this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, indexNode, [indexNode, targetNodeId]);
+            let index = this.NodeManager.node2index(instanceObj);
+            this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, index, [index, targetNodeId]);
         }
 
         return;
@@ -3392,7 +3541,7 @@ class PreviewArea {
     };
 
     // give a specific node index, remove all edges from a specific node in a specific scene
-    removeEdgesGivenNode(indexNode) {
+    removeEdgesGivenNode = (indexNode) => {
         let l = this.displayedEdges.length;
 
         // keep a list of removed edges indexes
@@ -3426,20 +3575,14 @@ class PreviewArea {
 
 
   skyboxLoadedCallback = (texture) => {
+    console.log("Skybox loaded");
     //set the scene background property with the resulting texture
     this.skybox.name = "skybox";
     this.scene.background = this.skybox;
     //activate background
     this.scene.background.needsUpdate = true;
-    // todo, draw three lines at the center, this is blocking some things.
-    // var geometry = new THREE.SphereGeometry(5000, 60, 40);
-    // geometry.scale(-1, 1, 1);
-    // var material = new THREE.MeshBasicMaterial({
-    //     map: new THREE.TextureLoader().load('./images/' + folder + '/posy.png')
-    // });
-    // var mesh = new THREE.Mesh(geometry, material);
-    // scene.add(mesh);
   };
+
     // draw skybox from images
     addSkybox(){
       console.log("Adding skybox");
@@ -3522,23 +3665,31 @@ class PreviewArea {
     // detects which scene: left or right
     // return undefined if no object was found
 
-    getIntersectedObject = function (vector) {
-        // check if raycaster is defined
-        //if (!raycaster) {
+    getIntersectedObject = (vector) => {
+
         let raycaster = new THREE.Raycaster();
-        //}
-        // set the raycaster from the camera position and mouse position
+
         raycaster.setFromCamera(vector, this.camera);
-        // get the list of objects the ray intersected
+
         this.objectsIntersected = raycaster.intersectObjects(this.scene.children, true);
         // return the first object. It's the closest one
-        // console.log("objectsIntersected: ");
-        // console.log(objectsIntersected);
-        return (this.objectsIntersected[0]) ? this.objectsIntersected[0] : undefined;
+        // returning the first object is ok but only returning region objects better for many reasons.
+        //return first object with name.type == 'region'
+        return this.objectsIntersected.find(o => o.object.name.type === 'region');
+
+        //return (this.objectsIntersected[0]) ? this.objectsIntersected[0] : null;
     };
 
     // callback when window is resized
-    resizeScene() {
+    resizeScene = () => {
+
+        //avoid calling calling to quickly will crash the renderer.
+        if (Date.now() - this.lastResizeTime < 50) {
+            return;
+        } else {
+            this.lastResizeTime = Date.now();
+        }
+
         //todo disabled for now straight to else  vrButton.isPresenting() ...  actually removing all WebVR for now
         // if (vrButton && 0) {
         //     camera.aspect = window.innerWidth / window.innerHeight;
@@ -3547,30 +3698,38 @@ class PreviewArea {
         // } else {
         if(!this.camera) {
             console.log("resize failed to find camera.");
-            return;
+            this.camera = this.initCamera();
+        } else {
+            // drop the old camera and create a new one
+              //the returns here are mostly decorative if scope is working correctly.
+            this.camera = this.initCamera();
+            this.controls = this.initControls();
         }
-        let width = window.innerWidth / 2;
-        let height = window.innerHeight
+        let width = window.innerWidth/2;
+        let height = window.innerHeight;
         if(width<1 || height<1) {
             // something has gone wrong.
             return;
         }
+        this.canvas.width = width;
+        this.canvas.height = height;
         this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
         console.log("Resize x " + width + " y " + height);
         //}
-        this.camera.updateProjectionMatrix();
+
     };
 
     // compute shortest path info for a node
-    computeShortestPathForNode(nodeIndex) {
+    computeShortestPathForNode = (nodeIndex) => {
         console.log("Compute Shortest Path for node " + nodeIndex);
         setRoot(nodeIndex);
         this.model.computeShortestPathDistances(nodeIndex);
     };
 
     // draw shortest path from root node up to a number of hops
-    updateShortestPathBasedOnHops() {
+    updateShortestPathBasedOnHops = () => {
         let hops = this.model.getNumberOfHops();
         let hierarchy = this.model.getHierarchy(getRoot);
         let edges = this.model.getActiveEdges();
@@ -3600,7 +3759,7 @@ class PreviewArea {
         }
     };
 
-    updateShortestPathBasedOnDistance() {
+    updateShortestPathBasedOnDistance = () => {
         clrNodesSelected();
         this.removeShortestPathEdgesFromScene();
 
@@ -3628,7 +3787,7 @@ class PreviewArea {
         }
     };
 
-    updateShortestPathEdges() {
+    updateShortestPathEdges = () => {
         switch (getShortestPathVisMethod()) {
             case (SHORTEST_DISTANCE):
                 this.updateShortestPathBasedOnDistance();
@@ -3640,7 +3799,7 @@ class PreviewArea {
     };
 
     // prepares the shortest path from a = root to node b
-    getShortestPathFromRootToNode(target) {
+    getShortestPathFromRootToNode = (target) => {
         this.removeShortestPathEdgesFromScene();
 
         let i = target;
@@ -3665,14 +3824,14 @@ class PreviewArea {
     //todo this looks familiar, maybe it can be combined with getIntersectedObject
     // main difference between this and getIntersectedObject is this is for a controller
     // while getIntersectedObject is for the mouse or flat screen vector.
-    getPointedObject(controller) {
+    getPointedObject = (controller) => {
         let raycaster = new THREE.Raycaster();
         let controllerPosition = controller.position;
         let forwardVector = new THREE.Vector3(0, 0, -1);
         //get object in front of controller
         forwardVector.applyQuaternion(controller.quaternion);
         raycaster = new THREE.Raycaster(controllerPosition, forwardVector);
-        let objectsIntersected = raycaster.intersectObjects(this.scene);
+        let objectsIntersected = raycaster.intersectObjects(this.scene.children);
         return (objectsIntersected[0]) ? objectsIntersected[0] : undefined;
     }
 
@@ -3693,14 +3852,14 @@ class PreviewArea {
     // Update the text and position according to selected node
     // The alignment, size and offset parameters are set by experimentation
     // TODO needs more experimentation
-    updateNodeLabel(text, nodeObject) {    ///Index) {
+    updateNodeLabel = (text, nodeObject) => {    ///Index) {
         if(this.labelsVisible === false) return;
 
-        let context = nspCanvas.getContext('2d');
+        let context = this.nspCanvas.getContext('2d');
         context.textAlign = 'left';
         // Find the length of the text and add enough _s to fill half of the canvas
         let textLength = context.measureText(text).width;
-        let numUnderscores = Math.ceil((nspCanvas.width/2 - textLength) / context.measureText("_").width);
+        let numUnderscores = Math.ceil((this.nspCanvas.width/2 - textLength) / context.measureText("_").width);
         for (let i = 0; i < numUnderscores; i++) {
             text = text + "_";
         }
@@ -3712,13 +3871,13 @@ class PreviewArea {
         //var pos = glyphs[nodeIndex].position;
         let pos = nodeObject.point;
         this.nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
-        if(previewAreaLeft.labelsVisible || previewAreaRight.labelsVisible) {
+        if(this.labelsVisible) {
             this.nodeLabelSprite.needsUpdate = true;
         }
     };
 
     // Adding Node label Sprite
-    addNodeLabel() {
+    addNodeLabel = () => {
         //this.nspCanvas = document.createElement('canvas');
         //moved to constructor.
         let size = 256;
@@ -3750,14 +3909,15 @@ class PreviewArea {
             this.brain.add(this.nodeLabelSprite);
         }
         //todo why are we ignoring the right brain? also while we are here we can avoid
+        //followup set it to respect this, no need for magic globals.
         // the global previewAreaLeft by using this instead.
     };
 
-    getCamera() {
+    getCamera = () => {
         return this.camera;
     };
 
-    syncCameraWith(cam) {
+    syncCameraWith = (cam) => {
         this.camera.copy(cam);
         this.camera.position.copy(cam.position);
         this.camera.zoom = cam.zoom;
@@ -3776,11 +3936,11 @@ class PreviewArea {
     //     return glyphs.length;
     // }
 
-    setAnimation(amp) {
+    setAnimation = (amp) => {
         this.amplitude = amp;
     }
 
-    setFlahRate(freq) {
+    setFlahRate = (freq) => {
         this.frequency = freq;
     }
 
@@ -3798,7 +3958,11 @@ class PreviewArea {
     }
 
 
-
+  rebindNodeManagerCallbacks() {
+    this.NodeManager.nodesSelectedGeneralCallback = this.GroupSelectedCallback.bind(this);
+    this.NodeManager.nodeSelectedCallback = this.appearSelected.bind(this);
+    this.NodeManager.onNodeUnselectCallback = this.appearUnselected.bind(this);
+  }
 }
 
 

@@ -1,6 +1,7 @@
 /**
  * Created by Johnson on 2/15/2017.
  */
+import NodeManager from "./NodeManager";
 
 
 var previewAreaLeft, previewAreaRight;
@@ -69,9 +70,11 @@ function onDocumentMouseMove(model, event) {
     // (such as the mouse's TrackballControls)
     // do we want that?
    // event.preventDefault();
-    let intersectedObject = getIntersectedObject(event);
-    // var isLeft = event.clientX < window.innerWidth/2;
-    updateNodeMoveOver(previewAreaLeft.model, intersectedObject, 1); // 1 = mouse hover
+   let intersectedObject = getIntersectedObject(event);
+   //  console.log("intersectedObject: ");
+   //  console.log(intersectedObject);
+    let isLeft = event.clientX < window.innerWidth/2;
+    updateNodeMoveOver(isLeft ? previewAreaLeft.model : previewAreaRight.model, intersectedObject, isLeft); // 1 = mouse hover
 
 }
 
@@ -89,7 +92,9 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     var nodeIdx, region, nodeRegion;
     //console.log("updateNodeMoveOver: ");
     //console.log(intersectedObject);
-    if(intersectedObject === undefined)
+    if(intersectedObject === undefined || intersectedObject === null)
+        return;
+    if(intersectedObject.object === undefined)
         return;
     //check if name is defined, if not, it is not a node
     if (intersectedObject.object.name === undefined) {
@@ -104,13 +109,22 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     //check if the intersected object is a node, if it is the name.type will be 'region'
     //if it is a node, get the node index and the region name
     if (intersectedObject.object.name.type == 'region') {
-        nodeIdx = intersectedObject.object.getDatasetIndex(intersectedObject); //.instanceId);
+        nodeIdx = previewAreaLeft.NodeManager.node2index(intersectedObject); //.instanceId);
         if (intersectedObject) {
             //nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
             region = model.getRegionByIndex(nodeIdx);
             nodeRegion = model.getGroupNameByNodeIndex(nodeIdx);
         }
+    } else {
+        // you can test for things other than our instances and route accordingly
+        // but right now other things don't matter.
+        return;
     }
+
+    //todo based on the code below this is only supposed to highlight the node if it is visible.
+    //todo: this is not working anyway so i'm just highlighting the node under the mouse.
+    previewAreaLeft.NodeManager.highlightNode(intersectedObject);
+    previewAreaRight.NodeManager.highlightNode(intersectedObject);
     //nodeIdx = intersectedObject.object.getDatasetIndex(intersectedObject.instanceId);
     // if (intersectedObject) {
     //     nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
@@ -129,13 +143,17 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
         // }
     }
 
-    if (nodeExistAndVisible && intersectedObject.object.isSelected(intersectedObject)) { // not selected
+    if (nodeExistAndVisible && previewAreaLeft.NodeManager.isSelected(intersectedObject)) { // not selected
         if (hoverTimeout && oldNodeIndex == nodeIdx) {
             // create a selected node (bigger) from the pointed node
             pointedObject = intersectedObject.object;
-            previewAreaLeft.updateNodeGeometry(nodeIdx, 'mouseover');
-            previewAreaRight.updateNodeGeometry(nodeIdx, 'mouseover');
+            // previewAreaLeft.updateNodeGeometry(nodeIdx, 'mouseover');
+            // previewAreaRight.updateNodeGeometry(nodeIdx, 'mouseover');
+            previewAreaLeft.NodeManager.highlightNode(intersectedObject);
+            previewAreaRight.NodeManager.highlightNode(intersectedObject);
             // console.log("Drawing edges from node ", nodeIdx);
+            //todo most of this behavior should be moved to the mouseover in previewArea's nodemanager.
+            //will need a similar method for dealing with the VR controller.
             pointedNodeIdx = nodeIdx;
             hoverTimeout = false;
             hoverMode = hoverMode | mode;  // set the hover mode to the mode that triggered this function
@@ -148,7 +166,9 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
         }
     } else {
         if (pointedObject ) {
-            nodeIdx = intersectedObject.object; //glyphNodeDictionary[pointedObject.uuid];
+            //nodeIdx = intersectedObject.object; //glyphNodeDictionary[pointedObject.uuid];
+            // nodeIdx above would not of been an index, it would of been the object itself.
+            nodeIdx = previewAreaLeft.NodeManager.node2index(intersectedObject);
             if (nodeIdx === undefined)
                 return;
             hoverMode = hoverMode & ~mode; // clear the hover mode that triggered this function
@@ -159,11 +179,15 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
             pointedNodeIdx = -1;
             if (nodeIdx == root) {
                 console.log("Root creation");
-                previewAreaLeft.updateNodeGeometry(nodeIdx, 'root');
-                previewAreaRight.updateNodeGeometry(nodeIdx, 'root');
+                // previewAreaLeft.updateNodeGeometry(nodeIdx, 'root');
+                // previewAreaRight.updateNodeGeometry(nodeIdx, 'root');
+                //
+                previewAreaLeft.NodeManager.setRootNode(nodeIdx);
+                previewAreaRight.NodeManager.setRootNode(nodeIdx);
             } else {
-                previewAreaLeft.updateNodeGeometry(nodeIdx, 'normal');
-                previewAreaRight.updateNodeGeometry(nodeIdx, 'normal');
+                // previewAreaLeft.updateNodeGeometry(nodeIdx, 'normal');
+                // previewAreaRight.updateNodeGeometry(nodeIdx, 'normal');
+                previewAreaLeft.NodeManager.restoreNode(intersectedObject)
             }
             pointedObject = null;
         }
@@ -191,151 +215,171 @@ function onMiddleClick(event) {
             previewAreaLeft.computeShortestPathForNode(nodeIndex);
             previewAreaRight.computeShortestPathForNode(nodeIndex);
         }
-        updateScenes();
+        //updateScenes();
         enableShortestPathFilterButton(getSpt());
         enableThresholdControls(!getSpt());
     }
 }
 
 // callback to select a node on mouse click
-function onLeftClick(model, event) {
-
-    //event.preventDefault();
-    var objectIntersected = getIntersectedObject(event);
-    // console.log("onLeftClick event: ");
-    // console.log(event);
-    // console.log("onLeftClick objectIntersected: ");
-    // console.log(objectIntersected);
-    var isLeft = event.clientX < window.innerWidth / 2;
-    updateNodeSelection(model, objectIntersected, isLeft);
-}
-
-const updateNodeSelection = (model, objectIntersected, isLeft) => {
-    // console.log("model: ", model);
-    // console.log("objectIntersected: ", objectIntersected);
-    // console.log(`isLeft: ${isLeft}`);
-
-    if (!objectIntersected) return;
+function onLeftClick(previewArea, event) {
 
 
 
-    const instanceId = objectIntersected.instanceId;
-    const group = objectIntersected.object.name.group;
-    const hemisphere = objectIntersected.object.name.hemisphere;
-    // check if name is blank empty or undefined
-    if (group === "" || group === undefined) return;
-    if (hemisphere === "" || hemisphere === undefined) return;
-    if (instanceId === "" || instanceId === undefined) return;
-
-    const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
-    //console.log("previewArea instances: ");
-    //console.log(previewArea.instances);
-    // if
-    //const instanceList = previewArea.instances[group][hemisphere];
-    //or could be
-    //const instanceList = objectIntersected.
-    // log instance
-
-    if (!group || !hemisphere || !instanceId) {
-        console.log("group: ", group);
-        console.log("hemisphere: ", hemisphere);
-        console.log("instanceId: ", instanceId);
-
+    let isLeft = event.clientX < window.innerWidth / 2;
+    if(isLeft && previewArea.name !== 'Left') {
+        //console.log("left click processed on right preview area");
         return;
-        }
-    //if selected make unselected, if unselected make selected
-    //objectIntersected.object.userData.selected = !objectIntersected.object.userData.selected;
-    // check if object is selected or not
-    let isSelected = objectIntersected.object.isSelected(objectIntersected);
-    let nodeIndex = objectIntersected.object.getDatasetIndex(objectIntersected);
-    if (!isSelected) {
-        //mark object selected
-        objectIntersected.object.select(objectIntersected);
-        //previewArea.updateNodeGeometry(objectIntersected, 'selected');
-        //set the object geometry to selected in both scenes
-        // this if statement is to handle different active groups in the left and right preview areas
-        let nodeIndex = -1;
-        if (isLeft) {
-            nodeIndex = previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected');
-            previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
-            //previewAreaLeft.getNodesInstanceFromDatasetIndex(nodeIndex);
-        } else {
-            //previewAreaRight.getNodesInstanceFromDatasetIndex(nodeIndex);
-            nodeIndex = previewAreaRight.updateNodeGeometry(objectIntersected, 'selected');
-            previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
-        }
-        //previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
-        //previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
-        console.log("switched to selected");
-        //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
-        //previewArea.drawSelectedNode(objectIntersected);
-
-        if(spt) {
-            //previewArea.getShortestPathFromRootToNode(nodeIndex);
-            //return;
-            let pathArray = isLeft? modelLeft.getPathArray(getRoot(), nodeIndex) : modelRight.getPathArray(getRoot(), nodeIndex);
-            //console.log("pathArray: ", pathArray);
-            //console.log("pathArray.length: ", pathArray.length);
-            //console.log("pathArray[0]: ", pathArray[0]);
-            for (let i = 0; i < pathArray.length; i++) {
-                if (thresholdModality) {
-                    previewAreaLeft.drawEdgesGivenNode(pathArray[i]);//,activeEdges);
-                    previewAreaRight.drawEdgesGivenNode(pathArray[i]);//,activeEdges);
-
-                } else {
-                    //const n = model.getNumberOfEdges();
-                    //previewArea.drawTopNEdgesByNode(nodeIndex, n);
-                    previewAreaLeft.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
-                    previewAreaRight.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
-                }
-
-            }
-        }
-
-        let activeEdges = previewArea.drawConnections(); //do we want to draw the connections there or here in drawing? My vote is here.
-        // draw connections does not draw connections, but it does returs the lists of the connections to be drawn, filtered by the threshold.
-
-        //todo: work out the below.
-        if (thresholdModality) {
-            previewAreaLeft.drawEdgesGivenNode(nodeIndex);//,activeEdges);
-            previewAreaRight.drawEdgesGivenNode(nodeIndex);//,activeEdges);
-
-        } else {
-            //const n = model.getNumberOfEdges();
-            //previewArea.drawTopNEdgesByNode(nodeIndex, n);
-            previewAreaLeft.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
-            previewAreaRight.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
-        }
-
-    } else {
-        //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
-        //objectIntersected.object.userData.selected = false;
-        //unselect the object
-        console.log("switching to unselected");
-        //previewArea.updateNodeGeometry(objectIntersected, 'normal');
-        //set the object geometry to normal in both scenes
-        previewAreaLeft.updateNodeGeometry(objectIntersected, 'normal');
-        previewAreaRight.updateNodeGeometry(objectIntersected, 'normal');
-        objectIntersected.object.unSelect(objectIntersected);
-        previewAreaLeft.updateScene();
-        previewAreaRight.updateScene();
-        //probably want to remove the edges from the scene here.
-        console.log("end switch");
-        removeEdgesGivenNodeFromScenes(nodeIndex);
+    } else if (!isLeft && previewArea.name !== 'Right') {
+        //console.log("right click processed on left preview area");
+        return;
+    }
+    //event.preventDefault();
+    let objectIntersected = getIntersectedObject(event);
+    if(!objectIntersected) {
+        return;
     }
 
-    //log the currently selected nodes
-    let selectedNodes = getNodesSelected(); // local to drawing, returns a list from both preview areas
-    console.log("selectedNodes: ", selectedNodes);
-};
+        // if it is a node then toggle it's select state.
+        // if it is not a node, then do nothing.
+  console.log("objectIntersected: ", objectIntersected);
+    if(objectIntersected.object.name.type === 'region')
+        previewArea.NodeManager.toggleSelectNode(objectIntersected);
+
+}
+
+// const updateNodeSelection = (model, objectIntersected, isLeft) => {
+//     // console.log("model: ", model);
+//     // console.log("objectIntersected: ", objectIntersected);
+//     // console.log(`isLeft: ${isLeft}`);
+//
+//     if (!objectIntersected) return;
+//
+//
+//
+//     const instanceId = objectIntersected.instanceId;
+//     const group = objectIntersected.object.name.group;
+//     const hemisphere = objectIntersected.object.name.hemisphere;
+//     // check if name is blank empty or undefined
+//     if (group === "" || group === undefined) return;
+//     if (hemisphere === "" || hemisphere === undefined) return;
+//     if (instanceId === "" || instanceId === undefined) return;
+//
+//     const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
+//     //console.log("previewArea instances: ");
+//     //console.log(previewArea.instances);
+//     // if
+//     //const instanceList = previewArea.instances[group][hemisphere];
+//     //or could be
+//     //const instanceList = objectIntersected.
+//     // log instance
+//
+//     if (!group || !hemisphere || !instanceId) {
+//         // console.log("group: ", group);
+//         // console.log("hemisphere: ", hemisphere);
+//         // console.log("instanceId: ", instanceId);
+//
+//         return;
+//         }
+//     //if selected make unselected, if unselected make selected
+//     //objectIntersected.object.userData.selected = !objectIntersected.object.userData.selected;
+//     // check if object is selected or not
+//     let isSelected = previewArea.NodeManager.isSelected(objectIntersected);
+//     let nodeIndex = previewArea.NodeManager.node2index(objectIntersected);
+//     if (!isSelected) {
+//         //mark object selected
+//         previewArea.NodeManager.selectNode(objectIntersected);
+//         //previewArea.updateNodeGeometry(objectIntersected, 'selected');
+//         //set the object geometry to selected in both scenes
+//         // this if statement is to handle different active groups in the left and right preview areas
+//         let nodeIndex = -1;
+//         if (isLeft) {
+//             //this would not have provided an index.
+//             previewAreaLeft.NodeManager.selectNode(objectIntersected);
+//             //previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
+//             previewAreaRight.NodeManager.selectNode(objectIntersected);
+//             //previewAreaLeft.getNodesInstanceFromDatasetIndex(nodeIndex);
+//         } else {
+//             //previewAreaRight.getNodesInstanceFromDatasetIndex(nodeIndex);
+//             nodeIndex = previewAreaRight.updateNodeGeometry(objectIntersected, 'selected');
+//             previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
+//         }
+//         //previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
+//         //previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
+//         console.log("switched to selected");
+//         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
+//         //previewArea.drawSelectedNode(objectIntersected);
+//
+//         if(spt) {
+//             //previewArea.getShortestPathFromRootToNode(nodeIndex);
+//             //return;
+//             let pathArray = isLeft? modelLeft.getPathArray(getRoot(), nodeIndex) : modelRight.getPathArray(getRoot(), nodeIndex);
+//             //console.log("pathArray: ", pathArray);
+//             //console.log("pathArray.length: ", pathArray.length);
+//             //console.log("pathArray[0]: ", pathArray[0]);
+//             for (let i = 0; i < pathArray.length; i++) {
+//                 if (thresholdModality) {
+//                     previewAreaLeft.drawEdgesGivenNode(pathArray[i]);//,activeEdges);
+//                     previewAreaRight.drawEdgesGivenNode(pathArray[i]);//,activeEdges);
+//
+//                 } else {
+//                     //const n = model.getNumberOfEdges();
+//                     //previewArea.drawTopNEdgesByNode(nodeIndex, n);
+//                     previewAreaLeft.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
+//                     previewAreaRight.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
+//                 }
+//
+//             }
+//         }
+//
+//         //todo map a ui toggle directly to preview areas.
+//         let activeEdges = previewArea.drawConnections(); //do we want to draw the connections there or here in drawing? My vote is here.
+//         // draw connections does not draw connections, but it does returs the lists of the connections to be drawn, filtered by the threshold.
+//
+//         //todo: work out the below.
+//         if (thresholdModality) {
+//             previewAreaLeft.drawEdgesGivenNode(nodeIndex);//,activeEdges);
+//             previewAreaRight.drawEdgesGivenNode(nodeIndex);//,activeEdges);
+//
+//         } else {
+//             //const n = model.getNumberOfEdges();
+//             //previewArea.drawTopNEdgesByNode(nodeIndex, n);
+//             previewAreaLeft.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
+//             previewAreaRight.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
+//         }
+//
+//     } else {
+//         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
+//         //objectIntersected.object.userData.selected = false;
+//         //unselect the object
+//         console.log("switching to unselected");
+//         //previewArea.updateNodeGeometry(objectIntersected, 'normal');
+//         //set the object geometry to normal in both scenes
+//         previewAreaLeft.updateNodeGeometry(objectIntersected, 'normal');
+//         previewAreaRight.updateNodeGeometry(objectIntersected, 'normal');
+//         previewAreaLeft.NodeManager.deselectNode(objectIntersected);
+//         previewAreaRight.NodeManager.deselectNode(objectIntersected);
+//         //previewAreaLeft.updateScene();
+//         //previewAreaRight.updateScene();
+//         //probably want to remove the edges from the scene here.
+//         //console.log("end switch");
+//         removeEdgesGivenNodeFromScenes(nodeIndex);
+//     }
+//
+//     //log the currently selected nodes
+//     let selectedNodes = getNodesSelected(); // local to drawing, returns a list from both preview areas
+//     console.log("selectedNodes: ", selectedNodes);
+// };
 
 // callback on mouse press
 function onMouseDown(event) {
     click = true;
     switch (event.button) { // middle button
-        //todo less then 200 msec for what?
+        //auto bounce control timer
+        case 0: // left click -> should be < 200 msec
         case 2: // right click -> should be < 200 msec
-            setTimeout(function () {
+            setTimeout( () => {
+                console.log("unblocking click");
                 click = false;
             }, 200);
             break;
@@ -343,7 +387,7 @@ function onMouseDown(event) {
 }
 
 // callback on mouse release
-function onMouseUp(model, event) {
+let onMouseUp = (model, event) => {
 
     switch (event.button) {
         case 0:
@@ -482,15 +526,15 @@ var initCanvas = function () {
     previewAreaRight = new PreviewArea(document.getElementById('canvasRight'), modelRight, 'Right');
 
     // Get the button, and when the user clicks on it, execute myFunction
-    // document.getElementById("syncLeft").onclick = function () {
-    //     previewAreaLeft.syncCameraWith(previewAreaRight.getCamera());
-    // };
-    // document.getElementById("syncRight").onclick = function () {
-    //     previewAreaRight.syncCameraWith(previewAreaLeft.getCamera());
-    // };
-    // pass mouse events controllers
-    previewAreaLeft.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
-    previewAreaRight.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
+    document.getElementById("syncLeft").onclick = function () {
+        previewAreaLeft.syncCameraWith(previewAreaRight.getCamera());
+    };
+    document.getElementById("syncRight").onclick = function () {
+        previewAreaRight.syncCameraWith(previewAreaLeft.getCamera());
+    };
+    // pass mouse events controllers, took it off drawings hands.
+    //previewAreaLeft.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
+    //previewAreaRight.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
     window.addEventListener("keypress", onKeyPress, true);
 
     // $(window).resize( (e) => {
@@ -607,9 +651,10 @@ var enableEdgeBundling = function (enable) {
 
     previewAreaLeft.removeEdgesFromScene();
     previewAreaRight.removeEdgesFromScene();
-
-    previewAreaLeft.drawConnections();
-    previewAreaRight.drawConnections();
+    previewAreaLeft.reset();
+    previewAreaRight.reset();
+    // previewAreaLeft.drawConnections();
+    // previewAreaRight.drawConnections();
 };
 
 // updating scenes: redrawing glyphs and displayed edges
@@ -643,8 +688,10 @@ var redrawEdges = function () {
 };
 
 var updateOpacity = function (opacity) {
-    previewAreaLeft.updateEdgeOpacity(opacity);
+
+  previewAreaLeft.updateEdgeOpacity(opacity);
     previewAreaRight.updateEdgeOpacity(opacity);
+
 };
 
 var removeEdgesGivenNodeFromScenes = function (nodeIndex) {
@@ -655,22 +702,39 @@ var removeEdgesGivenNodeFromScenes = function (nodeIndex) {
     // setEdgesColor();
 };
 
+//maps the coordinates to the canvas, returns a vector2 containing 2 values between -1 and 1
+var mapCoordinates = function (event, isLeft) {
+    // Define the mapping range for x and y coordinates
+    const xRange = [-1, 1];
+    const yRange = [-1, 1];
+
+    // Calculate the x mapping based on isLeft
+    let x;
+    if (isLeft) {
+        x = (event.clientX / (window.innerWidth / 2)) * (xRange[1] - xRange[0]) + xRange[0];
+    } else {
+        x = ((event.clientX - window.innerWidth / 2) / (window.innerWidth / 2)) * (xRange[1] - xRange[0]) + xRange[0];
+    }
+
+    // Map the y coordinate
+    const y = -(event.clientY / window.innerHeight) * (yRange[1] - yRange[0]) + yRange[1];
+
+    return new THREE.Vector2(x, y);
+};
 // get intersected object beneath the mouse pointer
 // detects which scene: left or right
 // return undefined if no object was found
-var getIntersectedObject = function (event) {
+let getIntersectedObject = (event) => {
 
     var isLeft = event.clientX < window.innerWidth / 2;
+    var vector = mapCoordinates(event, isLeft);
 
-    // mapping coordinates of the viewport to (-1,1), (1,1), (-1,-1), (1,-1)
-    // TODO: there is a glitch for the right side
-    var vector = new THREE.Vector2(
-        (event.clientX / window.innerWidth) * 4 - (isLeft ? 1 : 3),
-        -(event.clientY / window.innerHeight) * 2 + 1
-    );
+    //log client xy
+    // console.log("clientX: ", event.clientX);
+    // console.log("clientY: ", event.clientY);
+    // console.log("Vector: ", vector);
     let iObject = isLeft ? previewAreaLeft.getIntersectedObject(vector) : previewAreaRight.getIntersectedObject(vector);
-    //console.log("Intersected object: ");
-    //console.log(iObject);
+
     return iObject;
 };
 
@@ -733,11 +797,11 @@ var redrawScene = function (side) {
     switch (side) {
         case 'Left':
         case 'left':
-            previewAreaLeft.updateScene();
+            //previewAreaLeft.updateScene();
             break;
         case 'Right':
         case 'right':
-            previewAreaRight.updateScene();
+            //previewAreaRight.updateScene();
             break;
     }
 };
@@ -749,25 +813,28 @@ var changeActiveGeometry = function (model, side, type) {
     model.setActiveTopology(type);
 
     if(side !== "Left") {
-        previewAreaRight.removeAllInstances();
+
+
         modelRight.setAllRegionsActivated();
         modelRight.getDataset(true);
-        previewAreaRight.drawRegions();
+      previewAreaRight.reset();
+
         previewAreaRight.updateNodesVisibility();
         previewAreaRight.setSelectedNodes(tempNodesSelected);
 
     } else {
-        previewAreaLeft.removeAllInstances();
+
+
         modelLeft.setAllRegionsActivated();
         modelLeft.getDataset(true);
-        previewAreaLeft.drawRegions();
+        previewAreaLeft.reset();
         previewAreaLeft.updateNodesVisibility();
         previewAreaLeft.setSelectedNodes(tempNodesSelected);
 
-
     }
     model.computeEdgesForTopology(model.getActiveTopology());
-    redrawScene(side);};
+    redrawScene(side);
+};
 
 // draw shortest path for the left and right scenes = prepare the edges and plot them
 var updateShortestPathEdges = function (side) {
@@ -944,7 +1011,7 @@ export {
     updateScenes,
     updateNodesVisiblity,
     updateNodeMoveOver,
-    updateNodeSelection,
+    //updateNodeSelection,
     redrawEdges,
     updateOpacity,
     glyphNodeDictionary,
@@ -963,5 +1030,8 @@ export {
     getEnableIpsi, //todo: couldn't find definition
     getEnableContra,
     setThresholdModality,
-    getThresholdModality
+    getThresholdModality,
+    onMouseUp,
+    onDocumentMouseMove,
+    onMouseDown
 }
