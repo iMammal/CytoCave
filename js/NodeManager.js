@@ -100,8 +100,8 @@ class NodeManager {
 
 
     CountGroupMembers(group) {
-        let leftCount = 0;
-        let rightCount = 0;
+        let leftCount ;
+        let rightCount ;
         leftCount = this.previewArea.countGroupMembers(group, "left");
         rightCount = this.previewArea.countGroupMembers(group, "right");
         return {left: leftCount, right: rightCount}
@@ -532,17 +532,16 @@ class NodeManager {
 
     getEdges = (node, threshold = 0, topN= null, distance = 0) => {
         //get the edges of the node at the instanceId.
-        console.log("Getting Edges");
-        //settings
-        console.log("Threshold: " + threshold);
-        console.log("TopN: " + topN);
-        console.log("Distance: " + distance);
+        // console.log("Getting Edges");
+        // //settings
+        // console.log("Threshold: " + threshold);
+        // console.log("TopN: " + topN);
+        // console.log("Distance: " + distance);
 
         let index = this.node2index(node);
         let matrixRow = this.model.getConnectionMatrixRow(index);
         let edges = [];
-        console.log("Matrix Row dimensions: ");
-        console.log(matrixRow.length);
+
         //
         // for (let i = 0; i < matrixRow.length; i++) {
         //     if (matrixRow[i] > threshold) {
@@ -554,7 +553,7 @@ class NodeManager {
         //         });
         //     }
         // }
-        console.log("Starting with " + matrixRow.length + " edges.");
+        console.log("Starting with " + matrixRow.size() + " edges.");
         matrixRow.forEach((weight, i) => {
             if (weight > threshold) {
 
@@ -594,12 +593,12 @@ class NodeManager {
           return aDistance - bDistance;
         } );
 
-        if(topN !== null && topN !== 0){
+        if(topN !== null && topN > 0){
             console.log("TopN filter set topN to null or 0 to disable.");
             edges = edges.slice(0, topN);
         }
-        console.log("Returning " + edges.length + " edges.");
-        console.log(edges);
+        // console.log("Returning " + edges.length + " edges.");
+        // console.log(edges);
         return edges;
 
     }
@@ -618,8 +617,8 @@ class NodeManager {
                 if(this.instances[group][hemisphere] === null){
                     continue;
                 }
-                console.log("adding instance to scene");
-                console.log(this.instances[group][hemisphere]);
+                // console.log("adding instance to scene");
+                // console.log(this.instances[group][hemisphere]);
                 this.sceneObject.add(this.instances[group][hemisphere]);
             }
         }

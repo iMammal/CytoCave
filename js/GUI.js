@@ -348,9 +348,9 @@ var addThresholdSlider = function () {
         .attr("type", "range")
         .attr("value", modelLeft.getThreshold())
         .attr("id", "thresholdSlider")
-        .attr("min", 0.)
+        .attr("min", 0.0)
         .attr("max", max)
-        .attr("step", max/20)
+        .attr("step", max/100)
         .on("change", function () {
             modelLeft.setThreshold(this.value/thresholdMultiplier);
             modelRight.setThreshold(this.value/thresholdMultiplier);
@@ -570,7 +570,8 @@ var addTopNSlider = function () {
         .on("change", function () {
             modelLeft.setNumberOfEdges(this.value);
             modelRight.setNumberOfEdges(this.value);
-            redrawEdges();
+            //redrawEdges();
+          updateScenes();
             document.getElementById("topNThresholdSliderLabel").innerHTML = "Number of Edges: " + modelLeft.getNumberOfEdges();
         });
     menu.append("label")
@@ -910,6 +911,7 @@ var addColorGroupList = function() {
             this.value = 'Unlocked';
             this.innerHTML = "Lock";
             lockLegend = false;
+            updateScenes();
         } else {
             document.getElementById("colorCodingLeft").hidden = true;
             document.getElementById("colorCodingMenu").label = "ColorCoding:";
@@ -1116,6 +1118,7 @@ var addTopologyMenu = function (model, side, type="anatomy") {
                 changeActiveGeometry(model, side, selection);
                 break;
         }
+        updateScenes();
     };
 
     if (hierarchicalClusteringExist)

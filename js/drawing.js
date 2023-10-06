@@ -913,6 +913,8 @@ var changeSceneToSubject = function (subjectId, model, previewArea, side) {
 
 var setRoot = function (rootNode) {
     root = rootNode;
+    previewAreaLeft.NodeManager.setRootNode(rootNode);
+    previewAreaRight.NodeManager.setRootNode(rootNode);
 }
 
 var getRoot = function () {
