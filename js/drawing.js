@@ -36,7 +36,7 @@ import {isLoaded, dataFiles, mobile} from "./globals";
 import {
     addEdgeBundlingCheck,
     addModalityButton,
-	addLateralityCheck,
+	  addLateralityCheck,
     removeGeometryButtons,
     addOpacitySlider,
     addThresholdSlider,
@@ -660,6 +660,7 @@ var enableEdgeBundling = function (enable) {
 // updating scenes: redrawing glyphs and displayed edges
 //todo compare with redrawScene
 var updateScenes = function (side) {
+  let selectedNodes = getNodesSelected();
     console.log("Scene update "+side);
     if (side !== "Right") {
         previewAreaLeft.updateScene();
@@ -669,6 +670,9 @@ var updateScenes = function (side) {
         previewAreaRight.updateScene();
         createLegend(modelRight,"Right");
     }
+    previewAreaLeft.setSelectedNodes(selectedNodes);
+    previewAreaRight.setSelectedNodes(selectedNodes);
+
 };
 
 var updateNodesVisiblity = function (side) {
@@ -687,11 +691,18 @@ var redrawEdges = function () {
     previewAreaRight.redrawEdges();
 };
 
+var getEdgeOpacity = function () {
+    return previewAreaLeft.getEdgeOpacity();
+}
+
+var setEdgeOpacity = function (opacity) {
+    previewAreaLeft.setEdgeOpacity(opacity);
+    previewAreaRight.setEdgeOpacity(opacity);
+}
+
 var updateOpacity = function (opacity) {
-
-  previewAreaLeft.updateEdgeOpacity(opacity);
-    previewAreaRight.updateEdgeOpacity(opacity);
-
+  previewAreaLeft.setEdgeOpacity(opacity);
+  previewAreaRight.setEdgeOpacity(opacity);
 };
 
 var removeEdgesGivenNodeFromScenes = function (nodeIndex) {
@@ -743,12 +754,12 @@ var changeColorGroup = function (name, side) {
     console.log("Change color group: " + name + " " + side);
     let tempNodesSelected = getNodesSelected();
 
-    if (side !== "Right") {
-        previewAreaLeft.removeAllInstances();
+    if (side !== "Right" || side === "Both") {
+        //previewAreaLeft.removeAllInstances();
         modelLeft.setActiveGroup(name);
         modelLeft.setAllRegionsActivated();
         modelLeft.getDataset(true);
-        previewAreaLeft.drawRegions();
+        //previewAreaLeft.drawRegions();
         previewAreaLeft.updateNodesVisibility();
         previewAreaLeft.updateNodesColor();
         createLegend(modelLeft, "Left");
@@ -756,20 +767,23 @@ var changeColorGroup = function (name, side) {
         previewAreaLeft.setSelectedNodes(tempNodesSelected);
     }
 
-    if (side !== "Left") {
-        previewAreaRight.removeAllInstances();
+    if (side !== "Left" || side === "Both" ) {
+        //previewAreaRight.removeAllInstances();
         modelRight.setActiveGroup(name);
         modelRight.setAllRegionsActivated();
         modelRight.getDataset(true);
-        previewAreaRight.drawRegions();
+        //previewAreaRight.drawRegions();
         previewAreaRight.updateNodesVisibility();
         previewAreaRight.updateNodesColor();
+
         createLegend(modelRight, "Right");
         //redrawScene("Right")  // This is not needed as the redrawScene is called in the updateNodesVisibility
         previewAreaRight.setSelectedNodes(tempNodesSelected);
     }
-
     setColorGroupScale(side);
+    previewAreaLeft.updateScene();
+    previewAreaRight.updateScene();
+
     redrawEdges();
 };
 

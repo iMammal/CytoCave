@@ -15,6 +15,7 @@ class NodeManager {
         this.groupCount = this.groups.length;
         this.instances = {};
         this.selectedNodes = [];
+        this.focusedNodes = [];
         this.selectedNodesCount = 0;
         this.selectedNodesChanged = false;
         this.nodesSelectedGeneralCallback = null;
@@ -110,7 +111,8 @@ class NodeManager {
         //find the instancedMesh that contains the index and return it.
         //return null if not found.
         if (index === null || index === undefined || isNaN(index)) {
-            throw new Error("index is not a number");
+          console.log("index2node  Index: " + index);
+          throw new Error("index is not a number");
         }
         for (let group in this.instances) {
             for (let hemisphere in this.instances[group]) {
@@ -152,13 +154,29 @@ class NodeManager {
         return index;
     }
 
-
-    getSelectedNodes() {
+    //gets all selected nodes, optionally filtered by group and hemisphere.
+    //to filter by group, pass an array of group names. to filter by hemisphere, pass an array of hemisphere names.
+    //todo rename hemisphere to subsection or something.
+    getSelectedNodes(groups = null, hemispheres = null) {
         // from all this.instances, get the userData.selectedNodes of each instance.
         // return the list of selected nodes.
+        if(groups === null){
+            groups = this.groups;
+        }
+
+        if(hemispheres === null){
+            hemispheres = ["left", "right"];
+        }
+
         let selectedNodes = [];
         for (let group in this.instances) {
+            if(!groups.includes(group)){
+                continue;
+            }
             for (let hemisphere in this.instances[group]) {
+                if(!hemispheres.includes(hemisphere)){
+                    continue;
+                }
                 if(this.instances[group][hemisphere] === null){
                     continue;
                 }
@@ -167,8 +185,23 @@ class NodeManager {
                 selectedNodes = selectedNodes.concat(this.instances[group][hemisphere].userData.selectedNodes);
             }
         }
-        this.selectedNodes = selectedNodes;
+
         return selectedNodes;
+
+        //
+        // let selectedNodes = [];
+        // for (let group in this.instances) {
+        //     for (let hemisphere in this.instances[group]) {
+        //         if(this.instances[group][hemisphere] === null){
+        //             continue;
+        //         }
+        //         //console.log("getting selected nodes from group: " + group + " and hemisphere: " + hemisphere);
+        //             //console.log(this.instances[group][hemisphere].userData.selectedNodes);
+        //         selectedNodes = selectedNodes.concat(this.instances[group][hemisphere].userData.selectedNodes);
+        //     }
+        // }
+        // this.selectedNodes = selectedNodes;
+        // return selectedNodes;
     }
 
     setSelectedNodes(indexList, clear = true) {
@@ -497,45 +530,84 @@ class NodeManager {
         }
     }
 
-    getEdges = (node, threshold = 0, topN= null) => {
+    getEdges = (node, threshold = 0, topN= null, distance = 0) => {
         //get the edges of the node at the instanceId.
-        let object= node.object;
-        let index = node.object.userData.indexList[node.instanceId];
+        console.log("Getting Edges");
+        //settings
+        console.log("Threshold: " + threshold);
+        console.log("TopN: " + topN);
+        console.log("Distance: " + distance);
+
+        let index = this.node2index(node);
         let matrixRow = this.model.getConnectionMatrixRow(index);
         let edges = [];
+        console.log("Matrix Row dimensions: ");
+        console.log(matrixRow.length);
+        //
+        // for (let i = 0; i < matrixRow.length; i++) {
+        //     if (matrixRow[i] > threshold) {
+        //         edges.push({
+        //             sourceNodeId: index,
+        //             targetNodeId: i,
+        //             weight: matrixRow[i],
+        //             position: this.getNodePosition(this.index2node(i))
+        //         });
+        //     }
+        // }
+        console.log("Starting with " + matrixRow.length + " edges.");
+        matrixRow.forEach((weight, i) => {
+            if (weight > threshold) {
 
-        matrixRow.forEach(function(weight, targetIndex) {
-            if (weight > 0) {
-                let edge = {
+                edges.push({
+                    sourceNodeId: index,
+                    targetNodeId: i[0],
                     weight: weight,
-                    targetNodeId: targetIndex[0],
-                };
-                edges.push(edge);
+                    position: this.getNodePosition(this.index2node(i[0]))
+                });
             }
-        }, true);
+        });
 
-        let filteredResults = [];
-        if (!topN) {
-            filteredResults = edges.filter(edge => edge.weight >= threshold);
-        } else {
-            filteredResults = edges.sort((a, b) => b.weight - a.weight).slice(0, topN);
-            if(threshold) {
-                filteredResults = filteredResults.filter(edge => edge.weight >= threshold);
-            }
+
+        edges.sort((a, b) => {
+            //sort by weight
+            return b.weight - a.weight;
+        });
+
+        if(distance !== 0) {
+            console.log("Distance filter active, distance to 0 to disable.");
+            //calculate distance to each target, drop targets that are too far away.
+            let sourcePosition = this.getNodePosition(node);
+            edges = edges.filter(edge => {
+              let targetPosition = this.getNodePosition(this.index2node(edge.targetNodeId));
+              let distance2target = sourcePosition.distanceTo(targetPosition);
+              return distance2target <= distance;
+            } );
         }
 
+        edges.sort((a, b) => {
+          // sort by distance closest to farthest
+          let sourcePosition = this.getNodePosition(node);
+          let aPosition = this.getNodePosition(this.index2node(a.targetNodeId));
+          let bPosition = this.getNodePosition(this.index2node(b.targetNodeId));
+          let aDistance = sourcePosition.distanceTo(aPosition);
+          let bDistance = sourcePosition.distanceTo(bPosition);
+          return aDistance - bDistance;
+        } );
+
+        if(topN !== null && topN !== 0){
+            console.log("TopN filter set topN to null or 0 to disable.");
+            edges = edges.slice(0, topN);
+        }
+        console.log("Returning " + edges.length + " edges.");
+        console.log(edges);
         return edges;
+
     }
 
-    getEdgesWithThreshold = (node, threshold) => {
-        let edges = this.getEdges(node);
-        let filteredEdges = edges.filter(edge => edge.weight >= threshold);
-        return filteredEdges;
-    }
-
-    getEdgesByIndex(index) {
+    //todo add options for threshold, topN, and distance.
+    getEdgesByIndex(index, threshold = 0, topN= null, distance = 0) {
         let node = this.index2node(index);
-        let edges = this.getEdges(node);
+        let edges = this.getEdges(node, threshold, topN, distance);
         return edges;
     }
 
@@ -619,13 +691,22 @@ class NodeManager {
         this.rootNodeChangedCallback = callback;
     }
 
-    ChangeOpacityByGroupAndHemisphere(group, hemisphere, opacity) {
-        this.instances[group][hemisphere].material.opacity = opacity;
-        this.instances[group][hemisphere].material.needsUpdate = true;
+    ChangeOpacityByGroupAndHemisphere = (group, hemisphere, opacity) => {
+      if(this.instances[group] === undefined){
+        return;
+      }
+      if(this.instances[group][hemisphere] === undefined || this.instances[group][hemisphere] === null){
+        return;
+      }
+      this.instances[group][hemisphere].material.opacity = opacity;
+      this.instances[group][hemisphere].material.needsUpdate = true;
     }
 
-    destructor() {
+  getActiveEdges() {
+    return undefined;
+  }
 
+    destructor() {
        // clear all objects free memory.
         for (let group in this.instances) {
             for (let hemisphere in this.instances[group]) {
@@ -643,6 +724,8 @@ class NodeManager {
 
 
     }
+
+
 }
 
 export default NodeManager;

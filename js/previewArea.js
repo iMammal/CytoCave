@@ -30,10 +30,10 @@ import {
     getSpt,
     glyphNodeDictionary,
     //getNodesSelected,
-    clrNodesSelected,
-    setNodesSelected,
-    getNodesFocused,
-    clrNodesFocused,
+    //clrNodesSelected,
+    // setNodesSelected,
+    // getNodesFocused,
+    // clrNodesFocused,
     setNodesFocused,
     getVisibleNodes,
     getVisibleNodesLength,
@@ -175,10 +175,12 @@ class PreviewArea {
   reset = () => {
     this.removeAllInstances();
     this.NodeManager = new NodeManager(this);
+    this.updateNodesVisibility(true);
     this.rebindNodeManagerCallbacks();
     this.removeEdgesFromScene();
-    this.edgeFlarePoints = null;
+    this.reInitEdgeFlare();
 
+    this.setEdgeOpacity(this.edgeOpacity);  //maintains edge opacity between resets.
   }
 
   appearUnselected = (node) => {
@@ -194,8 +196,7 @@ class PreviewArea {
       previewAreaLeft.NodeManager.selectNode(node);
       previewAreaRight.NodeManager.selectNode(node);
         this.NodeManager.scaleNode(node, 4/3);
-        //just to sync up clicks between the two preview areas for now until more control updates.
-
+        //just to sync up clicks between the two preview areas for now until more control updates
         //theory being that the select does nothing if it's already selected in that previewarea.
         this.drawEdgesGivenNode(node);
         this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.
@@ -1469,7 +1470,7 @@ class PreviewArea {
 
       for (let i = 0; i < edges.length; i++) {
         count += edges[i][1].length;
-        instanceGroup = this.NodeManager.instances[edges[i][0].object.name.group][edges[i][0].object.name.hemisphere];
+
           let material = getNormalMaterial(this.model, edges[i][0].object.name.group);
         // index, length, and color, should be enough...
         colorMatchMap[i] = [ edges[i][1].length, material.color ];
@@ -1712,7 +1713,8 @@ class PreviewArea {
     toggleFlare = () => {
         if (!(this.edgeFlareVisible < 9)) {
             this.edgeFlareVisible = -1;// false;
-            this.reInitEdgeFlare();
+            this.removeEdgeFlare();
+            //this.reInitEdgeFlare();
             //this.hideEdgeFlare();
         } else {
             this.edgeFlareVisible += 1;// true;;
@@ -1999,6 +2001,11 @@ class PreviewArea {
     }
 
     animateEdges = () => {
+        //console.log("animateEdges");
+        //console.log("Current value of  this.edgeFlareVisible: " + this.edgeFlareVisible);
+        // console.log("Current value of  this.displayedEdges: ");
+        // console.log(this.displayedEdges);
+
         const positions = this.edgeFlareGeometry.attributes.position;
         const material = this.edgeFlareMaterial;
 
@@ -2297,10 +2304,7 @@ class PreviewArea {
     // updating scenes: redrawing glyphs and displayed edges
     updateScene = () => {
       console.log('%c  ' + 'updateScene', 'background: #222; color: #bada55');
-        //updateNodesPositions(); // todo: update to account for instancing
-        this.updateNodesVisibility(true);
-        this.redrawEdges();
-        this.reInitEdgeFlare();
+        this.reset();
     };
 
     removeAllInstances = () => {
@@ -3029,12 +3033,18 @@ class PreviewArea {
     // }
 
     // get the active edges, right now this is the same as the selected nodes but will be seperated in the future.
-    getActiveEdges = (topN = null) => {
+    getActiveEdges = () => {
         //var nodeIdx;
         let nodesSelected = this.NodeManager.getSelectedNodes();
         let numNodesSelected = nodesSelected.length;
         //console.log("numNodesSelected: " + numNodesSelected);
         let activeEdges = [];
+        let topN = this.model.getNumberOfEdges();
+        let distance = this.model.getDistanceThreshold();
+        console.log('Get Active Edge Settings: ');
+        console.log('topN: ' + topN);
+        console.log('distance: ' + distance);
+
         //let groups = this.listGroups();
         let threshold = this.model.getThreshold();
         if (threshold === undefined) {
@@ -3042,6 +3052,8 @@ class PreviewArea {
             // consider all selected nodes active
             threshold = 0;
         }
+
+        console.log("Threshold: " + threshold)
 
         // for each index in nodes selected, get the edges, rules are automatically applied
         // based if threshhold topN or both are supplied.
@@ -3052,14 +3064,16 @@ class PreviewArea {
                 //console.log("Node not found for index: " + nodesSelected[i]);
                 throw new Error("Node not found for index: " + nodesSelected[i]);
             }
-            let edges = this.NodeManager.getEdges(node, threshold, topN);
+            let edges = this.NodeManager.getEdges(node, threshold, topN, distance);
             if (!edges) {
                 //throw an error
                 throw new Error("Edges not found for node: " + node);
             }
             // add the edges to active edges
+
             activeEdges.push([node, edges]);
         }
+
         return activeEdges;
     }
         //todo go over the code below at some point, figure out what was supposed to be happening. it looks broken
@@ -3196,10 +3210,11 @@ class PreviewArea {
         clrNodesFocused();
 
 
-        //todo update to handle instances.
-        return;
-        for (var i = 0; i < glyphs.length; ++i) {
-            glyphs[i].material.color = new THREE.Color(scaleColorGroup(this.model, dataset[i].group));
+
+        //updated for nodemanager.
+        for (let i = 0; i < dataset.length; ++i) {
+          this.NodeManager.setNodeColor(i, new THREE.Color(scaleColorGroup(this.model, dataset[i].group)));
+            //glyphs[i].material.color = new THREE.Color(scaleColorGroup(this.model, dataset[i].group));
         }
     };
 
@@ -3238,13 +3253,12 @@ class PreviewArea {
         }
     };
 
-    updateEdgeOpacity = (opacity) => {
+    setEdgeOpacity = (opacity) => {
+        this.edgeOpacity = opacity;
         for (var i = 0; i < this.displayedEdges.length; i++) {
             this.displayedEdges[i].material.opacity = opacity;
             this.displayedEdges[i].material.needsUpdate = true;
         }
-
-
     };
 
     // create a line using start and end points and give it a name
@@ -3402,9 +3416,9 @@ class PreviewArea {
         let node = this.NodeManager.index2node(index);
         this.drawEdgesGivenNode(node, topN);
     }
-    // draw edges given a node following edge threshold
-    drawEdgesGivenNode = (instanceObj, topN = null) => {
-        console.log("Attempting to draw edges given node: " + instanceObj.object.name.group + " " + instanceObj.object.name.hemisphere + " " + instanceObj.instanceId);
+    // draw edges given a node. thresholding is provided by getActiveEdges, this just draws the edges.
+    drawEdgesGivenNode = (node) => {
+        console.log("Attempting to draw edges given node: " + node.object.name.group + " " + node.object.name.hemisphere + " " + node.instanceId);
         //var dataset = this.model.getDataset();
         //var row = this.model.getConnectionMatrixRow(indexNode);
 
@@ -3412,7 +3426,7 @@ class PreviewArea {
         //instanceObj may be in any group (left or right) so we need to find it. getnodesinstancefromdatasetindex returns null if not found in that group.
 
 
-        if(instanceObj == null) {
+        if(node == null) {
             console.log("instanceObj is null");
             return;
         }
@@ -3420,33 +3434,35 @@ class PreviewArea {
         let matrix = new THREE.Matrix4();
         //console.log("NodeObject: ");
         //console.log(nodeObject);
-        let instancePosition = new THREE.Vector3();
+        //let instancePosition = new THREE.Vector3();
         let targetPosition = new THREE.Vector3();
         //let quaternion = new THREE.Quaternion();
         //let scaleVector = new THREE.Vector3();
 
         // get the position of the instanced node, not sure here which to use or if identical.
-        instanceObj.object.getMatrixAt(instanceObj.instanceId, matrix);
+        node.object.getMatrixAt(node.instanceId, matrix);
         //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
-        instancePosition.setFromMatrixPosition(matrix);
-
-        let edges = this.NodeManager.getEdges(instanceObj);
+        //instancePosition.setFromMatrixPosition(matrix);
+        let nodePosition = this.NodeManager.getNodePosition(node);
+        let edges = this.NodeManager.getEdges(node,this.model.getThreshold(), this.model.getNumberOfEdges(), this.model.getDistanceThreshold());
+        let sourceIndex = this.NodeManager.node2index(node);
         //var edges = this.getActiveEdges(); //this gets all active edges.
         // console.log("drawEdgesGivenNode: Active edges: ");
         // console.log(edges);
-
-        if(!topN) {
-            edges = edges.filter(edge => edge.weight >= this.model.getThreshold());
-        } else {
-            edges = edges.sort((a, b) => b.weight - a.weight).slice(0, topN);
-        }
-
+        // get activeedges does the topn distance weight and thresholding.
+        // if(!topN) {
+        //     edges = edges.filter(edge => edge.weight >= this.model.getThreshold());
+        // } else {
+        //     edges = edges.sort((a, b) => b.weight - a.weight).slice(0, topN);
+        // }
+        console.log("DrawEdgesGivenNode Edges: ");
+        console.log(edges);
         for(let i = 0; i < edges.length; i++) {
             // console.log("edge: ");
             // console.log(edges[i]);
 
             let edge  = [];
-            edge.push(instancePosition);
+            edge.push(nodePosition);
             let targetNodeId = edges[i].targetNodeId;
             let targetNode = this.NodeManager.index2node(targetNodeId);
             if(targetNode == null) {
@@ -3457,8 +3473,8 @@ class PreviewArea {
             targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
             targetPosition.setFromMatrixPosition(matrix);
             edge.push(targetPosition);
-            let index = this.NodeManager.node2index(instanceObj);
-            this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, index, [index, targetNodeId]);
+            //let index = this.NodeManager.node2index(node);
+            this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, sourceIndex, [sourceIndex, targetNodeId]);
         }
 
         return;
@@ -3732,7 +3748,7 @@ class PreviewArea {
     updateShortestPathBasedOnHops = () => {
         let hops = this.model.getNumberOfHops();
         let hierarchy = this.model.getHierarchy(getRoot);
-        let edges = this.model.getActiveEdges();
+        let edges = this.NodeManager.getActiveEdges();
         let edgeIdx = this.model.getEdgesIndeces();
         let previousMap = this.model.getPreviousMap();
         if(!previousMap) {
@@ -3760,7 +3776,7 @@ class PreviewArea {
     };
 
     updateShortestPathBasedOnDistance = () => {
-        clrNodesSelected();
+        this.NodeManager.deselectAll();
         this.removeShortestPathEdgesFromScene();
 
         // show only nodes with shortest paths distance less than a threshold
@@ -3770,9 +3786,9 @@ class PreviewArea {
             setVisibleNodes(i, (distanceArray[i] <= threshold));
         }
 
-        let edges = this.model.getActiveEdges();
+        let edges = this.model.getActiveEdges(this.model.getNumberOfEdges());
         let edgeIdx = this.model.getEdgesIndeces();
-        let previousMap = model.getPreviousMap();
+        let previousMap = this.model.getPreviousMap();
         if(!previousMap) {
             return;
         }

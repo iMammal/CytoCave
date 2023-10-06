@@ -41,16 +41,16 @@ function Model(side) {
 
 
 
-    var threshold = 1;                  // threshold for the edge value, default to 1, max, no edges
+    var threshold = 0;                  // threshold for the edge value, default to 0, max, all edges  //todo this is currently being used a a weight threshold. maybe scale to 0-1? figure out what it's supposed to actually threshold.
     var conthreshold = 1;               // threshold for the contralateral edge value, default to 1, max, no edges
-    var numberOfEdges = 5;              // threshold the number of edges for shortest paths
+    var numberOfEdges = 0;              // threshold the number of edges for shortest paths, 0 for all edges, topN edges if not in shortest path.
 
     var edges = [];                     // contains the edges per dataType
     var edgeIdx = [];                   // 2D matrix where entries are the corresponding edge index
 
     var distanceArray = [];                  // contain the shortest path for current selected node
     var maxDistance = null;             // max value of distanceArray
-    var distanceThreshold = 50;         // threshold for the distanceArray in percentage of the max value: 0 to 100
+    var distanceThreshold = 0;         // threshold for the distanceArray in percentage of the max value: 0 to 100 //todo shared with distance threshold to cut off edges farther than a certain distance
     var numberOfHops = 0;               // max number of hops for shortest path
     this.graph = new Graph();
 
@@ -1013,7 +1013,7 @@ function Model(side) {
             }
         }
         // TODO: disable edge bundling for now, just to get the rest of the code upgraded and working
-        // stable enought to try enabling EB... Disabling again... things got complicated 
+        // stable enought to try enabling EB... Disabling again... things got complicated
         //fbundling.edges(edges_);
         //var results = fbundling();
         //

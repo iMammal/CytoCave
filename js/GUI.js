@@ -181,8 +181,7 @@ var addDimensionFactorSliderRight = function (side) {
                 setDimensionFactorRightSphere(this.value);
                 document.getElementById("dimensionSliderLeftRight").value = this.value;
             }
-            previewAreaLeft.updateScene();
-            previewAreaRight.updateScene();
+          updateScenes();
         });
     } else {
         panel.append("label")
@@ -218,8 +217,7 @@ var addDimensionFactorSliderRight = function (side) {
                 setDimensionFactorLeftSphere(this.value);
                 document.getElementById("dimensionSliderLeftLeft").value = this.value;
             }
-            previewAreaLeft.updateScene();
-            previewAreaRight.updateScene();
+          updateScenes();
         });
     }
 
@@ -260,8 +258,7 @@ var addAnimationSlider = function () {
             previewAreaLeft.setAnimation(Math.floor(this.value)/10000);
             previewAreaRight.setAnimation(Math.floor(this.value)/10000);
             document.getElementById("animationSliderLabel").innerHTML = "Animation @ " + this.value/1.00;
-            previewAreaLeft.updateScene();
-            previewAreaRight.updateScene();
+          updateScenes();
         });
     menu.append("br");
 
@@ -286,8 +283,7 @@ var addFlashRateSlider = function () {
             previewAreaLeft.setFlahRate(Math.floor(this.value)/100);
             previewAreaRight.setFlahRate(Math.floor(this.value)/100);
             document.getElementById("flashRateSliderLabel").innerHTML = "Flash rate @ " + this.value/100.00;
-            previewAreaLeft.updateScene();
-            previewAreaRight.updateScene();
+          updateScenes();
         });
     menu.append("br");
 };
@@ -308,8 +304,7 @@ var addSkyboxButton = function (side) {
             //if (side !== "Right")
             previewAreaLeft.setSkyboxVisibility(checked);
             previewAreaRight.setSkyboxVisibility(checked);
-            previewAreaLeft.updateScene();
-            previewAreaRight.updateScene();
+          updateScenes();
         })
         // .append("input")
         // .attr("type","checkbox")
@@ -351,7 +346,7 @@ var addThresholdSlider = function () {
     var menu = d3.select("#edgeInfoPanel");
     menu.append("input")
         .attr("type", "range")
-        .attr("value", max/2)
+        .attr("value", modelLeft.getThreshold())
         .attr("id", "thresholdSlider")
         .attr("min", 0.)
         .attr("max", max)
@@ -359,16 +354,14 @@ var addThresholdSlider = function () {
         .on("change", function () {
             modelLeft.setThreshold(this.value/thresholdMultiplier);
             modelRight.setThreshold(this.value/thresholdMultiplier);
-
             document.getElementById("thresholdSliderLabel").innerHTML = neuro?"Ipsi-Threshold @ ":"Intra-Threshold @ " + this.value/thresholdMultiplier;
-          redrawEdges();
+            //todo determine how to process ipsi and contra in previewArea.getActiveEdges();
+            updateScenes();
         });
     menu.append("label")
         .attr("for", "thresholdSlider")
         .attr("id", "thresholdSliderLabel")
-        .text("Threshold @ " + max/2/thresholdMultiplier);
-    modelLeft.setThreshold(max/2/thresholdMultiplier);
-    modelRight.setThreshold(max/2/thresholdMultiplier);
+        .text("Threshold @ " + modelLeft.getThreshold());
 };
 
 /* Edges stuff at edgeInfoPanel */
@@ -389,19 +382,18 @@ var addConThresholdSlider = function () {
         .attr("max", max)
         .attr("step", max / 20)
         .on("change", function () {
+            //todo determine if filters such as distance and threashold should be applied to the contra edges or if they need reset to 0
             modelLeft.setConThreshold(this.value / thresholdMultiplier);
             modelRight.setConThreshold(this.value / thresholdMultiplier);
             redrawEdges();
             document.getElementById("conThresholdSliderLabel").innerHTML = neuro?"Contra-Threshold @ ":"Inter-Threshold @ " + this.value / thresholdMultiplier;
-            previewAreaLeft.updateScene();
-            previewAreaRight.updateScene();
+          updateScenes();
         });
     menu.append("label")
         .attr("for", "conThresholdSlider")
         .attr("id", "conThresholdSliderLabel")
         .text(neuro?"Contra-Threshold @ ":"Inter-Threshold @ "  + max / 2 / thresholdMultiplier);
-    modelLeft.setConThreshold(max / 2 / thresholdMultiplier);
-    modelRight.setConThreshold(max / 2 / thresholdMultiplier);
+
 };
 
 // add opacity slider 0 to 1
@@ -732,13 +724,15 @@ var createLegend = function(model,side) {
                     .attr("id", activeGroup[i])
                     .style("cursor", "pointer")
                     .on("click", function () {
-                        if (lockLegend) { modelLeft.toggleRegion(this.id); }
+                        if (lockLegend) {
+                            modelLeft.toggleRegion(this.id);
+                        }
                         console.log("RIGHTmodel:" + side + model.getName());
                         modelRight.toggleRegion(this.id);//,"Right");
-                        if (model.getRegionState(this.id) == 'transparent')
-                            updateNodesVisiblity(lockLegend?"Both":"Right");
-                        else
-                            updateScenes(lockLegend?"Both":"Right");
+                        if (model.getRegionState(this.id) == 'transparent') {
+                            updateNodesVisiblity(lockLegend ? "Both" : "Right");
+                        }
+                       updateScenes(lockLegend?"Both":"Right");
                     });
 
             }
@@ -1076,6 +1070,7 @@ var addColorClusteringSlider = function () {
             modelLeft.updateClusteringGroupLevel(this.value);
             modelRight.updateClusteringGroupLevel(this.value);
             changeColorGroup(modelLeft.getActiveGroupName());
+            updateScenes();
         });
 };
 
@@ -1152,7 +1147,7 @@ var addClusteringSlider = function (model, side) {
         .attr("step", 1)
         .on("change", function () {
             model.setClusteringLevel(parseInt(this.value));
-            redrawScene(side);
+            updateScenes();
             document.getElementById("clusteringSliderLabel" + side).innerHTML = "Level " + this.value;
         });
 };
