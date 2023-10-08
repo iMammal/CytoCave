@@ -16,7 +16,7 @@ import {FirstPersonControls} from "three/examples/jsm/controls/FirstPersonContro
 import {ArcballControls} from "three/examples/jsm/controls/ArcballControls";
 import {FlyControls} from "three/examples/jsm/controls/FlyControls";
 import {TrackballControls} from "three/examples/jsm/controls/TrackballControls";
-import {TransformControls} from "three/examples/jsm/controls/TransformControls";
+//import {TransformControls} from "three/examples/jsm/controls/TransformControls";
 //createWebglContext is deprecated, put here to explain why the gl context thing is broken.
 //import {CreateWebGLContext} from "three/examples/jsm/webgl/WebGL";
 //import * as quat from "./external-libraries/gl-matrix/quat.js";
@@ -1730,11 +1730,6 @@ class PreviewArea {
 
           break;
         case 'arcball':
-          this.controls = new TransformControls(this.camera, this.renderer.domElement);
-          this.controlMode = 'transform';
-
-          break;
-        case 'transform':
           this.initOrbitControls();
 
           break;
