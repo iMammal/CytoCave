@@ -80,7 +80,7 @@ class PreviewArea {
     this.lastResizeTime = 0;
     this.scene = null;
     this.controls = null;
-    this.controlMode = 'trackball';  // tracks type of control currently in use if mode is changed by keypress.
+    this.controlMode = 'orbit';  // tracks type of control currently in use if mode is changed by keypress.
     this.clock = new THREE.Clock(true);
     this.instances = {};
 
@@ -1384,27 +1384,121 @@ class PreviewArea {
     }
 
     initControls = () => {
-        // console.log("init controls");
-        // this.controls = new OrbitControls(this.camera, this.canvas);
-        // this.controls.enableDamping = true;
-        // this.controls.dampingFactor = 0.25;
-        // this.controls.enableZoom = true;
-        // this.controls.autoRotate = false;
-        // this.controls.autoRotateSpeed = 0.5;
-        // this.controls.enablePan = true;
-        // this.controls.enableKeys = true;
-        // this.controls.minDistance = 10;
-        // this.controls.maxDistance = 1000;
-        // this.controls.listenToKeyEvents(this.renderer.domElement);
-        // //the point in which orbit controls orbits.
-        // this.controls.target = new THREE.Vector3(150, 150, 0);
-        // this.resetCamera();
-        // this.controls.update();
-        this.controls = new TrackballControls(this.camera, this.canvas.parentNode);
-        // orient controls to camera
-        return this.controls;
-
+      // console.log("init controls");
+      // this.controls = new OrbitControls(this.camera, this.canvas);
+      // this.controls.enableDamping = true;
+      // this.controls.dampingFactor = 0.25;
+      // this.controls.enableZoom = true;
+      // this.controls.autoRotate = false;
+      // this.controls.autoRotateSpeed = 0.5;
+      // this.controls.enablePan = true;
+      // this.controls.enableKeys = true;
+      // this.controls.minDistance = 10;
+      // this.controls.maxDistance = 1000;
+      // this.controls.listenToKeyEvents(this.renderer.domElement);
+      // //the point in which orbit controls orbits.
+      // this.controls.target = new THREE.Vector3(150, 150, 0);
+      // this.resetCamera();
+      // this.controls.update();
+      if(this.controls) {
+        this.controls.dispose();
+        this.controls=null;
+      }
+      switch (this.controlMode) {
+        case "orbit":
+          this.controls = this.initOrbitControls();
+          break;
+        case "fly":
+          this.controls = this.initFlyControls();
+          break;
+        case "trackball":
+          this.controls = this.initTrackballControls();
+          break;
+        case "firstPerson":
+          this.controls = this.initFirstPersonControls();
+          break;
+        case "vr":
+          //todo: do not init to vr, those methods have not been re-written yet.
+          //this.controls = this.initVRControls();
+          break;
+        default:
+          this.controls = this.initOrbitControls();
+          break;
+      }
     }
+
+    initOrbitControls = () => {
+      console.log("init orbit controls");
+      this.controls = new OrbitControls(this.camera, this.canvas);
+      this.controls.enableDamping = true;
+      this.controls.dampingFactor = 0.25;
+      this.controls.enableZoom = true;
+      this.controls.autoRotate = false;
+      this.controls.autoRotateSpeed = 0.5;
+      this.controls.enablePan = true;
+      this.controls.enableKeys = true;
+      this.controls.minDistance = 10;
+      this.controls.maxDistance = 1000;
+      this.controls.listenToKeyEvents(this.renderer.domElement);
+      //the point in which orbit controls orbits.
+      this.controls.target = new THREE.Vector3(150, 150, 0);
+      this.resetCamera();
+      this.controls.update();
+      this.controlMode = "orbit";
+      return this.controls;
+    }
+
+    initFlyControls = () => {
+      //keep it slow
+      console.log("init fly controls");
+      this.controls = new FlyControls(this.camera, this.canvas);
+      this.controls.movementSpeed = 0.5;
+      this.controls.domElement = this.canvas;
+      this.controls.rollSpeed = Math.PI / 24;
+      this.controls.autoForward = false;
+      this.controls.dragToLook = false;
+      this.resetCamera();
+      this.controls.update();
+      this.controlMode = "fly";
+      return this.controls;
+    }
+
+    initTrackballControls = () => {
+      console.log("init trackball controls");
+      this.controls = new TrackballControls(this.camera, this.canvas);
+      this.controls.rotateSpeed = 1.0;
+      this.controls.zoomSpeed = 1.2;
+      this.controls.panSpeed = 0.8;
+      this.controls.noZoom = false;
+      this.controls.noPan = false;
+      this.controls.staticMoving = true;
+      this.controls.dynamicDampingFactor = 0.3;
+      this.resetCamera();
+      this.controls.update();
+      this.controlMode = "trackball";
+      return this.controls;
+    }
+
+    initFirstPersonControls = () => {
+      //no gravity
+      console.log("init first person controls");
+      this.controls = new FirstPersonControls(this.camera, this.canvas);
+      this.controls.movementSpeed = 0.5;
+      this.controls.lookSpeed = 0.1;
+      this.controls.lookVertical = true;
+      this.controls.constrainVertical = true;
+      this.controls.verticalMin = 1.0;
+      this.controls.verticalMax = 2.0;
+      this.controls.lon = -150;
+      this.controls.lat = 120;
+      this.resetCamera();
+      this.controls.update();
+      this.controlMode = "firstPerson";
+      return this.controls;
+    }
+
+
+
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
     initScene = ()=> {
         console.log("init scene");
@@ -1428,14 +1522,14 @@ class PreviewArea {
     };
 
     resetCamera = () => {
-        console.log("reset camera");
+        console.log("default camera position");
         this.camera.position.set(150, 150, -50);
         this.camera.lookAt(150,150,0)
         //set camera rotation to 0
         this.camera.rotation.set(0,0,0);
         //set camera forward to positive z
-        this.camera.up.set(0,1,0);
-        if(this.controls) {
+        this.camera.up.set(0,0,1);
+        if(this.controls && this.controls.reset) {
             // reset the orientation of the controls
             this.controls.reset();
         }
@@ -1616,51 +1710,50 @@ class PreviewArea {
 
     //toggle between control modes when 'c' is pressed
     toggleControlMode = () =>  {
+      // remove the current controls
+      this.controls.dispose();
+        // toggle between control modes
+      this.controls = null;
+      switch (this.controlMode) {
+        case 'orbit':
+          this.initTrackballControls();
+          break;
+        case 'trackball':
+          this.initFlyControls();
+          break;
+        case 'fly':
+          this.initFirstPersonControls();
+          break;
+        case 'firstPerson':
+          this.controls = new ArcballControls(this.camera, this.renderer.domElement);
+          this.controlMode = 'arcball';
 
-        if (this.controlMode == 'orbit') {
-            this.controls = new TrackballControls(this.camera, this.canvas);
-            this.controlMode = 'trackball'
-            console.log("controlMode: " + this.controlMode);
-            return;
-        }
-         if (this.controlMode == 'trackball') {
-             this.controls = new FlyControls(this.camera, this.canvas);
-             this.controlMode = 'fly';
-             console.log("controlMode: " + this.controlMode);
-             return;
-         }
-        if (this.controlMode == 'fly') {
-            this.controls = new FirstPersonControls(this.camera, this.canvas);
-            this.controlMode = 'firstPerson';
-            console.log("controlMode: " + this.controlMode);
-            return;
-        }
-        if (this.controlMode == 'firstPerson') {
-            this.controls = new ArcballControls(this.camera, this.renderer.domElement);
-            this.controlMode = 'arcball';
-            console.log("controlMode: " + this.controlMode);
-            return;
-        }
-        if (this.controlMode == 'arcball') {
-            this.controls = new TransformControls(this.camera, this.renderer.domElement);
-            this.controlMode = 'transform';
-            console.log("controlMode: " + this.controlMode);
-            return;
-        }
-        if (this.controlMode == 'transform') {
-            this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-            this.resetCamera(); //this is our default camera mode.
-            this.controlMode = 'orbit';
-            console.log("controlMode: " + this.controlMode);
-            return;
-        }
+          break;
+        case 'arcball':
+          this.controls = new TransformControls(this.camera, this.renderer.domElement);
+          this.controlMode = 'transform';
+
+          break;
+        case 'transform':
+          this.initOrbitControls();
+
+          break;
+        default:
+          this.initOrbitControls();
+          break;
+      }
+
+      console.log("controlMode: " + this.controlMode);
 
 
     }
 
     //listen for key presses
     keyPress = (event) => {
-        if (event.key == 'c') {
+      //remove the event listener for keypresses if it is already listening
+      window.removeEventListener('keypress', this.keyPress, false);
+
+      if (event.key == 'c') {
             console.log("toggle control mode");
             this.toggleControlMode();
         }
@@ -1682,18 +1775,20 @@ class PreviewArea {
         if (event.key == 's') {
             //toggle slice images.
             if (this.imageSlices) {
-
                 this.imageSlices.toggleSlices();
             }
         }
         if (event.key == 'd') {
           // dump camera and controller to console.
+          console.log('dumping camera and controller to console');
             console.log("Camera: ");
             console.log(this.camera);
             console.log("2D Controls: ");
             console.log(this.controls);
 
         }
+        //re-add the event listener for keypresses
+        window.addEventListener('keypress', this.keyPress, false);
     }
 
     // toggle between showing and hiding labels
@@ -2172,13 +2267,10 @@ class PreviewArea {
         //calculate delta for controls
 
         //check if controls has an update function
+      if(this.controls.update) {
         this.controls.update();
-        // //update controls
-        // if (this.controlMode !== 'transform' && delta) {
-        //     this.controls.update(delta);
-        // } else {
-        //     this.controls.update();
-        // }
+      }
+
         //todo: update to account for instancing.
         //animateNodeShimmer(getNodesSelected(), 0.5);
         //animateNodeShimmer(getNodesFocused(), 4);//, "#ffffff")
@@ -3717,7 +3809,7 @@ class PreviewArea {
             this.camera = this.initCamera();
         } else {
             // drop the old camera and create a new one
-              //the returns here are mostly decorative if scope is working correctly.
+
             this.camera = this.initCamera();
             this.controls = this.initControls();
         }
