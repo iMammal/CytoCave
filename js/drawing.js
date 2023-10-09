@@ -89,7 +89,7 @@ function onDocumentMouseMove(model, event) {
 // intersects with a glyph, that glyph should be highlighted
 ///////////////////////////////////////////////////////////////////////////////////////////
 var updateNodeMoveOver = function (model, intersectedObject, mode) {
-    var nodeIdx, region, nodeRegion;
+    let nodeIdx, region, nodeRegion;
     //console.log("updateNodeMoveOver: ");
     //console.log(intersectedObject);
     if(intersectedObject === undefined || intersectedObject === null)
@@ -123,8 +123,8 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
 
     //todo based on the code below this is only supposed to highlight the node if it is visible.
     //todo: this is not working anyway so i'm just highlighting the node under the mouse.
-    previewAreaLeft.NodeManager.highlightNode(intersectedObject);
-    previewAreaRight.NodeManager.highlightNode(intersectedObject);
+    previewAreaLeft.NodeManager.highlightNodeByIndex(nodeIdx);
+    previewAreaRight.NodeManager.highlightNodeByIndex(nodeIdx);
     //nodeIdx = intersectedObject.object.getDatasetIndex(intersectedObject.instanceId);
     // if (intersectedObject) {
     //     nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
@@ -132,7 +132,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     //     nodeRegion = model.getGroupNameByNodeIndex(nodeIdx);
     // }
         //todo check if the visibleNodes array is valid
-    var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
+    let nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
     // update node information label
     if (nodeExistAndVisible) {
         setNodeInfoPanel(region, nodeIdx);
@@ -168,7 +168,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
         if (pointedObject ) {
             //nodeIdx = intersectedObject.object; //glyphNodeDictionary[pointedObject.uuid];
             // nodeIdx above would not of been an index, it would of been the object itself.
-            nodeIdx = previewAreaLeft.NodeManager.node2index(intersectedObject);
+            //nodeIdx = previewAreaLeft.NodeManager.node2index(intersectedObject);
             if (nodeIdx === undefined)
                 return;
             hoverMode = hoverMode & ~mode; // clear the hover mode that triggered this function
@@ -182,6 +182,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
                 // previewAreaLeft.updateNodeGeometry(nodeIdx, 'root');
                 // previewAreaRight.updateNodeGeometry(nodeIdx, 'root');
                 //
+              root = nodeIdx;
                 previewAreaLeft.NodeManager.setRootNode(nodeIdx);
                 previewAreaRight.NodeManager.setRootNode(nodeIdx);
             } else {
@@ -198,10 +199,14 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
 // selected nodes are drawn bigger
 function onMiddleClick(event) {
     //event.preventDefault();
-
+  // determine if the click was on the left or right preview area
+  let isLeft = event.clientX < window.innerWidth/2;
+  if(isLeft && previewAreaLeft.name !== 'Left') {
+      throw new Error("left click processed on right preview area");
+  }
     var intersectedObject = getIntersectedObject(event);
     if (intersectedObject) {
-        var nodeIndex = intersectedObject.instanceId; //glyphNodeDictionary[intersectedObject.object.uuid];
+        let nodeIndex = isLeft ? previewAreaLeft.NodeManager.node2index(intersectedObject) : previewAreaRight.NodeManager.node2index(intersectedObject);
         if (nodeIndex == undefined || nodeIndex < 0)
             return;
         if (root == nodeIndex) { // disable spt and reset nodes visibility
@@ -818,6 +823,7 @@ var redrawScene = function (side) {
             //previewAreaRight.updateScene();
             break;
     }
+    updateScenes(side);
 };
 
 // change the active geometry
@@ -911,14 +917,14 @@ var changeSceneToSubject = function (subjectId, model, previewArea, side) {
         });
 };
 
-var setRoot = function (rootNode) {
-    root = rootNode;
-    previewAreaLeft.NodeManager.setRootNode(rootNode);
-    previewAreaRight.NodeManager.setRootNode(rootNode);
-}
+// var setRoot = function (rootNode) {
+//     root = rootNode;
+//     previewAreaLeft.NodeManager.setRootNode(rootNode);
+//     previewAreaRight.NodeManager.setRootNode(rootNode);
+// }
 
 var getRoot = function () {
-    return root;
+  return root;
 }
 
 var getSpt = function () {
@@ -1021,7 +1027,7 @@ export {
     initCanvas,
     changeActiveGeometry,
     changeColorGroup,
-    setRoot,
+//    setRoot,
     getRoot,
     getSpt,
     updateScenes,

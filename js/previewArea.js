@@ -66,7 +66,7 @@ import NeuroSlice from "./NeuroSlice";
 import NodeManager from "./NodeManager";
 class PreviewArea {
   constructor(canvas_, model_, name_) {
-
+    //Class variables
     this.name = name_;
     this.model = model_;
     this.canvas = canvas_;
@@ -82,7 +82,7 @@ class PreviewArea {
     this.controls = null;
     this.controlMode = 'orbit';  // tracks type of control currently in use if mode is changed by keypress.
     this.clock = new THREE.Clock(true);
-    this.instances = {};
+  //  this.instances = {}; // NodeManager now handles this, mostly in order to make it easier to remove NodeManager. (Switched to more of a OOP approach)
 
       this.controllerLeft = null;
       this.controllerRight = null;
@@ -193,12 +193,13 @@ class PreviewArea {
   }
 
   appearSelected = (node) => {
-      previewAreaLeft.NodeManager.selectNode(node);
+      previewAreaLeft.NodeManager.selectNode(node);  //if it's already selected in this tree selectNode does nothing so it's safe to call on both sides.
       previewAreaRight.NodeManager.selectNode(node);
         this.NodeManager.scaleNode(node, 4/3);
         //just to sync up clicks between the two preview areas for now until more control updates
         //theory being that the select does nothing if it's already selected in that previewarea.
-        this.drawEdgesGivenNode(node);
+    let index = this.NodeManager.node2index(node);
+    this.drawEdgesGivenIndex(index);
         this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.
   }
 
@@ -2059,15 +2060,15 @@ class PreviewArea {
 
         const positions = this.edgeFlareGeometry.attributes.position;
         const material = this.edgeFlareMaterial;
-
+        let groupVal = null;
         for (let i = 0; i < this.displayedEdges.length; ++i) {
             let nodeIdx = this.displayedEdges[i].name;
 
-            let groupVal = null;
+            //let groupVal = null;
             if(this.model.getDataset()[nodeIdx] !== undefined)
                 groupVal = this.model.getDataset()[nodeIdx].group;
             let firerate = 0.01;
-            if (typeof (groupVal) !== 'string' && !isNaN(groupVal)) {
+            if (typeof (groupVal) !== 'string' && !isNaN(Number(groupVal))) {
                 firerate = (groupVal % 10) / 100;
             }
 
@@ -2088,7 +2089,7 @@ class PreviewArea {
                 let dZ = this.displayedEdges[i].geometry.attributes.position.array[5] - this.displayedEdges[i].geometry.attributes.position.array[2];
 
                 // Create a new vector with components dX, dY, dZ
-                var vector = new THREE.Vector3(dX, dY, dZ);
+                let vector = new THREE.Vector3(dX, dY, dZ);
 
                 // Normalize the vector
                 vector.normalize();
@@ -2222,7 +2223,7 @@ class PreviewArea {
         // } else {
         //calculate delta for controls
 
-        
+
 
         //todo: update to account for instancing.
         //animateNodeShimmer(getNodesSelected(), 0.5);
@@ -2295,6 +2296,7 @@ class PreviewArea {
 
     redrawEdges = () => {
         this.removeEdgesFromScene(); // todo: works now?
+        this.reInitEdgeFlare();
         // should only be removing the edges then calling drawEdgesGivenNodes based
         // on return of getActiveEdges, get Active edges applies the rules.
         let activeEdges = this.getActiveEdges();  //remember already filtered.
@@ -3362,7 +3364,11 @@ class PreviewArea {
     };
 
     drawEdgeWithName = (edge, ownerNode, nodes) => {
-        // console.log("Edge: ");
+      //edge is an array of points
+      //ownerNode is the name of the node that owns the edge//usually the source node index
+      //nodes is an array of node indexes that are connected by the edge
+
+      // console.log("Edge: ");
         // console.log(edge);
         // console.log("ownerNode: " + ownerNode);
         // console.log("nodes: ");
@@ -3452,14 +3458,14 @@ class PreviewArea {
     //     return null;
     // }
 
-    drawEdgesGivenIndex = (index, topN = null) => {
+    drawEdgesGivenIndex = (index) => {
         //if index is NaN the throw an error.
         if(isNaN(index)) {
             throw new Error("index is not a number");
 
         }
         let node = this.NodeManager.index2node(index);
-        this.drawEdgesGivenNode(node, topN);
+        this.drawEdgesGivenNode(node);
     }
     // draw edges given a node. thresholding is provided by getActiveEdges, this just draws the edges.
     drawEdgesGivenNode = (node) => {
@@ -3480,12 +3486,13 @@ class PreviewArea {
         //console.log("NodeObject: ");
         //console.log(nodeObject);
         //let instancePosition = new THREE.Vector3();
-        let targetPosition = new THREE.Vector3();
+
         //let quaternion = new THREE.Quaternion();
         //let scaleVector = new THREE.Vector3();
 
         // get the position of the instanced node, not sure here which to use or if identical.
-        node.object.getMatrixAt(node.instanceId, matrix);
+        //node.object.getMatrixAt(node.instanceId, matrix);
+
         //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
         //instancePosition.setFromMatrixPosition(matrix);
         let nodePosition = this.NodeManager.getNodePosition(node);
@@ -3502,24 +3509,30 @@ class PreviewArea {
         // }
         console.log("DrawEdgesGivenNode Edges: ");
         console.log(edges);
+        let targetPosition = new THREE.Vector3();
         for(let i = 0; i < edges.length; i++) {
             // console.log("edge: ");
             // console.log(edges[i]);
 
             let edge  = [];
             edge.push(nodePosition);
-            let targetNodeId = edges[i].targetNodeId;
-            let targetNode = this.NodeManager.index2node(targetNodeId);
-            if(targetNode == null) {
-                console.log("targetNode is null");
-                continue;
-            }
-            //position = targetNode.object.getPosition(targetNode.instanceId);
-            targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
-            targetPosition.setFromMatrixPosition(matrix);
+            // let targetNodeId = edges[i].targetNodeId;
+            // let targetNode = this.NodeManager.index2node(targetNodeId);
+            // if(targetNode == null) {
+            //     console.log("targetNode is null");
+            //     continue;
+            // }
+            // //position = targetNode.object.getPosition(targetNode.instanceId);
+            // //targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
+            // //targetPosition.setFromMatrixPosition(matrix);
+            //
+            // edge.push(targetPosition);
+            targetPosition.set(edges[i].position.x, edges[i].position.y, edges[i].position.z);
             edge.push(targetPosition);
             //let index = this.NodeManager.node2index(node);
-            this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, sourceIndex, [sourceIndex, targetNodeId]);
+            //targetNodeId is the index of the target node as it is in the dataset. this is not the same as the instanceId which is only used in nodeManager.
+          //todo refactor targetNodeId to targetNodeIndex
+            this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, sourceIndex, [sourceIndex, edges[i].targetNodeId]);
         }
 
         return;
@@ -3785,7 +3798,9 @@ class PreviewArea {
     // compute shortest path info for a node
     computeShortestPathForNode = (nodeIndex) => {
         console.log("Compute Shortest Path for node " + nodeIndex);
-        setRoot(nodeIndex);
+        //setRoot(nodeIndex);
+        this.NodeManager.setRootNode(nodeIndex);
+        //you can create a side effect for when this happens by passing a function to NodeManager.setRootNodeChanged(callback)
         this.model.computeShortestPathDistances(nodeIndex);
     };
 

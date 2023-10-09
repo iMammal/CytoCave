@@ -374,7 +374,7 @@ class NodeManager {
     }
     const position = this.getNodePosition(node);
     this.highLight.position.set(position.x, position.y, position.z);
-    this.highLight.scale.set(scale * 1.3, scale * 1.3, scale * 1.3);
+    this.highLight.scale.set(scale * 1.01, scale * 1.01, scale * 1.01);
     this.highLight.visible = true;
     this.sceneObject.add(this.highLight);
     // console.log("Highlight Position:", this.highLight.position);
@@ -388,6 +388,11 @@ class NodeManager {
       this.sceneObject.remove(this.highLight);
       this.highLight = null;
     }, 1000);
+  }
+
+  highlightNodeByIndex(index) {
+    let node = this.index2node(index);
+    this.highlightNode(node);
   }
 
   isSelected(node) {
