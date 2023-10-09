@@ -270,12 +270,21 @@ class NodeManager {
     node.object.setMatrixAt(node.instanceId, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
   }
 
+  restoreNodePositionByIndex(index) {
+    let node = this.index2node(index);
+    this.restoreNodePosition(node);
+  }
   restoreNodeColor(node) {
     //restore the color of the node.
     //this is the color of the node as defined by the instance.
     let index = this.node2index(node);
     let instance = this.instances[node.object.name.group][node.object.name.hemisphere];
     instance.setColorAt(instance.userData.indexList.indexOf(index), instance.material.color);
+  }
+
+  restoreNodeColorByIndex(index) {
+    let node = this.index2node(index);
+    this.restoreNodeColor(node);
   }
 
   restoreNodeScale(node) {
@@ -290,10 +299,20 @@ class NodeManager {
     instance.setMatrixAt(instance.userData.indexList.indexOf(index), matrix);
   }
 
+  restoreNodeScaleByIndex(index) {
+    let node = this.index2node(index);
+    this.restoreNodeScale(node);
+  }
+
   restoreNode(node) {
     this.restoreNodePosition(node);
     this.restoreNodeColor(node);
     this.restoreNodeScale(node);
+  }
+
+  restoreNodeByIndex(index) {
+    let node = this.index2node(index);
+    this.restoreNode(node);
   }
 
   restoreAllNodes() {

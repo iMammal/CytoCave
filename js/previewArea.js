@@ -196,6 +196,7 @@ class PreviewArea {
     let index = this.NodeManager.node2index(node);
       previewAreaLeft.NodeManager.select(index);  //if it's already selected in this tree selectNode does nothing so it's safe to call on both sides.
       previewAreaRight.NodeManager.select(index);
+      this.NodeManager.restoreNodeByIndex(index);
         this.NodeManager.scaleNodeByIndex(index, 1.5);
         //just to sync up clicks between the two preview areas for now until more control updates
         //theory being that the select does nothing if it's already selected in that previewarea.
