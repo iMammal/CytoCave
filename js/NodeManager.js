@@ -423,7 +423,8 @@ class NodeManager {
     //check if the node is selected.
     //this is true if the node is in the userData.selectedNodes of the instance.
     let index = this.node2index(node);
-    return this.instances[node.object.name.group][node.object.name.hemisphere].userData.selectedNodes.includes(index);
+    //return this.instances[node.object.name.group][node.object.name.hemisphere].userData.selectedNodes.includes(index);
+    return this.selectedNodes.includes(index);
   }
 
   selectNode(node) {
