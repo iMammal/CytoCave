@@ -193,18 +193,20 @@ class PreviewArea {
   }
 
   appearSelected = (node) => {
-      previewAreaLeft.NodeManager.selectNode(node);  //if it's already selected in this tree selectNode does nothing so it's safe to call on both sides.
-      previewAreaRight.NodeManager.selectNode(node);
-        this.NodeManager.scaleNode(node, 4/3);
+    let index = this.NodeManager.node2index(node);
+      previewAreaLeft.NodeManager.select(index);  //if it's already selected in this tree selectNode does nothing so it's safe to call on both sides.
+      previewAreaRight.NodeManager.select(index);
+        this.NodeManager.scaleNodeByIndex(index, 1.5);
         //just to sync up clicks between the two preview areas for now until more control updates
         //theory being that the select does nothing if it's already selected in that previewarea.
-        let index = this.NodeManager.node2index(node);
+        //let index = this.NodeManager.node2index(node);
         this.drawEdgesGivenIndex(index);
         this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.
   }
 
   GroupSelectedCallback() {
-      //only use for things that effect every selected node, can be cpu intensive.
+      //only use for things that effect every selected node, can be cpu intensive. when a node is selected in a group, everything
+    // the regular callback is also called, so this is not suitable for things that are node specific.
       return;
    }
 

@@ -319,6 +319,11 @@ class NodeManager {
     node.object.setMatrixAt(node.instanceId, matrix);
   }
 
+  scaleNodeByIndex(index, scale) {
+    let node = this.index2node(index);
+    this.scaleNode(node, scale);
+  }
+
   translate(node, translation) {
     let position = new THREE.Vector3();
     position.setFromMatrixPosition(node.object.getMatrixAt(node.instanceId));
