@@ -115,7 +115,7 @@ class PreviewArea {
 
       // nodes and edges
       this.brain = null; // three js group housing all instances and edges
-      this.glyphs = [];
+      //this.glyphs = [];
       this.displayedEdges = [];
       // shortest path
       this.shortestPathEdges = [];
@@ -198,8 +198,8 @@ class PreviewArea {
         this.NodeManager.scaleNode(node, 4/3);
         //just to sync up clicks between the two preview areas for now until more control updates
         //theory being that the select does nothing if it's already selected in that previewarea.
-    let index = this.NodeManager.node2index(node);
-    this.drawEdgesGivenIndex(index);
+        let index = this.NodeManager.node2index(node);
+        this.drawEdgesGivenIndex(index);
         this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.
   }
 
@@ -1108,8 +1108,8 @@ class PreviewArea {
             //get value of left thumbstick x axis
             if (this.xrInputLeft.gamepad.axes.length > 0) {
               // todo say no to globals. remake the below. use either let or use this or init in constructor
-                var leftThumbstickX = controllerLeft.gamepad.axes[2];
-                var leftThumbstickY = controllerLeft.gamepad.axes[3];
+                var leftThumbstickX = this.controllerLeft.gamepad.axes[2];
+                var leftThumbstickY = this.controllerLeft.gamepad.axes[3];
                 //multiply by max increment
                 var leftThumbstickXIncrement = leftThumbstickX * cameraMaxTranslationSpeed;
                 var leftThumbstickYIncrement = leftThumbstickY * cameraMaxTranslationSpeed;
@@ -1424,6 +1424,7 @@ class PreviewArea {
           this.controls = this.initOrbitControls();
           break;
       }
+      return this.controls;
     }
 
     initOrbitControls = () => {
