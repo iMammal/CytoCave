@@ -12,9 +12,9 @@
 
 import * as THREE from 'three'
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
-import {FirstPersonControls} from "three/examples/jsm/controls/FirstPersonControls";
+//import {FirstPersonControls} from "three/examples/jsm/controls/FirstPersonControls";
 import {ArcballControls} from "three/examples/jsm/controls/ArcballControls";
-import {FlyControls} from "three/examples/jsm/controls/FlyControls";
+//import {FlyControls} from "three/examples/jsm/controls/FlyControls";
 import {TrackballControls} from "three/examples/jsm/controls/TrackballControls";
 //import {TransformControls} from "three/examples/jsm/controls/TransformControls";
 //createWebglContext is deprecated, put here to explain why the gl context thing is broken.
@@ -1408,9 +1408,7 @@ class PreviewArea {
         case "orbit":
           this.controls = this.initOrbitControls();
           break;
-        case "fly":
-          this.controls = this.initFlyControls();
-          break;
+
         case "trackball":
           this.controls = this.initTrackballControls();
           break;
@@ -1448,20 +1446,7 @@ class PreviewArea {
       return this.controls;
     }
 
-    initFlyControls = () => {
-      //keep it slow
-      console.log("init fly controls");
-      this.controls = new FlyControls(this.camera, this.canvas);
-      this.controls.movementSpeed = 0.5;
-      this.controls.domElement = this.canvas;
-      this.controls.rollSpeed = Math.PI / 24;
-      this.controls.autoForward = false;
-      this.controls.dragToLook = false;
-      this.resetCamera();
-      this.controls.update();
-      this.controlMode = "fly";
-      return this.controls;
-    }
+
 
     initTrackballControls = () => {
       console.log("init trackball controls");
@@ -1479,23 +1464,6 @@ class PreviewArea {
       return this.controls;
     }
 
-    initFirstPersonControls = () => {
-      //no gravity
-      console.log("init first person controls");
-      this.controls = new FirstPersonControls(this.camera, this.canvas);
-      this.controls.movementSpeed = 0.5;
-      this.controls.lookSpeed = 0.1;
-      this.controls.lookVertical = true;
-      this.controls.constrainVertical = true;
-      this.controls.verticalMin = 1.0;
-      this.controls.verticalMax = 2.0;
-      this.controls.lon = -150;
-      this.controls.lat = 120;
-      this.resetCamera();
-      this.controls.update();
-      this.controlMode = "firstPerson";
-      return this.controls;
-    }
 
 
 
@@ -1719,15 +1687,8 @@ class PreviewArea {
           this.initTrackballControls();
           break;
         case 'trackball':
-          this.initFlyControls();
-          break;
-        case 'fly':
-          this.initFirstPersonControls();
-          break;
-        case 'firstPerson':
           this.controls = new ArcballControls(this.camera, this.renderer.domElement);
           this.controlMode = 'arcball';
-
           break;
         case 'arcball':
           this.initOrbitControls();
@@ -2261,10 +2222,7 @@ class PreviewArea {
         // } else {
         //calculate delta for controls
 
-        //check if controls has an update function
-      if(this.controls.update) {
-        this.controls.update();
-      }
+        
 
         //todo: update to account for instancing.
         //animateNodeShimmer(getNodesSelected(), 0.5);

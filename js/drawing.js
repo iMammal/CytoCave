@@ -831,7 +831,7 @@ var changeActiveGeometry = function (model, side, type) {
 
         modelRight.setAllRegionsActivated();
         modelRight.getDataset(true);
-      previewAreaRight.reset();
+        previewAreaRight.reset();
 
         previewAreaRight.updateNodesVisibility();
         previewAreaRight.setSelectedNodes(tempNodesSelected);
