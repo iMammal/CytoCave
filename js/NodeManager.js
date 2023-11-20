@@ -422,9 +422,18 @@ class NodeManager {
   isSelected(node) {
     //check if the node is selected.
     //this is true if the node is in the userData.selectedNodes of the instance.
+    //throw an error if hemisphere or group are not set
+    if (node.object.name.hemisphere === undefined || node.object.name.group === undefined) {
+      console.log("Error");
+      console.log(node);
+      throw new Error("hemisphere or group not set");
+    }
     let index = this.node2index(node);
-    //return this.instances[node.object.name.group][node.object.name.hemisphere].userData.selectedNodes.includes(index);
-    return this.selectedNodes.includes(index);
+    if(index === null){
+      return false;
+    }
+    return this.instances[node.object.name.group][node.object.name.hemisphere].userData.selectedNodes.includes(index);
+    //return this.selectedNodes.includes(index);
   }
 
   selectNode(node) {
@@ -556,16 +565,27 @@ class NodeManager {
     for (let group in this.instances) {
       //for each instance, get the userData.indexList and userData.selectedNodes.
       let inversion = [];
-      let instance = this.instances[group];
-      let indexList = instance.userData.indexList;
-      let selectedNodes = instance.userData.selectedNodes;
-      //for each index in the indexList, call toggleSelect.
-      for (let i = 0; i < indexList.length; i++) {
-        this.toggleSelect(indexList[i]);
+      for (let hemisphere in this.instances[group]) {
+        // call this.toggleSelect for each index in the indexList.
+        let instance = this.instances[group][hemisphere];
+        let indexList = instance.userData.indexList;
+        //  let selectedNodes = instance.userData.selectedNodes;
+        //for each index in the indexList, call toggleSelect.
+        for (let i = 0; i < indexList.length; i++) {
+          this.toggleSelect(indexList[i]);
+        }
       }
     }
   }
 
+  //Given a node from the raycaster, return the edges of the node.
+  //Optional parameters are threshold, topN, and distance.
+  //Threshold is the minimum weight of the edge.
+  //TopN is the maximum number of edges to return.
+  //Distance is the maximum distance from the source node to the target node.
+  //If distance is 0, the distance filter is disabled.
+  //If topN is null or 0, the topN filter is disabled.
+  //If threshold is null or 0, the threshold filter is disabled.
   getEdges = (node, threshold = 0, topN = null, distance = 0) => {
     //get the edges of the node at the instanceId.
     // console.log("Getting Edges");
@@ -639,7 +659,14 @@ class NodeManager {
 
   }
 
-  //todo add options for threshold, topN, and distance.
+  //Given an index number return the available edges from that node.
+  //Optional parameters are threshold, topN, and distance.
+  //Threshold is the minimum weight of the edge.
+  //TopN is the maximum number of edges to return.
+  //Distance is the maximum distance from the source node to the target node.
+  //If distance is 0, the distance filter is disabled.
+  //If topN is null or 0, the topN filter is disabled.
+  //If threshold is null or 0, the threshold filter is disabled.
   getEdgesByIndex(index, threshold = 0, topN = null, distance = 0) {
     let node = this.index2node(index);
     let edges = this.getEdges(node, threshold, topN, distance);
