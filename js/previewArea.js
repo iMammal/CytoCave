@@ -286,8 +286,19 @@ class PreviewArea {
             console.log("Select end");
         }
 
-        var v3Origin = new THREE.Vector3(0, 0, 0);
-        var v3UnitUp = new THREE.Vector3(0, 0, -100);
+        //function for left thumbstick movement
+        let onLeftThumbstickMove = (event) => {
+            console.log("Left thumbstick move");
+        }
+
+        //function for right thumbstick movement
+        let onRightThumbstickMove = (event) => {
+            console.log("Right thumbstick move");
+        }
+
+
+        let v3Origin = new THREE.Vector3(0, 0, 0);
+        let v3UnitUp = new THREE.Vector3(0, 0, -100);
 
         this.controllerLeft = this.renderer.xr.getController( 0 );
         this.controllerLeft.addEventListener( 'selectstart', onSelectStart );
@@ -345,40 +356,42 @@ class PreviewArea {
         this.controllerGripRight = this.renderer.xr.getControllerGrip(1);
         this.controllerGripRight.add(controllerModelFactory.createControllerModel(this.controllerGripRight));
         this.scene.add(this.controllerGripRight);
-
-
+        console.log('this.controllerLeft.gamepad');
+        console.log(this.controllerLeft.gamepad);
         //document.body
         document.getElementById('vrButton' + this.name).appendChild(VRButton.createButton(this.renderer));
 
     }
 
 
-    buildController = (data) => {
 
-        let geometry, material;
-
-        switch (data.targetRayMode) {
-
-            case 'tracked-pointer':
-
-                geometry = new THREE.BufferGeometry();
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, -1], 3));
-                geometry.setAttribute('color', new THREE.Float32BufferAttribute([0.5, 0.5, 0.5, 0, 0, 0], 3));
-
-                material = new THREE.LineBasicMaterial({vertexColors: true, blending: THREE.AdditiveBlending});
-
-                return new THREE.Line(geometry, material);
-
-            case 'gaze':
-
-                geometry = new THREE.RingGeometry(0.02, 0.04, 32).translate(0, 0, -1);
-                material = new THREE.MeshBasicMaterial({opacity: 0.5, transparent: true});
-                return new THREE.Mesh(geometry, material);
-
-        }
-
-
-    }
+    // webxr is now largly responsible for this
+    // buildController = (data) => {
+    //
+    //     let geometry, material;
+    //
+    //     switch (data.targetRayMode) {
+    //
+    //         case 'tracked-pointer':
+    //
+    //             geometry = new THREE.BufferGeometry();
+    //             geometry.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, -1], 3));
+    //             geometry.setAttribute('color', new THREE.Float32BufferAttribute([0.5, 0.5, 0.5, 0, 0, 0], 3));
+    //
+    //             material = new THREE.LineBasicMaterial({vertexColors: true, blending: THREE.AdditiveBlending});
+    //
+    //             return new THREE.Line(geometry, material);
+    //
+    //         case 'gaze':
+    //
+    //             geometry = new THREE.RingGeometry(0.02, 0.04, 32).translate(0, 0, -1);
+    //             material = new THREE.MeshBasicMaterial({opacity: 0.5, transparent: true});
+    //             return new THREE.Mesh(geometry, material);
+    //
+    //     }
+    //
+    //
+    // }
 
     //todo say no to globals pollution
     // // animation settings
@@ -2193,6 +2206,35 @@ class PreviewArea {
         this.shortestPathEdges = [];
     };
 
+    handleXRControllers = () => {
+      if(!this.xrInputLeft || !this.xrInputRight) {
+        return;
+      }
+      if(this.xrInputLeft.gamepad) {
+        this.xrInputLeft.gamepad.buttons.forEach((button, i) => {
+          if(button.pressed) {
+            console.log("left button pressed: " + i);
+          }
+        });
+      }
+      if(this.xrInputRight.gamepad) {
+        this.xrInputRight.gamepad.buttons.forEach((button, i) => {
+          if(button.pressed) {
+            console.log("right button pressed: " + i);
+          }
+        });
+      }
+
+      //check left gamepad axes (thumbstick)
+      if(this.xrInputLeft.gamepad.axes[2] > 0.5) {
+        console.log("left thumbstick right");
+      }
+      if(this.xrInputLeft.gamepad.axes[2] < -0.5) {
+        console.log("left thumbstick left");
+      }
+
+    }
+
     //say no to globals var lastTime = 0;
     //   var fps = 240;
     //todo: add fps slider
@@ -2204,14 +2246,14 @@ class PreviewArea {
         //     return;
         // }
         // lastTime = Date.now();
-
+        this.handleXRControllers();
 
         // if (enableVR && activateVR) {
         //     // if (oculusTouchExist) { //todo: Change old WebVR code to WebXR
         //     //     controllerLeft.update();
         //     //     controllerRight.update();
         //todo re-enable scanOculusTouch when WebXR is working 100%
-        this.scanOculusTouch();
+        //this.scanOculusTouch();
         //     console.log("scanOculusTouch");
         //     // }
         //     //vrControl.update(); //todo: Change old WebVR code to WebXR
