@@ -104,6 +104,11 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     if (intersectedObject.object.name === '') {
         return;
     }
+    //also not valid if type is highlight
+    if (intersectedObject.object.type === 'highlight') {
+        return;
+    }
+
     //console.log("intersected Object Moveover: ");
     //console.log(intersectedObject);
     //check if the intersected object is a node, if it is the name.type will be 'region'
@@ -122,9 +127,22 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     }
 
     //todo based on the code below this is only supposed to highlight the node if it is visible.
-    //todo: this is not working anyway so i'm just highlighting the node under the mouse.
+    //this is not working anyway so i'm just highlighting the node under the mouse.
+    //further modified to not rehighlight the selected nodes.
+  //console.info("hightlight triggered line 132 file drawing.js, node idx is ", nodeIdx);
+  if(!previewAreaLeft.NodeManager.indexIsSelected(nodeIdx) && !previewAreaRight.NodeManager.indexIsSelected(nodeIdx) ) {
     previewAreaLeft.NodeManager.highlightNodeByIndex(nodeIdx);
     previewAreaRight.NodeManager.highlightNodeByIndex(nodeIdx);
+    setTimeout(() =>  {
+      //remove the highlight after 1 second
+      //don't remove the highlight if the node is selected.
+      if(!previewAreaLeft.NodeManager.indexIsSelected(nodeIdx) && !previewAreaRight.NodeManager.indexIsSelected(nodeIdx) ) {
+      previewAreaLeft.NodeManager.removeHighlightByIndex(nodeIdx);
+      previewAreaRight.NodeManager.removeHighlightByIndex(nodeIdx);
+      }
+    } , 1000);
+  }
+
     //nodeIdx = intersectedObject.object.getDatasetIndex(intersectedObject.instanceId);
     // if (intersectedObject) {
     //     nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
@@ -149,8 +167,20 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
             pointedObject = intersectedObject.object;
             // previewAreaLeft.updateNodeGeometry(nodeIdx, 'mouseover');
             // previewAreaRight.updateNodeGeometry(nodeIdx, 'mouseover');
-            previewAreaLeft.NodeManager.highlightNode(intersectedObject);
-            previewAreaRight.NodeManager.highlightNode(intersectedObject);
+            //console.log("highlight triggered line 158 drawing.js");
+            //console.log("nodeIdx: ", nodeIdx);
+          if(!previewAreaLeft.NodeManager.indexIsSelected(nodeIdx) && !previewAreaRight.NodeManager.indexIsSelected(nodeIdx) ) {
+            previewAreaLeft.NodeManager.highlightNodeByIndex(nodeIdx);
+            previewAreaRight.NodeManager.highlightNodeByIndex(nodeIdx);
+            setTimeout(() =>  {
+              //remove the highlight after 1 second
+              //don't remove the highlight if the node is selected.
+              if(!previewAreaLeft.NodeManager.indexIsSelected(nodeIdx) && !previewAreaRight.NodeManager.indexIsSelected(nodeIdx) ) {
+                previewAreaLeft.NodeManager.removeHighlightByIndex(nodeIdx);
+                previewAreaRight.NodeManager.removeHighlightByIndex(nodeIdx);
+              }
+            } , 1000);
+          }
             // console.log("Drawing edges from node ", nodeIdx);
             //todo most of this behavior should be moved to the mouseover in previewArea's nodemanager.
             //will need a similar method for dealing with the VR controller.
@@ -247,7 +277,7 @@ function onLeftClick(previewArea, event) {
 
         // if it is a node then toggle it's select state.
         // if it is not a node, then do nothing.
-  console.log("objectIntersected: ", objectIntersected);
+  //console.log("objectIntersected: ", objectIntersected);
     if(objectIntersected.object.name.type === 'region')
         previewArea.NodeManager.toggleSelectNode(objectIntersected);
 
@@ -384,9 +414,10 @@ function onMouseDown(event) {
         case 0: // left click -> should be < 200 msec
         case 2: // right click -> should be < 200 msec
             setTimeout( () => {
-                console.log("unblocking click");
+                //console.log("unblocking click");
+              //debouncing the click
                 click = false;
-            }, 200);
+            }, 300);
             break;
     }
 }
@@ -666,12 +697,14 @@ var enableEdgeBundling = function (enable) {
 //todo compare with redrawScene
 var updateScenes = function (side) {
   let selectedNodes = getNodesSelected();
-    console.log("Scene update "+side);
+    console.log("Drawing Scene Update "+side);
     if (side !== "Right") {
+        //previewAreaLeft.NodeManager.removeHighlights();
         previewAreaLeft.updateScene();
         createLegend(modelLeft,"Left");
     }
     if (side !== "Left") {
+        //previewAreaRight.NodeManager.removeHighlights();
         previewAreaRight.updateScene();
         createLegend(modelRight,"Right");
     }
@@ -696,14 +729,6 @@ var redrawEdges = function () {
     previewAreaRight.redrawEdges();
 };
 
-var getEdgeOpacity = function () {
-    return previewAreaLeft.getEdgeOpacity();
-}
-
-var setEdgeOpacity = function (opacity) {
-    previewAreaLeft.setEdgeOpacity(opacity);
-    previewAreaRight.setEdgeOpacity(opacity);
-}
 
 var updateOpacity = function (opacity) {
   previewAreaLeft.setEdgeOpacity(opacity);
@@ -957,11 +982,13 @@ var setNodesSelected = function (arrIndex, newNodeVal) {
 var getNodesFocused = function () {
     //todo add a focused state list to userData similar to selected state list.
     // also figure out what to do with the focused state list.
+  //todo see if context selection can be applied here
     return nodesFocused;
 }
 
 var clrNodesFocused = function () {
     //todo same as getNodesFocused comment except for this stuff.
+  //todo see if context selection can be applied here
     console.log(nodesFocused);
     nodesFocused = [];
 }
@@ -1055,5 +1082,6 @@ export {
     getThresholdModality,
     onMouseUp,
     onDocumentMouseMove,
-    onMouseDown
+    onMouseDown,
+
 }

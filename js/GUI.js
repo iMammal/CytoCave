@@ -341,7 +341,7 @@ var addThresholdSlider = function () {
     var max = Math.max(modelLeft.getMaximumWeight(), modelRight.getMaximumWeight());
     var min = Math.min(modelLeft.getMinimumWeight(), modelRight.getMinimumWeight());
     max = Math.max(Math.abs(max), Math.abs(min));
-    thresholdMultiplier = (max < 1.0) ? 100.0 : 1.0;
+    thresholdMultiplier = (max <= 1.0) ? 100.0 : 1.0;
     max *= thresholdMultiplier;
     var menu = d3.select("#edgeInfoPanel");
     menu.append("input")
@@ -350,7 +350,7 @@ var addThresholdSlider = function () {
         .attr("id", "thresholdSlider")
         .attr("min", 0.0)
         .attr("max", max)
-        .attr("step", max/100)
+        .attr("step", max/1000)
         .on("change", function () {
             modelLeft.setThreshold(this.value/thresholdMultiplier);
             modelRight.setThreshold(this.value/thresholdMultiplier);
@@ -368,19 +368,21 @@ var addThresholdSlider = function () {
 // add a slider to threshold Contralateral edges at specific values
 var addConThresholdSlider = function () {
 
-    var max = Math.max(modelLeft.getMaximumWeight(), modelRight.getMaximumWeight());
-    var min = Math.min(modelLeft.getMinimumWeight(), modelRight.getMinimumWeight());
-    max = Math.max(Math.abs(max), Math.abs(min));
-    thresholdMultiplier = (max < 1.0) ? 100.0 : 1.0;
+  let max = Math.max(modelLeft.getMaximumWeight(), modelRight.getMaximumWeight());
+  let min = Math.min(modelLeft.getMinimumWeight(), modelRight.getMinimumWeight());
+  max = Math.max(Math.abs(max), Math.abs(min));
+    //todo get maximum weight may have an issue, added <= instead of = to work around
+  // todo look into getMaxWeight and getMinWeight operation and the thresholdMultiplier
+    thresholdMultiplier = (max <= 1.0) ? 100.0 : 1.0;
     max *= thresholdMultiplier;
     var menu = d3.select("#edgeInfoPanel");
     menu.append("input")
         .attr("type", "range")
-        .attr("value", max / 2)
+        .attr("value", max)
         .attr("id", "conThresholdSlider")
         .attr("min", 0.)
         .attr("max", max)
-        .attr("step", max / 20)
+        .attr("step", max / 1000)
         .on("change", function () {
             //todo determine if filters such as distance and threashold should be applied to the contra edges or if they need reset to 0
             modelLeft.setConThreshold(this.value / thresholdMultiplier);
@@ -398,21 +400,30 @@ var addConThresholdSlider = function () {
 
 // add opacity slider 0 to 1
 var addOpacitySlider = function () {
+  let opacityval = 0.5;
+  if(previewAreaLeft) {
+    //todo: due to reasons, previewarea  may not exist when this is called
+    //the default value is set to 0.5, but it should be set to the current value
+    //set the default value in previewArea to change the default here, update the val above
+    //to display that value.
+    opacityval = previewAreaLeft.getEdgeOpacity();
+  }
+
     var menu = d3.select("#edgeInfoPanel");
     menu.append("label")
         .attr("for", "opacitySlider")
         .attr("id", "opacitySliderLabel")
-        .text("Opacity @ " + 1.);
+        .text("Opacity @ " + opacityval);
     menu.append("input")
         .attr("type", "range")
-        .attr("value", 100)
+        .attr("value", opacityval*100)
         .attr("id", "opacitySlider")
         .attr("min", 0)
         .attr("max", 100)
         .attr("step",1)
         .on("change", function () {
             updateOpacity(Math.floor(this.value)/100);
-            document.getElementById("opacitySliderLabel").innerHTML = "Opacity @ " + this.value/100.;
+            document.getElementById("opacitySliderLabel").innerHTML = "Opacity @ " + this.value;
         });
 };
 

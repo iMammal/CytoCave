@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 
 import {getNormalGeometry, getNormalMaterial} from "./graphicsUtils";
+import {previewAreaLeft} from "./drawing";
 
 class NodeManager {
   constructor(_previewArea) {
@@ -16,24 +17,56 @@ class NodeManager {
     this.groupCount = this.groups.length;
     this.instances = {};
     this.selectedNodes = [];
-    this.focusedNodes = [];
+    this.focusedNodes = []; //todo: what is a focused node?
+
     this.selectedNodesCount = 0;
     this.selectedNodesChanged = false;
     this.nodesSelectedGeneralCallback = null;
     this.nodeSelectedCallback = null;
     this.onNodeUnselectCallback = null;
+    this.contextualNodes = [];
+    this.contextualNodeDeactivated = null;
+    this.contextualNodeActivated = null;
+    this.maxNodesToProcess = 100; // used for shortest path
+    this.processSTP = false; // used for shortest path
+    this.STPRunning = false; // used for shortest path
+    this.STPFinished = false; // used for shortest path
+    this.STPFinishedCallback = null; // used for shortest path
+    this.STPpath = null; // used for shortest path
     this.defaultScale = 1.0;
     this.rootNode = null;
     this.numberSelected = 0;
+    this.processQueue = false;
     this.CreateInstanceMeshes();
     this.PositionAndColorNodes();
     this.addInstancesToScene();
 
-    this.highLight = null;
+    this.highLights = [];
 
 
     this.rootNodeChanged = false;
     this.rootNodeChangedCallback = null;
+  }
+
+  setContextualNodes(nodes) {
+    //brute force method to set the contextual nodes.
+    this.contextualNodes = nodes;
+
+    for (let i = 0; i < nodes.length; i++) {
+      //trigger callback
+      this.addContextNode(nodes[i]);
+    }
+  }
+
+  setContextualNodesByIndex(indexList) {
+    //brute force method to set the contextual nodes.
+    // this.contextualNodes = [];
+    for (let i = 0; i < indexList.length; i++) {
+      let node = this.index2node(indexList[i]);
+      //this.contextualNodes.push(node);
+      //trigger callback
+      this.addContextNode(node);
+    }
   }
 
   PositionAndColorNodes() {
@@ -58,6 +91,9 @@ class NodeManager {
       instance.userData.indexList.push(i);
       if (instance.userData.selectedNodes === undefined) {
         instance.userData.selectedNodes = [];
+      }
+      if (instance.userData.contextualNodes === undefined) {
+        instance.userData.contextualNodes = [];
       }
     }
   }
@@ -113,7 +149,7 @@ class NodeManager {
     //find the instancedMesh that contains the index and return it.
     //return null if not found.
     if (index === null || index === undefined || isNaN(index)) {
-      console.log("index2node  Index: " + index);
+      //console.log("index2node  Index: " + index);
       throw new Error("index is not a number");
     }
     for (let group in this.instances) {
@@ -146,9 +182,31 @@ class NodeManager {
     // from the node.userData.indexList, get the node at position instanceId.
     // return the index of the node in the dataset.
     let instanceId = node.instanceId;
-    let index = node.object.userData.indexList[instanceId];
-    if (index === undefined) {
-      console.log("node2index  InstanceID: " + instanceId + " index: " + index);
+    // check if object is null or undefined
+    if (node.object === null || node.object === undefined) {
+      console.log('error');
+      console.log(node);
+      throw new Error("node2index node.object null InstanceID: " + instanceId + " index: ?");
+    }
+    //check if userData.indexList is defined. before using it.
+    if (node.object.userData === undefined) {
+      console.log('error');
+      console.log(node);
+      throw new Error("node2index userData undefined, InstanceID: " + instanceId + " index: ?");
+    }
+    if(instanceId >= node.object.userData.indexList.length){
+      console.log("instanceId is greater than length of indexList");
+      throw new Error("instanceId is greater than length of indexList");
+    }
+    let index= undefined;
+    if(instanceId === undefined || instanceId === null || isNaN(instanceId)) {
+      index = node.object.userData.indexList[node.id];
+    } else {
+      index = node.object.userData.indexList[instanceId];
+    }
+    //let index = node.object.userData.indexList[instanceId];
+    if (index === undefined && node.id !== undefined) {
+      console.log("node2index  InstanceID: " + instanceId + " index: " + index + "Index not found in userData.indexList");
       throw new Error("index not found in dataset");
     }
 
@@ -274,6 +332,7 @@ class NodeManager {
     let node = this.index2node(index);
     this.restoreNodePosition(node);
   }
+
   restoreNodeColor(node) {
     //restore the color of the node.
     //this is the color of the node as defined by the instance.
@@ -295,7 +354,7 @@ class NodeManager {
     matrix.scale(new THREE.Vector3(this.defaultScale, this.defaultScale, this.defaultScale));
     let index = this.node2index(node);
     let instance = this.instances[node.object.name.group][node.object.name.hemisphere];
-    let scale = this.defaultScale;
+    //let scale = this.defaultScale;
     instance.setMatrixAt(instance.userData.indexList.indexOf(index), matrix);
   }
 
@@ -360,18 +419,40 @@ class NodeManager {
     //if the node is selected, do nothing.
     let node = event.object;
     if (!this.isSelected(node)) {
-      this.highlightNode(node);
+      this.highlightNode(node);  //todo: add color parameter, defaults to white.
+      //add timeout to remove highlight.
+      setTimeout(() => {
+        this.removeHighlightByIndex(this.node2index(node));
+      } , 1000);
     }
   }
 
-  highlightNode(node) {
-    if (this.highLight !== null) {
+  highlightNode(node,color = 0xffffff) {
+    if (node == null || node === undefined || node.object === null || node.object === undefined ) {
+      console.log("highlightNode: node is null or undefined");
+      console.log(node);
+
+      //throw new Error("node is null or undefined");
       return;
     }
+    //only put index in the highlight list if it is not already there.
+    let index = this.node2index(node);
+    // check if index matches any index in highLights userData.index
+    // for (let i = 0; i < this.highLights.length; i++) {
+    //   if (this.highLights[i].userData.index === index) {
+    //     return;
+    //   }
+    // }
+    // // use some method to do above
+    if(this.highLights.some(highLight => highLight.userData.index === index)){
+      return;
+    }
+
     //console.log("Highlighting");
-    // Create a wireframe sphere slightly larger than the node.
-    const radius = 1.1;
-    const segments = 32;
+    //console.log(index);
+    // Create a wireframe  slightly larger than the node.
+    // const radius = 1.1;
+    // const segments = 32;
     const baseGeometry = getNormalGeometry(node.object.name.hemisphere)
     const wireframe = new THREE.WireframeGeometry(
       baseGeometry
@@ -379,10 +460,10 @@ class NodeManager {
 
     // Create a wireframe material with a low opacity.
     const material = new THREE.LineBasicMaterial({
-      color: 0xffffff,
+      color: color,
       transparent: true,
       opacity: 0.8,
-      linewidth: 4
+      linewidth: 8
     });
 
     //figure out the size of the node so we can scale the highlight to match.
@@ -390,49 +471,95 @@ class NodeManager {
     node.object.getMatrixAt(node.instanceId, matrix);
     let scale = matrix.getMaxScaleOnAxis();
 
-
+    let newHighlight = new THREE.LineSegments(wireframe, material);
     // Create a wireframe mesh and set its position.
-    this.highLight = new THREE.LineSegments(wireframe, material);
-    if (this.highLight === null || this.highLight === undefined) {
+    newHighlight = new THREE.LineSegments(wireframe, material);
+    if (newHighlight === null || newHighlight === undefined) {
       throw new Error("highLight is null or undefined");
     }
     const position = this.getNodePosition(node);
-    this.highLight.position.set(position.x, position.y, position.z);
-    this.highLight.scale.set(scale * 1.01, scale * 1.01, scale * 1.01);
-    this.highLight.visible = true;
-    this.sceneObject.add(this.highLight);
+    newHighlight.position.set(position.x, position.y, position.z);
+    newHighlight.scale.set(scale * 1.02, scale * 1.02, scale * 1.02);
+    newHighlight.visible = true;
+    newHighlight.userData = {
+      type: "highlight",
+      group: node.object.name.group,
+      hemisphere: node.object.name.hemisphere,
+      index: index
+    }
+    this.sceneObject.add(newHighlight);
     // console.log("Highlight Position:", this.highLight.position);
     // console.log("Highlight Scale:", this.highLight.scale);
     // Set a timeout to remove the highlight.
-    setTimeout(() => {
-      // Dispose of the highlight geometry and material.
-      this.highLight.geometry.dispose();
-      this.highLight.material.dispose();
-      // Remove the highlight from the scene.
-      this.sceneObject.remove(this.highLight);
-      this.highLight = null;
-    }, 1000);
+    this.highLights.push(newHighlight);
+
   }
 
-  highlightNodeByIndex(index) {
+  highlightNodeByIndex(index, color= 0xffffff) {
+
     let node = this.index2node(index);
-    this.highlightNode(node);
+    this.highlightNode(node,color);
   }
+
+  removeHighlights = () => {
+    //remove all highlights.
+    let i = this.highLights.length;
+    while (i--)   {
+      this.removeHighlightByIndex(this.highLights[i].userData.index);
+    }
+
+  };
+
+  removeHighlight(node) {
+    // remove highlight from scene where highlight.userData.index === node.userData.index
+    //console.log("removing highlight");
+
+    let index = this.node2index(node);
+    //console.log(index);
+    this.removeHighlightByIndex(index);
+
+  }
+  removeHighlightByIndex(index) {
+
+    // remove highlight from this.highLights where highlight.userData.index === index
+    // count matching objects in this.highLights
+    // if count > 1
+    for (let i = 0; i < this.highLights.length; i++) {
+      if (this.highLights[i].userData.index === index) {
+        this.sceneObject.remove(this.highLights[i]);
+        //remove from this.highLights list
+        this.highLights.splice(i, 1);
+      }
+
+    }
+    //let node = this.index2node(index);
+    //this.removeHighlight(node);
+  }
+
 
   isSelected(node) {
     //check if the node is selected.
     //this is true if the node is in the userData.selectedNodes of the instance.
     //throw an error if hemisphere or group are not set
     if (node.object.name.hemisphere === undefined || node.object.name.group === undefined) {
-      console.log("Error");
+      console.log("NodeManager.isSelected: hemisphere or group not set");
       console.log(node);
-      throw new Error("hemisphere or group not set");
     }
     let index = this.node2index(node);
-    if(index === null){
+    if (index === null) {
       return false;
     }
-    return this.instances[node.object.name.group][node.object.name.hemisphere].userData.selectedNodes.includes(index);
+
+
+    let value = this.instances[node.object.name.group][node.object.name.hemisphere].userData.selectedNodes.includes(index);
+
+    // verify the value is valid
+    if (value === undefined || value === null) {
+      console.log("NodeManager.isSelected: value is undefined or null");
+      console.log(node);
+    }
+
+    return value;
     //return this.selectedNodes.includes(index);
   }
 
@@ -445,9 +572,9 @@ class NodeManager {
       let index = this.node2index(node);
       //throw an error if index is null undefined or in any other way not a number.
       if (index === null || index === undefined || isNaN(index)) {
-        console.log("Error");
+        console.log("selectNode: index is null undefined or in any other way not a number");
         console.log(node);
-        throw new Error("index not found in dataset");
+
       }
       if (this.selectedNodesCount === 0) {
         this.rootNode = index;
@@ -536,28 +663,24 @@ class NodeManager {
   }
 
   selectAll() {
-    // don't do this, but if you do, it puts everything in the userData.indexList into the userData.selectedNodes.
-    // this is not a good idea.
+    //probably don't do this. it might work but will have side effects
     for (let group in this.instances) {
       for (let hemisphere in this.instances[group]) {
-        let instance = this.instances[group][hemisphere];
-        instance.userData.selectedNodes = instance.userData.indexList;
+        if (this.instances[group][hemisphere] === null) {
+          continue;
+        }
+        for (let i = 0; i < this.instances[group][hemisphere].userData.indexList.length; i++) {
+          let index = this.instances[group][hemisphere].userData.indexList[i];
+          this.select(index);
+        }
       }
     }
-    this.selectedNodes = this.getSelectedNodes();
-    this.selectedNodesCount = this.selectedNodes.length;
   }
 
   deselectAll() {
-    //this is ok.
-    for (let group in this.instances) {
-      for (let hemisphere in this.instances[group]) {
-        let instance = this.instances[group][hemisphere];
-        instance.userData.selectedNodes = [];
-      }
+    for (let x = this.selectedNodes.length - 1; x >= 0; x--) {
+      this.deselect(this.selectedNodes[x]);
     }
-    this.selectedNodes = this.getSelectedNodes();
-    this.selectedNodesCount = this.selectedNodes.length; // should be 0
   }
 
   toggleSelectAll() {
@@ -586,14 +709,32 @@ class NodeManager {
   //If distance is 0, the distance filter is disabled.
   //If topN is null or 0, the topN filter is disabled.
   //If threshold is null or 0, the threshold filter is disabled.
-  getEdges = (node, threshold = 0, topN = null, distance = 0) => {
+  getEdges = (node, threshold = 0, topN = 0, distance = 0) => {
     //get the edges of the node at the instanceId.
     // console.log("Getting Edges");
     // //settings
     // console.log("Threshold: " + threshold);
     // console.log("TopN: " + topN);
     // console.log("Distance: " + distance);
-
+    if(threshold === 0){
+      threshold = this.previewArea.model.getThreshold();
+    }
+    let maxThreshold = this.previewArea.model.getConThreshold()
+    console.log("Max Threshold: " + maxThreshold);
+    if(maxThreshold === 0){
+      maxThreshold = 100; //some really high number.
+      this.previewArea.model.setConThreshold(maxThreshold); //update the threshold in the model.
+    }
+    if(threshold > maxThreshold){
+      threshold = maxThreshold;
+      this.previewArea.model.setThreshold(threshold); //update the threshold in the model.
+    }
+    if(topN === 0){
+      topN = this.previewArea.model.getNumberOfEdges();
+    }
+    if(distance === 0){
+      distance = this.previewArea.model.getDistanceThreshold();
+    }
     let index = this.node2index(node);
     let matrixRow = this.model.getConnectionMatrixRow(index);
     let edges = [];
@@ -603,19 +744,19 @@ class NodeManager {
     //     if (matrixRow[i] > threshold) {
     //         edges.push({
     //             sourceNodeId: index,
-    //             targetNodeId: i,
+    //             targetNodeIndex: i,
     //             weight: matrixRow[i],
     //             position: this.getNodePosition(this.index2node(i))
     //         });
     //     }
     // }
-    console.log("Starting with " + matrixRow.size() + " edges.");
+    //console.log("Starting with " + matrixRow.size() + " edges.");
     matrixRow.forEach((weight, i) => {
-      if (weight > threshold) {
+      if (weight > threshold && weight < maxThreshold) {
 
         edges.push({
-          sourceNodeId: index,
-          targetNodeId: i[0],
+          sourceNodeIndex: index,
+          targetNodeIndex: i[0],
           weight: weight,
           position: this.getNodePosition(this.index2node(i[0]))
         });
@@ -633,7 +774,7 @@ class NodeManager {
       //calculate distance to each target, drop targets that are too far away.
       let sourcePosition = this.getNodePosition(node);
       edges = edges.filter(edge => {
-        let targetPosition = this.getNodePosition(this.index2node(edge.targetNodeId));
+        let targetPosition = this.getNodePosition(this.index2node(edge.targetNodeIndex));
         let distance2target = sourcePosition.distanceTo(targetPosition);
         return distance2target <= distance;
       });
@@ -642,8 +783,8 @@ class NodeManager {
     edges.sort((a, b) => {
       // sort by distance closest to farthest
       let sourcePosition = this.getNodePosition(node);
-      let aPosition = this.getNodePosition(this.index2node(a.targetNodeId));
-      let bPosition = this.getNodePosition(this.index2node(b.targetNodeId));
+      let aPosition = this.getNodePosition(this.index2node(a.targetNodeIndex));
+      let bPosition = this.getNodePosition(this.index2node(b.targetNodeIndex));
       let aDistance = sourcePosition.distanceTo(aPosition);
       let bDistance = sourcePosition.distanceTo(bPosition);
       return aDistance - bDistance;
@@ -657,6 +798,324 @@ class NodeManager {
     // console.log(edges);
     return edges;
 
+  }
+
+  /*requires two nodes to be selected. the first node is the source node, the second node is the target node.
+* the path is calculated using the shortest path algorithm.
+ */
+
+  calculateShortestPath(node1, node2, topN = null, distance = 0) {
+    //modified djikstra's algorithm.
+    //https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+    //https://en.wikipedia.org/wiki/Shortest_path_problem
+    //https://en.wikipedia.org/wiki/Graph_traversal
+    //https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)
+    //https://en.wikipedia.org/wiki/Graph_theory
+
+
+
+
+    let sptSet = new Set();
+    let dist = new Map();
+    let prev = new Map();
+    this.stpQueue = [];
+    let sourceIndex = this.node2index(node1);
+    let targetIndex = this.node2index(node2);
+    //initialize the distance of all nodes to infinity.
+    for (let group in this.instances) {
+      for (let hemisphere in this.instances[group]) {
+        if (this.instances[group][hemisphere] === null) {
+          continue;
+        }
+        for (let i = 0; i < this.instances[group][hemisphere].userData.indexList.length; i++) {
+          let index = this.instances[group][hemisphere].userData.indexList[i];
+          dist.set(index, Infinity);
+          prev.set(index, null);
+        }
+      }
+    }
+    //set the distance of the source node to 0.
+    dist.set(sourceIndex, 0);
+    //add the source node to the queue.
+    this.stpQueue.push(sourceIndex);
+    while (this.stpQueue.length > 0 && !sptSet.has(targetIndex) && this.stpQueue.length < this.maxNodesToProcess) {
+      //get the node with the smallest distance from the queue.
+      let u = this.stpQueue.shift();
+      //add the node to the sptSet.
+      sptSet.add(u);
+      //get the edges of the node.
+      let edges = this.getEdgesByIndex(u, this.model.getThreshold(), topN, distance);
+      //for each edge.
+      for (let i = 0; i < edges.length; i++) {
+        //get the target node.
+        let v = edges[i].targetNodeIndex;
+        //if the target node is not in the sptSet.
+        if (!sptSet.has(v)) {
+          //calculate the distance from the source node to the target node.
+          let alt = dist.get(u) + edges[i].weight;
+          //if the distance is less than the current distance.
+          if (alt < dist.get(v)) {
+            //set the distance to the new distance.
+            dist.set(v, alt);
+            //set the previous node to the current node.
+            prev.set(v, u);
+            //add the target node to the queue.
+            this.stpQueue.push(v);
+          }
+        }
+
+      }
+    }
+    //the loop above will terminate when the queue is empty or the target node is in the sptSet.
+    //if the target node is in the sptSet, the shortest path has been found. otherwise there is no path.
+    //if the target node is in the sptSet, reconstruct the path.
+    let path = [];
+    if (sptSet.has(targetIndex)) {
+      let u = targetIndex;
+      while (prev.get(u) !== null) {
+        path.push(u);
+        u = prev.get(u);
+      }
+      path.push(sourceIndex);
+      path.reverse();
+    }
+    return path;
+
+  }
+
+
+  /*supplemental example function that activates edges on nodes around the actual selected node.*/
+  /* node is the node that was selected. distance is the distance from the node to the target node.
+  /* focusDepth is the number of hops to activate focus on.
+  */
+  activateContextAroundNode(node, distance, focusDepth = 1, topN = null, processby = "edgeweight") {
+    // nodes around the are either physically close to the node or connected to the node by an edge.
+    // if the node is already selected, do nothing.
+
+    if (this.inContext(node)) {
+      //skip this node if it is already in the context.
+      return;
+    }
+    if(processby === "edgeweight") {
+      let edges = [];
+      if (topN === null || topN === undefined || isNaN(topN) || topN === 0) {
+        topN = previewAreaLeft.model.getNumberOfEdges();
+      }
+
+      if (topN === null || topN === undefined || isNaN(topN) || topN === 0) {
+        topN = null;
+      }
+      //get the edges of the node.
+      edges = this.getEdges(node, previewAreaLeft.model.getThreshold(), topN, distance);
+
+      //sort by threshold
+      edges.sort((a, b) => {
+        return b.weight - a.weight;
+      });
+
+
+      //for each edge add the target node to the context.
+      for (let i = 0; i < edges.length; i++) {
+        let targetNode = this.index2node(edges[i].targetNodeIndex);
+
+        //console.log("adding node to context");
+        //console.log(targetNode);
+        const data = {order: i, weight: edges[i].weight, origin: this.node2index(node)};
+        this.addContextNode(targetNode, data);
+      }
+    }
+
+  }
+
+  removeContextNodesFromAroundObject(node, distance = 0, topN = null, processby = "edgeweight") {
+    // nodes around the are either physically close to the node or connected to the node by an edge.
+    // if the node is already selected, do nothing.
+    console.log("removeContextNodesFromAroundObject");
+
+    if(processby === "edgeweight") {
+      let edges = [];
+
+      //get the edges of the node.
+      edges = this.getEdges(node, previewAreaLeft.model.getThreshold(), topN, distance);
+
+      //sort by threshold
+      edges.sort((a, b) => {
+        return b.weight - a.weight;
+      });
+
+      for (let i = 0; i < edges.length; i++) {
+        let targetNode = this.index2node(edges[i].targetNodeIndex);
+
+        //console.log("removing node from context");
+        //console.log(targetNode);
+
+        this.removeContextNodeByIndex(edges[i].targetNodeIndex);
+      }
+    }
+}
+
+  /*same as above but uses the index of the node instead of the node itself.*/
+  activateContextAroundIndex(index, distance, focusDepth = 1) {
+    let node = this.index2node(index);
+    this.activateContextAroundNode(node, distance, focusDepth);
+  }
+
+  removeContextNode(node) {
+    // remove the node from the userData.contextualNodes of the instance.
+    // if the node is not focused, do nothing.
+    if (!this.inContext(node)) {
+      return;
+    }
+    let index = this.node2index(node);
+    let instance = this.instances[node.object.name.group][node.object.name.hemisphere];
+    let contextualNodes = instance.userData.contextualNodes;
+    //let instanceId = contextualNodes.indexOf(index);
+    contextualNodes.splice(index, 1);
+    this.contextualNodes.splice(this.contextualNodes.indexOf(index), 1);
+    // fire the callback if it is set.
+    if (this.contextualNodeDeactivated !== null) {
+      //console.debug("firing callback for contextual node deactivated")
+      this.contextualNodeDeactivated(node);
+    }
+  }
+
+  removeContextNodeByIndex(index) {
+    let node = this.index2node(index);
+    this.removeContextNode(node);
+  }
+
+  addContextNode(node, data = null) {
+    // add the node to the userData.contextualNodes of the instance.
+    // if the node is already focused, do nothing.
+    if (this.inContext(node)) {
+      //console.log("node is already in context")
+      return;
+    }
+    let index = this.node2index(node);
+    let instance = this.instances[node.object.name.group][node.object.name.hemisphere];
+    instance.userData.contextualNodes.push(index);
+    this.contextualNodes.push(index);
+    // fire the callback if it is set.
+    if (this.contextualNodeActivated !== null) {
+      //console.debug("firing callback for contextual node activated")
+      if (data !== null) {
+        this.contextualNodeActivated(node, data);
+      } else {
+        this.contextualNodeActivated(node);
+      }
+    }
+  }
+
+  inContext(node) {
+    //check if the node is focused.
+    //this is true if the node is in the userData.focusedNodes of the instance.
+    //throw an error if hemisphere or group are not set
+    if (node.object.name.hemisphere === undefined || node.object.name.group === undefined) {
+      console.log("Error checking context, node info is undefined or null");
+      console.log(node);
+    }
+    let index = this.node2index(node);
+
+    //check if the node is in the this.contextualNodes list. return true if it is.
+    if (this.contextualNodes.includes(index)) {
+      return true;
+    } else {
+      return false;
+    }
+
+  }
+
+  indexInContext(index) {
+    //given a dataset index, check if the node is focused.
+    //this is true if the node is in the userData.focusedNodes of the instance.
+    let node = this.index2node(index);
+    return this.instances[node.object.name.group][node.object.name.hemisphere].userData.contextualNodes.includes(index);
+  }
+
+  setSTPQueue(queue) {
+    this.stpQueue = queue;
+  }
+
+  /*setup for stp, actual stp is performed by performSTPstep*/
+  setupSTP(node1, node2, topN = null, distance = 0) {
+    // setupSTP, STPstep is the actual algorithm. this just sets up the data structures
+    // and initializes the queue.
+    //get the edges of the source node.
+    let edges = this.getEdges(node1, 0, topN, distance);
+
+    //use class variables to store the data structures.
+    this.sptSet = new Set();
+    this.dist = new Map();
+    this.prev = new Map();
+    this.stpQueue = [];
+    this.sourceIndex = this.node2index(node1);
+    this.targetIndex = this.node2index(node2);
+    //initialize the distance of all nodes to infinity.
+    for (let group in this.instances) {
+      for (let hemisphere in this.instances[group]) {
+        if (this.instances[group][hemisphere] === null) {
+          continue;
+        }
+        for (let i = 0; i < this.instances[group][hemisphere].userData.indexList.length; i++) {
+          let index = this.instances[group][hemisphere].userData.indexList[i];
+          this.dist.set(index, Infinity);
+          this.prev.set(index, null);
+        }
+      }
+    }
+    //set the distance of the source node to 0.
+    this.dist.set(this.sourceIndex, 0);
+    //add the source node to the queue.
+    this.stpQueue.push(this.sourceIndex);
+    //activate the stp queue.
+    this.processSTP = true;
+    //clear the current path if there is one.
+    this.STPpath = [];
+  }
+
+  //perform a single step of the shortest path algorithm.
+  STPstep(queue, sptSet, dist, prev, topN = null, distance = 0) {
+    //get the node with the smallest distance from the queue.
+    let u = queue.shift();
+    //add the node to the sptSet.
+    sptSet.add(u);
+    //get the edges of the node.
+    let edges = this.getEdgesByIndex(u, 0, topN, distance);
+    //for each edge.
+    for (let i = 0; i < edges.length; i++) {
+      //get the target node.
+      let v = edges[i].targetNodeIndex;
+      //if the target node is not in the sptSet.
+      if (!sptSet.has(v)) {
+        //calculate the distance from the source node to the target node.
+        let alt = dist.get(u) + edges[i].weight;
+        //if the distance is less than the current distance.
+        if (alt < dist.get(v)) {
+          //set the distance to the new distance.
+          dist.set(v, alt);
+          //set the previous node to the current node.
+          prev.set(v, u);
+          //add the target node to the queue.
+          queue.push(v);
+        }
+      }
+    }
+    //the loop above will terminate when the queue is empty or the target node is in the sptSet.
+    //if the target node is in the sptSet, the shortest path has been found. otherwise there is no path.
+    //if the target node is in the sptSet, reconstruct the path.
+    if (sptSet.has(this.targetIndex)) {
+      let u = this.targetIndex;
+      while (prev.get(u) !== null) {
+        this.STPpath.push(u);
+        u = prev.get(u);
+      }
+      this.STPpath.push(this.sourceIndex);
+      this.STPpath.reverse();
+      //the path has been found, stop processing.
+      this.processSTP = false;
+      this.STPFinished = true;
+      this.STPRunning = false;
+    }
   }
 
   //Given an index number return the available edges from that node.
@@ -716,6 +1175,7 @@ class NodeManager {
 
         }
       }
+
     }
 
     if (this.rootNodeChanged) {
@@ -724,6 +1184,13 @@ class NodeManager {
         this.rootNodeChangedCallback();
 
       }
+
+        if(this.processSTP){
+            this.STPstep( this.stpQueue, this.sptSet, this.dist, this.prev);
+            if(this.STPFinishedCallback !== null){
+                this.STPFinishedCallback();
+            }
+        }
 
     }
   }
@@ -758,6 +1225,11 @@ class NodeManager {
   }
 
   getActiveEdges() {
+    console.log("NodeManager does not track rendered edges, only returns raw data about the edges from the model" +
+      "associated with the node. Use NodeManager.getEdges to get the edges of specific nodes, or " +
+      "NodeManager.getEdgesByIndex to get the edges of a node by index and track them elsewhere, " +
+      "or in PreviewArea use getAllSelectedNodesActiveEdges. All of these methods return the same data" +
+      "in different formats and packaging, but do not track the rendered objects.");
     return undefined;
   }
 
@@ -776,11 +1248,42 @@ class NodeManager {
         this.instances[group][hemisphere] = null;
       }
     }
-
-
+    //find object in scene that have userData.type = "highlight" and remove them.
+    // this.previewArea.scene.children.forEach((child) => {
+    //   if (child.userData.type === "highlight") {
+    //     this.previewArea.scene.remove(child);
+    //   }
+    // } );
+    //remove all highlights.
+    this.removeHighlights();
   }
 
+  resetContext() {
+    let _contextualNodes = this.contextualNodes;
+    for(let i = 0; i < _contextualNodes.length; i++){
+      this.removeContextNodeByIndex(_contextualNodes[i]);
+    }
+    //just in case you want to do something with the nodes that were removed.
+    //like reactivate their context after some other operation.
+    return _contextualNodes;
+  }
 
+  //iterator for all nodes.
+  * [Symbol.iterator]() {
+    for (let group in this.instances) {
+      for (let hemisphere in this.instances[group]) {
+        if (this.instances[group][hemisphere] === null) {
+          continue;
+        }
+        for (let i = 0; i < this.instances[group][hemisphere].userData.indexList.length; i++) {
+          //yield this.instances[group][hemisphere].userData.indexList[i];
+          //return [index: this.instances[group][hemisphere].userData.indexList[i], node: this.index2node(this.instances[group][hemisphere].userData.indexList[i])];
+          yield this.index2node(this.instances[group][hemisphere].userData.indexList[i]);
+        }
+      }
+    }
+
+  }
 }
 
 export default NodeManager;
