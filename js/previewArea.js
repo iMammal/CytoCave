@@ -1782,7 +1782,7 @@ class PreviewArea {
         //console.log("triggering pathfinder");
         console.log("selected nodes: ");
         console.log(this.NodeManager.selectedNodes);
-        this.pathFinder.setActiveAlgorithm("A*"); //Pathfinder auto detects if there are two nodes.
+        this.pathFinder.setActiveAlgorithm("Dijkstra"); //Pathfinder auto detects if there are two nodes.
         //deactivate edges on the selected nodes
         for(let i = 0; i < this.NodeManager.selectedNodes.length; i++) {
           this.removeEdgeGivenNode(this.NodeManager.index2node(this.NodeManager.selectedNodes[i]));
@@ -1812,60 +1812,49 @@ class PreviewArea {
   }
 
   pathfinderFinished = (pathObject) => {
-    //pop up an alert with the nodes in the path
-    // let alertString = "";
-    // for(let i = 0; i < pathObject.path.length; i++) {
-    //   alertString += pathObject.path[i].sourceNodeIndex + " ";
-    // }
-    // draw the path
+    console.log(pathObject);
     setTimeout(() => {
       let edgePoints = [];
       let nodesI = [];
-      //this.drawPath(pathObject.path);
-      for (let i = 0; i < pathObject.path.length; i++) {
-        let node = pathObject.path[i];
-        let index = this.NodeManager.node2index(pathObject.path[i]);
-        this.NodeManager.removeHighlight(node);
-        this.NodeManager.restoreNode(node);
-        this.NodeManager.scaleNodeByIndex(index, 1.5);
-        this.NodeManager.highlightNode(node, 0xffffff);
+      let pathLength = pathObject.path.length;
+
+      for (let i = 0; i < pathLength; i++) {
+        let nodeIndex = this.NodeManager.node2index(pathObject.path[i]);
+        let node = this.NodeManager.index2node(nodeIndex);
+
+        // Check if the node is the start node, else if it's not the end node, it's a middle node
+        if (i === 0) { // start node
+          this.NodeManager.scaleNodeByIndex(nodeIndex, 1.5);
+          this.NodeManager.removeHighlight(node); // removing any previous highlight before setting our own
+          this.NodeManager.highlightNode(node, 0xffffff); // white
+        } else if (i === pathLength - 1) { // end node
+          this.NodeManager.scaleNodeByIndex(nodeIndex, 1.5);
+          this.NodeManager.removeHighlight(node); // removing any previous highlight before setting our own
+          this.NodeManager.highlightNode(node, 0x000000); // black
+        } else { // middle nodes
+          this.NodeManager.scaleNodeByIndex(nodeIndex, 1.5);
+          this.NodeManager.removeHighlight(node); // removing any previous highlight before setting our own
+          this.NodeManager.highlightNode(node, 0x00ff00); // green
+        }
+
         let point = this.NodeManager.getNodePosition(node);
-
         edgePoints.push(point);
-        nodesI.push(index);
+        nodesI.push(nodeIndex);
       }
-      //set the start node white
-      //will be the first node is the selected nodes array
-      let node = this.NodeManager.index2node(this.NodeManager.selectedNodes[0]);
-      this.NodeManager.restoreNode(node)
-      this.NodeManager.removeHighlight(node);
-      this.NodeManager.scaleNodeByIndex(this.NodeManager.selectedNodes[0], 1.5);
-      this.NodeManager.highlightNode(node, 0x000000);
-      //set the end node red
-      //will be the second node is the selected nodes array
-      node = this.NodeManager.index2node(this.NodeManager.selectedNodes[1]);
-      this.NodeManager.restoreNode(node)
-      this.NodeManager.removeHighlight(node);
-      this.NodeManager.scaleNodeByIndex(this.NodeManager.selectedNodes[1], 1.5);
-      this.NodeManager.highlightNode(node, 0xff0000);
-      //draw the path
-      edgePoints.push(this.NodeManager.getNodePosition(node));// last node
-      nodesI.push(this.NodeManager.selectedNodes[1]);
-      this.shortestPathEdges.push(this.drawEdgeWithName(edgePoints,"A* Path", nodesI));
-    }, 1000);
 
+      // draw the path
+      this.shortestPathEdges.push(this.drawEdgeWithName(edgePoints,"Dijkstra Path", nodesI));
+    }, 50);
 
-    //distance is pathObject.distance total distance of the path
-    //alertString += "\nDistance: " + pathObject.distance;
     console.log("pathfinder finished: " + pathObject + " path cost: " + pathObject.distance);
-    //alert(alertString);
     this.pathFinder = null;
   }
 
   pathfinderFailed = (pathObject) => {
     //pop an alert with the failure message
     alert("Pathfinder failed: " + pathObject.message);
-
+    this.pathFinder = null;
+    this.reset();
   }
 
   toggleHelp = () => {
@@ -2317,14 +2306,18 @@ class PreviewArea {
     //get all edges from brain with name index
     let index = this.NodeManager.node2index(node);
     //from this.displayedEdges get all edges with name index
-    let edges = this.displayedEdges.filter(edge => edge.name == index);
+    let edges = this.displayedEdges.filter(edge => edge.name === index);
     //remove all edges from brain
     for (let i = 0; i < edges.length; ++i) {
       this.brain.remove(edges[i]);
     }
     //remove all edges from displayedEdges
-    this.displayedEdges = this.displayedEdges.filter(edge => edge.name != index);
+    this.displayedEdges = this.displayedEdges.filter(edge => edge.name !== index);
+  }
 
+  removeEdgeGivenIndex = (nodeIndex) => {
+    let node = this.NodeManager.index2node(nodeIndex);
+    this.removeEdgeGivenNode(node);
   }
 
   removeShortestPathEdgesFromScene = () => {

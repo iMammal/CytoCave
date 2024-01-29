@@ -3,9 +3,7 @@
 // Activates Highlighting of Nodes and Draws Edge Lines for the path
 
 // Requires NodeManager.js
-import { NodeManager } from './NodeManager.js';
-import { PreviewArea } from './previewArea.js';
-import {modelLeft} from "./model";
+import {NodeManager} from './NodeManager.js';
 
 // PathFinder class
 class PathFinder {
@@ -36,20 +34,20 @@ class PathFinder {
 
     // check that the algorithm is a valid class.
     // set start and end nodes
-    if(algorithm === null) {
+    if (algorithm === null) {
       console.log("Algorithm is null. Please select an algorithm.\n" +
         "Currently supported algorithms\n" +
-        ": A*\n" +
+        ": Dijkstra\n" +
         "Pathfinder.setActiveAlgorithm(aClass)\n");
       return;
     }
 
-    if(algorithm === "A*") {
-      this.activeAlgorithm = new AStar(this.NodeManager, this.PreviewArea);
+    if (algorithm === "Dijkstra") {
+      this.activeAlgorithm = new Dijkstra(this.NodeManager, this.PreviewArea);
     } else {
       console.log("Algorithm not supported. Please select an algorithm.\n" +
         "Currently supported algorithms\n" +
-        ": A*\n" +
+        ": Dijkstra\n" +
         "Pathfinder.setActiveAlgorithm(aClass)\n");
       return;
     }
@@ -57,31 +55,30 @@ class PathFinder {
     if (this.activeAlgorithm != null) {
       // verify that the algorithm has the required methods
 
-        if (this.NodeManager.selectedNodesCount === 2) {
-          // set start and end nodes
-          console.log("PathFinder: Setting start and end nodes from active NodeManager selectedNodes.")
-          if(this.NodeManager.selectedNodes.length === 2) {
-            // the extra check above is largely unnecessary, but it's a good sanity check
-            // and will help with debugging, remove it if you want.
-            this.activeAlgorithm.setStartNode(this.NodeManager.index2node(this.NodeManager.selectedNodes[0]));
-            this.activeAlgorithm.setEndNode(this.NodeManager.index2node(this.NodeManager.selectedNodes[1]));
-            this.status = 'ready';
-            this.ready = this.activeAlgorithm.ready;
-          }
-        } else {
-
-
-
-          console.log("Please set start and end nodes before running algorithm.");
-          return;
+      if (this.NodeManager.selectedNodesCount === 2) {
+        // set start and end nodes
+        console.log("PathFinder: Setting start and end nodes from active NodeManager selectedNodes.")
+        if (this.NodeManager.selectedNodes.length === 2) {
+          // the extra check above is largely unnecessary, but it's a good sanity check
+          // and will help with debugging, remove it if you want.
+          this.activeAlgorithm.setStartNode(this.NodeManager.index2node(this.NodeManager.selectedNodes[0]));
+          this.activeAlgorithm.setEndNode(this.NodeManager.index2node(this.NodeManager.selectedNodes[1]));
+          this.status = 'ready';
+          this.ready = this.activeAlgorithm.ready;
         }
+      } else {
+
+
+        console.log("Please set start and end nodes before running algorithm.");
+        return;
+      }
 
 
     } else {
       // throw error
-      console.log( "Algorithm is null. Please select an algorithm.\n" +
-      "Currently supported algorithms\n" +
-      ": A*\n" +
+      console.log("Algorithm is null. Please select an algorithm.\n" +
+        "Currently supported algorithms\n" +
+        ": Dijkstra\n" +
         "Pathfinder.setActiveAlgorithm(aClass)\n");
     }
 
@@ -102,7 +99,7 @@ class PathFinder {
       return;
     }
     this.activeAlgorithm.setStartNode(node);
-    if(this.activeAlgorithm.EndNode !== null) {
+    if (this.activeAlgorithm.EndNode !== null) {
       if (this.activeAlgorithm.getStatus() === "ready")
         this.ready = true;
     }
@@ -114,8 +111,8 @@ class PathFinder {
       return;
     }
     this.activeAlgorithm.setEndNode(node);
-    if(this.activeAlgorithm.StartNode !== null) {
-      if(this.activeAlgorithm.getStatus() === "ready") {
+    if (this.activeAlgorithm.StartNode !== null) {
+      if (this.activeAlgorithm.getStatus() === "ready") {
         this.ready = true;
       }
     }
@@ -143,11 +140,15 @@ class PathFinder {
       console.log("No algorithm selected.");
       return;
     }
+
+    this.active = false;
+
+
     this.activeAlgorithm.stop();
   }
 
   update() {
-    if(this.active !== true) {
+    if (this.active !== true) {
       return;
     }
     if (this.activeAlgorithm == null) {
@@ -156,48 +157,42 @@ class PathFinder {
     }
     let status = this.activeAlgorithm.getStatus();
     //get status of algorithm and run one step if it is running
-    if(status === "running") {
+    if (status === "running") {
       this.activeAlgorithm.step();
-    } else if(status === "failed") {
+    } else if (status === "failed") {
       console.log("Algorithm failed.");
       this.active = false;
-      if(this.callbackOnFailure !== null) {
+      if (this.callbackOnFailure !== null) {
         this.callbackOnFailure(this.activeAlgorithm.getStatus());
       } else {
         console.log("No callbackOnFailure set. Call PathFinder.setCallbackOnFailure(callback) to set callback.");
       }
-    } else if(status === "finished") {
+      this.stop();
+    } else if (status === "finished") {
       console.log("Algorithm finished.");
       this.active = false;
-      if(this.callbackOnFinish !== null) {
-        this.callbackOnFinish(this.activeAlgorithm.getPathNodes());
+      if (this.callbackOnFinish !== null) {
+        this.callbackOnFinish(this.getPathObj());
+        this.stop();
       } else {
         console.log("No callbackOnFinish set. Call PathFinder.setCallbackOnFinish(callback) to set callback.");
       }
       this.status = "finished";
+      this.stop();
 
-    } else if(status === "not ready") {
+    } else if (status === "not ready") {
       this.active = false;
     }
 
   }
 
   // Get the path nodes
-  getPathNodes() {
+  getPathObj() {
     if (this.activeAlgorithm == null) {
       console.log("No algorithm selected.");
       return;
     }
-    return this.activeAlgorithm.getPathNodes();
-  }
-
-  // Get the failed path nodes
-  getFailedPathNodes() {
-    if (this.activeAlgorithm == null) {
-      console.log("No algorithm selected.");
-      return;
-    }
-    return this.activeAlgorithm.getFailedPathNodes();
+    return this.activeAlgorithm.getPath();
   }
 
   // Get the status of the algorithm
@@ -225,8 +220,8 @@ class PathFinder {
 
 }
 
-// A* algorithm for pathfinding through NodeManager edges
-class AStar {
+// Dijkstra algorithm for pathfinding through NodeManager edges
+class Dijkstra {
   constructor(NodeManager_, PreviewArea_) {
     this.running = false;
     this.ready = false;
@@ -234,19 +229,21 @@ class AStar {
     this.EndNode = null;
     this.NodeManager = NodeManager_;
     this.PreviewArea = PreviewArea_;
-    this.path = [];
-    this.cost = []; // cost of the path per hop
-    this.failedPath = []; //path that failed, or was more expensive than the best path
-    this.visited = []; // nodes that have been visited in this iteration
+
     this.status = "not ready";
-    this.edges = []; // a list of the active edges the under processing node is connected to
+
     this.savedContext = null; // the currently active context function
-    this.bestPath = null;
-    this.bestPathDistance = null;
-    this.pathObject = {}; // return for successful path {path: this.bestPath, distance: this.bestPathDistance}
-    this.currentNode = undefined;
-    this.currentEdge = undefined;
-    this.edges = [];
+
+    this.priQueue = new Set();  // priority queue of nodes
+    this.visited = new Set();  // set of visited nodes
+    this.distance = new Map();  // map of nodes to their distance from the start node
+    this.parentMap = new Map(); // map of nodes to their parent nodes
+
+    this.bestPath = [];
+    this.bestPathDistance = 0;
+
+    this.sCount = 0; // a counter for the number of steps taken in the algorithm
+
   }
 
   reset() {
@@ -254,26 +251,23 @@ class AStar {
     this.ready = false;
     this.StartNode = null;
     this.EndNode = null;
-    this.path = [];
-    this.failedPath = [];
-    this.visited = [];
+
     this.status = "not ready";
-    this.pathObject = {}; // return for successful path {path: this.path, distance: distance}
-    this.edges = []; // a list of the active edges the under processing node is connected to
 
     this.savedContext = null; // the currently active context function
+    this.sCount = 0; // a counter for the number of steps taken in the algorithm
   }
 
   // Set the start node, required for pathfinder
   setStartNode(StartNode_) {
-    console.log("A* setting start node: " + this.NodeManager.node2index(StartNode_));
-    if(StartNode_ !== null) {
+    console.log("Dijkstra setting start node: " + this.NodeManager.node2index(StartNode_));
+    if (StartNode_ !== null) {
       this.StartNode = StartNode_;
     } else {
-      console.log("A* StartNode is null.");
+      console.log("Dijkstra StartNode is null.");
     }
 
-    if(this.EndNode !== null) {
+    if (this.EndNode !== null) {
       this.ready = true;
       this.status = "ready";
     }
@@ -281,33 +275,50 @@ class AStar {
 
   // Set the end node, required for pathfinder
   setEndNode(EndNode_) {
-    console.log("A* setting end node: " + this.NodeManager.node2index(EndNode_));
-    if(EndNode_ !== null) {
+    console.log("Dijkstra setting end node: " + this.NodeManager.node2index(EndNode_));
+    if (EndNode_ !== null) {
       this.EndNode = EndNode_;
     } else {
-      console.log("A* EndNode is null.");
+      console.log("Dijkstra EndNode is null.");
     }
 
 
-    if(this.StartNode !== null) {
+    if (this.StartNode !== null) {
       this.ready = true;
       this.status = "ready";
     }
   }
+
   getAlgorithmName() {
-    return "A*";
+    return "Dijkstra";
   }
 
   // Get the path nodes
-  getPathNodes() {
-    this.pathObject = {path: this.bestPath, distance: this.bestPathDistance};
-    return this.pathObject;
+  getPath() {
+    let path = [];
+    let sni = this.NodeManager.node2index(this.StartNode);
+    let eni = this.NodeManager.node2index(this.EndNode);
+
+    if (!this.parentMap.has(eni)) {
+      console.log("Dijkstra end node has no parent.");
+      this.status = "failed";
+      this.running = false;
+      return;
+    }
+    path.unshift(this.EndNode);   // add the end node at the beginning
+    for(let ni = this.parentMap.get(eni); ni !== sni; ni = this.parentMap.get(ni)) {
+      path.unshift(this.NodeManager.index2node(ni));
+    }
+
+    path.unshift(this.StartNode); // add the start node at the beginning
+
+
+    return {
+      path: path,
+      distance: this.distance.get(eni) // get distance for the end node
+    };
   }
 
-  // Get the failed path nodes
-  getFailedPathNodes() {
-    return this.failedPath;
-  }
 
   // Get the status of the algorithm
   getStatus() {
@@ -315,10 +326,8 @@ class AStar {
   }
 
   start() {
-    console.log("A* start");
-    this.running = true;
-    this.status = "running";
-    this.edges = this.NodeManager.getEdges(this.StartNode);
+    console.log("Dijkstra start");
+
     //hijacking context for this.
     if (this.NodeManager.contextualNodeActivated !== null) {
       //only using this as an example of how a context function can be restored.
@@ -332,244 +341,231 @@ class AStar {
     this.NodeManager.highlightNode(this.StartNode, 0xFFFFFF); //white is the color of the start node
     this.NodeManager.removeHighlight(this.EndNode); // remove highlight from so that we can change it ourselves.
     this.NodeManager.highlightNode(this.EndNode, 0x000000); //black is the color of the end node
-    this.currentNode = this.StartNode;
 
-    this.path.push(this.currentNode);
-    this.visited.push(this.currentNode);
-  }
-
-  contextCallback(node,color) {
-    // This is triggered when the algo adds a node to the path
-    console.log("A* looking at node: " + this.NodeManager.node2index(node));
-    //setTimeout(() => {
-      this.NodeManager.highlightNode(node, 0x00FF00);
-      //activate edges on the node
-      this.PreviewArea.drawEdgesGivenIndex(this.NodeManager.node2index(node));
-    //}, 10);
-    setTimeout(() => {
-      //check if node is in current path if not remove highlight
-      if(this.path.includes(node) === false) {
-        this.NodeManager.removeHighlight(node);
-        this.PreviewArea.removeEdgeGivenNode(node);
-      }
-
-    },1000);
-  }
-
-  step() {
-    if(!this.running) {
-      console.log("A* not running.");
+    if (this.StartNode === this.EndNode) {
+      console.log("Dijkstra start and end nodes are the same.");
+      this.status = "failed";
+      this.running = false;
       return;
     }
 
-    //this.currentNode is the node we are currently processing
-    //this.edges is the list of edges being processed, it already contains the edges of nextNode
+    console.log("Dijkstra start node: " + this.NodeManager.node2index(this.StartNode));
+    console.log(this.StartNode);
+    //add start node to queue
+    let sni = this.NodeManager.node2index(this.StartNode);
+    this.priQueue.add(sni);
+    this.distance.set(sni, 0);
+    this.status = "running";
+    this.running = true;
 
-    // Check if we are at the end
-    if(this.NodeManager.node2index(this.currentNode) === this.NodeManager.node2index(this.EndNode)) {
-      let pathCost = this.calculateTotalPathCost(this.path);
-      this.bestPath = this.path.slice();
-      this.bestPathDistance = pathCost;
-      console.log("A* found path.");
-      // Continue searching for more paths
-      this.edges.shift();
-      if (this.edges.length === 0) {
-        console.log("Best Path Obj:")
-        console.log(this.bestPath);
+  }
 
-        console.log("A* finished. Best path: " + this.bestPathDistance + " hops: " + this.bestPath.length);
-        this.status = "finished";
-        this.running = false;
-
-        return;
-      } else {
-        if (this.bestPath === null) {
-          console.log("A* found first path.");
-          this.bestPath = this.path.slice();
-          this.bestPathDistance = pathCost;
-          this.path.pop(); // remove the end node from the path
-        } else {
-          //if total cost of path is less than best path, replace best path
-          //add cost of the current path
-          //let pathCost = this.calculateTotalPathCost(this.path);
-          if(pathCost < this.bestPathDistance || this.path.length < this.bestPath.length) {
-            console.log("A* found better path.");
-            console.log("Path is " + this.path.length + " hops long. And costs " + pathCost);
-            this.bestPath = this.path.slice();
-            this.bestPathDistance = pathCost;
-            this.path.pop(); // remove the end node from the path
-          } else {
-            console.log("A* found worse path.");
-            console.log("Path is " + this.path.length + " hops long. And costs " + pathCost);
-            this.path = [] // remove the end node from the path
-            //clear visited nodes
-            this.visited = [];
-            //add start node to visited nodes
-            this.visited.push(this.NodeManager.node2index(this.StartNode));
-            //add the last node in the path to the visited nodes
-            this.visited.push(this.NodeManager.node2index(this.currentNode));
-            //set the current node to the start node
-            this.currentNode = this.StartNode;
-          }
-        }
-
+  contextCallback(node, color) {
+    // This is triggered when the algo adds a node to the path
+    //console.log("Dijkstra looking at node: " + this.NodeManager.node2index(node));
+    //setTimeout(() => {
+    let ni = this.NodeManager.node2index(node);
+    let sni = this.NodeManager.node2index(this.StartNode);
+    let eni = this.NodeManager.node2index(this.EndNode);
+    if (ni !== sni && ni !== eni) {
+      this.NodeManager.highlightNodeByIndex(ni, 0x00FF00);
+    }
+    this.PreviewArea.drawEdgesGivenIndex(ni);
+    //}, 10);
+    setTimeout(() => {
+      //check if node is in current path if not remove highlight
+      // if(this.path.includes(node) === false) {
+      //   this.NodeManager.removeHighlight(node);
+      //   this.PreviewArea.removeEdgeGivenNode(node);
+      //
+      //}
+      let ni = this.NodeManager.node2index(node);
+      let sni = this.NodeManager.node2index(this.StartNode);
+      let eni = this.NodeManager.node2index(this.EndNode);
+      if (ni !== sni && ni !== eni) {
+        this.NodeManager.removeHighlightByIndex(ni);
       }
+      this.PreviewArea.removeEdgeGivenNode(node);
+    }, 1000);
+  }
+
+  step() {
+    if (this.running === false) {
+      return false;
+    }
+    this.sCount += 1;
+    // this is the main loop of the algorithm
+    // it is called by the update function
+    //console.log('Dijkstra step');
+    if (this.priQueue.size === 0) {
+      console.log("Priority queue is empty. Dijkstra's algorithm has already terminated.");
+      this.status = "finished";
+      return true;
+    }
+    //estimate queue size
+    let queueSize = this.priQueue.size;
+    //console.log("Dijkstra queue size: " + queueSize + " sCount: " + this.sCount);
+    let node = this.NodeManager.index2node(this.dequeueMin());
+    if (node === null) {
+      console.log("Priority queue is empty. Dijkstra's algorithm has already terminated.");
+      this.status = "finished";
+      return true;
+    }
+    //console.log("Dijkstra dequeued node: " + this.NodeManager.node2index(node));
+    this.NodeManager.addContextNode(node);
+    this.exploreNeighbors(node);
+
+    if (this.priQueue.size === 0) {
+      console.log("Priority queue is empty. Dijkstra's algorithm has already terminated.");
+      this.status = "finished";
+      return true;
     }
 
-    // add the edges from the current node to the list of edges
-    if(this.edges.length === 0) {
-      //but only if it hasn't been visited
-      let newEdges = this.NodeManager.getEdges(this.currentNode);
-      //check if any of the edges point to the end node
-
-        this.edges = this.edges.concat(newEdges);
-        //remove edges that point to visited nodes
-        this.edges = this.edges.filter((edge) => {
-          if(this.visited.includes(edge.targetNodeIndex)) {
-            return false;
-          } else {
-            return true;
-          }
-        });
-        //check if any of the edges point to the end node
-
-    }
-    //sort the edges by cost
-    this.edges.sort((a, b) => this.getEdgeCost(a) - this.getEdgeCost(b));
-    //add place cost data on the edges
-    this.edges.forEach((edge) => {
-      edge.cost = this.getEdgeCost(edge);
-    });
-    //look for next unvisited node in this.edges with current node as sourceNodeIndex
-    //remove edges pointing to visited nodes
-    console.log(this.currentEdge);
-
-    do {
-      this.currentEdge = this.edges.shift();
-      if(this.currentEdge === undefined) {
-        break;
-      }
-      //check if visited, remove from edges if visited
-      if(this.visited.includes(this.currentEdge.targetNodeIndex)
-      || this.path.includes(this.NodeManager.index2node(this.currentEdge.targetNodeIndex))) {
-
-        //remove that edge from the list of edges
-
-      } else {
-        break;
-      }
-
-      // // If all nodes have been visited, break the loop
-      // if (this.visited.length === this.NodeManager.nodes.length) {
-      //   console.log("All nodes have been visited. Stopping the algorithm.");
-      //   this.running = false;
-      //   this.status = "failed";
-      //   break;
-      // }
-
-    } while(this.edges.length > 0);
-
-
-
-    //if there are no more edges, the while loop above will remove all edges and we will be at a dead end
-    if(this.currentEdge === undefined) {
-      //we are at a dead end, go back to the previous node
-      //remove the current node from the path
-      console.log("A* dead end, backtracking.") ;
-      this.path.pop();
-      if(this.path.length === 0) {
-        this.status = "finished";
-        this.running = false;
-        console.log("A* finished. All paths have been explored.");
-      }
-      this.visited.push(this.NodeManager.node2index(this.currentNode));
-      //set the current node to the previous node
-      this.currentNode = this.path[this.path.length - 1];
-    }
-
-
-
-    const maxPathLength = 10;
-    // Check if the path is too long
-    if (this.path.length > maxPathLength) {
-      console.log("A* path is too long, backtracking.");
-      //console.log("Path is " + this.path.length + " hops long. And costs " + this.path.reduce((a, b) => a + b.weight, 0));
-      // We are at a dead end, go back to the previous node
-      // Remove the current node from the path
-      this.path.pop();
-      // Set the current node to the previous node
-      this.currentNode = this.path[this.path.length - 1];
-    } else {
-      //add the edge to the path
-      if(this.currentEdge === undefined) {
-        return true;
-      }
-      this.path.push(this.NodeManager.index2node(this.currentEdge.targetNodeIndex));
-      this.visited.push(this.currentEdge.targetNodeIndex);
-      // Set the current node to the target node of the current edge
-      this.currentNode = this.NodeManager.index2node(this.currentEdge.targetNodeIndex);
-      // Highlight the node
-      this.NodeManager.addContextNode(this.currentNode);
-    }
-
-    //check if any of the edges point to the end node
-
-
-
-    console.log("Remaining edges: " + this.edges.length +
-      " Path length: " + this.path.length + " Visited: " + this.visited.length + " Total Nodes: " +
-        this.PreviewArea.model.getDataset().length);
-
+    return false;
 
 
   }
 
-  getEdgeCost(edge) {
-    // returns the cost of the edge + all the hops before it
-    let positionalCost = 0;
-    for(let i = 0; i < this.path.length; i++) {
-      if(this.path[i] === this.NodeManager.index2node(edge.sourceNodeIndex)) {
-        positionalCost += i;
+  exploreNeighbors(node) {
+    for (let edge of this.NodeManager.getEdges(node)) {
+      let neighborI = edge.targetNodeIndex;
+
+      // Use helper function to calculate shortest path distance
+      let distance = this.getShortestPathDistance(edge, neighborI);
+
+      if (distance !== null && this.pathSizeWithinRange(neighborI)) {
+        //neighbor index
+        let ni = neighborI;
+        let sni = this.NodeManager.node2index(node);
+
+        // Use helper function to update path data
+        this.updatePathData(ni, sni, distance);
       }
     }
-    if(this.NodeManager.index2node(edge.targetNodeIndex) === this.EndNode) {
-      positionalCost = 0; // straight to the end saves some cost. otherwise guess.
+  }
+
+// Extracted helper function to calculate shortest path distance
+  getShortestPathDistance(edge, neighborI) {
+    let distance = this.distance.get(edge.sourceNodeIndex) + edge.weight;
+
+    // If this distance is longer than the existing one, return null
+    if (this.distance.has(neighborI) && distance >= this.distance.get(neighborI)) {
+      return null;
     }
 
-    return positionalCost + edge.weight;// + positionalCost;
+    return distance;
+  }
+
+// Extracted helper function to update path data
+  updatePathData(ni, sni, distance) {
+    this.distance.set(ni, distance);
+    this.parentMap.set(ni, sni);
+    this.priQueue.add(ni);
+  }
+
+  pathSizeWithinRange(neighborI) {
+    let currentIndex = neighborI;
+    let pathLength = 0;
+    let x = 0;
+    //random between 0 and 10
+    //todo make this a parameter
+    let y = Math.floor(Math.random() * 10) + 1;
+    // Calculate the path length by traversing parents
+    let sni = this.NodeManager.node2index(this.StartNode);
+    while (currentIndex !== sni) {
+      pathLength++;
+      currentIndex = this.parentMap.get(currentIndex);
+      if (!currentIndex) {
+        // Reached the start node or encountered an unreachable node
+        break;
+      }
+    }
+
+    // Check if the path length is within the specified range [x, y]
+    return pathLength >= x && pathLength <= y;
+  }
+
+  getDistance(node1, node2) {
+    let edge = this.NodeManager.getEdge(node1, node2);
+    if (edge) {
+      return edge.weight;
+    } else {
+      return Infinity;
+    }
+  }
+
+  dequeueMin() {
+    if (this.priQueue.size === 0) {
+      return null;
+    }
+    let min = Infinity;
+    let minNode = null;
+    for (let index of this.priQueue) {
+      //console.log("Dijkstra queue index: " + index);
+
+      //let node = this.NodeManager.index2node(index);
+      //raw object
+      //console.log(node)
+      if (this.distance.get(index) < min) {
+        min = this.distance.get(index);
+        minNode = index;
+      }
+    }
+    //console.log("Dijkstra min node: ");
+    //console.log(minNode);
+    this.priQueue.delete(minNode);
+    return minNode;
   }
 
   calculateTotalPathCost(path) {
-    let totalDistance = 0;
+    let totalCost = 0;
 
-    return totalDistance;
-  }
+    let sni = this.NodeManager.node2index(this.StartNode);
+    let eni = this.NodeManager.node2index(this.EndNode);
+    console.log("Dijkstra start: " + sni + " end: " + eni);
+    console.log("Dijkstra path: " + this.NodeManager.node2index(path[0]) + " " + this.NodeManager.node2index(path[path.length - 1]));
 
-  stop() {
-    console.log("A* stop");
-    if(this.running === true) {
-      if(this.status !== "failed") {
-        this.status = "stopped";
-        console.log("A* paused.");
-      } else {
-        console.log("A* failed.");
+    for (let i = 0; i < path.length - 1; i++) {
+      let edge = this.NodeManager.getEdge(path[i], path[i + 1]);
+      if (edge === null) {
+        console.log("Dijkstra edge is null.");
+        return;
       }
-      this.running = false;
-      this.NodeManager.resetContext();
-      console.log("restoring context");
-      // example of restoring context
-      this.NodeManager.contextualNodeActivated = this.savedContext;
-      this.NodeManager.setContextualNodesByIndex(this._context);
-
-    } else {
-     this.running = false;
-     this.status = "finished?";
+      totalCost += edge.weight;
     }
 
 
+    return totalCost;
   }
 
+  stop() {
+    console.log("Dijkstra stop");
+    if (this.running === true && this.status !== "finished") {
+      if (this.status !== "finished") {
+        this.status = "stopped";
+        console.log("Dijkstra paused.");
+      } else {
+        console.log("Dijkstra failed.");
+      }
+      this.running = false;
+      //this.NodeManager.resetContext();
+      //console.log("restoring context");
+      // example of restoring context
+      //this.NodeManager.contextualNodeActivated = this.savedContext;
+      //this.NodeManager.setContextualNodesByIndex(this._context);
+
+    } else {
+      if (this.running === false) {
+        console.log("Dijkstra already stopped.");
+      } else {
+      this.running = false;
+      this.status = "finished";
+      console.log("Dijkstra finished.");
+      }
+    }
+
+  }
 
 }
 
-export { PathFinder, AStar };
+export {PathFinder};

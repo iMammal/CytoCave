@@ -720,7 +720,7 @@ class NodeManager {
       threshold = this.previewArea.model.getThreshold();
     }
     let maxThreshold = this.previewArea.model.getConThreshold()
-    console.log("Max Threshold: " + maxThreshold);
+    //console.log("Max Threshold: " + maxThreshold);
     if(maxThreshold === 0){
       maxThreshold = 100; //some really high number.
       this.previewArea.model.setConThreshold(maxThreshold); //update the threshold in the model.
@@ -800,10 +800,22 @@ class NodeManager {
 
   }
 
+  //given two nodes, find common edge.
+  //return the edge or null if no common edge.
+  getEdge(node1, node2) {
+    let edges = this.getEdges(node1);
+    for (let i = 0; i < edges.length; i++) {
+      if (edges[i].targetNodeIndex === this.node2index(node2)) {
+        return edges[i];
+      }
+    }
+    return null;
+  }
+
   /*requires two nodes to be selected. the first node is the source node, the second node is the target node.
 * the path is calculated using the shortest path algorithm.
  */
-
+//todo remove stp stuff from nodemanager, superceded by PathFinder
   calculateShortestPath(node1, node2, topN = null, distance = 0) {
     //modified djikstra's algorithm.
     //https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
