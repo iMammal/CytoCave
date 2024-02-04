@@ -24,6 +24,7 @@ import {TrackballControls} from "three/examples/jsm/controls/TrackballControls";
 // import {isLoaded, dataFiles  , mobile} from "./globals";
 import {mobile, atlas} from './globals';
 import {getNormalGeometry, getNormalMaterial} from './graphicsUtils.js'
+import { XRInterface } from './XRInterface.js'
 import {
   getRoot,
   setRoot,
@@ -42,8 +43,8 @@ import {
   getEnableIpsi,
   getEnableContra,
   getThresholdModality,
-  vr,
-  activeVR,
+  //vr,
+  //activeVR,
   // updateNodeSelection,
   updateNodeMoveOver,
   previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove
@@ -52,9 +53,9 @@ import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, removeGeometry
 import {scaleColorGroup} from './utils/scale'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
-import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
+//import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
 //import { XRControllerModelFactory } from './external-libraries/vr/XRControllerModelFactory.js';
-import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory.js";
+// import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory.js";
 // import {nodeObject, timerDelta} from "three/examples/jsm/nodes/shadernode/ShaderNodeElements";
 // import {WebXRManager} from "three/src/renderers/webxr/WebXRManager";
 // import {abs, sign} from "mathjs";
@@ -105,11 +106,11 @@ class PreviewArea {
     this.vrControl = null;
     this.effect = null;
 
-    // XR stuff
-    this.xrButton = null;
-    this.xrRefSpace = null;
-    this.xrImmersiveRefSpace = null;
-    this.xrInlineRefSpace = null;
+    // // XR stuff
+    // this.xrButton = null;
+    // this.xrRefSpace = null;
+    // this.xrImmersiveRefSpace = null;
+    // this.xrInlineRefSpace = null;
     this.inlineSession = null;
     this.controller = null;
     this.controllerGrip = null;
@@ -147,15 +148,15 @@ class PreviewArea {
     //this.gl = null;
     // possably need this.gl to be set to the canvas context
     // I didn't see it created anywhere except some commented code.
-
+    this.animatePV = this.animatePV.bind(this);
 
     // PreviewArea construction
     this.createCanvas();
     this.initCamera();
     this.initScene();
     this.initControls();
-
-    this.initXR();
+    this.xrInterface = new XRInterface(this);
+    //this.initXR();
     //this.drawRegions();  //replaced with nodeManager
     this.NodeManager = new NodeManager(this);
     this.rebindNodeManagerCallbacks();
@@ -169,7 +170,7 @@ class PreviewArea {
     this.nspCanvas = document.createElement('canvas');
     this.nodeNameMap = null;
     this.nodeLabelSprite = null;
-    this.xrDolly = new THREE.Object3D();
+    //this.xrDolly = new THREE.Object3D();
     //this.imageSlices = new NeuroSlice('public/images','data/Cartana/SliceDepth0.csv',this.imagesLoadedCallback.bind(this));
 
   }
@@ -204,8 +205,8 @@ class PreviewArea {
   }
 
   appearSelected = (node) => {
-    console.log('appearSelected');
-    console.log(node);
+    //console.log('appearSelected');
+    //console.log(node);
     let index = this.NodeManager.node2index(node);
 
     this.NodeManager.restoreNodeByIndex(index);
@@ -282,95 +283,99 @@ class PreviewArea {
   }
 
 
-  initXR = () => {
+ // initXR = () => {
     //init VR //todo: this is stub now
-
-
-    console.log("Init XR for PV: " + name);
-    this.enableVR = true;
-    this.activateVR = false;
-
-    //renderer.outputEncoding = THREE.sRGBEncoding; //The robot says this makes the colors look better in VR but it makes the colors look worse in the browser
-    this.renderer.xr.enabled = true;
-
-
-    function onSelectStart() {
-
-      this.userData.isSelecting = true;
-      console.log("Select start");
-    }
-
-    function onSelectEnd() {
-
-      this.userData.isSelecting = false;
-      console.log("Select end");
-    }
-
-    let v3Origin = new THREE.Vector3(0, 0, 0);
-    let v3UnitUp = new THREE.Vector3(0, 0, -100);
-
-    this.controllerLeft = this.renderer.xr.getController(0);
-    this.controllerLeft.addEventListener('selectstart', onSelectStart);
-    this.controllerLeft.addEventListener('selectend', onSelectEnd);
-    this.controllerLeft.addEventListener('connected', (event) => {
-      this.controllerLeft.gamepad = event.data.gamepad;
-      console.log("Left controller connected");
-      console.log("event data: ");
-      console.log(event.data);
-      this.xrInputLeft = event.data;
-      //  this.add( buildController( event.data ) );
-      //todo this is no longer the gamepad as we used ()=> {} instead of function() {}
-      // in order to draw the pointer we need to add it to the controller probably, test this.
-      this.controllerLeft.add(this.drawPointer(v3Origin, v3UnitUp));
-      //this.add( drawPointer(v3Origin, v3UnitUp) );
-
-    });
-
-    this.controllerLeft.addEventListener('disconnected', function () {
-
-      this.remove(this.children[0]);
-
-    });
-    this.scene.add(this.controllerLeft);
-
-    this.controllerRight = this.renderer.xr.getController(1);
-    this.controllerRight.addEventListener('selectstart', onSelectStart);
-    this.controllerRight.addEventListener('selectend', onSelectEnd);
-    this.controllerRight.addEventListener('connected', (event) => {
-      this.controllerRight.gamepad = event.data.gamepad;
-      //this.add( buildController( event.data ) );
-      console.log("Right controller connected: ");
-      console.log("event data: ");
-      this.xrInputRight = event.data;
-      console.log(event.data);
-      //todo this is no longer the gamepad as we used ()=> {} instead of function() {}
-      // in order to draw the pointer we need to add it to the controller probably, test this.
-      this.controllerRight.add(this.drawPointer(v3Origin, v3UnitUp));
-      //this.add(this.drawPointer(v3Origin, v3UnitUp));//
-    });
-
-    this.controllerRight.addEventListener('disconnected', function () {
-
-      this.remove(this.children[0]);
-
-    });
-    this.scene.add(this.controllerRight);
-
-    const controllerModelFactory = new XRControllerModelFactory();
-
-    this.controllerGripLeft = this.renderer.xr.getControllerGrip(0);
-    this.controllerGripLeft.add(controllerModelFactory.createControllerModel(this.controllerGripLeft));
-    this.scene.add(this.controllerGripLeft);
-
-    this.controllerGripRight = this.renderer.xr.getControllerGrip(1);
-    this.controllerGripRight.add(controllerModelFactory.createControllerModel(this.controllerGripRight));
-    this.scene.add(this.controllerGripRight);
-    console.log('this.controllerLeft.gamepad');
-    console.log(this.controllerLeft.gamepad);
-    //document.body
-    document.getElementById('vrButton' + this.name).appendChild(VRButton.createButton(this.renderer));
-
-  }
+  //
+  //   // if(this.xrInterface !== null) {
+  //   //   this.xrInterface.initXR(this);
+  //   // }
+  //   return; //disabled moved to xrInterface
+  //
+  //   console.log("Init XR for PV: " + name);
+  //   this.enableVR = true;
+  //   this.activateVR = false;
+  //
+  //   //renderer.outputEncoding = THREE.sRGBEncoding; //The robot says this makes the colors look better in VR but it makes the colors look worse in the browser
+  //   this.renderer.xr.enabled = true;
+  //
+  //
+  //   function onSelectStart() {
+  //
+  //     this.userData.isSelecting = true;
+  //     console.log("Select start");
+  //   }
+  //
+  //   function onSelectEnd() {
+  //
+  //     this.userData.isSelecting = false;
+  //     console.log("Select end");
+  //   }
+  //
+  //   let v3Origin = new THREE.Vector3(0, 0, 0);
+  //   let v3UnitUp = new THREE.Vector3(0, 0, -100);
+  //
+  //   this.controllerLeft = this.renderer.xr.getController(0);
+  //   this.controllerLeft.addEventListener('selectstart', onSelectStart);
+  //   this.controllerLeft.addEventListener('selectend', onSelectEnd);
+  //   this.controllerLeft.addEventListener('connected', (event) => {
+  //     this.controllerLeft.gamepad = event.data.gamepad;
+  //     console.log("Left controller connected");
+  //     console.log("event data: ");
+  //     console.log(event.data);
+  //     this.xrInputLeft = event.data;
+  //     //  this.add( buildController( event.data ) );
+  //     //todo this is no longer the gamepad as we used ()=> {} instead of function() {}
+  //     // in order to draw the pointer we need to add it to the controller probably, test this.
+  //     this.controllerLeft.add(this.drawPointer(v3Origin, v3UnitUp));
+  //     //this.add( drawPointer(v3Origin, v3UnitUp) );
+  //
+  //   });
+  //
+  //   this.controllerLeft.addEventListener('disconnected', function () {
+  //
+  //     this.remove(this.children[0]);
+  //
+  //   });
+  //   this.scene.add(this.controllerLeft);
+  //
+  //   this.controllerRight = this.renderer.xr.getController(1);
+  //   this.controllerRight.addEventListener('selectstart', onSelectStart);
+  //   this.controllerRight.addEventListener('selectend', onSelectEnd);
+  //   this.controllerRight.addEventListener('connected', (event) => {
+  //     this.controllerRight.gamepad = event.data.gamepad;
+  //     //this.add( buildController( event.data ) );
+  //     console.log("Right controller connected: ");
+  //     console.log("event data: ");
+  //     this.xrInputRight = event.data;
+  //     console.log(event.data);
+  //     //todo this is no longer the gamepad as we used ()=> {} instead of function() {}
+  //     // in order to draw the pointer we need to add it to the controller probably, test this.
+  //     this.controllerRight.add(this.drawPointer(v3Origin, v3UnitUp));
+  //     //this.add(this.drawPointer(v3Origin, v3UnitUp));//
+  //   });
+  //
+  //   this.controllerRight.addEventListener('disconnected', function () {
+  //
+  //     this.remove(this.children[0]);
+  //
+  //   });
+  //   this.scene.add(this.controllerRight);
+  //
+  //   const controllerModelFactory = new XRControllerModelFactory();
+  //
+  //   this.controllerGripLeft = this.renderer.xr.getControllerGrip(0);
+  //   this.controllerGripLeft.add(controllerModelFactory.createControllerModel(this.controllerGripLeft));
+  //   this.scene.add(this.controllerGripLeft);
+  //
+  //   this.controllerGripRight = this.renderer.xr.getControllerGrip(1);
+  //   this.controllerGripRight.add(controllerModelFactory.createControllerModel(this.controllerGripRight));
+  //   this.scene.add(this.controllerGripRight);
+  //   console.log('this.controllerLeft.gamepad');
+  //   console.log(this.controllerLeft.gamepad);
+  //   //document.body
+  //   document.getElementById('vrButton' + this.name).appendChild(VRButton.createButton(this.renderer));
+  //
+  // }
 
 
   // webxr is now largly responsible for this
@@ -1401,11 +1406,7 @@ class PreviewArea {
   }; // scanOculusTouch
 
   // draw a pointing line
-  drawPointer = (start, end) => {
-    var material = new THREE.LineBasicMaterial();
-    var geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
-    return new THREE.Line(geometry, material);
-  }
+  //moved to xrInterface.js
 
   initControls = () => {
     // console.log("init controls");
@@ -1441,7 +1442,7 @@ class PreviewArea {
         break;
       case "vr":
         //todo: do not init to vr, those methods have not been re-written yet.
-        //this.controls = this.initVRControls();
+        this.controls = this.initVRControls();
         break;
       default:
         this.controls = this.initOrbitControls();
@@ -1542,7 +1543,7 @@ class PreviewArea {
 
   initEdgeFlare = () => {
     //console.log("initEdgeFlare");
-    console.log("Current value of  this.edgeFlareVisible: " + this.edgeFlareVisible);
+    //console.log("Current value of  this.edgeFlareVisible: " + this.edgeFlareVisible);
     //count active edges in each node from get active edges function
     let count = 0;
     let edges = this.getAllSelectedNodesActiveEdges();
@@ -2246,7 +2247,7 @@ class PreviewArea {
         var difference = new THREE.Vector3().subVectors(vectorFlare, vectorEnd);
 
         if (difference.length() <= firerate * this.edgeFlareVisible) {
-          console.log("vectorFlare and vectorEnd are within 1 unit of each other.");
+          //console.log("vectorFlare and vectorEnd are within 1 unit of each other.");
           this.edgeFlareVertices[i * 3] = this.displayedEdges[i].geometry.attributes.position.array[0];
           this.edgeFlareVertices[i * 3 + 1] = this.displayedEdges[i].geometry.attributes.position.array[1];
           this.edgeFlareVertices[i * 3 + 2] = this.displayedEdges[i].geometry.attributes.position.array[2];
@@ -2328,211 +2329,20 @@ class PreviewArea {
   };
 
 
-  handleXRControllers = () => {
 
-    if (!this.xrInputLeft || !this.xrInputRight) {
-      return;
-    }
-
-    //some xrCamera setup
-
-    this.XRMaximumSpeed = 0.1;
-    this.XRMaximumRotationSpeed = 0.1;
-    this.XRspeed = 0.0;
-    this.XRStrafeSpeed = 0.0;
-    this.XRRotationSpeed = 0.0;
-    this.XRUpRotationSpeed = 0.0;
-    this.XRMaxAcceleration = 0.01;
-    this.XRMAXRotaionAcceleration = 0.01;
-    this.XRControlDeadzone = 0.05;
-
-    if (this.xrInputLeft.gamepad) {
-      this.xrInputLeft.gamepad.buttons.forEach((button, i) => {
-        if (button.pressed) {
-          console.log("left button pressed: " + i);
-        }
-      });
-    }
-    if (this.xrInputRight.gamepad) {
-      this.xrInputRight.gamepad.buttons.forEach((button, i) => {
-        if (button.pressed) {
-          console.log("right button pressed: " + i);
-        }
-      });
-    }
-
-
-    let position = new THREE.Vector3();
-    let rotation = new THREE.Vector3();
-    //this.xrDolly.getWorldPosition(position);
-    //this.xrDolly.getWorldQuaternion(rotation);
-    //getWorldQuanternion is not working, so we will use getWorldRotation instead
-    //this.xrDolly.getWorldRotation(rotation);
-    //getWorldRotation is not working either, so we will use getWorldDirection instead
-    //this.xrDolly.getWorldDirection(rotation);
-    /*
-      //following are initialized in previewArea constructor and are here for reference
-      this.XRMaximumSpeed = 0.1;
-      this.XRMaximumRotationSpeed = 0.1;
-      this.XRspeed = 0.0;
-      this.XRStrafeSpeed = 0.0;
-      this.XRRotationSpeed = 0.0;
-      this.XRUpRotationSpeed = 0.0;
-      this.XRMaxAcceleration = 0.01;
-      this.XRMAXRotaionAcceleration = 0.01;
-       */
-    //
-    // console.log("position: ");
-    // console.log(position);
-    //
-    // console.log("rotation: ");
-    // console.log(rotation);
-
-    let delta = this.clock.getDelta();
-
-    //check left gamepad axes (thumbstick)
-    if (this.xrInputLeft.gamepad.axes[2] > this.XRControlDeadzone) {
-      console.log("left thumbstick right");
-      this.XRStrafeSpeed += (this.XRMaxAcceleration) * Math.abs(this.xrInputLeft.gamepad.axes[2]);
-      if (this.XRStrafeSpeed > this.XRMaximumSpeed) {
-        this.XRStrafeSpeed = this.XRMaximumSpeed;
-      }
-    }
-    if (this.xrInputLeft.gamepad.axes[2] < -this.XRControlDeadzone) {
-      console.log("left thumbstick left");
-      this.XRStrafeSpeed -= (this.XRMaxAcceleration) * Math.abs(this.xrInputLeft.gamepad.axes[2]);
-      if (this.XRStrafeSpeed < -this.XRMaximumSpeed) {
-        this.XRStrafeSpeed = -this.XRMaximumSpeed;
-      }
-    }
-
-    if (this.xrInputLeft.gamepad.axes[3] < -this.XRControlDeadzone) {
-      console.log("left thumbstick forward");
-      this.XRspeed += (this.XRMaxAcceleration) * Math.abs(this.xrInputLeft.gamepad.axes[3]);
-      if (this.XRspeed > this.XRMaximumSpeed) {
-        this.XRspeed = this.XRMaximumSpeed;
-      }
-    }
-
-    if (this.xrInputLeft.gamepad.axes[3] > this.XRControlDeadzone) {
-      console.log("left thumbstick backward");
-      this.XRspeed -= (this.XRMaxAcceleration) * Math.abs(this.xrInputLeft.gamepad.axes[3]);
-      if (this.XRspeed < -this.XRMaximumSpeed) {
-        this.XRspeed = -this.XRMaximumSpeed;
-      }
-    }
-
-    //use right thumbstick to rotate
-    if (this.xrInputRight.gamepad.axes[2] > this.XRControlDeadzone) {
-      console.log("right thumbstick right");
-      this.XRRotationSpeed += (this.XRMAXRotaionAcceleration) * Math.abs(this.xrInputRight.gamepad.axes[2]);
-      if (this.XRRotationSpeed > this.XRMaximumRotationSpeed) {
-        this.XRRotationSpeed = this.XRMaximumRotationSpeed;
-      }
-    }
-
-    if (this.xrInputRight.gamepad.axes[2] < -this.XRControlDeadzone) {
-      console.log("right thumbstick left");
-      this.XRRotationSpeed -= (this.XRMAXRotaionAcceleration) * Math.abs(this.xrInputRight.gamepad.axes[2]);
-      if (this.XRRotationSpeed < -this.XRMaximumRotationSpeed) {
-        this.XRRotationSpeed = -this.XRMaximumRotationSpeed;
-      }
-    }
-
-    if (this.xrInputRight.gamepad.axes[3] < -this.XRControlDeadzone) {
-      console.log("right thumbstick up (rotate down)");
-      this.XRUpRotationSpeed += (this.XRMAXRotaionAcceleration) * Math.abs(this.xrInputRight.gamepad.axes[3]);
-      if (this.XRUpRotationSpeed > this.XRMaximumRotationSpeed) {
-        this.XRUpRotationSpeed = this.XRMaximumRotationSpeed;
-      }
-    }
-
-    if (this.xrInputRight.gamepad.axes[3] > this.XRControlDeadzone) {
-      console.log("right thumbstick down (rotate up)");
-      this.XRUpRotationSpeed -= (this.XRMAXRotaionAcceleration) * Math.abs(this.xrInputRight.gamepad.axes[3]);
-      if (this.XRUpRotationSpeed < -this.XRMaximumRotationSpeed) {
-        this.XRUpRotationSpeed = -this.XRMaximumRotationSpeed;
-      }
-    }
-
-    console.log("xr speed: ");
-    console.log(this.XRspeed);
-    console.log("xr strafe speed: ");
-    console.log(this.XRStrafeSpeed);
-    console.log("xr r/l rotation speed: ");
-    console.log(this.XRRotationSpeed);
-    console.log("xr up/down rotation speed: ");
-    console.log(this.XRUpRotationSpeed);
-
-    if (Math.abs(this.XRspeed) > 0) {
-      // Calculate the amount to decrease speed by
-      let deacceleration = (this.XRMaxAcceleration * delta) * 100;
-      // Decrease speed towards zero but don't overshoot
-      if (Math.abs(this.XRspeed) <= deacceleration) {
-        // Speed is close enough to zero, set it to zero
-        this.XRspeed = 0;
-      } else {
-        // Decrease speed by deacceleration, keeping sign direction
-        this.XRspeed -= deacceleration * Math.sign(this.XRspeed);
-      }
-
-    }
-
-    if (Math.abs(this.XRStrafeSpeed) > 0) {
-      // Calculate the amount to decrease speed by
-      let deacceleration = (this.XRMaxAcceleration * delta) * 100;
-      // Decrease speed towards zero but don't overshoot
-      if (Math.abs(this.XRStrafeSpeed) <= deacceleration) {
-        // Speed is close enough to zero, set it to zero
-        this.XRStrafeSpeed = 0;
-      } else {
-        // Decrease speed by deacceleration, keeping sign direction
-        this.XRStrafeSpeed -= deacceleration * Math.sign(this.XRStrafeSpeed);
-      }
-
-    }
-
-    if (Math.abs(this.XRRotationSpeed) > 0) {
-      // Calculate the amount to decrease speed by
-      let deacceleration = (this.XRMAXRotaionAcceleration * delta) * 100;
-      // Decrease speed towards zero but don't overshoot
-      if (Math.abs(this.XRRotationSpeed) <= deacceleration) {
-        // Speed is close enough to zero, set it to zero
-        this.XRRotationSpeed = 0;
-      } else {
-        // Decrease speed by deacceleration, keeping sign direction
-        this.XRRotationSpeed -= deacceleration * Math.sign(this.XRRotationSpeed);
-      }
-    }
-
-    if (Math.abs(this.XRUpRotationSpeed) > 0) {
-      // Calculate the amount to decrease speed by
-      let deacceleration = (this.XRMAXRotaionAcceleration * delta) * 100;
-      // Decrease speed towards zero but don't overshoot
-      if (Math.abs(this.XRUpRotationSpeed) <= deacceleration) {
-        // Speed is close enough to zero, set it to zero
-        this.XRUpRotationSpeed = 0;
-      } else {
-        // Decrease speed by deacceleration, keeping sign direction
-        this.XRUpRotationSpeed -= deacceleration * Math.sign(this.XRUpRotationSpeed);
-      }
-    }
-    let translation = new THREE.Vector3(this.XRStrafeSpeed, 0, this.XRspeed);
-    rotation = new THREE.Vector3(this.XRUpRotationSpeed, this.XRRotationSpeed, 0);
-    this.applyXRControls(this, translation, rotation);
-
-
-  }
 
   //say no to globals var lastTime = 0;
   //   var fps = 240;
   //todo: add fps slider
   // calls the animation updates.
-  animatePV = () => {
+  animatePV() {
     this.NodeManager.update();
     if(this.pathFinder && this.pathFinder.active) {
       this.pathFinder.update();
     }
+    if(this.xrInterface.isVRAvailable())
+      this.xrInterface.update(this.xrInterface);
+
     //limit this function to (fps)fps)
     // if (Date.now() - lastTime < 1000 / fps) {
     //     return;
@@ -2544,8 +2354,8 @@ class PreviewArea {
     //     // if (oculusTouchExist) { //todo: Change old WebVR code to WebXR
     //     //     controllerLeft.update();
     //     //     controllerRight.update();
-    //todo re-enable scanOculusTouch when WebXR is working 100%
-    this.scanOculusTouch();
+    // //todo re-enable scanOculusTouch when WebXR is working 100%
+    // this.scanOculusTouch();
     //     console.log("scanOculusTouch");
     //     // }
     //     //vrControl.update(); //todo: Change old WebVR code to WebXR
@@ -2623,8 +2433,8 @@ class PreviewArea {
   }
 
   isVRAvailable = () => {
-    //todo change to WebXR style and set variable appropriately
-    return this.enableVR;
+    // changed to xrInterface.isVRAvailable
+    return this.xrInterface.isVRAvailable();
   };
 
   // this.isPresenting = function () {
@@ -3424,9 +3234,9 @@ class PreviewArea {
     let activeEdges = [];
     let topN = this.model.getNumberOfEdges();
     let distance = this.model.getDistanceThreshold();
-    console.log('Get Active Edge Settings: ');
-    console.log('topN: ' + topN);
-    console.log('distance: ' + distance);
+    // console.log('Get Active Edge Settings: ');
+    // console.log('topN: ' + topN);
+    // console.log('distance: ' + distance);
 
     //let groups = this.listGroups();
     let threshold = this.model.getThreshold();
@@ -3436,7 +3246,7 @@ class PreviewArea {
       threshold = 0;
     }
 
-    console.log("Threshold: " + threshold)
+    //console.log("Threshold: " + threshold)
 
     // for each index in nodes selected, get the edges, rules are automatically applied
     // based if threshhold topN or both are supplied.
@@ -4260,16 +4070,16 @@ class PreviewArea {
   //todo this looks familiar, maybe it can be combined with getIntersectedObject
   // main difference between this and getIntersectedObject is this is for a controller
   // while getIntersectedObject is for the mouse or flat screen vector.
-  getPointedObject = (controller) => {
-    let raycaster = new THREE.Raycaster();
-    let controllerPosition = controller.position;
-    let forwardVector = new THREE.Vector3(0, 0, -1);
-    //get object in front of controller
-    forwardVector.applyQuaternion(controller.quaternion);
-    raycaster = new THREE.Raycaster(controllerPosition, forwardVector);
-    let objectsIntersected = raycaster.intersectObjects(this.scene.children);
-    return (objectsIntersected[0]) ? objectsIntersected[0] : undefined;
-  }
+  // getPointedObject = (controller) => {
+  //   let raycaster = new THREE.Raycaster();
+  //   let controllerPosition = controller.position;
+  //   let forwardVector = new THREE.Vector3(0, 0, -1);
+  //   //get object in front of controller
+  //   forwardVector.applyQuaternion(controller.quaternion);
+  //   raycaster = new THREE.Raycaster(controllerPosition, forwardVector);
+  //   let objectsIntersected = raycaster.intersectObjects(this.scene.children);
+  //   return (objectsIntersected[0]) ? objectsIntersected[0] : undefined;
+  // }
 
   // // get the object pointed by the controller
   // var getPointedObject = function (controller) {
@@ -4344,9 +4154,8 @@ class PreviewArea {
     if (this.labelsVisible) {
       this.brain.add(this.nodeLabelSprite);
     }
-    //todo why are we ignoring the right brain? also while we are here we can avoid
-    //followup set it to respect this, no need for magic globals.
-    // the global previewAreaLeft by using this instead.
+
+
   };
 
   getCamera = () => {

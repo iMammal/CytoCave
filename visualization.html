@@ -66,6 +66,14 @@
     <div class="legend" style="position: absolute; bottom: 0; right: 0;">
       <svg class="menu" id="legendLeft"></svg>
     </div>
+    <div class="menu" id="viewLeft">
+      <label id="subjectMenuLeftLabel" for="subjectMenuLeft">Subject: </label>
+      <select id="subjectMenuLeft" class="jumpmenu"></select>
+      <label id="topologyMenuLeftLabel" for="topologyMenuLeft">Coordinate System: </label>
+      <select id="topologyMenuLeft" class="jumpmenu"></select>
+      <button type='button' id='syncLeft'>Sync</button>
+      <button type='button' id='allToggleLeft' hidden>Toggle</button>
+    </div>
     <div class="menu colorcoding" id="colorCodingLeft" hidden>
       <label for="colorCodingMenuLeft">Left ColorCoding: </label>
       <select id="colorCodingMenuLeft" class="jumpmenu"></select>
@@ -76,6 +84,14 @@
     <canvas id="canvasRight" style="width: 100%; height: 100%"></canvas>
     <div class="legend">
       <svg class="menu" id="legend"></svg>
+    </div>
+    <div class="menu" id="viewRight">
+      <label id="subjectMenuRightLabel" for="subjectMenuRight">Subject: </label>
+      <select id="subjectMenuRight" class="jumpmenu"></select>
+      <label id="topologyMenuRightLabel" for="topologyMenuRight">Coordinate System: </label>
+      <select id="topologyMenuRight" class="jumpmenu"></select>
+      <button type='button' id='syncRight'>Sync</button>
+      <button type='button' id='allToggleRight'>Toggle</button>
     </div>
     <div class="menu colorcoding" id="colorCoding">
       <label for="colorCodingMenu">Right ColorCoding: </label>
@@ -92,22 +108,8 @@
 
 
 
-<div class="menu" id="viewLeft">
-  <label id="subjectMenuLeftLabel" for="subjectMenuLeft">Subject: </label>
-  <select id="subjectMenuLeft" class="jumpmenu"></select>
-  <label id="topologyMenuLeftLabel" for="topologyMenuLeft">Coordinate System: </label>
-  <select id="topologyMenuLeft" class="jumpmenu"></select>
-  <button type='button' id='syncLeft'>Sync</button>
-  <button type='button' id='allToggleLeft' hidden>Toggle</button>
-</div>
-<div class="menu" id="viewRight">
-  <label id="subjectMenuRightLabel" for="subjectMenuRight">Subject: </label>
-  <select id="subjectMenuRight" class="jumpmenu"></select>
-  <label id="topologyMenuRightLabel" for="topologyMenuRight">Coordinate System: </label>
-  <select id="topologyMenuRight" class="jumpmenu"></select>
-  <button type='button' id='syncRight'>Sync</button>
-  <button type='button' id='allToggleRight'>Toggle</button>
-</div>
+
+
 <div id="vrLeft">
   <div id="vrButtonLeft"></div>
   <a id="magicWindowLeft" href="#">Maximize</a>

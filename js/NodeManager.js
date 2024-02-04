@@ -2,6 +2,9 @@
 //goals are to accelerate rendering using instancing and to allow for easy customization of the node rendering.
 // Class also handles the node selection and highlighting providing a simple interface to the user.
 // rendering interface provided by three.js
+/*
+* NodeManager: for rendering and managing nodes.
+ */
 
 import * as THREE from 'three';
 
@@ -49,7 +52,8 @@ class NodeManager {
   }
 
   setContextualNodes(nodes) {
-    //brute force method to set the contextual nodes.
+    //accepts an array of nodes and adds them to the contextualNodes list.
+
     this.contextualNodes = nodes;
 
     for (let i = 0; i < nodes.length; i++) {
@@ -98,43 +102,40 @@ class NodeManager {
     }
   }
 
-  CreateInstanceMeshes() {
-    //create instance mesh for each group
-    let LeftNormalGeometry = getNormalGeometry("left");
-    let RightNormalGeometry = getNormalGeometry("right");
-    //each group has it's own material that is used for all instances of that group.
-    // these can be retrieved with previewArea.getNormalMaterial(this.model, group)
+    CreateInstanceMeshes() {
+        //create instance mesh for each group
+        let LeftNormalGeometry = getNormalGeometry("left", this.previewArea.name);
+        console.log("LeftNormalGeometry Side: " + this.previewArea.name);
+        console.log(this.previewArea.name);
+        let RightNormalGeometry = getNormalGeometry("right", this.previewArea.name);
 
-    for (let i = 0; i < this.groupCount; i++) {
-      let leftCount = this.previewArea.countGroupMembers(this.groups[i], "left");
-      let rightCount = this.previewArea.countGroupMembers(this.groups[i], "right");
-      let material = getNormalMaterial(this.model, this.groups[i]);
-      this.instances[this.groups[i]] = {
-        left: null,
-        right: null,
-      };
-      if (leftCount > 0) {
-        this.instances[this.groups[i]].left = new THREE.InstancedMesh(LeftNormalGeometry, material, leftCount);
-        this.instances[this.groups[i]].left.name = {
-          group: this.groups[i],
-          hemisphere: 'left',
-          type: 'region'
+        // Function to create an instance with specified properties
+        const createInstance = (count, geometry, material, hemisphere, group) => {
+            if (count > 0) {
+                const instance = new THREE.InstancedMesh(geometry, material, count);
+                instance.name = {
+                    group,
+                    hemisphere,
+                    type: 'region'
+                };
+                instance.setColorAt(0, material.color);
+                return instance;
+            }
+            return null;
+        };
+
+        //each group has it's own material that is used for all instances of that group
+        // these can be retrieved with previewArea.getNormalMaterial(this.model, group)
+        for (let i = 0; i < this.groupCount; i++) {
+            let leftCount = this.previewArea.countGroupMembers(this.groups[i], "left", this.previewArea.name);
+            let rightCount = this.previewArea.countGroupMembers(this.groups[i], "right", this.previewArea.name);
+            let material = getNormalMaterial(this.model, this.groups[i]);
+            this.instances[this.groups[i]] = {
+                left: createInstance(leftCount, LeftNormalGeometry, material, 'left', this.groups[i]),
+                right: createInstance(rightCount, RightNormalGeometry, material, 'right', this.groups[i])
+            };
         }
-        this.instances[this.groups[i]].left.setColorAt(0, material.color);
-      }
-
-      if (rightCount > 0) {
-        this.instances[this.groups[i]].right = new THREE.InstancedMesh(RightNormalGeometry, material, rightCount);
-        this.instances[this.groups[i]].right.name = {
-          group: this.groups[i],
-          hemisphere: 'right',
-          type: 'region'
-        }
-        this.instances[this.groups[i]].right.setColorAt(0, material.color);
-      }
-
     }
-  }
 
 
   CountGroupMembers(group) {
@@ -200,6 +201,8 @@ class NodeManager {
     }
     let index= undefined;
     if(instanceId === undefined || instanceId === null || isNaN(instanceId)) {
+      console.log("node2index  InstanceID: " + instanceId + " index: " + index + "InstanceID is null undefined or in any other way not a number")
+      console.log("Falling back to node.id")
       index = node.object.userData.indexList[node.id];
     } else {
       index = node.object.userData.indexList[instanceId];
@@ -453,7 +456,7 @@ class NodeManager {
     // Create a wireframe  slightly larger than the node.
     // const radius = 1.1;
     // const segments = 32;
-    const baseGeometry = getNormalGeometry(node.object.name.hemisphere)
+    const baseGeometry = getNormalGeometry(node.object.name.hemisphere,this.previewArea.name);
     const wireframe = new THREE.WireframeGeometry(
       baseGeometry
     );
@@ -710,6 +713,10 @@ class NodeManager {
   //If topN is null or 0, the topN filter is disabled.
   //If threshold is null or 0, the threshold filter is disabled.
   getEdges = (node, threshold = 0, topN = 0, distance = 0) => {
+    //todo: move to model, remove edges as a concept from NodeManager
+    let edges = []; //this.previewArea.model.getActiveEdges();
+    //console.log(edges);
+    //return edges;
     //get the edges of the node at the instanceId.
     // console.log("Getting Edges");
     // //settings
@@ -719,12 +726,9 @@ class NodeManager {
     if(threshold === 0){
       threshold = this.previewArea.model.getThreshold();
     }
-    let maxThreshold = this.previewArea.model.getConThreshold()
+    let maxThreshold = this.previewArea.model.getMaximumWeight();
     //console.log("Max Threshold: " + maxThreshold);
-    if(maxThreshold === 0){
-      maxThreshold = 100; //some really high number.
-      this.previewArea.model.setConThreshold(maxThreshold); //update the threshold in the model.
-    }
+
     if(threshold > maxThreshold){
       threshold = maxThreshold;
       this.previewArea.model.setThreshold(threshold); //update the threshold in the model.
@@ -737,7 +741,7 @@ class NodeManager {
     }
     let index = this.node2index(node);
     let matrixRow = this.model.getConnectionMatrixRow(index);
-    let edges = [];
+
 
     //
     // for (let i = 0; i < matrixRow.length; i++) {
@@ -751,14 +755,14 @@ class NodeManager {
     //     }
     // }
     //console.log("Starting with " + matrixRow.size() + " edges.");
-    matrixRow.forEach((weight, i) => {
-      if (weight > threshold && weight < maxThreshold) {
+    matrixRow.forEach((weight, j) => {
+      if (weight > threshold && weight <= maxThreshold) {
 
         edges.push({
           sourceNodeIndex: index,
-          targetNodeIndex: i[0],
+          targetNodeIndex: j[0],
           weight: weight,
-          position: this.getNodePosition(this.index2node(i[0]))
+          position: this.getNodePosition(this.index2node(j[0]))
         });
       }
     });
@@ -778,17 +782,19 @@ class NodeManager {
         let distance2target = sourcePosition.distanceTo(targetPosition);
         return distance2target <= distance;
       });
-    }
+    } else {
 
-    edges.sort((a, b) => {
-      // sort by distance closest to farthest
-      let sourcePosition = this.getNodePosition(node);
-      let aPosition = this.getNodePosition(this.index2node(a.targetNodeIndex));
-      let bPosition = this.getNodePosition(this.index2node(b.targetNodeIndex));
-      let aDistance = sourcePosition.distanceTo(aPosition);
-      let bDistance = sourcePosition.distanceTo(bPosition);
-      return aDistance - bDistance;
-    });
+      edges.sort((a, b) => {
+        // sort by distance closest to farthest
+        let sourcePosition = this.getNodePosition(node);
+        let aPosition = this.getNodePosition(this.index2node(a.targetNodeIndex));
+        let bPosition = this.getNodePosition(this.index2node(b.targetNodeIndex));
+        let aDistance = sourcePosition.distanceTo(aPosition);
+        let bDistance = sourcePosition.distanceTo(bPosition);
+        return aDistance - bDistance;
+      });
+
+    }
 
     if (topN !== null && topN > 0) {
       console.log("TopN filter set topN to null or 0 to disable.");
@@ -996,7 +1002,7 @@ class NodeManager {
     this.removeContextNode(node);
   }
 
-  addContextNode(node, data = null) {
+  addContextNode(node, data) {
     // add the node to the userData.contextualNodes of the instance.
     // if the node is already focused, do nothing.
     if (this.inContext(node)) {
@@ -1010,12 +1016,17 @@ class NodeManager {
     // fire the callback if it is set.
     if (this.contextualNodeActivated !== null) {
       //console.debug("firing callback for contextual node activated")
-      if (data !== null) {
+      if (data !== undefined) {
         this.contextualNodeActivated(node, data);
       } else {
         this.contextualNodeActivated(node);
       }
     }
+  }
+
+  addContextNodeByIndex(index, data) {
+    let node = this.index2node(index);
+    this.addContextNode(node, data);
   }
 
   inContext(node) {

@@ -158,7 +158,7 @@ var addDimensionFactorSliderRight = function (side) {
 
 	console.log("#nodeInfoPanel"+side);
 
-    if(side == 'Left') {
+    if(side === 'Left') {
       panel.append("input")
         .attr("type", "range")
         .attr("value", "1")

@@ -8,7 +8,7 @@ var previewAreaLeft, previewAreaRight;
 
 var glyphNodeDictionary = {};        /// Object that stores uuid of left and right glyphs
 
-var activeVR = 'left';
+//var activeVR = 'left';
 
 var nodesSelected = [];
 var nodesFocused = [];

@@ -205,7 +205,7 @@ function Model(side) {
     };
 
     this.getActiveTopology = function () {
-        return activeTopology;0
+        return activeTopology;
     };
 
     //todo: These are the distances between the nodes in the selected topology used for edge bundling calculations.
@@ -539,20 +539,20 @@ function Model(side) {
 
     this.getMaximumWeight = function () {
         return this.maxConnectionMatrix;
-        return d3.max(this.connectionMatrix, function (d) {
-            return d3.max(d, function (d) {
-                return d;
-            })
-        });
+        // return d3.max(this.connectionMatrix, function (d) {
+        //     return d3.max(d, function (d) {
+        //         return d;
+        //     })
+        // });
     };
 
     this.getMinimumWeight = function () {
         return this.minConnectionMatrix;
-        return d3.min(this.connectionMatrix, function (d) {
-            return d3.min(d, function (d) {
-                return d;
-            })
-        });
+        // return d3.min(this.connectionMatrix, function (d) {
+        //     return d3.min(d, function (d) {
+        //         return d;
+        //     })
+        // });
     };
 
     this.getNumberOfEdges = function () {
@@ -1030,7 +1030,6 @@ function Model(side) {
 
     this.getActiveEdges = function () {
         console.log("model getActiveEdges");
-
         return edges;
     };
 
@@ -1092,10 +1091,7 @@ function Model(side) {
     this.computeEdgesForTopology = function (topology) {
         console.log("Computing edges for " + topology);
         var nNodes = this.connectionMatrix.size()[1]; //length;
-        edges = [];
 
-        return;
-        //edges array is no longer used. Data is stored in node instance userdata
 
         this.connectionMatrix.forEach(function (value, index) {
             var i = index[0];

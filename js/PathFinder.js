@@ -243,6 +243,7 @@ class Dijkstra {
     this.bestPathDistance = 0;
 
     this.sCount = 0; // a counter for the number of steps taken in the algorithm
+    this.hardPath = false;
 
   }
 
@@ -305,8 +306,9 @@ class Dijkstra {
       this.running = false;
       return;
     }
+    console.log("Parent Map Size is : " + this.parentMap.size);
     path.unshift(this.EndNode);   // add the end node at the beginning
-    for(let ni = this.parentMap.get(eni); ni !== sni; ni = this.parentMap.get(ni)) {
+    for (let ni = this.parentMap.get(eni); ni !== sni; ni = this.parentMap.get(ni)) {
       path.unshift(this.NodeManager.index2node(ni));
     }
 
@@ -379,6 +381,8 @@ class Dijkstra {
       //   this.PreviewArea.removeEdgeGivenNode(node);
       //
       //}
+      //console.log("node should be node: ");
+      //console.log(node);
       let ni = this.NodeManager.node2index(node);
       let sni = this.NodeManager.node2index(this.StartNode);
       let eni = this.NodeManager.node2index(this.EndNode);
@@ -398,25 +402,34 @@ class Dijkstra {
     // it is called by the update function
     //console.log('Dijkstra step');
     if (this.priQueue.size === 0) {
-      console.log("Priority queue is empty. Dijkstra's algorithm has already terminated.");
+      console.log("Priority queue is empty. Dijkstra's algorithm terminating.");
       this.status = "finished";
       return true;
     }
     //estimate queue size
     let queueSize = this.priQueue.size;
     //console.log("Dijkstra queue size: " + queueSize + " sCount: " + this.sCount);
-    let node = this.NodeManager.index2node(this.dequeueMin());
+    let node = null;
+    if (this.hardPath === true) {
+      node = this.dequeueMax();
+    } else {
+      node = this.dequeueMin();
+    }
+
+    //let node = this.dequeueMin(); //it shouldn't be, there should be a node in the queue if we are here.
     if (node === null) {
-      console.log("Priority queue is empty. Dijkstra's algorithm has already terminated.");
+      console.log("Priority queue is empty. Dijkstra's algorithm terminating.");
       this.status = "finished";
       return true;
+    } else {
+      node = this.NodeManager.index2node(node);
     }
     //console.log("Dijkstra dequeued node: " + this.NodeManager.node2index(node));
     this.NodeManager.addContextNode(node);
     this.exploreNeighbors(node);
 
     if (this.priQueue.size === 0) {
-      console.log("Priority queue is empty. Dijkstra's algorithm has already terminated.");
+      console.log("Priority queue is empty. Dijkstra's algorithm terminating.");
       this.status = "finished";
       return true;
     }
@@ -458,9 +471,12 @@ class Dijkstra {
 
 // Extracted helper function to update path data
   updatePathData(ni, sni, distance) {
-    this.distance.set(ni, distance);
-    this.parentMap.set(ni, sni);
-    this.priQueue.add(ni);
+
+      this.distance.set(ni, distance);
+      this.parentMap.set(ni, sni);
+      this.priQueue.add(ni);
+
+
   }
 
   pathSizeWithinRange(neighborI) {
@@ -517,6 +533,27 @@ class Dijkstra {
     return minNode;
   }
 
+  dequeueMax() {
+    if (this.priQueue.size === 0) {
+      return null;
+    }
+    let max = -Infinity;  // Previously 'min', now is 'max' and set to negative infinity.
+    let maxNode = null;   // Previously 'minNode', now is 'maxNode'
+
+    for (let index of this.priQueue) {
+
+      let currentDistance = this.distance.get(index);
+
+      // Change the comparison from less than to greater than
+      if (currentDistance > max) {
+        max = currentDistance;
+        maxNode = index;
+      }
+    }
+    this.priQueue.delete(maxNode);
+    return maxNode;
+  }
+
   calculateTotalPathCost(path) {
     let totalCost = 0;
 
@@ -558,14 +595,201 @@ class Dijkstra {
       if (this.running === false) {
         console.log("Dijkstra already stopped.");
       } else {
-      this.running = false;
-      this.status = "finished";
-      console.log("Dijkstra finished.");
+        this.running = false;
+        this.status = "finished";
+        console.log("Dijkstra finished.");
       }
     }
 
   }
 
 }
+
+
+class superSet {
+  constructor() {
+    this.queues = [];
+    this.size = 0;
+    this.maxShardSize = 500;
+    this.minShardSize = 100;
+    this.DCallCount = 0;
+    this.usage = new Map();
+    this.maxSize = 0;
+
+  }
+
+  add(value) {
+
+
+    //check if value is unique among all shards
+    for (let shard of this.queues) {
+      if (shard.has(value)) {
+        return;
+      }
+    }
+
+    //if no shards then create one
+    if (this.queues.length === 0) {
+      this.queues.push(new Set());
+    }
+
+    let i = 0;
+    for (let shard of this.queues) {
+      if (shard.size < this.maxShardSize) {
+        shard.add(value);
+        this.size++;
+        return;
+      }
+      i++;
+    }
+// if no shard found which isn't full, create a new one
+    if (i === this.queues.length) {
+      const newShard = new Set();
+      newShard.add(value);
+      this.queues.push(newShard);
+      this.size++;
+    }
+
+  }
+
+  delete(value) {
+    //check for value in all shards
+    for (let shard of this.queues) {
+      if (shard.has(value)) {
+        shard.delete(value);
+        this.size--;
+        //if shard is empty, remove it
+        if (shard.size === 0) {
+          this.queues.splice(this.queues.indexOf(shard), 1);
+
+        } else if (shard.size < this.minShardSize) {
+          //check if any other shards are below the min size, if so combine them with this shard and remove them
+          for (let shard2 of this.queues) {
+            if (shard2.size < this.minShardSize) {
+              this.merge(shard, shard2);
+            }
+          }
+
+        }
+      }
+    }
+
+    this.usage.delete(value);
+    this.DCallCount++;
+    if (this.DCallCount > 100 && this.queues.length > 1) {
+      this.consolidate();
+    }
+
+
+  }
+
+  merge(shard1, shard2) {
+    //check that both shards exist
+    if (this.queues.indexOf(shard1) === -1 || this.queues.indexOf(shard2) === -1) {
+      console.warn("priorityQueue.merge: shard does not exist.");
+      return;
+    }
+    //merge shard2 into shard1
+    for (let value of shard2) {
+      shard1.add(value);
+    }
+    //decrement the size property by the size of shard2
+    this.size -= shard2.size;
+    //remove shard2 from queues
+    this.queues.splice(this.queues.indexOf(shard2), 1);
+  }
+
+  consolidate() {
+    //consolidate all shards that are under the min size, remove empty shards
+    for (let shard of this.queues) {
+      if (shard.size < this.minShardSize) {
+        for (let shard2 of this.queues) {
+          if (shard2.size < this.minShardSize) {
+            this.merge(shard, shard2);
+          }
+        }
+      }
+    }
+
+    //remove empty shards
+    for (let shard of this.queues) {
+      if (shard.size === 0) {
+        this.queues.splice(this.queues.indexOf(shard), 1);
+      }
+    }
+    this.DCallCount = 0;
+  }
+
+  has(value) {
+    for (let shard of this.queues) {
+      if (shard.has(value)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  clear() {
+    this.queues = [];
+    this.size = 0;
+    this.DCallCount = 0;
+  }
+
+  //Returns a new Iterator object that contains an array of [value, value] for each element in the Set object, in insertion order. This is kept similar to the Map object, so that each entry has the same value for its key and value here.
+  entries() {
+    let entries = [];
+    for (let shard of this.queues) {
+      for (let value of shard) {
+        entries.push([value, value]);
+      }
+    }
+    return entries;
+  }
+
+  forEach(callback) {
+    for (let shard of this.queues) {
+      for (let value of shard) {
+        callback(value);
+      }
+    }
+  }
+
+  values() {
+    let values = [];
+    for (let shard of this.queues) {
+      for (let value of shard) {
+        values.push(value);
+      }
+    }
+    return values;
+  }
+
+  keys() {
+    let keys = [];
+    for (let shard of this.queues) {
+      for (let value of shard) {
+        keys.push(value);
+      }
+    }
+    return keys;
+  }
+
+  [Symbol.iterator]() {
+    let index = -1;
+    let data = this.values(); // Use the existing values method
+
+    return {
+      next: () => {
+        index++;
+        return {
+          value: data[index],
+          done: index === data.length
+        };
+      }
+    };
+  }
+
+}
+
 
 export {PathFinder};

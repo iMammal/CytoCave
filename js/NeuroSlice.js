@@ -25,9 +25,7 @@ class NeuroSlice {
       d3.csv(pathToSliceData, this.dataSliceCallback);
   }
 
-  //binding the callback in this way will
-  // allow us to access the class variables
-  // inside the callback function
+
   dataSliceCallback = (data) => {
     if (data) {
       console.log('Image Positional Data loaded');
@@ -41,45 +39,47 @@ class NeuroSlice {
       console.log('Image Positional Data not loaded');
     }
   }
+  generateFilename(slice) {
+    const pre = 'CA1DapiBoundaries_';
+    const post = '_left.tif';
+    return pre + slice + post;
+  }
+
+  loadTexture(path, slice, z) {
+    let loadingTexture = new TIFFLoader();
+    loadingTexture.manager.onLoad = this.imageLoadedCallback;
+    loadingTexture.manager.onProgress = this.imageProgressCallback;
+
+    let texture = null;
+    try {
+      texture = loadingTexture.load(path);
+      texture.name = slice;
+      texture.z = z;
+      texture.imageType = 'slice';
+    } catch (e) {
+      console.error(`Error loading image at path ${path}: ${e}`);
+    }
+
+    return texture;
+  }
+
   loadSliceImages() {
-    //check data not null
     if (!this.data) {
       console.log('No positional data loaded, cannot load images');
       return;
     }
-    // use three.js to load images. part of the filename will be predefined since not defined in the csv file.
-    let pre = 'CA1DapiBoundaries_';
-    let post = '_left.tif';
-    let loadingTexture = new TIFFLoader();
 
     for (let i = 0; i < this.data.length; i++) {
+      const filename = this.generateFilename(this.data[i].slice);
+      const path = this.imagePath + '/' + filename;
+      console.log('Loading image: ' + path);
 
-      let filename = pre + this.data[i].slice + post;
-      let texture = null;
-      try {
-        let path = this.imagePath + '/' + filename;
-        console.log('Loading image: ' + path);
-
-        loadingTexture.manager.onLoad = this.imageLoadedCallback;
-        loadingTexture.manager.onProgress = this.imageProgressCallback;
-        // remember texture is blank until loaded asynchronously.
-
-        texture = loadingTexture.load(path);
-        texture.name = this.data[i].slice;
-        texture.z = this.data[i].z;
-        texture.imageType = 'slice';
-        //push to imagePaths
-        if(texture) {
-          this.imagePaths.push(path);
-          this.imageSet.push(texture);
-        }
-      } catch (e) {
-        console.log('Image not loaded');
-        console.log('Error: ' + e);
+      const texture = this.loadTexture(path, this.data[i].slice, this.data[i].z);
+      if (texture) {
+        this.imagePaths.push(path);
+        this.imageSet.push(texture);
       }
-
     }
-
   }
 
   imageLoadedCallback = () => {
