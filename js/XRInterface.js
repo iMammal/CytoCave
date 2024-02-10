@@ -103,8 +103,18 @@ class XRInterface {
     this.previewArea.controls = this._controls;
   }
 
-  applyXRControls = function () {
+  applyXRControls(xrInterface,time,frame) {
+
+
+    // let viewerPose = frame.getViewerPose();
+    // console.log("viewer pose: ", viewerPose);
+    // console.log("viewer pose transform: ", viewerPose.transform);
+    // let viewerPos = viewerPose.transform.position;
+    // let viewerRot = viewerPose.transform.orientation;
+    // console.log("viewer position: ", viewerPos);
+    // console.log("viewer rotation: ", viewerRot);
     if (this.camera.position.x !== this.dollycam.position.x) {
+
       console.warn("Camera and dolly are not at the same position");
     }
 
@@ -262,6 +272,7 @@ class XRInterface {
     let cameraRotation = new THREE.Euler();
     cameraRotation.setFromRotationMatrix(cMatrix);
     let cameraRot = cameraRotation;
+
     // set the dollies position to the camera's position
     this.dolly.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
     this.dolly.rotation.set(cameraRot.x, cameraRot.y, cameraRot.z);
@@ -273,7 +284,9 @@ class XRInterface {
   }
 
 
-  updateXR(xrInterface) {
+  updateXR(xrInterface,time,frame) {
+    // console.log("frame update xr func");
+    // console.log(frame);
     //console.log("Updating XR for PV: " + this.name);
     if (xrInterface.leftController && xrInterface.rightController) {
       this.controls.enabled = true;
@@ -289,10 +302,10 @@ class XRInterface {
         this.previewArea.camera = this.camera;
       }
 
-
-      this.applyXRControls();
+      //console.log(frame);
+      this.applyXRControls(xrInterface,time,frame);
       this.checkForSelecting();
-      this.XRHud.update();
+      this.XRHud.update(time,frame);
 
 
     } else {
@@ -480,11 +493,11 @@ class XRInterface {
     return new THREE.Line(geometry, material);
   }
 
-  update(xrInterface) {
+  update(xrInterface,time,frame) {
     //console.log("xr update");
     // if presenting, update XR
     if (this.isVRAvailable()) {
-      this.updateXR(xrInterface);
+      this.updateXR(xrInterface,time,frame);
     } else {
       //console.log("XR not available");
     }

@@ -387,7 +387,7 @@ button > input[type="checkbox"] {
     position: absolute;
     width: 200px;
     height: 360px;
-    top: 10px;
+    top: 15%;
     right: 10px;
     z-index: 2
 }

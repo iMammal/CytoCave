@@ -6,6 +6,7 @@
   "dependencies": {
     "csv-parser": "^3.0.0",
     "d3": "^7.6.1",
+    "d3-dsv": "^3.0.1",
     "jquery": "^3.7.1",
     "mathjs": "^11.9.1",
     "node-dijkstra": "^2.5.0",

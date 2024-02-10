@@ -1084,7 +1084,7 @@ class PreviewArea {
 
 
   scanOculusTouch = () => {
-    //todo this returns immediately right now, is it supposed to do more?
+    // this returns immediately right now, is it supposed to do more?
     return;
     //exit if no controllers
     if (!this.controllerLeft || !this.controllerRight) return;
@@ -1441,8 +1441,8 @@ class PreviewArea {
         this.controls = this.initFirstPersonControls();
         break;
       case "vr":
-        //todo: do not init to vr, those methods have not been re-written yet.
-        this.controls = this.initVRControls();
+        //todo: rewrite spectator camera flow
+        //this.controls = this.initVRControls();
         break;
       default:
         this.controls = this.initOrbitControls();
@@ -2335,13 +2335,13 @@ class PreviewArea {
   //   var fps = 240;
   //todo: add fps slider
   // calls the animation updates.
-  animatePV() {
+  animatePV(time,frame) {
     this.NodeManager.update();
     if(this.pathFinder && this.pathFinder.active) {
       this.pathFinder.update();
     }
     if(this.xrInterface.isVRAvailable())
-      this.xrInterface.update(this.xrInterface);
+      this.xrInterface.update(this.xrInterface,time,frame);
 
     //limit this function to (fps)fps)
     // if (Date.now() - lastTime < 1000 / fps) {
