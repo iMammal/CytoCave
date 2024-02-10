@@ -17,7 +17,7 @@ var init = function () {
     initSubjectMenu('Right');
 
     var idLeft = document.getElementById("subjectMenuLeft").selectedIndex;
-    var idRight = document.getElementById("subjectMenuRight").selectedIndex += 1;
+    var idRight = document.getElementById("subjectMenuRight").selectedIndex;
 
     queue()
         .defer(loadSubjectNetwork, dataFiles[idLeft], modelLeft)

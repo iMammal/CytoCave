@@ -61,6 +61,9 @@ var scanFolder = function (callback) {
 // rich_club: rich club affiliation: region name vs non-RichClub (optional)
 var loadLookUpTable = function (callback) {
     var labelsLUTFilename = "LookupTable_" + labelLUT + ".csv";
+    if(labelLUT === "Dynamic") {
+        labelsLUTFilename = "LookupTable_Dynamic.php";
+    }
     Papa.parse("data/" + labelsLUTFilename, {
         download: true,
         delimiter: ";",
@@ -77,7 +80,11 @@ var loadLookUpTable = function (callback) {
 };
 
 var loadSubjectNetwork = function (fileNames, model, callback) {
-    if (fileNames.network.toString().endsWith(".csv")) {
+  console.log("Loading network file");
+  console.log(fileNames);
+
+
+  if ( fileNames.network.toString().endsWith(".csv") || fileNames.network.toString().endsWith(".php") ) {
         Papa.parse("data/" + folder + "/" + fileNames.network, {
             download: true,
             dynamicTyping: true,
