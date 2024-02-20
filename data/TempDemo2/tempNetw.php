@@ -3,7 +3,7 @@
   // return table of tempNetwork as CSV
 
   //open the database
-  $db = new SQLite3('../../huMAP2.db');
+  $db = new SQLite3('../../humap2.db');
 
   //execute the query to select all from tempNetwork
   $results = $db->query('SELECT * FROM tempNetwork');
@@ -21,7 +21,7 @@
     //echo the row
 //    echo implode(',', $row) . "\n";
     // echo source, target, interaction
-    echo $row['source'] . "," . $row['target'] . "," . $row['interaction'] . "\n";
+    echo ($row['source']-1) . "," . ($row['target']-1) . "," . $row['interaction'] . "\n";
 
   }
 ?>
