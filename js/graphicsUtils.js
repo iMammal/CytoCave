@@ -31,33 +31,38 @@ var rightSphereNormal = new THREE.SphereGeometry( shpereRadius, sphereResolution
 var rightBoxNormal = new THREE.BoxGeometry( 1.5*shpereRadius, 1.5*shpereRadius, 1.5*shpereRadius);
 
 // create normal edge geometry: sphere or cube
-var getNormalGeometry = function(hemisphere) {
-    if(hemisphere == "left"){
-        return sphereNormal;
-        //return leftSphereNormal;
-    } else if(hemisphere == "right"){
-        return boxNormal;
-        //return rightSphereNormal;
-    }
-};
+// see the other version of this.
+// var getNormalGeometry = function(hemisphere) {
+//     if(hemisphere == "left"){
+//         return sphereNormal;
+//         //return leftSphereNormal;
+//     } else if(hemisphere == "right"){
+//         return boxNormal;
+//         //return rightSphereNormal;
+//     }
+// };
 
 // create normal edge geometry: sphere or cube
-//commented out since it already exists?
-// UNcommented back in because it's overloaded for the independent scaling of the left and right spheres
+
 var getNormalGeometry = function(hemisphere,side) {
-    if(hemisphere == "left"){
-	    if(side == "Left"){
-		    return leftSphereNormal;
-	    } else {
-        return rightSphereNormal;
-	    }
-    } else if(hemisphere == "right"){
-	    if(side == "Left"){
-		    return leftBoxNormal;
-	    } else {
-        return rightBoxNormal;
-	    }
+  if(side === "Left"){
+    if(hemisphere === "left"){
+      return leftBoxNormal;
+    } else if(hemisphere === "right"){
+      return leftSphereNormal;
     }
+  } else if(side === "Right"){
+    if(hemisphere === "left"){
+      return rightBoxNormal;
+    } else if(hemisphere === "right"){
+      return rightSphereNormal;
+    }
+  } else {
+      console.log("ERROR: getNormalGeometry");
+      console.log("Hemi:"); console.log(hemisphere);
+      console.log("Side"); console.log(side);
+      console.log("does not match any of the expected values. Implement more geometry options");
+      }
 };
 
 // scaling the glyphs

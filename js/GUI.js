@@ -159,7 +159,7 @@ var addDimensionFactorSliderRight = function (side) {
 
 	console.log("#nodeInfoPanel"+side);
 
-    if(side == 'Left') {
+    if(side === 'Left') {
       panel.append("input")
         .attr("type", "range")
         .attr("value", "1")
@@ -182,6 +182,7 @@ var addDimensionFactorSliderRight = function (side) {
                 setDimensionFactorRightSphere(this.value);
                 document.getElementById("dimensionSliderLeftRight").value = this.value;
             }
+          updateScenes();
         });
     } else {
         panel.append("label")
@@ -217,7 +218,7 @@ var addDimensionFactorSliderRight = function (side) {
                 setDimensionFactorLeftSphere(this.value);
                 document.getElementById("dimensionSliderLeftLeft").value = this.value;
             }
-
+          updateScenes();
         });
     }
 
@@ -258,6 +259,7 @@ var addAnimationSlider = function () {
             previewAreaLeft.setAnimation(Math.floor(this.value)/10000);
             previewAreaRight.setAnimation(Math.floor(this.value)/10000);
             document.getElementById("animationSliderLabel").innerHTML = "Animation @ " + this.value/1.00;
+          updateScenes();
         });
     menu.append("br");
 
@@ -282,6 +284,7 @@ var addFlashRateSlider = function () {
             previewAreaLeft.setFlahRate(Math.floor(this.value)/100);
             previewAreaRight.setFlahRate(Math.floor(this.value)/100);
             document.getElementById("flashRateSliderLabel").innerHTML = "Flash rate @ " + this.value/100.00;
+          updateScenes();
         });
     menu.append("br");
 };
@@ -302,7 +305,7 @@ var addSkyboxButton = function (side) {
             //if (side !== "Right")
             previewAreaLeft.setSkyboxVisibility(checked);
             previewAreaRight.setSkyboxVisibility(checked);
-            updateScenes();
+          updateScenes();
         })
         // .append("input")
         // .attr("type","checkbox")
@@ -339,78 +342,89 @@ var addThresholdSlider = function () {
     var max = Math.max(modelLeft.getMaximumWeight(), modelRight.getMaximumWeight());
     var min = Math.min(modelLeft.getMinimumWeight(), modelRight.getMinimumWeight());
     max = Math.max(Math.abs(max), Math.abs(min));
-    thresholdMultiplier = (max < 1.0) ? 100.0 : 1.0;
+    thresholdMultiplier = (max <= 1.0) ? 100.0 : 1.0;
     max *= thresholdMultiplier;
     var menu = d3.select("#edgeInfoPanel");
     menu.append("input")
         .attr("type", "range")
-        .attr("value", max/2)
+        .attr("value", modelLeft.getThreshold())
         .attr("id", "thresholdSlider")
-        .attr("min", 0.)
+        .attr("min", 0.0)
         .attr("max", max)
-        .attr("step", max/20)
+        .attr("step", max/1000)
         .on("change", function () {
             modelLeft.setThreshold(this.value/thresholdMultiplier);
             modelRight.setThreshold(this.value/thresholdMultiplier);
-            redrawEdges();
             document.getElementById("thresholdSliderLabel").innerHTML = neuro?"Ipsi-Threshold @ ":"Intra-Threshold @ " + this.value/thresholdMultiplier;
+            //todo determine how to process ipsi and contra in previewArea.getActiveEdges();
+            updateScenes();
         });
     menu.append("label")
         .attr("for", "thresholdSlider")
         .attr("id", "thresholdSliderLabel")
-        .text("Threshold @ " + max/2/thresholdMultiplier);
-    modelLeft.setThreshold(max/2/thresholdMultiplier);
-    modelRight.setThreshold(max/2/thresholdMultiplier);
+        .text("Threshold @ " + modelLeft.getThreshold());
 };
 
 /* Edges stuff at edgeInfoPanel */
 // add a slider to threshold Contralateral edges at specific values
 var addConThresholdSlider = function () {
 
-    var max = Math.max(modelLeft.getMaximumWeight(), modelRight.getMaximumWeight());
-    var min = Math.min(modelLeft.getMinimumWeight(), modelRight.getMinimumWeight());
-    max = Math.max(Math.abs(max), Math.abs(min));
-    thresholdMultiplier = (max < 1.0) ? 100.0 : 1.0;
+  let max = Math.max(modelLeft.getMaximumWeight(), modelRight.getMaximumWeight());
+  let min = Math.min(modelLeft.getMinimumWeight(), modelRight.getMinimumWeight());
+  max = Math.max(Math.abs(max), Math.abs(min));
+    //todo get maximum weight may have an issue, added <= instead of = to work around
+  // todo look into getMaxWeight and getMinWeight operation and the thresholdMultiplier
+    thresholdMultiplier = (max <= 1.0) ? 100.0 : 1.0;
     max *= thresholdMultiplier;
     var menu = d3.select("#edgeInfoPanel");
     menu.append("input")
         .attr("type", "range")
-        .attr("value", max / 2)
+        .attr("value", max)
         .attr("id", "conThresholdSlider")
         .attr("min", 0.)
         .attr("max", max)
-        .attr("step", max / 20)
+        .attr("step", max / 1000)
         .on("change", function () {
+            //todo determine if filters such as distance and threashold should be applied to the contra edges or if they need reset to 0
             modelLeft.setConThreshold(this.value / thresholdMultiplier);
             modelRight.setConThreshold(this.value / thresholdMultiplier);
             redrawEdges();
             document.getElementById("conThresholdSliderLabel").innerHTML = neuro?"Contra-Threshold @ ":"Inter-Threshold @ " + this.value / thresholdMultiplier;
+          updateScenes();
         });
     menu.append("label")
         .attr("for", "conThresholdSlider")
         .attr("id", "conThresholdSliderLabel")
         .text(neuro?"Contra-Threshold @ ":"Inter-Threshold @ "  + max / 2 / thresholdMultiplier);
-    modelLeft.setConThreshold(max / 2 / thresholdMultiplier);
-    modelRight.setConThreshold(max / 2 / thresholdMultiplier);
+
 };
 
 // add opacity slider 0 to 1
 var addOpacitySlider = function () {
+  let opacityval = 0.5;
+  if(previewAreaLeft) {
+    //todo: due to reasons, previewarea  may not exist when this is called
+    //the default value is set to 0.5, but it should be set to the current value
+    //set the default value in previewArea to change the default here, update the val above
+    //to display that value.
+    opacityval = previewAreaLeft.getEdgeOpacity();
+  }
+
     var menu = d3.select("#edgeInfoPanel");
     menu.append("label")
         .attr("for", "opacitySlider")
         .attr("id", "opacitySliderLabel")
-        .text("Opacity @ " + 1.);
+        .text("Opacity @ " + opacityval);
     menu.append("input")
         .attr("type", "range")
-        .attr("value", 100)
+        .attr("value", opacityval*100)
         .attr("id", "opacitySlider")
         .attr("min", 0)
         .attr("max", 100)
         .attr("step",1)
         .on("change", function () {
             updateOpacity(Math.floor(this.value)/100);
-            document.getElementById("opacitySliderLabel").innerHTML = "Opacity @ " + this.value/100.;
+            document.getElementById("opacitySliderLabel").innerHTML = "Opacity @ " + this.value;
         });
 };
 
@@ -568,7 +582,8 @@ var addTopNSlider = function () {
         .on("change", function () {
             modelLeft.setNumberOfEdges(this.value);
             modelRight.setNumberOfEdges(this.value);
-            redrawEdges();
+            //redrawEdges();
+          updateScenes();
             document.getElementById("topNThresholdSliderLabel").innerHTML = "Number of Edges: " + modelLeft.getNumberOfEdges();
         });
     menu.append("label")
@@ -722,13 +737,15 @@ var createLegend = function(model,side) {
                     .attr("id", activeGroup[i])
                     .style("cursor", "pointer")
                     .on("click", function () {
-                        if (lockLegend) { modelLeft.toggleRegion(this.id); }
+                        if (lockLegend) {
+                            modelLeft.toggleRegion(this.id);
+                        }
                         console.log("RIGHTmodel:" + side + model.getName());
                         modelRight.toggleRegion(this.id);//,"Right");
-                        if (model.getRegionState(this.id) == 'transparent')
-                            updateNodesVisiblity(lockLegend?"Both":"Right");
-                        else
-                            updateScenes(lockLegend?"Both":"Right");
+                        if (model.getRegionState(this.id) == 'transparent') {
+                            updateNodesVisiblity(lockLegend ? "Both" : "Right");
+                        }
+                       updateScenes(lockLegend?"Both":"Right");
                     });
 
             }
@@ -906,6 +923,7 @@ var addColorGroupList = function() {
             this.value = 'Unlocked';
             this.innerHTML = "Lock";
             lockLegend = false;
+            updateScenes();
         } else {
             document.getElementById("colorCodingLeft").hidden = true;
             document.getElementById("colorCodingMenu").label = "ColorCoding:";
@@ -1066,6 +1084,7 @@ var addColorClusteringSlider = function () {
             modelLeft.updateClusteringGroupLevel(this.value);
             modelRight.updateClusteringGroupLevel(this.value);
             changeColorGroup(modelLeft.getActiveGroupName());
+            updateScenes();
         });
 };
 
@@ -1111,6 +1130,7 @@ var addTopologyMenu = function (model, side, type="anatomy") {
                 changeActiveGeometry(model, side, selection);
                 break;
         }
+        updateScenes();
     };
 
     if (hierarchicalClusteringExist)
@@ -1142,7 +1162,7 @@ var addClusteringSlider = function (model, side) {
         .attr("step", 1)
         .on("change", function () {
             model.setClusteringLevel(parseInt(this.value));
-            redrawScene(side);
+            updateScenes();
             document.getElementById("clusteringSliderLabel" + side).innerHTML = "Level " + this.value;
         });
 };

@@ -3,6 +3,16 @@
 <head lang="en">
     <meta charset="UTF-8">
     <title>NeuroCave</title>
+  <style>
+    .card {
+      width: 80%;
+      margin: 0 auto;
+      border: 1px solid #000;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.15);
+    }
+  </style>
 </head>
 <script type="text/javascript" src="./public/main.js"></script>
 
@@ -19,7 +29,7 @@
 </script>
 
 <body>
-
+<div class="card">
 <h2>NeuroCave</h2>
 NeuroCave is a tool allows to visualize brain networks also called the <a href="https://en.wikipedia.org/wiki/Connectome">
 Connectome</a> which is the network that describes how the different regions of the brain are interconnected.
@@ -31,10 +41,18 @@ trees can be computed on the fly. This tool has been developed with virtual real
 the Oculus Rift and requires the Oculus Touch input.
 
 <h3>Acknowledgement</h3>
-The tool was entirely developed the <a href="https://www.evl.uic.edu/creativecoding/">Creative Coding Research Group</a>,
+The tool was originally developed the <a href="https://www.evl.uic.edu/creativecoding/">Creative Coding Research Group</a>,
 directed by Prof. Angus Forbes. The research group is part of the <a href="https://www.evl.uic.edu">Electronic Visualization
 Lab (EVL)</a>  at University of Illinois at Chicago (UIC). This research is being done in collaboration with Alex Leow,
 Olusola Ajilore, and Allen Ye, all belonging to UIC Department of Psychiatry.
+
+<h3>Further Development</h3>
+This version of the tool has been heavily modified to allow for the visualization of large datasets. The original version
+of the tool can be found at the link above. Similarly the data and display types have been heavily modified.
+
+Due to current development, not all examples may work as expected.
+Errors may occur when using features of functional demos that have not been fully implemented in the current version of the tool.
+
 
 <h2>Demo</h2>
 
@@ -50,6 +68,10 @@ Olusola Ajilore, and Allen Ye, all belonging to UIC Department of Psychiatry.
     <a onclick="location.href=this.href+'?dataset=Demo7&load=0&lut=baltimore';return false;" href="visualization.html">Demo 7: F1000, female vs male, age: 20-30</a>
     <p></p>
     <a onclick="location.href=this.href+'?dataset=theta&load=0&lut=baltimore';return false;" href="visualization.html">theta</a>
+    <p></p>
+    <a onclick="location.href=this.href+'?dataset=SciVisIEEE2023&load=0&lut=viznonet';return false;" href="visualization.html">SciVisIEEE2023</a>
+    <p></p>
+    <a onclick="location.href=this.href+'?dataset=Cartana&load=0&neuro=0&lut=Cartana4';return false;" href="visualization.html">Cartana</a>
     <p></p>
 </ul>
 
@@ -70,7 +92,7 @@ Olusola Ajilore, and Allen Ye, all belonging to UIC Department of Psychiatry.
     <ul style="list-style-type:circle">
         <li><a href="https://github.com/CreativeCodingLab/NeuroCave/archive/master.zip">Download</a> <b>NeuroCave</b> to
             your local drive</li>
-	<li> Install NodeJS: 
+	<li> Install NodeJS:
 		<p> Windows/MacOS/Source:
 		<a href="https://nodejs.org/en/download/">Download | Node.js (nodejs.org) </a>
 		<p> RedHat,Centos,Fedora,Amazon Linux, etc.: sudo dnf install nodejs
@@ -78,9 +100,13 @@ Olusola Ajilore, and Allen Ye, all belonging to UIC Department of Psychiatry.
 	<li> Install Dependecy Packages:
 		<p> npm install d3 http-server mathjs papaparse queue three @babel/core "babel-loader" path webpack webpack-cli
 	<li> Start Neurocave in "local" mode
-		  <p> npm run local 
+		  <p> npm run local
 	<li>Run the local version of NeuroCave by Navigating the browser to one of the "Available on:" links in the above command's output  </li>
     </ul>
+
+  <div style="opacity: 0.5; pointer-events: none;">
+    <h4> Sorry feature is currently disabled</h4>
+    <!--    remove the div above to enable this feature -->
     <h3> Import your own Data into your local NeuroCave server:</h3>
     <ul style="list-style-type:circle">
         <li>In the local copy, put the folder containing your data in <b>.\NeuroCave\data\</b>. Your data should follow the description in
@@ -91,14 +117,16 @@ Olusola Ajilore, and Allen Ye, all belonging to UIC Department of Psychiatry.
         <li>Press the <b>'Submit'</b> button</li>
     </ul>
 
+
     <p></p>
-    <input id = 'folderSelect' type = 'file' onchange="getfolder(event)" webkitdirectory directory multiple/>Choose data folder</input>
+    <input id = 'folderSelect' type = 'file' onchange="getfolder(event)" webkitdirectory directory multiple>Choose data folder
     <p></p>
     <select id = "Atlas" class = "jumpmenu"></select>
     <label>Choose Atlas</label>
     <p></p>
     <button type = 'button' id = 'submit' onclick="location.href='visualization.html?dataset='+folder+'&load=0&lut='+atlas">Submit</button>
     <br>
+  </div>
 </div>
 
 <script type="text/Javascript">
@@ -164,6 +192,6 @@ Olusola Ajilore, and Allen Ye, all belonging to UIC Department of Psychiatry.
         });
 
 </script>
-
+</div>
 </body>
 </html>

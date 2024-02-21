@@ -32,10 +32,18 @@ function Model(side) {
     var nodesDistances = {};            // Euclidean distance between the centroids of all nodes
     let previousMap = {};               // previous map of nodesDistances
 
-    var connectionMatrix = [];          // adjacency matrix
+    this.connectionMatrix = [];          // adjacency matrix
     var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
     var nodesStrength = [];
 
+    this.minConnectionMatrix = 1;
+    this.maxConnectionMatrix = 1;
+
+
+
+    var threshold = 0;                  // threshold for the edge value, default to 0, max, all edges  //todo this is currently being used a a weight threshold. maybe scale to 0-1? figure out what it's supposed to actually threshold.
+    var conthreshold = 0;               // threshold for the contralateral edge value, default to 1, max, no edges
+    var numberOfEdges = 0;              // threshold the number of edges for shortest paths, 0 for all edges, topN edges if not in shortest path.
     this.minConnectionMatrix = 1;
     this.maxConnectionMatrix = 1;
 
@@ -50,13 +58,13 @@ function Model(side) {
 
     var distanceArray = [];                  // contain the shortest path for current selected node
     var maxDistance = null;             // max value of distanceArray
-    var distanceThreshold = 50;         // threshold for the distanceArray in percentage of the max value: 0 to 100
+    var distanceThreshold = 0;         // threshold for the distanceArray in percentage of the max value: 0 to 100
     var numberOfHops = 0;               // max number of hops for shortest path
     this.graph = new Graph();
 
     var metricValues = [];
 
-    var metricQuantileScale;
+    this.metricQuantileScale;
 
     var clusters = {};                  // PLACE clusters, assumed level 4: clusters from 1 to 16
     var heatmaps = {};                  // PLACE clusters, assumed level 4: clusters from 1 to 16
@@ -82,7 +90,7 @@ function Model(side) {
         clusters = {};
         nodesDistances = {};
 
-        connectionMatrix = [];
+        this.connectionMatrix = [];
         distanceMatrix = [];
 
         edges = [];
@@ -96,7 +104,7 @@ function Model(side) {
 
     // data ready in model ready
     this.ready = function () {
-        return (labelKeys && centroids && connectionMatrix);
+        return (labelKeys && centroids && this.connectionMatrix);
     };
 
 
@@ -146,7 +154,7 @@ function Model(side) {
 
         for (var i = 0; i < len; ++i) {
             var label = labelKeys[i];
-            console.log(label)
+            //`console.log(label)
             var region = atlas.getRegion(label);
             for (var j = 0; j < names.length; ++j)
                 groups[names[j]][i] = region[names[j]];
@@ -172,7 +180,7 @@ function Model(side) {
 
     // update the clustering group level, level can be 1 to 4
     this.updateClusteringGroupLevel = function (level) {
-        if (this. hasClusteringData() && clusteringTopologies.indexOf(activeGroup) > -1 && clusters[activeGroup].length > 1) {
+        if (this.hasClusteringData() && clusteringTopologies.indexOf(activeGroup) > -1 && clusters[activeGroup].length > 1) {
             groups[activeGroup] = clusters[activeGroup][level - 1];
             clusteringGroupLevel = level;
         }
@@ -206,7 +214,7 @@ function Model(side) {
     };
 
     this.getActiveTopology = function () {
-        return activeTopology;0
+        return activeTopology;
     };
 
     //todo: These are the distances between the nodes in the selected topology used for edge bundling calculations.
@@ -275,7 +283,7 @@ function Model(side) {
     // set connection matrix from JSON file
     this.setConnectionMatrixFromJSON = function (jsonData) {
         //const connectionMatrix = math.sparse(jsonData);
-        connectionMatrix = math.SparseMatrix.fromJSON(jsonData);
+        this.connectionMatrix = math.SparseMatrix.fromJSON(jsonData);
 
         console.log(`Successfully created the sparse matrix from JSON data.`);
         this.computeDistanceMatrix();
@@ -286,7 +294,7 @@ function Model(side) {
     // set connection matrix from CSV file
     this.setConnectionMatrix = function (d) {
         //console.log("set connection matrix:",Papa);
-        connectionMatrix = math.sparse();
+        this.connectionMatrix = math.sparse();
         if (d.data[0].length == 3) {
             // Process each data row
             for (let i = 0; i < d.data.length; i++) {
@@ -296,7 +304,7 @@ function Model(side) {
                 const weight = row[2];
 
                 // Assign the weight to the corresponding position in the sparse matrix
-                connectionMatrix.set([from, to], weight);
+                this.connectionMatrix.set([from, to], weight);
                 // let text = "from: " + from + " to: " + to + " weight: " + weight;
                 // setNodeInfoPanel(1,1,text);
                 //if(i % 1000 == 0) {
@@ -304,7 +312,7 @@ function Model(side) {
                 // }
             }
         } else {
-            connectionMatrix = math.sparse(d.data); // d.data;
+            this.connectionMatrix = math.sparse(d.data); // d.data;
         }
         this.computeDistanceMatrix();
         this.computeNodalStrength();
@@ -344,7 +352,7 @@ function Model(side) {
 
     // get connection matrix according to activeMatrix
     this.getConnectionMatrix = function () {
-        return connectionMatrix;
+        return this.connectionMatrix;
     };
 
     // get a row (one node) from connection matrix
@@ -355,7 +363,7 @@ function Model(side) {
         //console.log("ConnectionMatrix:",connectionMatrix);
         //let row = connectionMatrix.subset(math.index(index,math.range(0,connectionMatrix.size()[0]))).toArray().slice(0);
 
-        const size = connectionMatrix.size()[1];
+        const size = this.connectionMatrix.size()[1];
 
         // if (false) {
         //     const range = math.range(0, size);
@@ -366,7 +374,7 @@ function Model(side) {
         const rowVector = math.zeros([size,1]);
         rowVector[index][0] = 1; //.set([index], 1);
 
-        let row = math.multiply(connectionMatrix, rowVector);
+        let row = math.multiply(this.connectionMatrix, rowVector);
 
         // let row = connectionMatrix.subset();
         //
@@ -435,6 +443,12 @@ function Model(side) {
 
     // get region state using its name
     this.getRegionState = function (regionName) {
+        //console.info("regionName:", regionName);
+        // verify if regionName is a valid region
+        if (regions[regionName] === undefined) {
+            console.error("regionName is not valid");
+            return;
+        }
         return regions[regionName].state;
     };
 
@@ -465,7 +479,7 @@ function Model(side) {
 
     // get the connection matrix number of nodes
     this.getConnectionMatrixDimension = function () {
-        return connectionMatrix.size()[1]; //length;
+        return this.connectionMatrix.size()[1]; //length;
     };
 
     // get top n edges connected to a specific node
@@ -534,20 +548,20 @@ function Model(side) {
 
     this.getMaximumWeight = function () {
         return this.maxConnectionMatrix;
-        return d3.max(connectionMatrix, function (d) {
-            return d3.max(d, function (d) {
-                return d;
-            })
-        });
+        // return d3.max(this.connectionMatrix, function (d) {
+        //     return d3.max(d, function (d) {
+        //         return d;
+        //     })
+        // });
     };
 
     this.getMinimumWeight = function () {
         return this.minConnectionMatrix;
-        return d3.min(connectionMatrix, function (d) {
-            return d3.min(d, function (d) {
-                return d;
-            })
-        });
+        // return d3.min(this.connectionMatrix, function (d) {
+        //     return d3.min(d, function (d) {
+        //         return d;
+        //     })
+        // });
     };
 
     this.getNumberOfEdges = function () {
@@ -566,7 +580,7 @@ function Model(side) {
     this.setMetricValues = function (data) {
         metricValues = data.data;
 
-        metricQuantileScale = d3.scale.quantile()
+        this.metricQuantileScale = d3.scale.quantile()
             .domain(metricValues)
             .range(['#000080', '#0000c7', '#0001ff', '#0041ff', '#0081ff', '#00c1ff', '#16ffe1', '#49ffad',
                 '#7dff7a', '#b1ff46', '#e4ff13', '#ffd000', '#ff9400', '#ff5900', '#ff1e00', '#c40000']);
@@ -587,13 +601,13 @@ function Model(side) {
     };
 
     this.computeNodalStrength = function () {
-        var nNodes = connectionMatrix.size()[1];//length;
+        var nNodes = this.connectionMatrix.size()[1];//length;
         // nodesStrength = new Array(nNodes);
         // for (var i = 0; i < nNodes; ++i)
         //     nodesStrength[i] = d3.sum(this.getConnectionMatrixRow(i));
 
         const OnesVector = math.ones([nNodes,1]);
-        nodesStrength = math.multiply(connectionMatrix, OnesVector);
+        nodesStrength = math.multiply(this.connectionMatrix, OnesVector);
 
     };
 // // old compute distance
@@ -631,10 +645,10 @@ function Model(side) {
 //     };
     // compute distance matrix = 1/(adjacency matrix)
     this.computeDistanceMatrix = function() {
-        const nNodes = connectionMatrix.size()[1];
+        const nNodes = this.connectionMatrix.size()[1];
 
         this.graph = new Graph();
-        const distanceMatrix = connectionMatrix.map((value, index) => {
+        const distanceMatrix = this.connectionMatrix.map((value, index) => {
             const i = index[0];
             const j = index[1];
             //this.graph.addNode(i.toString(), {j.toString(): value});  //todo: fix j
@@ -653,6 +667,7 @@ function Model(side) {
             return 0;
         }, true); // skipZeros=true
 
+        //const graph = new Graph();
 
         // Assign the computed distanceMatrix and edgeIdx to class variables
         this.distanceMatrix = distanceMatrix;
@@ -663,7 +678,7 @@ function Model(side) {
         // but we create it anyway for the sake of consistency
         // use also create the graph for SPT
         let idx = 0; // Initialize idx to 0
-        edgeIdx = connectionMatrix.map((value, index) => {
+        edgeIdx = this.connectionMatrix.map((value, index) => {
             const i = index[0];
             const j = index[1];
             this.graph.addNode(i.toString(), {j: value});
@@ -715,7 +730,7 @@ function Model(side) {
         //     return retval;
         // },true);
 
-        console.log("edgeIdx", edgeIdx);
+        //console.log("edgeIdx", edgeIdx);
 
 
         // for (let i = 0; i < nNodes; i++) {
@@ -735,7 +750,7 @@ function Model(side) {
     // compute shortest path from a specific node to the rest of the nodes
     this.computeShortestPathDistances = function (rootNode) {
         console.log("computing spt");
-        var nNodes = connectionMatrix.size()[1];
+        var nNodes = this.connectionMatrix.size()[1];
         distanceArray = [];
         for (var i = 0; i < nNodes; i++) {
             const pathArray = this.graph.path(String(rootNode), String(i));
@@ -771,7 +786,7 @@ function Model(side) {
 
     this.getPathArray = function (rootIndex,targetId) {
         return this.graph.path(rootIndex, targetId);
- 7   }
+    }
 
     // compute the position of each node for a clustering topology according to clustering data
     // in case of PLACE or PACE, clustering level can be 1 to 4, clusters[topology][level]
@@ -977,11 +992,11 @@ function Model(side) {
     this.performEBOnNode = function (nodeIdx) {
         var edges_ = [];
         var edgeIndices = [];
-        var nNodes = connectionMatrix.size()[1];//length;
+        var nNodes = this.connectionMatrix.size()[1];//length;
         var cen = centroids[activeTopology];
         // all edges of selected node
         for (var i = 0; i < nNodes; i++) {
-            if (Math.abs(connectionMatrix.get([nodeIdx,i])) > 0) {
+            if (Math.abs(this.connectionMatrix.get([nodeIdx,i])) > 0) {
                 edges_.push({
                     'source': cen[i],
                     'target': cen[nodeIdx]
@@ -1014,7 +1029,7 @@ function Model(side) {
             }
         }
         // TODO: disable edge bundling for now, just to get the rest of the code upgraded and working
-        // stable enought to try enabling EB... Disabling again... things got complicated 
+        // stable enough to try enabling EB... Disabling again... things got complicated
         //fbundling.edges(edges_);
         //var results = fbundling();
         //
@@ -1086,14 +1101,13 @@ function Model(side) {
 // compute the edges for a specific topology
     this.computeEdgesForTopology = function (topology) {
         console.log("Computing edges for " + topology);
-        var nNodes = connectionMatrix.size()[1]; //length;
-        edges = [];
+        var nNodes = this.connectionMatrix.size()[1]; //length;
 
-        return;
+        //return;
         //edges array is no longer used. Data is stored in node instance userdata
         //and that is updated when the topology or subject changes
 
-        connectionMatrix.forEach(function (value, index) {
+        this.connectionMatrix.forEach(function (value, index) {
             var i = index[0];
             var j = index[1];
 
