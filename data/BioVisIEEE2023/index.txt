@@ -1,5 +1,8 @@
 subjectID,network,topology
 panCanProteinDrugs,comboNetwork.json,comboTopologyR5.csv
+panCanHM2ProteinDrugs,comboNetworkHuMap2.json,comboTopologyR5.csv
+panCan100HM2ProteinDrugs,comboNetworkHuMap2_100_12.json,comboTopologyR5.csv
 panCanDrugs,drug2Network.csv,drug2TopologyR5.csv
 panCanProtein,proteinSTRINGNW.json,proteinTopologyR5a.csv
 panCanProtein,proteinSTRINGNW300.json,proteinTopologyRW.csv
+PanCanHuMap2Protein,proteinHuMap2NW100.json,proteinTopologyR5a.csv
