@@ -13,7 +13,8 @@ $pisCsv = fopen('humap2_ppis_genename_20200821.csv', 'r');
 $db->exec('BEGIN');
 
 //iterate through each row of the csv file add to the database
-while (($data = fgetcsv($pisCsv, 0, "\t")) !== FALSE) {
+//while (($data = fgetcsv($pisCsv, 0, "\t")) !== FALSE) {
+while (($data = fgetcsv($pisCsv, 0, ",")) !== FALSE) {
   $stmt = $db->prepare('INSERT INTO pin (proteinA, proteinB, interaction) VALUES (:proteinA, :proteinB, :interaction)');
   $stmt->bindValue(':proteinA', $data[0], SQLITE3_TEXT);
   $stmt->bindValue(':proteinB', $data[1], SQLITE3_TEXT);
