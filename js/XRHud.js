@@ -13,6 +13,8 @@ class XRHud {
     this.scene = preViewArea_.scene;
     this.renderer = preViewArea_.renderer;
 
+    this.lineplotData = [];
+
     this.init();
     this.debug = false;
 
@@ -52,6 +54,7 @@ class XRHud {
     for (let i = 0; i < 25; i++) {
       fakeData.push(Math.random());
     }
+    this.lineplotData = fakeData;
     let options = {
       width: 200,
       height: 100,
@@ -67,7 +70,7 @@ class XRHud {
         height: 1
       }
     }
-    let graph = new canvasGraph(this.flatCanvas, fakeData, options); // canvas, data, options
+    let graph = new canvasGraph(this.flatCanvas, this.lineplotData, options); // canvas, data, options
     // add the mesh to the hud
     this.hud.add(this.flatMesh);
     //position the mesh in the top left corner of the hud
@@ -107,6 +110,10 @@ class XRHud {
     this.floorboard.add(this.hud);
 
 
+  }
+
+  addLineplotData(data) {
+    this.lineplotData = data;
   }
 
   createWireframeCube() {

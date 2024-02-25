@@ -566,6 +566,23 @@ class NodeManager {
     //return this.selectedNodes.includes(index);
   }
 
+  //nodeSelectedCallback(node) {
+    //console.log("nodeSelectedCallback");
+    //console.log(node);
+    //console.log(this);
+    //console.log(this.model);
+    //console.log(this.model.getDataset());
+    //console.log(this.model.getDataset()[this.node2index(node)]);
+    //console.log(this.model.getDataset()[this.node2index(node)].name);
+    //console.log(this.model.getDataset()[this.node2index(node)].group);
+    //console.log(this.model.getDataset()[this.node2index(node)].hemisphere);
+    //console.log(this.model.getDataset()[this.node2index(node)].position);
+    //console.log(this.model.getDataset()[this.node2index(node)].index);
+
+    //this.model.loadNodeDetails(this.model.getDataset()[this.node2index(node)]);
+  //  }
+
+
   selectNode(node) {
     //given a node from the raycaster, select the node and add it to the userData.selectedNodes of the instance.
     //if the node is already selected, do nothing.
@@ -587,6 +604,7 @@ class NodeManager {
       this.selectedNodes.push(index);
       this.selectedNodesChanged = true;
       this.selectedNodesCount++;
+      this.model.loadNodeDetails(index); //this.model.getDataset()[index]);
       if (this.nodeSelectedCallback !== null) {
         this.nodeSelectedCallback(node);
       }

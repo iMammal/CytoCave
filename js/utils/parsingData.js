@@ -99,23 +99,6 @@ var loadSubjectNetwork = function (fileNames, model, callback) {
         });
     }
     if (fileNames.network.toString().endsWith(".json")) {
-        // Papa.parse("data/" + folder + "/" + fileNames.network, {
-        //     download: true,
-        //     dynamicTyping: true,
-        //     delimiter: ',',
-        //     header: false,
-        //     skipEmptyLines: true,
-        //     complete: function (results) {
-        //         model.setConnectionMatrix(results);
-        //         console.log("NW loaded ... ");
-        //         callback(null, null);
-        //     }
-        // });
-        // fs.readFile("data/" + folder + "/" + fileNames.network, 'utf8', (err, jsonString) => {
-        //     if (err) {
-        //         console.error(`Failed to read the file ${filename}. Reason: ${err.message}`);
-        //         return;
-        //     }
 
         // Fetch a JSON file from the server
         fetch("data/" + folder + "/" + fileNames.network)
