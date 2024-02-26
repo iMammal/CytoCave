@@ -33,8 +33,8 @@ class XRHud {
     this.flatContext.fillStyle = 'white';
     //set the font size and font family
     this.flatContext.font = '12px Arial';
-    //draw the text
-    this.flatContext.fillText('Hello, world!', 10, 10);
+    // //draw the text
+    // this.flatContext.fillText('Hello, world!', 10, 10);
     //create a texture from the canvas
     this.flatTexture = new THREE.CanvasTexture(this.flatCanvas);
     //create a material from the texture
@@ -55,7 +55,7 @@ class XRHud {
       fakeData.push(Math.random());
     }
     this.lineplotData = fakeData;
-    let options = {
+    this.graphOptions = {
       width: 200,
       height: 100,
       color: 'white',
@@ -70,7 +70,7 @@ class XRHud {
         height: 1
       }
     }
-    let graph = new canvasGraph(this.flatCanvas, this.lineplotData, options); // canvas, data, options
+    let graph = new canvasGraph(this.flatCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
     // add the mesh to the hud
     this.hud.add(this.flatMesh);
     //position the mesh in the top left corner of the hud
@@ -111,11 +111,10 @@ class XRHud {
 
 
   }
-
-  addLineplotData(data) {
-    this.lineplotData = data;
-  }
-
+  //use canvasGraph to update the lineplot data
+  // addLineplotData(data) {
+  //   this.lineplotData = data;
+  // }
   createWireframeCube() {
     // create a wireframe cube
     const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -205,6 +204,36 @@ class XRHud {
     // move the hud back 1 meter relative to it's rotation
     hud.translateZ(-1);
 
+    //update the lineplot data
+    let newLineplotData = [];
+      console.log("nodeDetailData: ");
+      console.log(this.previewArea.model.nodeDetailData);
+      //check if nodeDetailData is empty
+      if(this.previewArea.model.nodeDetailData.length === 0){
+        console.log("nodeDetailData empty");
+        //probably should wrap the whole loop instead of returning here
+        return;
+      }
+     for(const row of this.previewArea.model.nodeDetailData[0]){
+
+        //newLineplotData.push(this.previewArea.model.nodeDetailData[row].time);
+        newLineplotData.push(row[1]);
+        // if there are more than 25 data points, remove the first 2
+        if(newLineplotData.length > 50){
+          newLineplotData.shift();
+          newLineplotData.shift();
+        }
+     }
+    this.lineplotData = newLineplotData;
+      console.log("lineplotData: ");
+      console.log(this.lineplotData);
+      //clear the canvas
+      this.flatContext.clearRect(0, 0, this.flatCanvas.width, this.flatCanvas.height);
+      //draw the graph
+    let graph = new canvasGraph(this.flatCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
+    this.flatTexture = new THREE.CanvasTexture(this.flatCanvas);
+    //update the material with the new texture
+    this.flatMaterial.map = this.flatTexture;
 
 
     if(this.debug === true){

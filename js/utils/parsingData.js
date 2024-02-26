@@ -129,10 +129,10 @@ var loadDetailsFile = function (fileName, model, callback = null) {
         header: false,
         skipEmptyLines: true,
         complete: function (results) {
-            model.addNodeDetails(results.data);
+            //model.addNodeDetails(results.data);
             console.log("Details Data for loaded for node: ", fileName);
             if (callback !== null) {
-                callback(null, null);
+                callback(results.data, null);
             }
         }
     });

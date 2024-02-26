@@ -210,6 +210,7 @@ class PreviewArea {
     let index = this.NodeManager.node2index(node);
 
     this.NodeManager.restoreNodeByIndex(index);
+    this.model.loadNodeDetails(index);
     this.NodeManager.scaleNodeByIndex(index, 1.5);
     this.drawEdgesGivenIndex(index);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.

@@ -868,10 +868,10 @@ function Model(side) {
 
     }
 
-    this.addNodeDetails = function (data) {
-        this.nodeDetailData.push(data);
-
-    }
+    // this.addNodeDetails = function (data) {
+    //     this.nodeDetailData.push(data);
+    //
+    // }
 
     this.loadNodeDetails = function (index) {
         //var file = "/3NeuroCave/data/SciVisIEEE2023/"+this.DetailsFilesList[index];
@@ -885,8 +885,16 @@ function Model(side) {
         // //Todo:This proabably Needs to wait for the file to be loaded...
         // this.nodeDetailDeta.push(fileData);
 
-        loadDetailsFile(this.DetailsFilesList[index], this);
+        loadDetailsFile(this.DetailsFilesList[index], this, this.finishedLoadingDetailsFile.bind(this));
 
+    }
+
+    //this.nodeDetailData = [];
+
+    this.finishedLoadingDetailsFile = function (data) {
+      console.log("Finished loading details file");
+      console.log(data);
+        this.nodeDetailData.push(data);
     }
 
     // clusters can be hierarchical such as PLACE and PACE or not

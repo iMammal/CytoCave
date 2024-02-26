@@ -604,7 +604,9 @@ class NodeManager {
       this.selectedNodes.push(index);
       this.selectedNodesChanged = true;
       this.selectedNodesCount++;
-      this.model.loadNodeDetails(index); //this.model.getDataset()[index]);
+      //
+      //this.model.loadNodeDetails(index); //this.model.getDataset()[index]);
+      //use the callback, right now it points to appearselected in previewarea as defined by previewarea.
       if (this.nodeSelectedCallback !== null) {
         this.nodeSelectedCallback(node);
       }
