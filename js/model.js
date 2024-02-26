@@ -14,6 +14,8 @@ import {Platonics} from "./polyhedron";
 import * as math from 'mathjs'
 import {sunflower} from "./graphicsUtils";
 import {setNodeInfoPanel} from "./GUI";
+import {loadDetailsFile} from "./utils/parsingData";
+
 
 function Model(side) {
     var groups = {};                    // contain nodes group affiliation according to Anatomy, place, rich club, id
@@ -66,7 +68,7 @@ function Model(side) {
     var clusteringRadius = 5;           // sphere radius of PLACE/PACE visualization
 
     this.DetailsFilesList = [];
-    this.nodeDetailDeta = [];
+    this.nodeDetailData = [];
 
     var name = side;
 
@@ -866,18 +868,24 @@ function Model(side) {
 
     }
 
+    this.addNodeDetails = function (data) {
+        this.nodeDetailData.push(data);
+
+    }
 
     this.loadNodeDetails = function (index) {
-        var file = "/NeuroCave/data/SciVisIEEE2023/"+this.DetailsFilesList[index];
-        var fileData = [];
-        d3.csv(file, function (error, data) {
-            if (error) throw error;
-            fileData = data;
-            console.log("fileData:", fileData);
-        });
-        //return fileData;
-        //Todo:This proabably Needs to wait for the file to be loaded...
-        this.nodeDetailDeta.push(fileData);
+        //var file = "/3NeuroCave/data/SciVisIEEE2023/"+this.DetailsFilesList[index];
+        // var fileData = [];
+        // d3.csv(file, function (error, data) {
+        //     if (error) throw error;
+        //     fileData = data;
+        //     console.log("fileData:", fileData);
+        // });
+        // //return fileData;
+        // //Todo:This proabably Needs to wait for the file to be loaded...
+        // this.nodeDetailDeta.push(fileData);
+
+        loadDetailsFile(this.DetailsFilesList[index], this);
 
     }
 

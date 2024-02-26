@@ -121,6 +121,23 @@ var loadSubjectNetwork = function (fileNames, model, callback) {
 
 };
 
+var loadDetailsFile = function (fileName, model, callback = null) {
+    Papa.parse("data/" + folder + "/" + fileName, {
+        download: true,
+        dynamicTyping: true,
+        delimiter: ';',
+        header: false,
+        skipEmptyLines: true,
+        complete: function (results) {
+            model.addNodeDetails(results.data);
+            console.log("Details Data for loaded for node: ", fileName);
+            if (callback !== null) {
+                callback(null, null);
+            }
+        }
+    });
+};
+
 var loadSubjectTopology = function (fileNames, model, callback) {
     Papa.parse("data/" + folder + "/" + fileNames.topology, {
         download: true,
@@ -168,4 +185,4 @@ var loadMetricValues = function (callback) {
     })
 };
 
-export {scanFolder, loadMetricValues, loadLookUpTable, loadSubjectTopology, loadSubjectNetwork}
+export {scanFolder, loadMetricValues, loadLookUpTable, loadSubjectTopology, loadSubjectNetwork, loadDetailsFile, setFolder};
