@@ -214,7 +214,7 @@ class XRHud {
         //probably should wrap the whole loop instead of returning here
         return;
       }
-     for(const row of this.previewArea.model.nodeDetailData[0]){
+     for(const row of this.previewArea.model.nodeDetailData[this.previewArea.model.nodeDetailData.length-1]){
 
         //newLineplotData.push(this.previewArea.model.nodeDetailData[row].time);
         newLineplotData.push(row[1]);
