@@ -15,10 +15,49 @@ class XRHud {
     this.renderer = preViewArea_.renderer;
 
     this.lineplotData = [];
-
+    this.graphObjects = [];
     this.init();
     this.debug = false;
+    this.initGraphs();
 
+  }
+
+  init() {
+    //create a wireframe cube at the center of the view
+    // cube should have front side edges slightly less
+    // in width then the camera view at 1 meter
+    let controller = this.previewArea.renderer.xr.getController(1);
+    let camera = this.previewArea.renderer.xr.getCamera(0);
+    if (this.debug === true) {
+      console.log("XRHud init");
+      //log controller position, camera position and rotation, xrdolly position and rotation
+      console.log("xrh controller position: ", controller);
+      //console.log("camera position: ", this.camera.position);  // get position of camera from world matrix
+      console.log("xrh camera position: ", this.camera.position);
+      //get camera quaternion
+      console.log("xrh camera quaternion: ", this.camera.quaternion);
+
+      console.log("xrh xrdolly position: ", this.xrInterface.getDolly());
+    }
+    // create a hud object
+    this.floorboard = new THREE.Object3D();
+
+    this.floorboard.position.set(0, 0, 0);
+    //set the hud to the right controller
+    const cube = this.createWireframeCube();
+    this.floorboard.add(cube);
+    //controller.add(this.hud);
+    this.xrInterface.getDolly().add(this.floorboard);
+
+    // create a hud object
+    this.hud = new THREE.Object3D();
+    this.createHudObjects(this.hud);
+    this.floorboard.add(this.hud);
+
+
+  }
+
+  initGraphs() {
     this.flatCanvas = document.createElement('canvas');
     this.flatCanvas.width = 200;
     this.flatCanvas.height = 100;
@@ -73,51 +112,13 @@ class XRHud {
       }
     }
     let graph = new canvasGraph(this.flatCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
+    //track the mesh in the graphObjects array
+    this.graphObjects.push(this.flatMesh);
     // add the mesh to the hud
     this.hud.add(this.flatMesh);
     //position the mesh in the top left corner of the hud
-    this.flatMesh.position.set(-0.35, 0.4, 0);
-  }
-
-  init() {
-    //create a wireframe cube at the center of the view
-    // cube should have front side edges slightly less
-    // in width then the camera view at 1 meter
-    let controller = this.previewArea.renderer.xr.getController(1);
-    let camera = this.previewArea.renderer.xr.getCamera(0);
-    if (this.debug === true) {
-      console.log("XRHud init");
-      //log controller position, camera position and rotation, xrdolly position and rotation
-      console.log("xrh controller position: ", controller);
-      //console.log("camera position: ", this.camera.position);  // get position of camera from world matrix
-      console.log("xrh camera position: ", this.camera.position);
-      //get camera quaternion
-      console.log("xrh camera quaternion: ", this.camera.quaternion);
-
-      console.log("xrh xrdolly position: ", this.xrInterface.getDolly());
-    }
-    // create a hud object
-    this.floorboard = new THREE.Object3D();
-
-    this.floorboard.position.set(0, 0, 0);
-    //set the hud to the right controller
-    const cube = this.createWireframeCube();
-    this.floorboard.add(cube);
-    //controller.add(this.hud);
-    this.xrInterface.getDolly().add(this.floorboard);
-
-    // create a hud object
-    this.hud = new THREE.Object3D();
-    this.createHudObjects(this.hud);
-    this.floorboard.add(this.hud);
-
-
-  }
-
-  //use canvasGraph to update the lineplot data
-  // addLineplotData(data) {
-  //   this.lineplotData = data;
-  // }
+    this.flatMesh.position.set(-0.35, 0.4, 0);s.lineplotData = data;
+   }
   createWireframeCube() {
     // create a wireframe cube
     const geometry = new THREE.BoxGeometry(1, 1, 1);
