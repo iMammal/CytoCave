@@ -230,7 +230,8 @@ class XRHud {
       //clear the canvas
       this.flatContext.clearRect(0, 0, this.flatCanvas.width, this.flatCanvas.height);
       //draw the graph
-    let graph = new canvasGraph(this.flatCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
+    let graph = new
+    canvasGraph(this.flatCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
     this.flatTexture = new THREE.CanvasTexture(this.flatCanvas);
     //update the material with the new texture
     this.flatMaterial.map = this.flatTexture;

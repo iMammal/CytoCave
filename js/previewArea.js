@@ -47,7 +47,8 @@ import {
   //activeVR,
   // updateNodeSelection,
   updateNodeMoveOver,
-  previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove
+  previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove,
+    updateHud2D
 } from './drawing'
 import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, removeGeometryButtons} from './GUI'
 import {scaleColorGroup} from './utils/scale'
@@ -67,6 +68,8 @@ import NeuroSlice from "./NeuroSlice";
 import NodeManager from "./NodeManager";
 import {modelLeft} from "./model";
 import { PathFinder } from "./PathFinder";
+import canvasGraph from "./canvasGraph";
+import  Hud2D  from "./Hud2d";
 
 class PreviewArea {
   constructor(canvas_, model_, name_) {
@@ -173,6 +176,9 @@ class PreviewArea {
     //this.xrDolly = new THREE.Object3D();
     //this.imageSlices = new NeuroSlice('public/images','data/Cartana/SliceDepth0.csv',this.imagesLoadedCallback.bind(this));
 
+    this.lineplotCanvas = document.createElement('canvas');
+    this.lineplots = [document.getElementById('lineplot1')];//createElement('canvas');
+    this.Hud2D = new Hud2D(this);
   }
 
   //reset previewArea to state
@@ -214,7 +220,7 @@ class PreviewArea {
     this.NodeManager.scaleNodeByIndex(index, 1.5);
     this.drawEdgesGivenIndex(index);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.
-    this.NodeManager.removeHighlight(node); //our highlight color has precedence over the selected color so we need to remove it.
+    this.NodeManager.removeHighlight(node); //our highlight color has precedence over the selected color so we need to remove it.appear
     this.NodeManager.highlightNode(node, 0xFF0000); // selected node will be red
     // set contextually selected nodes to appear highlighted
     //todo: do we have a slider for distance?
@@ -224,6 +230,9 @@ class PreviewArea {
 
       previewAreaLeft.NodeManager.select(index);  //if it's already selected in this tree selectNode does nothing so it's safe to call on both sides.
       previewAreaRight.NodeManager.select(index);
+
+
+      this.Hud2D.update();
 
   }
 
@@ -1726,6 +1735,40 @@ class PreviewArea {
 
   }
 
+  //display details of the selected nodes
+  displaySelectedNodeDetails = () => {
+
+    // graph some data
+    //generate some fake data
+    let fakeData = [];
+    for (let i = 0; i < 25; i++) {
+      fakeData.push(Math.random());
+    }
+    this.lineplotData = fakeData;
+    this.graphOptions = {
+      width: 200,
+      height: 100,
+      color: 'white',
+      strokeStyle: 'white', // color of the line
+      lineWidth: 2,
+      lineJoin: 'round',
+      lineCap: 'round',
+      padding: 10,
+      grid: {
+        color: 'rgba(255, 255, 255, 0.5)',
+        width: 1,
+        height: 1
+      }
+    }
+
+    this.addNodeLabel(this.lineplotCanvas);
+
+    //let graph = new canvasGraph(this.lineplotCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
+    let graph = new canvasGraph(this.lineplots[0], this.lineplotData, this.graphOptions); // canvas, data, options
+    //this.flatMesh.position.set(-0.35, 0.4, 0);
+
+  }
+
   //listen for key presses
   keyPress = (event) => {
     //remove the event listener for keypresses if it is already listening
@@ -1749,6 +1792,9 @@ class PreviewArea {
     }
     if (event.key === 'p') {
       this.toggleParticles();
+    }
+    if (event.key === 'g') {
+      this.displaySelectedNodeDetails();
     }
     if (event.key === 's') {
       //toggle slice images.
@@ -4095,11 +4141,23 @@ class PreviewArea {
   //     return null;
   // }
 
+  updateNodeSpritePos = (nodeObject, targetCanvas = this.nspCanvas) => {
+
+    let context = targetCanvas.getContext('2d');
+
+    let pos = nodeObject.point;
+    this.nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
+    if (true || this.labelsVisible) {
+      this.nodeLabelSprite.needsUpdate = true;
+    }
+  }
 
   // Update the text and position according to selected node
   // The alignment, size and offset parameters are set by experimentation
   // TODO needs more experimentation
   updateNodeLabel = (text, nodeObject) => {    ///Index) {
+    //this.updateNodeSpritePos(nodeObject, this.lineplotCanvas);
+
     if (this.labelsVisible === false) return;
 
     let context = this.nspCanvas.getContext('2d');
@@ -4124,19 +4182,19 @@ class PreviewArea {
   };
 
   // Adding Node label Sprite
-  addNodeLabel = () => {
+  addNodeLabel = (targetCanvas = this.nspCanvas) => {
     //this.nspCanvas = document.createElement('canvas');
     //moved to constructor.
     let size = 256;
-    this.nspCanvas.width = size * 4;
-    this.nspCanvas.height = size;
-    let context = this.nspCanvas.getContext('2d');
+    targetCanvas.width = size * 4;
+    targetCanvas.height = size;
+    let context = targetCanvas.getContext('2d');
     context.fillStyle = '#ffffff';
     context.textAlign = 'left';
     context.font = '24px Arial';
     context.fillText("", 0, 0);
     //todo bug can't assign a canvas as a texture, extract the texture first.
-    this.nodeNameMap = new THREE.Texture(this.nspCanvas);
+    this.nodeNameMap = new THREE.Texture(targetCanvas);
     this.nodeNameMap.needsUpdate = true;
 
     var mat = new THREE.SpriteMaterial({
