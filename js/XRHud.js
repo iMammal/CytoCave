@@ -5,8 +5,9 @@
 import * as THREE from 'three';
 import canvasGraph from './canvasGraph.js';
 import XRController from './XRController.js';
+
 class XRHud {
-  constructor(xrInterface_,preViewArea_) {
+  constructor(xrInterface_, preViewArea_) {
     this.xrInterface = xrInterface_;
     this.previewArea = preViewArea_;
     this.camera = preViewArea_.camera;
@@ -50,11 +51,12 @@ class XRHud {
     this.flatMesh.scale.set(0.1, 0.1, 0.1);
     // graph some data
     //generate some fake data
-    let fakeData = [];
-    for (let i = 0; i < 25; i++) {
-      fakeData.push(Math.random());
-    }
-    this.lineplotData = fakeData;
+    // let fakeData = [];
+    // for (let i = 0; i < 25; i++) {
+    //   fakeData.push(Math.random());
+    // }
+    // this.lineplotData = fakeData;
+    this.lineplotData = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
     this.graphOptions = {
       width: 200,
       height: 100,
@@ -78,12 +80,12 @@ class XRHud {
   }
 
   init() {
-  //create a wireframe cube at the center of the view
+    //create a wireframe cube at the center of the view
     // cube should have front side edges slightly less
     // in width then the camera view at 1 meter
     let controller = this.previewArea.renderer.xr.getController(1);
     let camera = this.previewArea.renderer.xr.getCamera(0);
-    if(this.debug === true){
+    if (this.debug === true) {
       console.log("XRHud init");
       //log controller position, camera position and rotation, xrdolly position and rotation
       console.log("xrh controller position: ", controller);
@@ -111,6 +113,7 @@ class XRHud {
 
 
   }
+
   //use canvasGraph to update the lineplot data
   // addLineplotData(data) {
   //   this.lineplotData = data;
@@ -130,19 +133,18 @@ class XRHud {
 
   createHudObjects(hud) {
 
-   let boarder = new THREE.Object3D();
+    let boarder = new THREE.Object3D();
     this.hudOutline(boarder);
     hud.add(boarder);
 
   }
 
 
-
   hudOutline(hud) {
-    const line1 = new THREE.Line( new THREE.BufferGeometry().setFromPoints( [ new THREE.Vector3( -0.5, 0.5, 0 ), new THREE.Vector3( 0.5, 0.5, 0 ) ] ), new THREE.LineBasicMaterial( { color: 0x00ff00 } ) );
-    const line2 = new THREE.Line( new THREE.BufferGeometry().setFromPoints( [ new THREE.Vector3( 0.5, 0.5, 0 ), new THREE.Vector3( 0.5, -0.5, 0 ) ] ), new THREE.LineBasicMaterial( { color: 0x00ff00 } ) );
-    const line3 = new THREE.Line( new THREE.BufferGeometry().setFromPoints( [ new THREE.Vector3( 0.5, -0.5, 0 ), new THREE.Vector3( -0.5, -0.5, 0 ) ] ), new THREE.LineBasicMaterial( { color: 0x00ff00 } ) );
-    const line4 = new THREE.Line( new THREE.BufferGeometry().setFromPoints( [ new THREE.Vector3( -0.5, -0.5, 0 ), new THREE.Vector3( -0.5, 0.5, 0 ) ] ), new THREE.LineBasicMaterial( { color: 0x00ff00 } ) );
+    const line1 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.5, 0.5, 0), new THREE.Vector3(0.5, 0.5, 0)]), new THREE.LineBasicMaterial({color: 0x00ff00}));
+    const line2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0.5, 0.5, 0), new THREE.Vector3(0.5, -0.5, 0)]), new THREE.LineBasicMaterial({color: 0x00ff00}));
+    const line3 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0.5, -0.5, 0), new THREE.Vector3(-0.5, -0.5, 0)]), new THREE.LineBasicMaterial({color: 0x00ff00}));
+    const line4 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.5, -0.5, 0), new THREE.Vector3(-0.5, 0.5, 0)]), new THREE.LineBasicMaterial({color: 0x00ff00}));
     //name the lines
     line1.name = "upperBorder";
     line2.name = "rightBorder";
@@ -157,21 +159,21 @@ class XRHud {
   gethudCornerPoints(hud) {
     let corners = [];
     let children = hud.children;
-    for(let i = 0; i < children.length; i++){
+    for (let i = 0; i < children.length; i++) {
       let child = children[i];
-      if(child.name === "upperBorder"){
+      if (child.name === "upperBorder") {
         corners.push(child.geometry.attributes.position.array[0]);
         corners.push(child.geometry.attributes.position.array[1]);
       }
-      if(child.name === "rightBorder"){
+      if (child.name === "rightBorder") {
         corners.push(child.geometry.attributes.position.array[3]);
         corners.push(child.geometry.attributes.position.array[4]);
       }
-      if(child.name === "lowerBorder"){
+      if (child.name === "lowerBorder") {
         corners.push(child.geometry.attributes.position.array[3]);
         corners.push(child.geometry.attributes.position.array[4]);
       }
-      if(child.name === "leftBorder"){
+      if (child.name === "leftBorder") {
         corners.push(child.geometry.attributes.position.array[0]);
         corners.push(child.geometry.attributes.position.array[1]);
       }
@@ -179,14 +181,14 @@ class XRHud {
     //remove duplicates
     corners = Array.from(new Set(corners));
     //should be 4 corners
-    if(corners.length !== 4){
+    if (corners.length !== 4) {
       console.log("Error: hud corners not found");
       return;
     }
     return corners;
   }
 
-  update(time,frame) {
+  update(time, frame) {
     // update hud position to the right controller
     this.floorboard.position.set(0, 0, 0);
     let controller = this.previewArea.renderer.xr.getController(1);
@@ -203,41 +205,10 @@ class XRHud {
     hud.position.set(position.x, position.y, position.z);
     // move the hud back 1 meter relative to it's rotation
     hud.translateZ(-1);
-
-    //update the lineplot data
-    let newLineplotData = [];
-      console.log("nodeDetailData: ");
-      console.log(this.previewArea.model.nodeDetailData);
-      //check if nodeDetailData is empty
-      if(this.previewArea.model.nodeDetailData.length === 0){
-        console.log("nodeDetailData empty");
-        //probably should wrap the whole loop instead of returning here
-        return;
-      }
-     for(const row of this.previewArea.model.nodeDetailData[this.previewArea.model.nodeDetailData.length-1]){
-
-        //newLineplotData.push(this.previewArea.model.nodeDetailData[row].time);
-        newLineplotData.push(row[1]);
-        // if there are more than 25 data points, remove the first 2
-        if(newLineplotData.length > 50){
-          newLineplotData.shift();
-          newLineplotData.shift();
-        }
-     }
-    this.lineplotData = newLineplotData;
-      console.log("lineplotData: ");
-      console.log(this.lineplotData);
-      //clear the canvas
-      this.flatContext.clearRect(0, 0, this.flatCanvas.width, this.flatCanvas.height);
-      //draw the graph
-    let graph = new
-    canvasGraph(this.flatCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
-    this.flatTexture = new THREE.CanvasTexture(this.flatCanvas);
-    //update the material with the new texture
-    this.flatMaterial.map = this.flatTexture;
+    this.updateLinegraph();
 
 
-    if(this.debug === true){
+    if (this.debug === true) {
       console.log("XRHud update");
       //log controller position, camera position and rotation, xrdolly position and rotation
       console.log("controller position: ", controller);
@@ -252,6 +223,41 @@ class XRHud {
   }
 
 
+  updateLinegraph() {
+    if (this.previewArea.model.nodeDetailData.length !== 0) {
+
+      //update the lineplot data
+      let newLineplotData = [];
+      console.log("nodeDetailData: ");
+      console.log(this.previewArea.model.nodeDetailData);
+      //check if nodeDetailData is empty
+
+
+      for (const row of this.previewArea.model.nodeDetailData[this.previewArea.model.nodeDetailData.length - 1]) {
+
+        //newLineplotData.push(this.previewArea.model.nodeDetailData[row].time);
+        newLineplotData.push(row[1]);
+        // if there are more than 50 data points, remove the first 2
+        if (newLineplotData.length > 50) {
+          newLineplotData.shift();
+          newLineplotData.shift();
+        }
+      }
+      this.lineplotData = newLineplotData;
+      console.log("lineplotData: ");
+      console.log(this.lineplotData);
+      //clear the canvas
+      this.flatContext.clearRect(0, 0, this.flatCanvas.width, this.flatCanvas.height);
+      //draw the graph
+      let graph = new
+      canvasGraph(this.flatCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
+      this.flatTexture = new THREE.CanvasTexture(this.flatCanvas);
+      //update the material with the new texture
+      this.flatMaterial.map = this.flatTexture;
+    } else {
+      console.log("nodeDetailData empty");
+    }
+  }
 }
 
-export { XRHud };
+export {XRHud};

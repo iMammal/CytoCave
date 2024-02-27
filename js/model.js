@@ -882,7 +882,7 @@ function Model(side) {
         //     console.log("fileData:", fileData);
         // });
         // //return fileData;
-        // //Todo:This proabably Needs to wait for the file to be loaded...
+        // //done:This proabably Needs to wait for the file to be loaded...
         // this.nodeDetailDeta.push(fileData);
 
         loadDetailsFile(this.DetailsFilesList[index], this, this.finishedLoadingDetailsFile.bind(this));
