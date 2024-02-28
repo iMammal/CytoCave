@@ -12,7 +12,7 @@ class Hud2D {
         this.canvas = [];
         this.context = [];
 
-        for (let i = 1; i < 9; i++) {
+        for (let i = 0; i < 8; i++) {
 
             this.canvas[i] = document.getElementById('lineplot'+i); //'canvasLeft');
         // this.flatContext = this.flatCanvas.getContext('2d');
@@ -85,6 +85,7 @@ class Hud2D {
 
     update() {
       return;
+
         // Update the HUD content dynamically
         // For example, generate new data and redraw the graph
         //this.generateFakeData(); // Generate new data for demonstration
