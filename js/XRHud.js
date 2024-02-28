@@ -16,6 +16,7 @@ class XRHud {
 
     this.lineplotData = [];
     this.graphObjects = [];
+    this.renderTextures = [];
     this.init();
     this.debug = false;
     this.initGraphs();
@@ -67,21 +68,15 @@ class XRHud {
       //
          this.hud.remove(this.graphObjects[i]);
        }
+       //remove this.renderTextures from memory
+      this.renderTextures = [];
       this.graphObjects = [];
     }
     const maxGraphs = 8;
     let dataSetCount = this.previewArea.model.nodeDetailData.length;
     console.log("dataSetCount: ", dataSetCount);
     //check for existing lineplot canvas and reuse if available
-    let renderCanvas = document.getElementById('lineplot');
-    if (renderCanvas === null) {
-      renderCanvas = document.createElement('canvas', {id: 'lineplot', alpha: true});
-    }
-    //create a graph for each data set, reusing the same canvas
-    //let renderCanvas = document.createElement('canvas', {id: 'lineplot'});
-    renderCanvas.width = 200;
-    renderCanvas.height = 100;
-    let renderContext = renderCanvas.getContext('2d');
+
 
     this.graphOptions = {
       width: 200,
@@ -100,8 +95,19 @@ class XRHud {
       transparent: true
     };
 
-    //iterate backwards through the data sets using up to 8
+
+
+    //iterate backwards through the data sets using up to maxGraphs
     for (let i = dataSetCount - 1; i >= 0 && maxGraphs-i > 0; i--) {
+      let renderCanvas = document.getElementById('lineplot' + i);
+      if (renderCanvas === null) {
+        renderCanvas = document.createElement('canvas');
+        renderCanvas.id = 'lineplot' + i;
+      }
+      //let renderCanvas = document.createElement('canvas', {id: 'lineplot'});
+      renderCanvas.width = 200;
+      renderCanvas.height = 100;
+      let renderContext = renderCanvas.getContext('2d');
       //clear the canvas
       renderContext.clearRect(0, 0, renderCanvas.width, renderCanvas.height);
       //set the font color
@@ -110,15 +116,17 @@ class XRHud {
       renderContext.font = '12px Arial';
       console.log("nodeDetailData: ", this.previewArea.model.nodeDetailData[i])
       let linedata = [];
+      linedata = [];
       for (let j = 0; j < this.previewArea.model.nodeDetailData[i].length; j++) {
+        console.log("number of data points: ", this.previewArea.model.nodeDetailData[i].length);
         linedata.push(this.previewArea.model.nodeDetailData[i][j][1]);
       }
       let graph = new canvasGraph(renderCanvas, linedata, this.graphOptions);
       //create a texture from the canvas
-      let renderTexture = new THREE.CanvasTexture(renderCanvas);
+      this.renderTextures.push(new THREE.CanvasTexture(renderCanvas));
       //create a material from the texture
       let renderMaterial = new THREE.MeshBasicMaterial({
-        map: renderTexture,
+        map: this.renderTextures[this.renderTextures.length - 1],
         transparent: true
       });
       //create a plane geometry
