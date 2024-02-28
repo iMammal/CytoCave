@@ -47,6 +47,7 @@ import {
   //activeVR,
   // updateNodeSelection,
   updateNodeMoveOver,
+    updateScenes,
   previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove
 } from './drawing'
 import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, removeGeometryButtons} from './GUI'
@@ -173,6 +174,8 @@ class PreviewArea {
     //this.xrDolly = new THREE.Object3D();
     //this.imageSlices = new NeuroSlice('public/images','data/Cartana/SliceDepth0.csv',this.imagesLoadedCallback.bind(this));
 
+    this.labelAll();
+
   }
 
   //reset previewArea to state
@@ -201,6 +204,7 @@ class PreviewArea {
     this.NodeManager.removeContextNodesFromAroundObject(node);
     this.NodeManager.removeHighlight(node);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class
+
 
   }
 
@@ -1749,9 +1753,12 @@ class PreviewArea {
     if (event.key === 'p') {
       this.toggleParticles();
     }
+    if (event.key === 'k') {
+      this.labelAll();
+    }
     if (event.key === 's') {
       //toggle slice images.
-      if (this.imageSlices) {
+       if (this.imageSlices) {
         this.imageSlices.toggleSlices();
       }
     }
@@ -1918,6 +1925,27 @@ class PreviewArea {
       //this.showParticles();
     }
   }
+
+  labelAllCallback = (nodeObject) => {
+    let index = this.NodeManager.node2index(nodeObject);
+    let region = this.model.getRegionByIndex(index);
+
+    this.addNodeLabel();
+    this.updateNodeLabel(index+'_'+region.name,nodeObject);
+    this.animatePV();
+  }
+
+  // select and label all nodes
+  labelAll = () => {
+    this.NodeManager.nodeSelectedCallback = this.labelAllCallback;
+    this.labelsVisible = true;
+    this.NodeManager.selectAll();
+    this.rebindNodeManagerCallbacks();
+    // this.NodeManager.deselectAll();
+    this.labelsVisible = false;
+    // this.model.setThreshold(0.0);
+  }
+
 
   // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
   //todo is this sort of infinite recursion intentional?
@@ -4153,7 +4181,7 @@ class PreviewArea {
     let context = this.nspCanvas.getContext('2d');
     context.fillStyle = '#ffffff';
     context.textAlign = 'left';
-    context.font = '24px Arial';
+    context.font = '88px Arial';
     context.fillText("", 0, 0);
     //todo bug can't assign a canvas as a texture, extract the texture first.
     this.nodeNameMap = new THREE.Texture(this.nspCanvas);

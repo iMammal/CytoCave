@@ -49,7 +49,7 @@ function Model(side) {
 
 
 
-    var threshold = 1;                  // threshold for the edge value, default to 1, max, no edges
+    var threshold = 0.01;                  // threshold for the edge value, default to 1, max, no edges
     var conthreshold = 1;               // threshold for the contralateral edge value, default to 1, max, no edges
     var numberOfEdges = 5;              // threshold the number of edges for shortest paths
 
