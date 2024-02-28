@@ -117,10 +117,12 @@ class XRHud {
       console.log("nodeDetailData: ", this.previewArea.model.nodeDetailData[i])
       let linedata = [];
       linedata = [];
-      for (let j = 0; j < this.previewArea.model.nodeDetailData[i].length; j++) {
-        console.log("number of data points: ", this.previewArea.model.nodeDetailData[i].length);
-        linedata.push(this.previewArea.model.nodeDetailData[i][j][1]);
-      }
+      // for (let j = 0; j < this.previewArea.model.nodeDetailData[i].length; j++) {
+      //   console.log("number of data points: ", this.previewArea.model.nodeDetailData[i].length);
+      //   linedata.push(this.previewArea.model.nodeDetailData[i][j][1]);
+      // }
+      //briefer method to create a lineplot?
+      linedata = this.previewArea.model.nodeDetailData[i].map((d) => d[1]);
       let graph = new canvasGraph(renderCanvas, linedata, this.graphOptions);
       //create a texture from the canvas
       this.renderTextures.push(new THREE.CanvasTexture(renderCanvas));
