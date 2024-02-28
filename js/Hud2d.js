@@ -84,17 +84,19 @@ class Hud2D {
     }
 
     update() {
+      return;
         // Update the HUD content dynamically
         // For example, generate new data and redraw the graph
         //this.generateFakeData(); // Generate new data for demonstration
         //this.drawGraph(); // Redraw the graph with new data
         let newLineplotData = [];
-        console.log("nodeDetailData: ");
-        console.log(this.previewArea.model.nodeDetailData);
+        //console.log("nodeDetailData: ");
+        //console.log(this.previewArea.model.nodeDetailData);
         //check if nodeDetailData is empty
         if (this.previewArea.model.nodeDetailData.length === 0) {
-            console.log("nodeDetailData empty");
+            //console.log("nodeDetailData empty");
             //probably should wrap the whole loop instead of returning here
+            //this issue is fixed in the code this was sourced from
             return;
         }
 
@@ -111,13 +113,18 @@ class Hud2D {
             }
         }
         this.lineplotData = newLineplotData;
-        console.log("lineplotData: ");
-        console.log(this.lineplotData);
+        //console.log("lineplotData: ");
+        //console.log(this.lineplotData);
         //clear the canvas
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        //draw the graph
-        let graph = new canvasGraph(this.canvas, this.lineplotData, this.graphOptions); // canvas, data, options
-
+        //this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      //for each context in this.context
+        for (let i = 1; i < 9; i++) {
+            this.context[i].clearRect(0, 0, this.canvas[i].width, this.canvas[i].height);
+        }
+      //for each canvas in this.canvas draw the graph
+      for (let canvas of this.canvas) {
+        let graph = new canvasGraph(canvas, this.lineplotData, this.graphOptions); // canvas, data, options
+      }
 
     }
 

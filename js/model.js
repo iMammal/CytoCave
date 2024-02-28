@@ -893,7 +893,7 @@ function Model(side) {
 
     this.finishedLoadingDetailsFile = function (data) {
       console.log("Finished loading details file");
-      console.log(data);
+      //console.log(data);
         this.nodeDetailData.push(data);
     }
 

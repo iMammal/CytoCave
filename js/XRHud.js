@@ -4,7 +4,7 @@
  */
 import * as THREE from 'three';
 import canvasGraph from './canvasGraph.js';
-import XRController from './XRController.js';
+
 
 class XRHud {
   constructor(xrInterface_, preViewArea_) {
@@ -27,7 +27,7 @@ class XRHud {
     // cube should have front side edges slightly less
     // in width then the camera view at 1 meter
     let controller = this.previewArea.renderer.xr.getController(1);
-    let camera = this.previewArea.renderer.xr.getCamera(0);
+    //let camera = this.previewArea.renderer.xr.getCamera(0);
     if (this.debug === true) {
       console.log("XRHud init");
       //log controller position, camera position and rotation, xrdolly position and rotation
@@ -58,44 +58,31 @@ class XRHud {
   }
 
   initGraphs() {
-    this.flatCanvas = document.createElement('canvas');
-    this.flatCanvas.width = 200;
-    this.flatCanvas.height = 100;
-    //create a 2d context
-    this.flatContext = this.flatCanvas.getContext('2d');
-    //set the background color
-    // this.flatContext.fillStyle = 'black';
-    // this.flatContext.fillRect(0, 0, this.flatCanvas.width, this.flatCanvas.height);
-    //for transparent background
-    this.flatContext.clearRect(0, 0, this.flatCanvas.width, this.flatCanvas.height);
+    //if there are already graph objects, remove them
+    if (this.graphObjects.length > 0) {
+       for (let i = 0; i < this.graphObjects.length; i++) {
+      //   //dispose of the texture and material currently on the graph object
+      //   this.graphObjects[i].material.map.dispose();
+      //   this.graphObjects[i].material.dispose();
+      //
+         this.hud.remove(this.graphObjects[i]);
+       }
+      this.graphObjects = [];
+    }
+    const maxGraphs = 8;
+    let dataSetCount = this.previewArea.model.nodeDetailData.length;
+    console.log("dataSetCount: ", dataSetCount);
+    //check for existing lineplot canvas and reuse if available
+    let renderCanvas = document.getElementById('lineplot');
+    if (renderCanvas === null) {
+      renderCanvas = document.createElement('canvas', {id: 'lineplot', alpha: true});
+    }
+    //create a graph for each data set, reusing the same canvas
+    //let renderCanvas = document.createElement('canvas', {id: 'lineplot'});
+    renderCanvas.width = 200;
+    renderCanvas.height = 100;
+    let renderContext = renderCanvas.getContext('2d');
 
-    //set the font color
-    this.flatContext.fillStyle = 'white';
-    //set the font size and font family
-    this.flatContext.font = '12px Arial';
-    // //draw the text
-    // this.flatContext.fillText('Hello, world!', 10, 10);
-    //create a texture from the canvas
-    this.flatTexture = new THREE.CanvasTexture(this.flatCanvas);
-    //create a material from the texture
-    this.flatMaterial = new THREE.MeshBasicMaterial({
-      map: this.flatTexture,
-      transparent: true
-    });
-    //create a plane geometry
-    this.flatGeometry = new THREE.PlaneGeometry(2, 1);
-    //create a mesh from the material and geometry
-    this.flatMesh = new THREE.Mesh(this.flatGeometry, this.flatMaterial);
-    //scale the mesh to 1/10th of a meter
-    this.flatMesh.scale.set(0.1, 0.1, 0.1);
-    // graph some data
-    //generate some fake data
-    // let fakeData = [];
-    // for (let i = 0; i < 25; i++) {
-    //   fakeData.push(Math.random());
-    // }
-    // this.lineplotData = fakeData;
-    this.lineplotData = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
     this.graphOptions = {
       width: 200,
       height: 100,
@@ -109,15 +96,52 @@ class XRHud {
         color: 'rgba(255, 255, 255, 0.5)',
         width: 1,
         height: 1
+      },
+      transparent: true
+    };
+
+    //iterate backwards through the data sets using up to 8
+    for (let i = dataSetCount - 1; i >= 0 && maxGraphs-i > 0; i--) {
+      //clear the canvas
+      renderContext.clearRect(0, 0, renderCanvas.width, renderCanvas.height);
+      //set the font color
+      renderContext.fillStyle = 'white';
+      //set the font size and font family
+      renderContext.font = '12px Arial';
+      console.log("nodeDetailData: ", this.previewArea.model.nodeDetailData[i])
+      let linedata = [];
+      for (let j = 0; j < this.previewArea.model.nodeDetailData[i].length; j++) {
+        linedata.push(this.previewArea.model.nodeDetailData[i][j][1]);
       }
+      let graph = new canvasGraph(renderCanvas, linedata, this.graphOptions);
+      //create a texture from the canvas
+      let renderTexture = new THREE.CanvasTexture(renderCanvas);
+      //create a material from the texture
+      let renderMaterial = new THREE.MeshBasicMaterial({
+        map: renderTexture,
+        transparent: true
+      });
+      //create a plane geometry
+      let renderGeometry = new THREE.PlaneGeometry(2, 1);
+      //create a mesh from the material and geometry
+      let renderMesh = new THREE.Mesh(renderGeometry, renderMaterial);
+      //scale the mesh to 1/10th of a meter
+      renderMesh.scale.set(0.1, 0.1, 0.1);
+      //track the mesh in the graphObjects array
+      this.graphObjects.push(renderMesh);
+      // add the mesh to the hud
+      this.hud.add(renderMesh);
+      //position the first graph in the top left corner of the hud
+      //position subsequent graphs below the previous graph
+      renderMesh.position.set(-0.35, 0.4 - (0.12 * i), 0);
     }
-    let graph = new canvasGraph(this.flatCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
-    //track the mesh in the graphObjects array
-    this.graphObjects.push(this.flatMesh);
-    // add the mesh to the hud
-    this.hud.add(this.flatMesh);
-    //position the mesh in the top left corner of the hud
-    this.flatMesh.position.set(-0.35, 0.4, 0);s.lineplotData = data;
+    //clean up the nodeDetailData array, remove the oldest data sets if there are more than maxGraphs
+    if (this.previewArea.model.nodeDetailData.length > maxGraphs) {
+      this.previewArea.model.nodeDetailData.splice(0, this.previewArea.model.nodeDetailData.length - maxGraphs);
+      //todo: meh, this is a bit of a hack, should be a method in the model
+      console.log('pruning nodeDetailData');
+    }
+
    }
   createWireframeCube() {
     // create a wireframe cube
@@ -225,39 +249,23 @@ class XRHud {
 
 
   updateLinegraph() {
-    if (this.previewArea.model.nodeDetailData.length !== 0) {
-
-      //update the lineplot data
-      let newLineplotData = [];
-      console.log("nodeDetailData: ");
-      console.log(this.previewArea.model.nodeDetailData);
-      //check if nodeDetailData is empty
-
-
-      for (const row of this.previewArea.model.nodeDetailData[this.previewArea.model.nodeDetailData.length - 1]) {
-
-        //newLineplotData.push(this.previewArea.model.nodeDetailData[row].time);
-        newLineplotData.push(row[1]);
-        // if there are more than 50 data points, remove the first 2
-        if (newLineplotData.length > 50) {
-          newLineplotData.shift();
-          newLineplotData.shift();
-        }
-      }
-      this.lineplotData = newLineplotData;
-      console.log("lineplotData: ");
-      console.log(this.lineplotData);
-      //clear the canvas
-      this.flatContext.clearRect(0, 0, this.flatCanvas.width, this.flatCanvas.height);
-      //draw the graph
-      let graph = new
-      canvasGraph(this.flatCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
-      this.flatTexture = new THREE.CanvasTexture(this.flatCanvas);
-      //update the material with the new texture
-      this.flatMaterial.map = this.flatTexture;
-    } else {
-      console.log("nodeDetailData empty");
+    //update the textures on the graph objects
+    if(this.previewArea.model.nodeDetailData.length === 0){
+      return;
     }
+
+    //if the number of graph objects is not equal to the number of nodeDetailData,
+    //clear the graphObjects array and reinitialize the graphs using the available nodeDetailData
+    if (this.previewArea.model.nodeDetailData.length !== this.graphObjects.length) {
+      // for (let i = 0; i < this.graphObjects.length; i++) {
+      //   this.hud.remove(this.graphObjects[i]);
+      // }
+      // this.graphObjects = [];
+      this.initGraphs();
+    } else {
+      //do something else like animate the graph
+    }
+
   }
 }
 
