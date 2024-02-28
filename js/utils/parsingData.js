@@ -121,7 +121,7 @@ var loadSubjectNetwork = function (fileNames, model, callback) {
 
 };
 
-var loadDetailsFile = function (fileName, model, callback = null) {
+var loadDetailsFile = function (fileName, model, callback = null, index) {
     Papa.parse("data/" + folder + "/" + fileName, {
         download: true,
         dynamicTyping: true,
@@ -132,7 +132,7 @@ var loadDetailsFile = function (fileName, model, callback = null) {
             //model.addNodeDetails(results.data);
             console.log("Details Data for loaded for node: ", fileName);
             if (callback !== null) {
-                callback(results.data, null);
+                callback(results.data, index);
             }
         }
     });

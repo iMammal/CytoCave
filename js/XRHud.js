@@ -122,8 +122,10 @@ class XRHud {
       //   linedata.push(this.previewArea.model.nodeDetailData[i][j][1]);
       // }
       //briefer method to create a lineplot?
-      linedata = this.previewArea.model.nodeDetailData[i].map((d) => d[1]);
+      linedata = this.previewArea.model.nodeDetailData[i].data.map((d) => d[1]);
       let graph = new canvasGraph(renderCanvas, linedata, this.graphOptions);
+      //add index as line of text at bottom of canvas
+      renderContext.fillText(this.previewArea.model.nodeDetailData[i].index, 10, 90);
       //create a texture from the canvas
       this.renderTextures.push(new THREE.CanvasTexture(renderCanvas));
       //create a material from the texture

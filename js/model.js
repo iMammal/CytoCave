@@ -885,16 +885,16 @@ function Model(side) {
         // //done:This proabably Needs to wait for the file to be loaded...
         // this.nodeDetailDeta.push(fileData);
 
-        loadDetailsFile(this.DetailsFilesList[index], this, this.finishedLoadingDetailsFile.bind(this));
+        loadDetailsFile(this.DetailsFilesList[index], this, this.finishedLoadingDetailsFile.bind(this),index);
 
     }
 
     //this.nodeDetailData = [];
 
-    this.finishedLoadingDetailsFile = function (data) {
+    this.finishedLoadingDetailsFile = function (data,index) {
       console.log("Finished loading details file");
       //console.log(data);
-        this.nodeDetailData.push(data);
+        this.nodeDetailData.push({index: index, data: data});
     }
 
     // clusters can be hierarchical such as PLACE and PACE or not
