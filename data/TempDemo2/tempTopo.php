@@ -11,7 +11,7 @@ $results = $db->query('SELECT * FROM tempTopology');
 //no header
 $header = false;
 
-echo "label,complexIdClustering\n";
+echo "label,Flat,,,complexIdClustering\n";
 
 //iterate through each row of the result
 while ($row = $results->fetchArray()) {
@@ -19,7 +19,7 @@ while ($row = $results->fetchArray()) {
   //echo the row
   //    echo implode(',', $row) . "\n";
   // echo label, complexIdCluster
-  echo $row['label'] . "," . $row['complexIdClustering'] . "\n";
+  echo $row['label'] .   "," . $row['Flat_X']. "," . $row['Flat_Y']. "," . $row['Flat_Z']."," . $row['complexIdClustering'] . "\n";
 
 }
 ?>
