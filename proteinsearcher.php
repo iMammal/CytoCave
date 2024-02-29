@@ -151,8 +151,8 @@ while ($row = $results->fetchArray()) {
     $stmt->bindValue(':label', $genecounter, SQLITE3_TEXT);
     $stmt->bindValue(':complexIdClustering', $complexcounter, SQLITE3_TEXT); // $row['HuMAP2_ID']
     $stmt->bindValue(':Flat_X', $geneFlatCoordinates[$mygenecounter][0], SQLITE3_TEXT);
-    $stmt->bindValue(':Flat_Y', $geneFlatCoordinates[$mygenecounter][1], SQLITE3_TEXT);
-    $stmt->bindValue(':Flat_Z', 0, SQLITE3_TEXT);
+    $stmt->bindValue(':Flat_Y', 0, SQLITE3_TEXT);
+    $stmt->bindValue(':Flat_Z', $geneFlatCoordinates[$mygenecounter][1], SQLITE3_TEXT);
 
     $result = $stmt->execute();
     if (!$result) {
@@ -199,7 +199,13 @@ for ($i = 1; $i < $genecounter; $i++) {
         $interaction = $db->querySingle('SELECT interaction FROM pin WHERE proteinA = "'.$target.'" AND proteinB = "'.$source.'"');
       }
 
-      if ($interaction != "") {
+        //echo the source, target, and interaction
+        echo "Source: " . $source . " Target: " . $target  . " Interaction: " . $interaction . "<br>";
+
+      // sameComplex is true if the source and target are in the same complex
+        $sameComplex = $db->querySingle('SELECT complexid FROM tempMetadata WHERE label = "'.$i.'"') == $db->querySingle('SELECT complexid FROM tempMetadata WHERE label = "'.$j.'"');
+
+      if ($interaction != "" && $sameComplex == true ) {
 
         $stmt = $db->prepare('INSERT INTO tempNetwork (source, target, interaction) VALUES (:source, :target, :interaction)');
         $stmt->bindValue(':source', $i, SQLITE3_TEXT);
