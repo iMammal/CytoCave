@@ -212,7 +212,7 @@ foreach ($complexMap as $complexId => $c) {
 
     // for each gene in the complex, insert into tempNetwork table the source, target, and interaction
     for ($i = 0; $i < count($genesInComplexArray); $i++) {
-        for ($j = $i; $j < count($genesInComplexArray); $j++) {
+        for ($j = 0; $j < count($genesInComplexArray); $j++) {
             if ($i != $j) {
                 //query the tempMetadate table to get the geneName for the source
                 $source = $db->querySingle('SELECT region_name FROM tempMetadata WHERE label = "'.$genesInComplexArray[$i].'"');
