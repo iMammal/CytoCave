@@ -203,7 +203,12 @@ for ($i = 1; $i < $genecounter; $i++) {
         echo "Source: " . $source . " Target: " . $target  . " Interaction: " . $interaction . "<br>";
 
       // sameComplex is true if the source and target are in the same complex
-        $sameComplex = $db->querySingle('SELECT complexid FROM tempMetadata WHERE label = "'.$i.'"') == $db->querySingle('SELECT complexid FROM tempMetadata WHERE label = "'.$j.'"');
+        $idComplexSource = $db->querySingle('SELECT complexid FROM tempMetadata WHERE label = "'.$i.'"');
+        $idComplexTarget = $db->querySingle('SELECT complexid FROM tempMetadata WHERE label = "'.$j.'"');
+        $sameComplex = $idComplexSource == $idComplexTarget;
+
+        echo "Same complex: " . $sameComplex . "<br>";
+        echo "Complex source: " . $idComplexSource . " Complex target: " . $idComplexTarget . "<br>";
 
       if ($interaction != "" && $sameComplex == true ) {
 
