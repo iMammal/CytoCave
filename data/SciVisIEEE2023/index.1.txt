@@ -1,2 +1,0 @@
-subjectID,network,topology
-scivisInStep50000,scivisInStep50000.csv,positions.csv
