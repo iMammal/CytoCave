@@ -107,6 +107,9 @@ $complexcounter = 1;
 
 $jsonReturn = array();
 
+$complexMap = array();
+$genesInComplexes = array();
+
 //generate the grid points
 $grid = generateGridPointsWithDistance($N);
 $gridPoints = $grid['points'];
@@ -124,6 +127,11 @@ while ($row = $results->fetchArray()) {
 
   $complexId = $row['HuMAP2_ID'];
 
+  //push the HuMAP2_ID abd complexcounter to complexMap
+  $complexMap[$complexId] = $complexcounter;
+
+  $genesInComplexes[$complexId] = array();
+
   // split the genenames by space
   $genenames = explode(" ", $row['genenames']);
 
@@ -140,11 +148,14 @@ while ($row = $results->fetchArray()) {
 
   $mygenecounter = 0;
 
+
   //iterate through each genename
   foreach ($genenames as $genename) {
     //echo the genename with counter echo "Genename".$genecounter.": " . $genename . "<br>";
 
 
+    // push the gene label into the genesInComplexes array
+    array_push($genesInComplexes[$complexId], $genecounter);
 
     //insert into tempTopology table the HuMAP2_ID and genenames with label counting upp from 1
     $stmt = $db->prepare('INSERT INTO tempTopology (label, complexIdClustering, Flat_X, Flat_Y, Flat_Z) VALUES (:label, :complexIdClustering, :Flat_X, :Flat_Y, :Flat_Z)');
@@ -184,46 +195,55 @@ while ($row = $results->fetchArray()) {
 }
 
 // for each number from 1 to genecounter, insert into tempNetowrk table the source, target, and interaction
-for ($i = 1; $i < $genecounter; $i++) {
-  //for ($j = $i; $j < $genecounter; $j++) {  // upper triangle
-  for ($j = 1; $j < $genecounter; $j++) {  // full matrix
-    if ($i != $j) {
-      //query the tempMetadate table to get the geneName for the source
-      $source = $db->querySingle('SELECT region_name FROM tempMetadata WHERE label = "'.$i.'"');
-      //query the tempMetadate table to get the geneName for the target
-      $target = $db->querySingle('SELECT region_name FROM tempMetadata WHERE label = "'.$j.'"');
+// Also, only insert if source and target are in the same complex
 
-      //query the pin table to get the interaction for the source and target
-      $interaction = $db->querySingle('SELECT interaction FROM pin WHERE proteinA = "'.$source.'" AND proteinB = "'.$target.'"');
-      if ($interaction == "") {
-        $interaction = $db->querySingle('SELECT interaction FROM pin WHERE proteinA = "'.$target.'" AND proteinB = "'.$source.'"');
-      }
+// first loop through all the complexed
 
-        //echo the source, target, and interaction
-        echo "Source: " . $source . " Target: " . $target  . " Interaction: " . $interaction . "<br>";
-
-      // sameComplex is true if the source and target are in the same complex
-        $idComplexSource = $db->querySingle('SELECT complexid FROM tempMetadata WHERE label = "'.$i.'"');
-        $idComplexTarget = $db->querySingle('SELECT complexid FROM tempMetadata WHERE label = "'.$j.'"');
-        $sameComplex = $idComplexSource == $idComplexTarget;
-
-        echo "Same complex: " . $sameComplex . "<br>";
-        echo "Complex source: " . $idComplexSource . " Complex target: " . $idComplexTarget . "<br>";
-
-      if ($interaction != "" && $sameComplex == true ) {
-
-        $stmt = $db->prepare('INSERT INTO tempNetwork (source, target, interaction) VALUES (:source, :target, :interaction)');
-        $stmt->bindValue(':source', $i, SQLITE3_TEXT);
-        $stmt->bindValue(':target', $j, SQLITE3_TEXT);
-        $stmt->bindValue(':interaction', $interaction, SQLITE3_TEXT);
-
-        $result = $stmt->execute();
-        if (!$result) {
-          echo "Error inserting data: " . $db->lastErrorMsg();
-        }
-      }
+//for ($c = 1; $c < $complexcounter; $c++) {
+foreach ($complexMap as $complexId => $c) {
+    // get all the genes in the complex
+    $genesInComplex = $db->query('SELECT label FROM tempMetadata WHERE complexid = "'.$complexId.'"');
+    $genesInComplexArray = array();
+    while ($row = $genesInComplex->fetchArray()) {
+        array_push($genesInComplexArray, $row['label']);
     }
-  }
+    //echo the genes in the complex
+    echo "Genes in complex: " . json_encode($genesInComplexArray) . "<br>";
+
+    // for each gene in the complex, insert into tempNetwork table the source, target, and interaction
+    for ($i = 0; $i < count($genesInComplexArray); $i++) {
+        for ($j = $i; $j < count($genesInComplexArray); $j++) {
+            if ($i != $j) {
+                //query the tempMetadate table to get the geneName for the source
+                $source = $db->querySingle('SELECT region_name FROM tempMetadata WHERE label = "'.$genesInComplexArray[$i].'"');
+                //query the tempMetadate table to get the geneName for the target
+                $target = $db->querySingle('SELECT region_name FROM tempMetadata WHERE label = "'.$genesInComplexArray[$j].'"');
+
+                //query the pin table to get the interaction for the source and target
+                $interaction = $db->querySingle('SELECT interaction FROM pin WHERE proteinA = "'.$source.'" AND proteinB = "'.$target.'"');
+                if ($interaction == "") {
+                $interaction = $db->querySingle('SELECT interaction FROM pin WHERE proteinA = "'.$target.'" AND proteinB = "'.$source.'"');
+                }
+
+                //echo the source, target, and interaction
+                echo "Source: " . $source . " Target: " . $target  . " Interaction: " . $interaction . "<br>";
+
+
+                if ( ($interaction != "") ) { //}&& ($sameComplex == 1 ) ) {
+
+                    $stmt = $db->prepare('INSERT INTO tempNetwork (source, target, interaction) VALUES (:source, :target, :interaction)');
+                    $stmt->bindValue(':source', $genesInComplexArray[$i], SQLITE3_TEXT);
+                    $stmt->bindValue(':target', $genesInComplexArray[$j], SQLITE3_TEXT);
+                    $stmt->bindValue(':interaction', $interaction, SQLITE3_TEXT);
+
+                    $result = $stmt->execute();
+                    if (!$result) {
+                      echo "Error inserting data: " . $db->lastErrorMsg();
+                    }
+                }
+            }
+        }
+    }
 }
 
 $db->close();
@@ -264,6 +284,38 @@ $db->close();
 //  if (!$result) {
 //    echo "Error inserting data: " . $db->lastErrorMsg();
 //  }
+            // sameComplex is true if the source and target are in the same complex
+//             $idComplexSource = $db->querySingle('SELECT complexid FROM tempMetadata WHERE label = "'.$genesInComplexArray[$i].'"');
+//             $idComplexTarget = $db->querySingle('SELECT complexid FROM tempMetadata WHERE label = "'.$genesInComplexArray[$j].'"');
+//             $sameComplex = $idComplexSource == $idComplexTarget;
+//
+//             echo "Same complex: " .
+//
+// for ($i = 1; $i < $genecounter; $i++) {
+//   //for ($j = $i; $j < $genecounter; $j++) {  // upper triangle
+//   for ($j = 1; $j < $genecounter; $j++) {  // full matrix
+//     if ($i != $j) {
+//       //query the tempMetadate table to get the geneName for the source
+//       $source = $db->querySingle('SELECT region_name FROM tempMetadata WHERE label = "'.$i.'"');
+//       //query the tempMetadate table to get the geneName for the target
+//       $target = $db->querySingle('SELECT region_name FROM tempMetadata WHERE label = "'.$j.'"');
+//
+//       //query the pin table to get the interaction for the source and target
+//       $interaction = $db->querySingle('SELECT interaction FROM pin WHERE proteinA = "'.$source.'" AND proteinB = "'.$target.'"');
+//       if ($interaction == "") {
+//         $interaction = $db->querySingle('SELECT interaction FROM pin WHERE proteinA = "'.$target.'" AND proteinB = "'.$source.'"');
+//       }
+//
+//         //echo the source, target, and interaction
+//         echo "Source: " . $source . " Target: " . $target  . " Interaction: " . $interaction . "<br>";
+//
+//       // sameComplex is true if the source and target are in the same complex
+//         $idComplexSource = $db->querySingle('SELECT complexid FROM tempMetadata WHERE label = "'.$i.'"');
+//         $idComplexTarget = $db->querySingle('SELECT complexid FROM tempMetadata WHERE label = "'.$j.'"');
+//         $sameComplex = $idComplexSource == $idComplexTarget;
+//
+//         echo "Same complex: " . $sameComplex . "<br>";
+//         echo "Complex source: " . $idComplexSource . " Complex target: " . $idComplexTarget . "<br>";
 
 echo "Done!";
 ?>
