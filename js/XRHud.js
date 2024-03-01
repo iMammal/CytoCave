@@ -3,6 +3,7 @@
  *
  */
 import * as THREE from 'three';
+import LineGraphs from './LineGraphs.js';
 import canvasGraph from './canvasGraph.js';
 
 
@@ -19,7 +20,8 @@ class XRHud {
     this.renderTextures = [];
     this.init();
     this.debug = false;
-    this.initGraphs();
+    //this.initGraphs();
+    this.linegraphs = new LineGraphs(preViewArea_);
 
   }
 
@@ -242,7 +244,7 @@ class XRHud {
     hud.position.set(position.x, position.y, position.z);
     // move the hud back 1 meter relative to it's rotation
     hud.translateZ(-1);
-    this.updateLinegraph();
+    this.linegraphs.updateLinegraph();
 
 
     if (this.debug === true) {
