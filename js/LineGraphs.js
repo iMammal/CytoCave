@@ -12,7 +12,7 @@ class LineGraphs {
         this.lineplotData = [];
         this.graphObjects = [];
         this.renderTextures = [];
-        this.init();
+        // this.init();
         this.debug = false;
         this.initGraphs();
 
@@ -37,7 +37,7 @@ class LineGraphs {
                 //   this.graphObjects[i].material.map.dispose();
                 //   this.graphObjects[i].material.dispose();
                 //
-                this.hud.remove(this.graphObjects[i]);
+                ///// this.hud.remove(this.graphObjects[i]);
             }
             //remove this.renderTextures from memory
             this.renderTextures = [];
@@ -113,7 +113,7 @@ class LineGraphs {
             //track the mesh in the graphObjects array
             this.graphObjects.push(renderMesh);
             // add the mesh to the hud
-            this.hud.add(renderMesh);
+            ///// this.hud.add(renderMesh);
             //position the first graph in the top left corner of the hud
             //position subsequent graphs below the previous graph
             renderMesh.position.set(-0.35, 0.4 - (0.12 * i), 0);
@@ -138,7 +138,7 @@ class LineGraphs {
         //clear the graphObjects array and reinitialize the graphs using the available nodeDetailData
         if (this.previewArea.model.nodeDetailData.length !== this.graphObjects.length) {
             // for (let i = 0; i < this.graphObjects.length; i++) {
-            //   this.hud.remove(this.graphObjects[i]);
+            /////   this.hud.remove(this.graphObjects[i]);
             // }
             // this.graphObjects = [];
             this.initGraphs();
@@ -149,4 +149,4 @@ class LineGraphs {
     }
 }
 
-export {LineGraphs};
+export default LineGraphs;

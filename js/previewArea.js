@@ -70,6 +70,7 @@ import {modelLeft} from "./model";
 import { PathFinder } from "./PathFinder";
 import canvasGraph from "./canvasGraph";
 import  Hud2D  from "./Hud2d";
+import LineGraphs from './LineGraphs.js';
 
 class PreviewArea {
   constructor(canvas_, model_, name_) {
@@ -179,6 +180,8 @@ class PreviewArea {
     this.lineplotCanvas = document.createElement('canvas');
     this.lineplots = [document.getElementById('lineplot1')];//createElement('canvas');
     this.Hud2D = new Hud2D(this);
+    this.linegraphs = new LineGraphs(this); //preViewArea_);
+
   }
 
   //reset previewArea to state
@@ -2389,6 +2392,11 @@ class PreviewArea {
     }
     if(this.xrInterface.isVRAvailable())
       this.xrInterface.update(this.xrInterface,time,frame);
+    else
+      // console.log("NOT XRing");
+      if(this.linegraphs !== null)
+        this.linegraphs.updateLinegraph();
+
 
     //limit this function to (fps)fps)
     // if (Date.now() - lastTime < 1000 / fps) {
