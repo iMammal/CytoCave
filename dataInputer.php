@@ -1,7 +1,15 @@
 <?php
 
+require_once('database.env'); // Assuming the file is located in the same directory
+$db_host = getenv('DB_HOST');
+$db_name = getenv('DB_NAME');
+$db_user = getenv('DB_USER');
+$db_password = getenv('DB_PASSWORD');
+// ... connect to your database using these variables ...
+
 //create if not exists or open sqlite3 database
 $db = new SQLite3('humap2.db');
+
 
 //create table if not exists, named pin
 $db->exec('CREATE TABLE IF NOT EXISTS pin (id INTEGER PRIMARY KEY, proteinA TEXT, proteinB TEXT, interaction TEXT)');
