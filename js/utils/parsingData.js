@@ -62,8 +62,12 @@ var scanFolder = function (callback) {
 // rich_club: rich club affiliation: region name vs non-RichClub (optional)
 var loadLookUpTable = function (callback) {
     var labelsLUTFilename = "LookupTable_" + labelLUT + ".csv";
-    if(labelLUT === "Dynamic") {
+    if((labelLUT === "Dynamic")) {  //} || (labelLUT === "DynamicPDO") || (labelLUT === "DynamicPDO2")) {
         labelsLUTFilename = "LookupTable_Dynamic.php";
+    } else if (labelLUT === "DynamicPDO") {
+        labelsLUTFilename = "LookupTable_DynamicPDO.php";
+    } else if (labelLUT === "DynamicPDO2") {
+        labelsLUTFilename = "LookupTable_DynamicPDO2.php";
     }
     Papa.parse("data/" + labelsLUTFilename, {
         download: true,
