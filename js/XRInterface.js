@@ -483,7 +483,19 @@ class XRInterface {
     //set raycaster origin to controller position
     raycaster.set(controllerPosition, controllerDirection);
     //get intersected objects
-    let objectsIntersected = raycaster.intersectObjects(this.scene.children);
+    //let objectsIntersected = raycaster.intersectObjects(this.scene.children);
+    let objectsIntersected = [];
+    //only process objects that are instanced mesh with type 'region'
+    this.scene.children.forEach((child) => {
+      // console.log("child type: ", child.type);
+      // console.log("child name: ", child.name);
+      if (child.type === 'Mesh') {
+        let intersected = raycaster.intersectObject(child, true);
+        if (intersected.length > 0) {
+          objectsIntersected.push(intersected[0]);
+        }
+      }
+    });
     return (objectsIntersected.find(o => o.object.name.type === 'region'));
   }
 

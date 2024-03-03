@@ -3959,7 +3959,7 @@ class PreviewArea {
   // return undefined if no object was found
 
   getIntersectedObject = (vector) => {
-
+    //2d intersection
     let raycaster = new THREE.Raycaster();
 
     raycaster.setFromCamera(vector, this.camera);
