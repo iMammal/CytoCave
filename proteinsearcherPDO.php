@@ -132,6 +132,10 @@ $jsonReturn = array();
 $complexMap = array();
 $genesInComplexes = array();
 
+$tempTopology = array();
+$tempMetadata = array();
+$tempNetwork = array();
+
 //generate the grid points
 $grid = generateGridPointsWithDistance($N);
 $gridPoints = $grid['points'];
@@ -192,7 +196,7 @@ foreach ($results as $row) {
 //       echo "Error inserting data: " . $db->lastErrorMsg();
 //     }
 
-//insert into tempTopology table the HuMAP2_ID and genenames with label counting upp from 1 with PDO
+//insert into tempTopology table the HuMAP2_ID and genenames with label counting up from 1 with PDO
     $stmt = $pdo->prepare('INSERT INTO tempTopology (label, complexIdClustering, Flat_X, Flat_Y, Flat_Z) VALUES (:label, :complexIdClustering, :Flat_X, :Flat_Y, :Flat_Z)');
     $stmt->bindValue(':label', $genecounter, PDO::PARAM_STR);
     $stmt->bindValue(':complexIdClustering', $complexcounter, PDO::PARAM_STR); // $row['HuMAP2_ID']
@@ -205,6 +209,13 @@ foreach ($results as $row) {
       echo "Error inserting data: " . $pdo->errorInfo();
     }
 
+    array_push($tempTopology,array(
+      'label' => $genecounter,
+      'complexIdClustering' => $complexcounter,
+      'Flat_X' => $geneFlatCoordinates[$mygenecounter][0],
+      'Flat_Y' => 0,
+      'Flat_Z' => $geneFlatCoordinates[$mygenecounter][1]
+    ));
 
     //insert into tempMetadata table the label, clusterid, region_name, and confidence
 //     $query = 'INSERT INTO tempMetadata (label, complexid, region_name, confidence, hemisphere) VALUES (:label, :complexid, :region_name, :confidence, :hemisphere)';
@@ -232,6 +243,15 @@ foreach ($results as $row) {
       echo "Error inserting data: " . $pdo->errorInfo();
     }
 
+//     array_push(
+    $tempMetadata[ $genecounter ] = array(
+      'label'=> $genecounter,
+      'complexid'=> $complexId,
+      'region_name'=> $genename,
+      'confidence'=>$row['Confidence'],
+      'hemisphere'=> "left"
+    );
+
     //increment the counters
     $genecounter++;
     $mygenecounter++;
@@ -243,6 +263,19 @@ foreach ($results as $row) {
   $complexcounter++;
 }
 
+
+// read pin table into memory
+$results = $pdo->query('SELECT proteinA, proteinB, interaction FROM pin LIMIT 100000');
+$pin = array();
+// while ($row = $results->fetchArray()) {
+foreach ($results as $row) {
+  array_push($pin, $row);
+}
+
+$source = null;
+$target = null;
+$interaction = null;
+
 // for each number from 1 to genecounter, insert into tempNetowrk table the source, target, and interaction
 // Also, only insert if source and target are in the same complex
 
@@ -252,6 +285,8 @@ foreach ($results as $row) {
 foreach ($complexMap as $complexId => $c) {
     // get all the genes in the complex
     $genesInComplex = $pdo->query('SELECT label FROM tempMetadata WHERE complexid = "'.$complexId.'"');
+    // Todo: popular the genesInComplex array from table tempMetadata isntead of query
+
     $genesInComplexArray = array();
 //     while ($row = $genesInComplex->fetchArray()) {
     foreach ($genesInComplex as $row) {
@@ -266,30 +301,137 @@ foreach ($complexMap as $complexId => $c) {
             if ($i != $j) {
                 //query the tempMetadate table to get the geneName for the source
 //                 $source = $db->querySingle('SELECT region_name FROM tempMetadata WHERE label = "'.$genesInComplexArray[$i].'"');
-                $result = $pdo->query('SELECT region_name FROM tempMetadata WHERE label = "'.$genesInComplexArray[$i].'"');
-                $source = $result->fetch(PDO::FETCH_ASSOC);
+//                 $result = $pdo->query('SELECT region_name FROM tempMetadata WHERE label = "'.$genesInComplexArray[$i].'"');
+//                 $source = $result->fetch(PDO::FETCH_ASSOC);
+
+//                 $source = $pdo->query('SELECT region_name FROM tempMetadata WHERE label = "'.$genesInComplexArray[$i].'"');
+
+                   // get region_name from tempMetadata table where label = $genesInComplexArray[$i]
+
+                    // convert this javascript to PHP
+//                    $source = $tempMetadata.find((item) => item.label === $genesInComplexArray[$i]);
+        // in PHP:
+
+//         $source = $tempMetadata.find(function(item) {
+//             return item.label === $genesInComplexArray[$i];
+//         });
+// $source = array_map(function($item) use ($genesInComplexArray, $i) {
+//   return $item['label'] === $genesInComplexArray[$i];
+// }, $tempMetadata);
+
+//     $source = array_column(
+//         array_filter($tempMetadata, function($item) use ($genesInComplexArray, $i) {
+//             return $item['label'] === $genesInComplexArray[$i];
+//         }), 'region_name');
+
+
+// foreach ($tempMetadata as $row) {
+//     echo "Row: " . json_encode($row) . "<br>";
+//     echo "genesInComplexArray: " . $genesInComplexArray[$i] . "<br>";
+//   if ($row['label'] === $genesInComplexArray[$i] )  {  //&& $row['column2'] === $value2) {
+//     $source = $row['region_name'];
+//     echo "Source: " . $source . "<br>";
+//   }
+// }
+
+            $source = $tempMetadata[$genesInComplexArray[$i]]['region_name'];
+            $target = $tempMetadata[$genesInComplexArray[$j]]['region_name'];
+
+// If you only want the first match:
+// $source = current($source);
+
 
                         //querySingle('SELECT region_name FROM tempMetadata WHERE label = "'.$genesInComplexArray[$i].'"');
 
 
                 //query the tempMetadate table to get the geneName for the target
-                $result = $pdo->query('SELECT region_name FROM tempMetadata WHERE label = "'.$genesInComplexArray[$j].'"');
-                $target = $result->fetch(PDO::FETCH_ASSOC);
+//                 $result = $pdo->query('SELECT region_name FROM tempMetadata WHERE label = "'.$genesInComplexArray[$j].'"');
+//                 $target = $result->fetch(PDO::FETCH_ASSOC);
+
+//                     $target = $tempMetadata.find((item) => item.label === $genesInComplexArray[$j]);
+        // in PHP:
+//         $target = $tempMetadata.find(function(item) {
+//             return item.label === $genesInComplexArray[$j];
+//         });
+
+// $target = array_map(function($item) use ($genesInComplexArray, $j) {
+//     return $item['label'] === $genesInComplexArray[$j];
+// },$tempMetadata);
+// $target = current($target);
+//             $target = array_column(
+//                 array_filter($tempMetadata, function($item) use ($genesInComplexArray, $j) {
+//                     return $item['label'] === $genesInComplexArray[$j];
+//                 }), 'region_name');
+// foreach ($tempMetadata as $row) {
+//   if ($row['label'] === $genesInComplexArray[$j] )  {  //&& $row['column2'] === $value2) {
+//     $target = $row['region_name'];
+//   }
+// }
+
 
                 //query the pin table to get the interaction for the source and target
-                $result = $pdo->query('SELECT interaction FROM pin WHERE proteinA = "'.$source['region_name'].'" AND proteinB = "'.$target['region_name'].'"');
-                $interaction = $result->fetch(PDO::FETCH_ASSOC);
-                if ($interaction['interaction'] == "") {
-                    $result = $pdo->query('SELECT interaction FROM pin WHERE proteinA = "'.$target['region_name'].'" AND proteinB = "'.$source['region_name'].'"');
-                    $interaction = $result->fetch(PDO::FETCH_ASSOC);
+//                 $result = $pdo->query('SELECT interaction FROM pin WHERE proteinA = "'.$source['region_name'].'" AND proteinB = "'.$target['region_name'].'"');
+//                 $interaction = $result->fetch(PDO::FETCH_ASSOC);
+
+//                 $interaction = $pin.find((item) => item.proteinA === source['region_name'] && item.proteinB === target['region_name']);
+
+//                 $interaction = $pin.find(function(item) {
+//                     return item.proteinA === source['region_name'] && item.proteinB === target['region_name'];
+//                 });
+
+//                 $interaction = array_column(
+//                     array_filter($pin, function($item) use ($source, $target) {
+//                         return $item['proteinA'] === $source && $item['proteinB'] === $target;
+//                     }), 'interaction');
+
+                    foreach ($pin as $row) {
+                      if ($row['proteinA'] === $source && $row['proteinB'] === $target)  {  //&& $row['column2'] === $value2) {
+                        $interaction = $row['interaction'];
+                      }
+                    }
+
+//                 $interaction = current($interaction);
+//                     $interaction = array_map(function($item) use ($source, $target) {
+//                         return $item['proteinA'] === $source['region_name'] && $item['proteinB'] === $target['region_name'];
+//                     }, $pin);
+
+                // if the interaction is empty, query the pin table to get the interaction for the target and source
+
+//                 if ($interaction['interaction'] == "") {
+                if (!$interaction) {
+//                     $result = $pdo->query('SELECT interaction FROM pin WHERE proteinA = "'.$target['region_name'].'" AND proteinB = "'.$source['region_name'].'"');
+//                     $interaction = $result->fetch(PDO::FETCH_ASSOC);
+//                     $interaction = $pin.find((item) => item.proteinA === target['region_name'] && item.proteinB === source['region_name']);
+//                     $interaction = $pin.find(function(item) {
+//                         return item.proteinA === target['region_name'] && item.proteinB === source['region_name'];
+//                     });
+
+//                         $interaction = array_column(
+//                             array_filter($pin, function($item) use ($source, $target) {
+//                             return $item['proteinA'] === $target && $item['proteinB'] === $source;
+//                         }), 'interaction');
+//                         $interaction = current($interaction);
+
+                    foreach ($pin as $row) {
+                      if ($row['proteinA'] === $target && $row['proteinB'] === $source)  {  //&& $row['column2'] === $value2) {
+                        $interaction = $row['interaction'];
+                      }
+                    }
+
+//                         $interaction = array_map(function($item) use ($source, $target) {
+//                             return $item['proteinA'] === $target['region_name'] && $item['proteinB'] === $source['region_name'];
+//                         }, $pin);
+//                     $interaction = current($interaction);
+
                 }
 
                 //echo the source, target, and interaction
                 echo "Source: " . json_encode($source) . " Target: " . json_encode($target)  . " Interaction: " . json_encode($interaction) . "<br>";
 
 
-                if ( ($interaction['interaction'] != "") ) { //}&& ($sameComplex == 1 ) ) {
-
+//                 if ( ($interaction['interaction'] != "") ) { //}&& ($sameComplex == 1 ) ) {
+                if ($interaction) {
+                    //insert into tempNetwork table the source, target, and interaction
 //                     $stmt = $db->prepare('INSERT INTO tempNetwork (source, target, interaction) VALUES (:source, :target, :interaction)');
 //                     $stmt->bindValue(':source', $genesInComplexArray[$i], SQLITE3_TEXT);
 //                     $stmt->bindValue(':source', $genesInComplexArray[$i], SQLITE3_TEXT);
@@ -303,7 +445,8 @@ foreach ($complexMap as $complexId => $c) {
                     $stmt = $pdo->prepare('INSERT INTO tempNetwork (source, target, interaction) VALUES (:source, :target, :interaction)');
                     $stmt->bindValue(':source', $genesInComplexArray[$i], PDO::PARAM_STR);
                     $stmt->bindValue(':target', $genesInComplexArray[$j], PDO::PARAM_STR);
-                    $stmt->bindValue(':interaction', $interaction['interaction'], PDO::PARAM_STR);
+//                     $stmt->bindValue(':interaction', $interaction['interaction'], PDO::PARAM_STR);
+                    $stmt->bindValue(':interaction', $interaction, PDO::PARAM_STR);
                     $result = $stmt->execute();
                     if (!$result) {
                       echo "Error inserting data: " . $pdo->errorInfo();
