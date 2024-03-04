@@ -465,8 +465,8 @@ class NodeManager {
     const material = new THREE.LineBasicMaterial({
       color: color,
       transparent: true,
-      opacity: 0.8,
-      linewidth: 8
+      opacity: 0.2,
+      linewidth: 5
     });
 
     //figure out the size of the node so we can scale the highlight to match.
