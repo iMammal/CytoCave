@@ -483,8 +483,15 @@ class XRInterface {
     //set raycaster origin to controller position
     raycaster.set(controllerPosition, controllerDirection);
     //get intersected objects
-    let objectsIntersected = raycaster.intersectObjects(this.scene.children);
-    return (objectsIntersected.find(o => o.object.name.type === 'region'));
+    // let objectsIntersected = raycaster.intersectObjects(this.scene.children);
+    // return (objectsIntersected.find(o => o.object.name.type === 'region'));
+    let nodes = this.scene.children.filter(o => o.name === 'NodeManager');
+    if (nodes.length > 0) {
+      let objectsIntersected = raycaster.intersectObjects(nodes[0].children);
+      return (objectsIntersected.find(o => o.object.name.type === 'region'));
+    } else {
+      return null;
+    }
   }
 
   drawPointer(v3Origin, v3UnitUp) {

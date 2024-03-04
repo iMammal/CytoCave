@@ -15,7 +15,8 @@ class NodeManager {
 
   constructor(_previewArea) {
     this.model = _previewArea.getModel();
-    this.sceneObject = _previewArea.getSceneObject();
+    this.scene = _previewArea.getSceneObject();
+    this.sceneObject = new THREE.Group();
     this.previewArea = _previewArea;
     this.groups = this.previewArea.listGroups();
     this.groupCount = this.groups.length;
@@ -1026,6 +1027,9 @@ class NodeManager {
         this.sceneObject.add(this.instances[group][hemisphere]);
       }
     }
+    //set name of sceneObject to "NodeManager"
+    this.sceneObject.name = "NodeManager";
+    this.scene.add(this.sceneObject);
   }
 
   setNodeColor(index, color) {

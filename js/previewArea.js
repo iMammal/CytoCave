@@ -165,7 +165,7 @@ class PreviewArea {
     this.NodeManager = new NodeManager(this);
     this.rebindNodeManagerCallbacks();
 
-    this.renderer.setAnimationLoop(this.animatePV); // todo: this is the new way to do it in WebXR
+    this.renderer.setAnimationLoop(this.animatePV); // done: this is the new way to do it in WebXR
 
     this.addSkybox();
     this.initEdgeFlare();
@@ -4322,34 +4322,8 @@ class PreviewArea {
         color.copy(midColor);
       }
 
-
-      //
-
-      // old code for lerp colors based on position in the highlight list and size of dataset.
-      // let dsLength = this.model.getDataset().length;
-      // //lerp 3 colors based on the weight of the connection.
-      // if (colorIndex < (dsLength / 2) - dsLength*0.05) {
-      //   color.lerpColors(startColor, midColor, colorIndex / dsLength);
-      // } else if (colorIndex > (dsLength / 2) + dsLength*0.05) {
-      //   color.lerpColors(midColor, endColor, colorIndex / dsLength);
-      // } else {
-      //   color.copy(midColor);
-      // }
       this.NodeManager.highlightNodeByIndex(index,color.getHex());
-      // setTimeout(() => {
-      //   this.NodeManager.removeHighlightByIndex(index);
-      // } , 1000);
 
-    //this.NodeManager.highlightNodeByIndex(index);
-    //set a timeout to remove the context.
-    // setTimeout(() => {
-    //   //this.NodeManager.unhighlightNodeByIndex(index);
-    //   //todo: we are just doing this until deactivateContextOnNode is finished.
-    //   this.NodeManager.removeContextNodeByIndex(index);
-    //   //find the highlight in the scene with matching userdata index and remove it
-    //
-    //   //time before you can reactivate any context node.
-    // }, 1000);
   }
 
   deactivateContextOnNode = (node) => {
