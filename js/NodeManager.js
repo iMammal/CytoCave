@@ -14,7 +14,8 @@ import {previewAreaLeft} from "./drawing";
 class NodeManager {
   constructor(_previewArea) {
     this.model = _previewArea.getModel();
-    this.sceneObject = _previewArea.getSceneObject();
+    this.scene = _previewArea.getSceneObject();
+    this.sceneObject = new THREE.Group();
     this.previewArea = _previewArea;
     this.groups = this.previewArea.listGroups();
     this.groupCount = this.groups.length;
@@ -714,7 +715,9 @@ class NodeManager {
   //If threshold is null or 0, the threshold filter is disabled.
   getEdges = (node, threshold = 0, topN = 0, distance = 0) => {
     //todo: move to model, remove edges as a concept from NodeManager
+
     let edges = []; //this.previewArea.model.getActiveEdges();
+    console.count("getEdges");
     //console.log(edges);
     //return edges;
     //get the edges of the node at the instanceId.
@@ -777,27 +780,30 @@ class NodeManager {
       console.log("Distance filter active, distance to 0 to disable.");
       //calculate distance to each target, drop targets that are too far away.
       let sourcePosition = this.getNodePosition(node);
+
       edges = edges.filter(edge => {
         let targetPosition = this.getNodePosition(this.index2node(edge.targetNodeIndex));
         let distance2target = sourcePosition.distanceTo(targetPosition);
         return distance2target <= distance;
       });
-    } else {
-
-      edges.sort((a, b) => {
-        // sort by distance closest to farthest
-        let sourcePosition = this.getNodePosition(node);
-        let aPosition = this.getNodePosition(this.index2node(a.targetNodeIndex));
-        let bPosition = this.getNodePosition(this.index2node(b.targetNodeIndex));
-        let aDistance = sourcePosition.distanceTo(aPosition);
-        let bDistance = sourcePosition.distanceTo(bPosition);
-        return aDistance - bDistance;
-      });
-
     }
 
-    if (topN !== null && topN > 0) {
-      console.log("TopN filter set topN to null or 0 to disable.");
+    edges.sort((a, b) => {
+      // sort by distance closest to farthest
+      let sourcePosition = this.getNodePosition(node);
+      let aPosition = this.getNodePosition(this.index2node(a.targetNodeIndex));
+      let bPosition = this.getNodePosition(this.index2node(b.targetNodeIndex));
+      let aDistance = sourcePosition.distanceTo(aPosition);
+      let bDistance = sourcePosition.distanceTo(bPosition);
+      return aDistance - bDistance;
+    });
+
+
+
+
+
+    if (topN !== null && topN > 0 && topN < edges.length) {
+      //console.log("TopN filter set topN to null or 0 to disable.");
       edges = edges.slice(0, topN);
     }
     // console.log("Returning " + edges.length + " edges.");
@@ -1167,6 +1173,8 @@ class NodeManager {
         this.sceneObject.add(this.instances[group][hemisphere]);
       }
     }
+    this.sceneObject.name = "NodeManager";
+    this.scene.add(this.sceneObject);
   }
 
   setNodeColor(index, color) {
