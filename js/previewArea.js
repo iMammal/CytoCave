@@ -11,6 +11,7 @@
  */
 
 import * as THREE from 'three'
+import {MeshLine, MeshLineMaterial} from 'three.meshline'
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 //import {FirstPersonControls} from "three/examples/jsm/controls/FirstPersonControls";
 import {ArcballControls} from "three/examples/jsm/controls/ArcballControls";
@@ -3547,50 +3548,99 @@ class PreviewArea {
    * @returns {THREE.Line} - A Three.js Line object representing the created line.
    */
   createLine = (edge, ownerNode, nodes, opacity) => {
-    //console.log("opacity: " + opacity);
-    let material = new THREE.LineBasicMaterial({
-      transparent: true,
+    var material = new MeshLineMaterial({
+      useMap: false,
+      color: new THREE.Color(0xffffff),
       opacity: opacity * this.getEdgeOpacity(),
-      vertexColors: true, //THREE.VertexColors
-      //enable double sided rendering
+      resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
+      sizeAttenuation: false,
+      transparent: true,
       side: THREE.DoubleSide,
-
-      // Due to limitations in the ANGLE layer on Windows platforms linewidth will always be 1.
+      lineWidth: opacity * 100
     });
     material.userData = {
       originalOpacity: opacity
     }
 
-    let geometry = new THREE.BufferGeometry();
-    let n = edge.length;
+    const line = new MeshLine();
 
-    let positions = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-      positions[i * 3] = edge[i].x;
-      positions[i * 3 + 1] = edge[i].y;
-      positions[i * 3 + 2] = edge[i].z;
+    const vertices = new Float32Array(edge.length * 3); // three components per vertex
+    for (var i = 0; i < edge.length; i++)
+    {
+      vertices[i * 3] = edge[i].x;
+      vertices[i * 3 + 1] = edge[i].y;
+      vertices[i * 3 + 2] = edge[i].z;;
     }
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-    var s1 = this.model.getNodalStrength(nodes[0]), s2 = this.model.getNodalStrength(nodes[1]);
+    line.setPoints( vertices );
+
+    var s1 = this.model.getNodalStrength(nodes[0]), s2 = this.model.getNodalStrength(nodes[-1]);
     var p1 = s1 / (s1 + s2);
-    var c1 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[0]))),// glyphs[nodes[0]].material.color,
-      c2 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[1])));// glyphs[nodes[1]].material.color;
-    geometry.setAttribute('color', new THREE.BufferAttribute(this.computeColorGradient(c1, c2, n, p1), 3));
+    // var c1 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[0]))),
+    //   c2 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[-1])));
+    var c1 = new THREE.Color(0x0000ff),
+      c2 = new THREE.Color(0xff0000);
+    // Assuming computeColorGradient is returning interleaved array of RGB values.
+    const colors = new Float32Array(this.computeColorGradient(c1, c2, edge.length, p1));
 
-    // geometry.colors = colorGradient;
-    let line = new THREE.Line(geometry, material);
-    //console.log("ownerNode: ");
-    //console.log(ownerNode);
-    line.name = ownerNode;
-    line.nPoints = n;
-    line.nodes = nodes;
-    line.p1 = p1;
-    line.material.linewidth = 1;
-    line.material.vertexColors = true; //THREE.VertexColors;
+    var geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    return line;
+    const mesh = new THREE.Mesh(line.geometry, material);
+
+    mesh.name = ownerNode;
+    mesh.nPoints = edge.length;
+    mesh.nodes = nodes;
+    mesh.p1 = p1;
+
+    return mesh;
   };
+  // createLine = (edge, ownerNode, nodes, opacity) => {
+  //   //console.log("opacity: " + opacity);
+  //   let material = new THREE.LineBasicMaterial({
+  //     transparent: true,
+  //     opacity: opacity * this.getEdgeOpacity(),
+  //     vertexColors: true, //THREE.VertexColors
+  //     //enable double sided rendering
+  //     side: THREE.DoubleSide,
+  //
+  //     // Due to limitations in the ANGLE layer on Windows platforms linewidth will always be 1.
+  //   });
+  //   material.userData = {
+  //     originalOpacity: opacity
+  //   }
+  //
+  //   let geometry = new THREE.BufferGeometry();
+  //   let n = edge.length;
+  //
+  //   let positions = new Float32Array(n * 3);
+  //   for (let i = 0; i < n; i++) {
+  //     positions[i * 3] = edge[i].x;
+  //     positions[i * 3 + 1] = edge[i].y;
+  //     positions[i * 3 + 2] = edge[i].z;
+  //   }
+  //   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  //
+  //   var s1 = this.model.getNodalStrength(nodes[0]), s2 = this.model.getNodalStrength(nodes[1]);
+  //   var p1 = s1 / (s1 + s2);
+  //   var c1 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[0]))),// glyphs[nodes[0]].material.color,
+  //     c2 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[1])));// glyphs[nodes[1]].material.color;
+  //   geometry.setAttribute('color', new THREE.BufferAttribute(this.computeColorGradient(c1, c2, n, p1), 3));
+  //
+  //   // geometry.colors = colorGradient;
+  //   let line = new THREE.Line(geometry, material);
+  //   //console.log("ownerNode: ");
+  //   //console.log(ownerNode);
+  //   line.name = ownerNode;
+  //   line.nPoints = n;
+  //   line.nodes = nodes;
+  //   line.p1 = p1;
+  //   line.material.linewidth = 1;
+  //   line.material.vertexColors = true; //THREE.VertexColors;
+  //
+  //   return line;
+  // };
 
   drawEdgeWithName = (edge, ownerNode, nodes, opacity) => {
     //edge is an array of points
@@ -3602,9 +3652,9 @@ class PreviewArea {
     // console.log("ownerNode: " + ownerNode);
     // console.log("nodes: ");
     // console.log(nodes);
-    let line = this.createLine(edge, ownerNode, nodes, opacity);
-    this.brain.add(line);
-    return line;
+    let lineMesh = this.createLine(edge, ownerNode, nodes, opacity);
+    this.brain.add(lineMesh);
+    return lineMesh;
   };
 
   // draw the top n edges connected to a specific node
