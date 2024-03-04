@@ -1,10 +1,10 @@
 <?php
 
-require_once('database.env'); // Assuming the file is located in the same directory
-$db_host = getenv('DB_HOST');
-$db_name = getenv('DB_NAME');
-$db_user = getenv('DB_USER');
-$db_password = getenv('DB_PASSWORD');
+// require_once('database.env'); // Assuming the file is located in the same directory
+// $db_host = getenv('DB_HOST');
+// $db_name = getenv('DB_NAME');
+// $db_user = getenv('DB_USER');
+// $db_password = getenv('DB_PASSWORD');
 // ... connect to your database using these variables ...
 
 //create if not exists or open sqlite3 database
