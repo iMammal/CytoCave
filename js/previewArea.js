@@ -3542,11 +3542,15 @@ class PreviewArea {
    * @param {Array} nodes - An array of node identifiers connected by this line.
    * @returns {THREE.Line} - A Three.js Line object representing the created line.
    */
-  createLine = (edge, ownerNode, nodes) => {
+  createLine = (edge, ownerNode, nodes, opacity) => {
+    //console.log("opacity: " + opacity);
     let material = new THREE.LineBasicMaterial({
       transparent: true,
-      opacity: this.edgeOpacity,
-      vertexColors: true //THREE.VertexColors
+      opacity: opacity,
+      vertexColors: true, //THREE.VertexColors
+      //enable double sided rendering
+      side: THREE.DoubleSide,
+
       // Due to limitations in the ANGLE layer on Windows platforms linewidth will always be 1.
     });
 
@@ -3581,7 +3585,7 @@ class PreviewArea {
     return line;
   };
 
-  drawEdgeWithName = (edge, ownerNode, nodes) => {
+  drawEdgeWithName = (edge, ownerNode, nodes, opacity) => {
     //edge is an array of points
     //ownerNode is the name of the node that owns the edge//usually the source node index
     //nodes is an array of node indexes that are connected by the edge
@@ -3591,7 +3595,7 @@ class PreviewArea {
     // console.log("ownerNode: " + ownerNode);
     // console.log("nodes: ");
     // console.log(nodes);
-    let line = this.createLine(edge, ownerNode, nodes);
+    let line = this.createLine(edge, ownerNode, nodes, opacity);
     this.brain.add(line);
     return line;
   };
@@ -3750,7 +3754,7 @@ class PreviewArea {
       //let index = this.NodeManager.node2index(node);
       //targetNodeId is the index of the target node as it is in the dataset. this is not the same as the instanceId which is only used in nodeManager.
 
-      this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, sourceIndex, [sourceIndex, edges[i].targetNodeIndex]);
+      this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, sourceIndex, [sourceIndex, edges[i].targetNodeIndex], edges[i].weight/this.model.getMaximumWeight());
     }
 
     return;
