@@ -4227,6 +4227,8 @@ class PreviewArea {
     //var pos = glyphs[nodeIndex].position;
     let pos = nodeObject.point;
     this.nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
+    //Set Renderorder of label sprites to 1 so they render before the edges and stop obscuring them with transparent planes and making them disappear
+    this.nodeLabelSprite.renderOrder = 1;
     if (this.labelsVisible) {
       this.nodeLabelSprite.needsUpdate = true;
     }
