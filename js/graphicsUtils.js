@@ -47,15 +47,15 @@ var rightBoxNormal = new THREE.BoxGeometry( 1.5*shpereRadius, 1.5*shpereRadius, 
 var getNormalGeometry = function(hemisphere,side) {
   if(side === "Left"){
     if(hemisphere === "left"){
-      return leftBoxNormal;
-    } else if(hemisphere === "right"){
       return leftSphereNormal;
+    } else if(hemisphere === "right"){
+      return leftBoxNormal;
     }
   } else if(side === "Right"){
     if(hemisphere === "left"){
-      return rightBoxNormal;
-    } else if(hemisphere === "right"){
       return rightSphereNormal;
+    } else if(hemisphere === "right"){
+      return rightBoxNormal;
     }
   } else {
       console.log("ERROR: getNormalGeometry");
