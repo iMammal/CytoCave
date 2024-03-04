@@ -3517,7 +3517,11 @@ class PreviewArea {
   setEdgeOpacity = (opacity) => {
     this.edgeOpacity = opacity;
     for (var i = 0; i < this.displayedEdges.length; i++) {
-      this.displayedEdges[i].material.opacity = opacity;
+
+      this.displayedEdges[i].material.opacity = this.displayedEdges[i].material.userData.originalOpacity * opacity;
+      console.log("originalOpacity: " + this.displayedEdges[i].material.userData.originalOpacity);
+      console.log("slider opacity: " + opacity);
+      console.log("actual opacity: " + this.displayedEdges[i].material.opacity);
       this.displayedEdges[i].material.needsUpdate = true;
     }
   };
@@ -3546,13 +3550,16 @@ class PreviewArea {
     //console.log("opacity: " + opacity);
     let material = new THREE.LineBasicMaterial({
       transparent: true,
-      opacity: opacity,
+      opacity: opacity * this.getEdgeOpacity(),
       vertexColors: true, //THREE.VertexColors
       //enable double sided rendering
       side: THREE.DoubleSide,
 
       // Due to limitations in the ANGLE layer on Windows platforms linewidth will always be 1.
     });
+    material.userData = {
+      originalOpacity: opacity
+    }
 
     let geometry = new THREE.BufferGeometry();
     let n = edge.length;
