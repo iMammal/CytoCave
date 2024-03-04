@@ -87,8 +87,8 @@ class XRInterface {
     //this.previewArea.NodeManager.contextualNodeActivated = this.dragSelectNode.bind(this);
     //if preview area camera is not at 0,0,0, set it to 0,0,0
     if(this.previewArea.camera.position.x !== 0 || this.previewArea.camera.position.y !== 0 || this.previewArea.camera.position.z !== 0){
-      console.log("Camera position is not 0,0,0, setting to 0,0,0");
-      this.previewArea.camera.position.set(0,0,0);
+      //console.log("Camera position is not 0,0,0, setting to 0,0,0");
+      //this.previewArea.camera.position.set(0,0,0);
     }
     this._camera = this.previewArea.camera;
     this._controls = this.previewArea.controls;
@@ -296,8 +296,13 @@ class XRInterface {
       // }
 
       this.camera = this.renderer.xr.getCamera();
+
+
       if (this.camera !== this.previewArea.camera) {
         console.warn("Camera changed to xr camera");
+        //move this.dolly to the new camera position
+        this.dolly.position.set(this._camera.position.x, this._camera.position.y, this._camera.position.z);
+        this.dolly.rotation.set(this._camera.rotation.x, this._camera.rotation.y, this._camera.rotation.z);
         //change camera to xr camera
         this.previewArea.camera = this.camera;
       }
