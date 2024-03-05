@@ -3561,7 +3561,8 @@ class PreviewArea {
       vertexColors: true, //THREE.VertexColors
       //enable double sided rendering
       //side: THREE.DoubleSide,
-      linewidth: 0.05 * opacity,
+      worldUnits: true,
+      linewidth: 10 * opacity,
       depthTest: true,
 
       //alphaToCoverage: true,
