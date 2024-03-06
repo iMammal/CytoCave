@@ -14,7 +14,8 @@ import {previewAreaLeft} from "./drawing";
 class NodeManager {
   constructor(_previewArea) {
     this.model = _previewArea.getModel();
-    this.sceneObject = _previewArea.getSceneObject();
+    this.scene = _previewArea.getSceneObject();
+    this.sceneObject = new THREE.Group();
     this.previewArea = _previewArea;
     this.groups = this.previewArea.listGroups();
     this.groupCount = this.groups.length;
@@ -102,40 +103,40 @@ class NodeManager {
     }
   }
 
-    CreateInstanceMeshes() {
-        //create instance mesh for each group
-        let LeftNormalGeometry = getNormalGeometry("left", this.previewArea.name);
-        console.log("LeftNormalGeometry Side: " + this.previewArea.name);
-        console.log(this.previewArea.name);
-        let RightNormalGeometry = getNormalGeometry("right", this.previewArea.name);
+  CreateInstanceMeshes() {
+    //create instance mesh for each group
+    let LeftNormalGeometry = getNormalGeometry("left", this.previewArea.name);
+    console.log("LeftNormalGeometry Side: " + this.previewArea.name);
+    console.log(this.previewArea.name);
+    let RightNormalGeometry = getNormalGeometry("right", this.previewArea.name);
 
-        // Function to create an instance with specified properties
-        const createInstance = (count, geometry, material, hemisphere, group) => {
-            if (count > 0) {
-                const instance = new THREE.InstancedMesh(geometry, material, count);
-                instance.name = {
-                    group,
-                    hemisphere,
-                    type: 'region'
-                };
-                instance.setColorAt(0, material.color);
-                return instance;
-            }
-            return null;
+    // Function to create an instance with specified properties
+    const createInstance = (count, geometry, material, hemisphere, group) => {
+      if (count > 0) {
+        const instance = new THREE.InstancedMesh(geometry, material, count);
+        instance.name = {
+          group,
+          hemisphere,
+          type: 'region'
         };
+        instance.setColorAt(0, material.color);
+        return instance;
+      }
+      return null;
+    };
 
-        //each group has it's own material that is used for all instances of that group
-        // these can be retrieved with previewArea.getNormalMaterial(this.model, group)
-        for (let i = 0; i < this.groupCount; i++) {
-            let leftCount = this.previewArea.countGroupMembers(this.groups[i], "left", this.previewArea.name);
-            let rightCount = this.previewArea.countGroupMembers(this.groups[i], "right", this.previewArea.name);
-            let material = getNormalMaterial(this.model, this.groups[i]);
-            this.instances[this.groups[i]] = {
-                left: createInstance(leftCount, LeftNormalGeometry, material, 'left', this.groups[i]),
-                right: createInstance(rightCount, RightNormalGeometry, material, 'right', this.groups[i])
-            };
-        }
+    //each group has it's own material that is used for all instances of that group
+    // these can be retrieved with previewArea.getNormalMaterial(this.model, group)
+    for (let i = 0; i < this.groupCount; i++) {
+      let leftCount = this.previewArea.countGroupMembers(this.groups[i], "left", this.previewArea.name);
+      let rightCount = this.previewArea.countGroupMembers(this.groups[i], "right", this.previewArea.name);
+      let material = getNormalMaterial(this.model, this.groups[i]);
+      this.instances[this.groups[i]] = {
+        left: createInstance(leftCount, LeftNormalGeometry, material, 'left', this.groups[i]),
+        right: createInstance(rightCount, RightNormalGeometry, material, 'right', this.groups[i])
+      };
     }
+  }
 
 
   CountGroupMembers(group) {
@@ -195,12 +196,12 @@ class NodeManager {
       console.log(node);
       throw new Error("node2index userData undefined, InstanceID: " + instanceId + " index: ?");
     }
-    if(instanceId >= node.object.userData.indexList.length){
+    if (instanceId >= node.object.userData.indexList.length) {
       console.log("instanceId is greater than length of indexList");
       throw new Error("instanceId is greater than length of indexList");
     }
-    let index= undefined;
-    if(instanceId === undefined || instanceId === null || isNaN(instanceId)) {
+    let index = undefined;
+    if (instanceId === undefined || instanceId === null || isNaN(instanceId)) {
       console.log("node2index  InstanceID: " + instanceId + " index: " + index + "InstanceID is null undefined or in any other way not a number")
       console.log("Falling back to node.id")
       index = node.object.userData.indexList[node.id];
@@ -426,12 +427,12 @@ class NodeManager {
       //add timeout to remove highlight.
       setTimeout(() => {
         this.removeHighlightByIndex(this.node2index(node));
-      } , 1000);
+      }, 1000);
     }
   }
 
-  highlightNode(node,color = 0xffffff) {
-    if (node == null || node === undefined || node.object === null || node.object === undefined ) {
+  highlightNode(node, color = 0xffffff) {
+    if (node == null || node === undefined || node.object === null || node.object === undefined) {
       console.log("highlightNode: node is null or undefined");
       console.log(node);
 
@@ -447,7 +448,7 @@ class NodeManager {
     //   }
     // }
     // // use some method to do above
-    if(this.highLights.some(highLight => highLight.userData.index === index)){
+    if (this.highLights.some(highLight => highLight.userData.index === index)) {
       return;
     }
 
@@ -456,7 +457,7 @@ class NodeManager {
     // Create a wireframe  slightly larger than the node.
     // const radius = 1.1;
     // const segments = 32;
-    const baseGeometry = getNormalGeometry(node.object.name.hemisphere,this.previewArea.name);
+    const baseGeometry = getNormalGeometry(node.object.name.hemisphere, this.previewArea.name);
     const wireframe = new THREE.WireframeGeometry(
       baseGeometry
     );
@@ -498,16 +499,16 @@ class NodeManager {
 
   }
 
-  highlightNodeByIndex(index, color= 0xffffff) {
+  highlightNodeByIndex(index, color = 0xffffff) {
 
     let node = this.index2node(index);
-    this.highlightNode(node,color);
+    this.highlightNode(node, color);
   }
 
   removeHighlights = () => {
     //remove all highlights.
     let i = this.highLights.length;
-    while (i--)   {
+    while (i--) {
       this.removeHighlightByIndex(this.highLights[i].userData.index);
     }
 
@@ -522,6 +523,7 @@ class NodeManager {
     this.removeHighlightByIndex(index);
 
   }
+
   removeHighlightByIndex(index) {
 
     // remove highlight from this.highLights where highlight.userData.index === index
@@ -714,7 +716,9 @@ class NodeManager {
   //If threshold is null or 0, the threshold filter is disabled.
   getEdges = (node, threshold = 0, topN = 0, distance = 0) => {
     //todo: move to model, remove edges as a concept from NodeManager
+
     let edges = []; //this.previewArea.model.getActiveEdges();
+    console.count("getEdges");
     //console.log(edges);
     //return edges;
     //get the edges of the node at the instanceId.
@@ -723,20 +727,20 @@ class NodeManager {
     // console.log("Threshold: " + threshold);
     // console.log("TopN: " + topN);
     // console.log("Distance: " + distance);
-    if(threshold === 0){
+    if (threshold === 0) {
       threshold = this.previewArea.model.getThreshold();
     }
     let maxThreshold = this.previewArea.model.getMaximumWeight();
     //console.log("Max Threshold: " + maxThreshold);
 
-    if(threshold > maxThreshold){
+    if (threshold > maxThreshold) {
       threshold = maxThreshold;
       this.previewArea.model.setThreshold(threshold); //update the threshold in the model.
     }
-    if(topN === 0){
+    if (topN === 0) {
       topN = this.previewArea.model.getNumberOfEdges();
     }
-    if(distance === 0){
+    if (distance === 0) {
       distance = this.previewArea.model.getDistanceThreshold();
     }
     let index = this.node2index(node);
@@ -757,13 +761,16 @@ class NodeManager {
     //console.log("Starting with " + matrixRow.size() + " edges.");
     matrixRow.forEach((weight, j) => {
       if (weight > threshold && weight <= maxThreshold) {
-
-        edges.push({
-          sourceNodeIndex: index,
-          targetNodeIndex: j[0],
-          weight: weight,
-          position: this.getNodePosition(this.index2node(j[0]))
-        });
+        let regionActive1 = this.previewArea.model.isRegionActive(this.index2node(index).object.name.group);
+        let regionActive2 = this.previewArea.model.isRegionActive(this.index2node(j[0]).object.name.group);
+        if (regionActive1 && regionActive2) {
+          edges.push({
+            sourceNodeIndex: index,
+            targetNodeIndex: j[0],
+            weight: weight,
+            position: this.getNodePosition(this.index2node(j[0]))
+          });
+        }
       }
     });
 
@@ -777,27 +784,27 @@ class NodeManager {
       console.log("Distance filter active, distance to 0 to disable.");
       //calculate distance to each target, drop targets that are too far away.
       let sourcePosition = this.getNodePosition(node);
+
       edges = edges.filter(edge => {
         let targetPosition = this.getNodePosition(this.index2node(edge.targetNodeIndex));
         let distance2target = sourcePosition.distanceTo(targetPosition);
         return distance2target <= distance;
       });
-    } else {
-
-      edges.sort((a, b) => {
-        // sort by distance closest to farthest
-        let sourcePosition = this.getNodePosition(node);
-        let aPosition = this.getNodePosition(this.index2node(a.targetNodeIndex));
-        let bPosition = this.getNodePosition(this.index2node(b.targetNodeIndex));
-        let aDistance = sourcePosition.distanceTo(aPosition);
-        let bDistance = sourcePosition.distanceTo(bPosition);
-        return aDistance - bDistance;
-      });
-
     }
 
-    if (topN !== null && topN > 0) {
-      console.log("TopN filter set topN to null or 0 to disable.");
+    edges.sort((a, b) => {
+      // sort by distance closest to farthest
+      let sourcePosition = this.getNodePosition(node);
+      let aPosition = this.getNodePosition(this.index2node(a.targetNodeIndex));
+      let bPosition = this.getNodePosition(this.index2node(b.targetNodeIndex));
+      let aDistance = sourcePosition.distanceTo(aPosition);
+      let bDistance = sourcePosition.distanceTo(bPosition);
+      return aDistance - bDistance;
+    });
+
+
+    if (topN !== null && topN > 0 && topN < edges.length) {
+      //console.log("TopN filter set topN to null or 0 to disable.");
       edges = edges.slice(0, topN);
     }
     // console.log("Returning " + edges.length + " edges.");
@@ -821,6 +828,7 @@ class NodeManager {
   /*requires two nodes to be selected. the first node is the source node, the second node is the target node.
 * the path is calculated using the shortest path algorithm.
  */
+
 //todo remove stp stuff from nodemanager, superceded by PathFinder
   calculateShortestPath(node1, node2, topN = null, distance = 0) {
     //modified djikstra's algorithm.
@@ -829,8 +837,6 @@ class NodeManager {
     //https://en.wikipedia.org/wiki/Graph_traversal
     //https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)
     //https://en.wikipedia.org/wiki/Graph_theory
-
-
 
 
     let sptSet = new Set();
@@ -903,6 +909,7 @@ class NodeManager {
 
 
   /*supplemental example function that activates edges on nodes around the actual selected node.*/
+
   /* node is the node that was selected. distance is the distance from the node to the target node.
   /* focusDepth is the number of hops to activate focus on.
   */
@@ -914,7 +921,7 @@ class NodeManager {
       //skip this node if it is already in the context.
       return;
     }
-    if(processby === "edgeweight") {
+    if (processby === "edgeweight") {
       let edges = [];
       if (topN === null || topN === undefined || isNaN(topN) || topN === 0) {
         topN = previewAreaLeft.model.getNumberOfEdges();
@@ -950,7 +957,7 @@ class NodeManager {
     // if the node is already selected, do nothing.
     console.log("removeContextNodesFromAroundObject");
 
-    if(processby === "edgeweight") {
+    if (processby === "edgeweight") {
       let edges = [];
 
       //get the edges of the node.
@@ -970,7 +977,7 @@ class NodeManager {
         this.removeContextNodeByIndex(edges[i].targetNodeIndex);
       }
     }
-}
+  }
 
   /*same as above but uses the index of the node instead of the node itself.*/
   activateContextAroundIndex(index, distance, focusDepth = 1) {
@@ -1167,6 +1174,8 @@ class NodeManager {
         this.sceneObject.add(this.instances[group][hemisphere]);
       }
     }
+    this.sceneObject.name = "NodeManager";
+    this.scene.add(this.sceneObject);
   }
 
   setNodeColor(index, color) {
@@ -1208,12 +1217,12 @@ class NodeManager {
 
       }
 
-        if(this.processSTP){
-            this.STPstep( this.stpQueue, this.sptSet, this.dist, this.prev);
-            if(this.STPFinishedCallback !== null){
-                this.STPFinishedCallback();
-            }
+      if (this.processSTP) {
+        this.STPstep(this.stpQueue, this.sptSet, this.dist, this.prev);
+        if (this.STPFinishedCallback !== null) {
+          this.STPFinishedCallback();
         }
+      }
 
     }
   }
@@ -1283,7 +1292,7 @@ class NodeManager {
 
   resetContext() {
     let _contextualNodes = this.contextualNodes;
-    for(let i = 0; i < _contextualNodes.length; i++){
+    for (let i = 0; i < _contextualNodes.length; i++) {
       this.removeContextNodeByIndex(_contextualNodes[i]);
     }
     //just in case you want to do something with the nodes that were removed.

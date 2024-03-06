@@ -11,6 +11,9 @@
  */
 
 import * as THREE from 'three'
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 //import {FirstPersonControls} from "three/examples/jsm/controls/FirstPersonControls";
 import {ArcballControls} from "three/examples/jsm/controls/ArcballControls";
@@ -1531,6 +1534,7 @@ class PreviewArea {
   };
 
   reInitEdgeFlare = () => {
+    return;
     //console.log("reInitEdgeFlare");
     this.removeEdgeFlare();
     this.initEdgeFlare();
@@ -1546,11 +1550,12 @@ class PreviewArea {
   }
 
   initEdgeFlare = () => {
+    return;
     //console.log("initEdgeFlare");
     //console.log("Current value of  this.edgeFlareVisible: " + this.edgeFlareVisible);
     //count active edges in each node from get active edges function
     let count = 0;
-    let edges = this.getAllSelectedNodesActiveEdges();
+    //let edges = this.getAllSelectedNodesActiveEdges();
     //console.log("init Edge Flare Edges: ");
     //console.log(edges);
     let colorMatchMap = [];
@@ -2214,6 +2219,7 @@ class PreviewArea {
   }
 
   animateEdges = () => {
+    return;
     //console.log("animateEdges");
     //console.log("Current value of  this.edgeFlareVisible: " + this.edgeFlareVisible);
     // console.log("Current value of  this.displayedEdges: ");
@@ -3544,52 +3550,64 @@ class PreviewArea {
    * @param {Array} edge - An array of Vector3 points representing the line's vertices.
    * @param {string} ownerNode - The name or identifier of the owner node for this line.
    * @param {Array} nodes - An array of node identifiers connected by this line.
-   * @returns {THREE.Line} - A Three.js Line object representing the created line.
+   * @param {number} [opacity=1] - The opacity of the line.
+   * @returns {Line2} - A Three.js Line2 object representing the created line.
    */
-  createLine = (edge, ownerNode, nodes, opacity) => {
+  createLine = (edge, ownerNode, nodes, opacity = 1) => {
     //console.log("opacity: " + opacity);
-    let material = new THREE.LineBasicMaterial({
+    let material = new LineMaterial({
       transparent: true,
       opacity: opacity * this.getEdgeOpacity(),
       vertexColors: true, //THREE.VertexColors
       //enable double sided rendering
-      side: THREE.DoubleSide,
+      //side: THREE.DoubleSide,
+      worldUnits: true,
+      linewidth: 10 * opacity,
+      depthTest: true,
 
+      //alphaToCoverage: true,
       // Due to limitations in the ANGLE layer on Windows platforms linewidth will always be 1.
     });
     material.userData = {
       originalOpacity: opacity
     }
 
-    let geometry = new THREE.BufferGeometry();
+    let geometry = new LineGeometry();
     let n = edge.length;
 
-    let positions = new Float32Array(n * 3);
+    let positions = [];
     for (let i = 0; i < n; i++) {
-      positions[i * 3] = edge[i].x;
-      positions[i * 3 + 1] = edge[i].y;
-      positions[i * 3 + 2] = edge[i].z;
+      // positions[i * 3] = edge[i].x;
+      // positions[i * 3 + 1] = edge[i].y;
+      // positions[i * 3 + 2] = edge[i].z;
+      positions.push(edge[i].x, edge[i].y, edge[i].z);
     }
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
+    //geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setPositions(positions);
     var s1 = this.model.getNodalStrength(nodes[0]), s2 = this.model.getNodalStrength(nodes[1]);
     var p1 = s1 / (s1 + s2);
     var c1 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[0]))),// glyphs[nodes[0]].material.color,
       c2 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[1])));// glyphs[nodes[1]].material.color;
-    geometry.setAttribute('color', new THREE.BufferAttribute(this.computeColorGradient(c1, c2, n, p1), 3));
-
+    //geometry.setAttribute('color', new THREE.BufferAttribute(this.computeColorGradient(c1, c2, n, p1), 3));
+    let colorGradient = this.computeColorGradient(c1, c2, n, p1);
+    //check that the color gradient is the right length, should be the same as the number of points
+    if (colorGradient.length !== n * 3) {
+      throw new Error("Color gradient length does not match the number of points");
+    }
+    // set the color gradient to the geometry
+    geometry.setColors(colorGradient);
     // geometry.colors = colorGradient;
-    let line = new THREE.Line(geometry, material);
+    let line2 = new Line2(geometry, material);
     //console.log("ownerNode: ");
     //console.log(ownerNode);
-    line.name = ownerNode;
-    line.nPoints = n;
-    line.nodes = nodes;
-    line.p1 = p1;
-    line.material.linewidth = 1;
-    line.material.vertexColors = true; //THREE.VertexColors;
+    line2.name = ownerNode;
+    line2.nPoints = n;
+    line2.nodes = nodes;
+    line2.p1 = p1;
 
-    return line;
+
+
+    return line2;
   };
 
   drawEdgeWithName = (edge, ownerNode, nodes, opacity) => {
@@ -3974,12 +3992,17 @@ class PreviewArea {
     let raycaster = new THREE.Raycaster();
 
     raycaster.setFromCamera(vector, this.camera);
-
-    this.objectsIntersected = raycaster.intersectObjects(this.scene.children, true);
-    // return the first object. It's the closest one
-    // returning the first object is ok but only returning region objects better for many reasons.
-    //return first object with name.type == 'region'
-    return this.objectsIntersected.find(o => o.object.name.type === 'region');
+    let nodes = this.scene.children.filter(o => o.name === 'NodeManager');
+    let objectsIntersected = [];
+    if (nodes.length > 0) {
+      for(let i = 0; i < nodes.length; i++) {
+        let intersects = raycaster.intersectObjects(nodes[i].children);
+        objectsIntersected = objectsIntersected.concat(intersects);
+      }
+      return (objectsIntersected.find(o => o.object.name.type === 'region'));
+    } else {
+      return null;
+    }
 
     //return (this.objectsIntersected[0]) ? this.objectsIntersected[0] : null;
   };
