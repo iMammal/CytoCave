@@ -21,13 +21,22 @@ if (!$pdo) {
 //open the database
 // $db = new SQLite3('../../humap2.db');
 
+//load metadata into $metadata array
+$metadata = array();
+
 //execute the query to select all from tempNetwork
-// $results = $db->query('SELECT * FROM tempTopology');
+$results = $pdo->query('SELECT * FROM tempMetadata');
+foreach ($results as $row) {
+    $metadata[$row['label']] = $row['region_name'];
+}
+
+
+
 $results = $pdo->query('SELECT * FROM tempTopology');
 //no header
 // $header = false;
 
-echo "label,Flat,,,complexIdClustering\n";
+echo "label,Flat,,,complexIdClustering,DetailsFile\n";
 
 //iterate through each row of the result
 // while ($row = $results->fetchArray()) {
@@ -35,7 +44,7 @@ foreach ($results as $row) {
   //echo the row
   //    echo implode(',', $row) . "\n";
   // echo label, complexIdCluster
-  echo $row['label'] .   "," . $row['Flat_X']. "," . $row['Flat_Y']. "," . $row['Flat_Z']."," . $row['complexIdClustering'] . "\n";
+  echo $row['label'] .   "," . $row['Flat_X']. "," . $row['Flat_Y']. "," . $row['Flat_Z']."," . $row['complexIdClustering'] . ",proteinDetails.php?gene=". $metadata[$row['label']] ."\n";
 
 }
 ?>

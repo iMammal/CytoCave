@@ -1,7 +1,7 @@
 <?php
 // Replace the values within the quotes according to your database connection details
 
-require_once('../config.php'); // Assuming the file is located in the same directory
+require_once('../../config.php'); // Assuming the file is located in the same directory
 $db_config = $config['db'];
 $db_host = $db_config['host'];
 $db_name = $db_config['name'];
