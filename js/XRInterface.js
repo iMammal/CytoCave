@@ -486,8 +486,12 @@ class XRInterface {
     // let objectsIntersected = raycaster.intersectObjects(this.scene.children);
     // return (objectsIntersected.find(o => o.object.name.type === 'region'));
     let nodes = this.scene.children.filter(o => o.name === 'NodeManager');
+    let objectsIntersected = [];
     if (nodes.length > 0) {
-      let objectsIntersected = raycaster.intersectObjects(nodes[0].children);
+      for(let i = 0; i < nodes.length; i++) {
+        let intersects = raycaster.intersectObjects(nodes[i].children);
+        objectsIntersected = objectsIntersected.concat(intersects);
+      }
       return (objectsIntersected.find(o => o.object.name.type === 'region'));
     } else {
       return null;

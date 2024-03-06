@@ -11,6 +11,9 @@
  */
 
 import * as THREE from 'three'
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 //import {FirstPersonControls} from "three/examples/jsm/controls/FirstPersonControls";
 import {ArcballControls} from "three/examples/jsm/controls/ArcballControls";
@@ -71,6 +74,7 @@ import { PathFinder } from "./PathFinder";
 import canvasGraph from "./canvasGraph";
 import  Hud2D  from "./Hud2d";
 import LineGraphs from './LineGraphs.js';
+import NodeLabels from "./nodeLabels";
 
 class PreviewArea {
   constructor(canvas_, model_, name_) {
@@ -170,11 +174,11 @@ class PreviewArea {
     this.addSkybox();
     this.initEdgeFlare();
     this.setEventListeners();
+    this.nodeLabels = new NodeLabels(this,this.NodeManager);
+    // this.nspCanvas = document.createElement('canvas');
+    // this.nodeNameMap = null;
+    // this.nodeLabelSprite = null;
 
-    this.nspCanvas = document.createElement('canvas');
-    this.nodeNameMap = null;
-    this.nodeLabelSprite = null;
-    //this.xrDolly = new THREE.Object3D();
     //this.imageSlices = new NeuroSlice('public/images','data/Cartana/SliceDepth0.csv',this.imagesLoadedCallback.bind(this));
 
     this.lineplotCanvas = document.createElement('canvas');
@@ -189,7 +193,8 @@ class PreviewArea {
     this.removeAllInstances();
     //shut down all highlights before reset
     this.NodeManager.removeHighlights();
-    //for each three.js wireframe in this.Nodemanager.highlights, remove from scene
+    //this.nodeLabels.removeAllLabels();
+
     this.pathFinder = null;
     this.NodeManager = new NodeManager(this);
     this.updateNodesVisibility(true);
@@ -199,6 +204,10 @@ class PreviewArea {
     this.reInitEdgeFlare();
 
     this.setEdgeOpacity(this.edgeOpacity);  //maintains edge opacity between resets.
+    //restore nodelabels if they were visible
+    if (this.labelsVisible) {
+      this.nodeLabels.labelAllNodes();
+    }
   }
 
   appearUnselected = (node) => {
@@ -1861,7 +1870,7 @@ class PreviewArea {
     //re-add the event listener for keypresses
 
   }
-
+  //callback for when the pathfinder finishes
   pathfinderFinished = (pathObject) => {
     console.log(pathObject);
     setTimeout(() => {
@@ -1894,13 +1903,14 @@ class PreviewArea {
       }
 
       // draw the path
-      this.shortestPathEdges.push(this.drawEdgeWithName(edgePoints,"Dijkstra Path", nodesI));
+      this.shortestPathEdges.push(this.drawEdgeWithName(edgePoints,"Dijkstra Path", nodesI,1));
     }, 50);
 
     console.log("pathfinder finished: " + pathObject + " path cost: " + pathObject.distance);
     this.pathFinder = null;
   }
 
+  //callback for when the pathfinder fails
   pathfinderFailed = (pathObject) => {
     //pop an alert with the failure message
     alert("Pathfinder failed: " + pathObject.message);
@@ -1934,13 +1944,17 @@ class PreviewArea {
   // toggle between showing and hiding labels
   toggleLabels = () => {
     if (this.labelsVisible) {
+      console.log("removing labels");
       this.labelsVisible = false;
+      this.nodeLabels.removeAllLabels();
       //this.hideLabels();
       //addNodeLabel();
     } else {
+      console.log("adding labels");
       this.labelsVisible = true;
       //this.showLabels();
-      this.addNodeLabel();
+      //this.nodeLabels.addNodeLabel();
+      this.nodeLabels.labelAllNodes();
     }
   }
 
@@ -3548,46 +3562,62 @@ class PreviewArea {
    * @param {Array} nodes - An array of node identifiers connected by this line.
    * @returns {THREE.Line} - A Three.js Line object representing the created line.
    */
-  createLine = (edge, ownerNode, nodes) => {
-    let material = new THREE.LineBasicMaterial({
+  createLine = (edge, ownerNode, nodes, opacity = 1) => {
+    //console.log("opacity: " + opacity);
+    let material = new LineMaterial({
       transparent: true,
-      opacity: this.edgeOpacity,
-      vertexColors: true //THREE.VertexColors
-      // Due to limitations in the ANGLE layer on Windows platforms linewidth will always be 1.
-    });
+      opacity: opacity * this.getEdgeOpacity(),
+      vertexColors: true, //THREE.VertexColors
+      //dashed: false,
+      worldUnits: true,
+      linewidth: 10 * opacity,
+      depthTest: true,
 
-    let geometry = new THREE.BufferGeometry();
+      // Line2 not subject to linewidth limitations.
+    });
+    material.userData = {
+      originalOpacity: opacity
+    }
+
+    let geometry = new LineGeometry();
     let n = edge.length;
 
-    let positions = new Float32Array(n * 3);
+    let positions = [];
     for (let i = 0; i < n; i++) {
-      positions[i * 3] = edge[i].x;
-      positions[i * 3 + 1] = edge[i].y;
-      positions[i * 3 + 2] = edge[i].z;
+      // positions[i * 3] = edge[i].x;
+      // positions[i * 3 + 1] = edge[i].y;
+      // positions[i * 3 + 2] = edge[i].z;
+      positions.push(edge[i].x, edge[i].y, edge[i].z);
     }
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
+    //geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setPositions(positions);
     var s1 = this.model.getNodalStrength(nodes[0]), s2 = this.model.getNodalStrength(nodes[1]);
     var p1 = s1 / (s1 + s2);
     var c1 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[0]))),// glyphs[nodes[0]].material.color,
       c2 = new THREE.Color(scaleColorGroup(this.model, this.model.getGroupNameByNodeIndex(nodes[1])));// glyphs[nodes[1]].material.color;
-    geometry.setAttribute('color', new THREE.BufferAttribute(this.computeColorGradient(c1, c2, n, p1), 3));
-
+    //geometry.setAttribute('color', new THREE.BufferAttribute(this.computeColorGradient(c1, c2, n, p1), 3));
+    let colorGradient = this.computeColorGradient(c1, c2, n, p1);
+    //check that the color gradient is the right length, should be the same as the number of points
+    if (colorGradient.length !== n * 3) {
+      throw new Error("Color gradient length does not match the number of points");
+    }
+    // set the color gradient to the geometry
+    geometry.setColors(colorGradient);
     // geometry.colors = colorGradient;
-    let line = new THREE.Line(geometry, material);
+    let line2 = new Line2(geometry, material);
     //console.log("ownerNode: ");
     //console.log(ownerNode);
-    line.name = ownerNode;
-    line.nPoints = n;
-    line.nodes = nodes;
-    line.p1 = p1;
-    line.material.linewidth = 1;
-    line.material.vertexColors = true; //THREE.VertexColors;
+    line2.name = ownerNode;
+    line2.nPoints = n;
+    line2.nodes = nodes;
+    line2.p1 = p1;
 
-    return line;
+
+
+    return line2;
   };
 
-  drawEdgeWithName = (edge, ownerNode, nodes) => {
+  drawEdgeWithName = (edge, ownerNode, nodes, weight) => {
     //edge is an array of points
     //ownerNode is the name of the node that owns the edge//usually the source node index
     //nodes is an array of node indexes that are connected by the edge
@@ -3597,7 +3627,7 @@ class PreviewArea {
     // console.log("ownerNode: " + ownerNode);
     // console.log("nodes: ");
     // console.log(nodes);
-    let line = this.createLine(edge, ownerNode, nodes);
+    let line = this.createLine(edge, ownerNode, nodes, weight);
     this.brain.add(line);
     return line;
   };
@@ -3756,7 +3786,7 @@ class PreviewArea {
       //let index = this.NodeManager.node2index(node);
       //targetNodeId is the index of the target node as it is in the dataset. this is not the same as the instanceId which is only used in nodeManager.
 
-      this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, sourceIndex, [sourceIndex, edges[i].targetNodeIndex]);
+      this.displayedEdges[this.displayedEdges.length] = this.drawEdgeWithName(edge, sourceIndex, [sourceIndex, edges[i].targetNodeIndex], edges[i].weight/this.model.getMaximumWeight());
     }
 
     return;
@@ -3970,12 +4000,17 @@ class PreviewArea {
 
     raycaster.setFromCamera(vector, this.camera);
 
-    this.objectsIntersected = raycaster.intersectObjects(this.scene.children, true);
-    // return the first object. It's the closest one
-    // returning the first object is ok but only returning region objects better for many reasons.
-    //return first object with name.type == 'region'
-    return this.objectsIntersected.find(o => o.object.name.type === 'region');
-
+    let nodes = this.scene.children.filter(o => o.name === 'NodeManager');
+    let objectsIntersected = [];
+    if (nodes.length > 0) {
+      for(let i = 0; i < nodes.length; i++) {
+        let intersects = raycaster.intersectObjects(nodes[i].children);
+        objectsIntersected = objectsIntersected.concat(intersects);
+      }
+      return (objectsIntersected.find(o => o.object.name.type === 'region'));
+    } else {
+      return null;
+    }
     //return (this.objectsIntersected[0]) ? this.objectsIntersected[0] : null;
   };
 
@@ -4149,81 +4184,9 @@ class PreviewArea {
   //     return null;
   // }
 
-  updateNodeSpritePos = (nodeObject, targetCanvas = this.nspCanvas) => {
-
-    let context = targetCanvas.getContext('2d');
-
-    let pos = nodeObject.point;
-    this.nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
-    if (true || this.labelsVisible) {
-      this.nodeLabelSprite.needsUpdate = true;
-    }
-  }
-
-  // Update the text and position according to selected node
-  // The alignment, size and offset parameters are set by experimentation
-  // TODO needs more experimentation
-  updateNodeLabel = (text, nodeObject) => {    ///Index) {
-    //this.updateNodeSpritePos(nodeObject, this.lineplotCanvas);
-
-    if (this.labelsVisible === false) return;
-
-    let context = this.nspCanvas.getContext('2d');
-    context.textAlign = 'left';
-    // Find the length of the text and add enough _s to fill half of the canvas
-    let textLength = context.measureText(text).width;
-    let numUnderscores = Math.ceil((this.nspCanvas.width / 2 - textLength) / context.measureText("_").width);
-    for (let i = 0; i < numUnderscores; i++) {
-      text = text + "_";
-    }
-    //text = text + "___________________________";
-    context.clearRect(0, 0, 256 * 4, 256);
-    context.fillText(text, 5, 120);
-
-    this.nodeNameMap.needsUpdate = true;
-    //var pos = glyphs[nodeIndex].position;
-    let pos = nodeObject.point;
-    this.nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
-    if (this.labelsVisible) {
-      this.nodeLabelSprite.needsUpdate = true;
-    }
-  };
-
-  // Adding Node label Sprite
-  addNodeLabel = (targetCanvas = this.nspCanvas) => {
-    //this.nspCanvas = document.createElement('canvas');
-    //moved to constructor.
-    let size = 256;
-    targetCanvas.width = size * 4;
-    targetCanvas.height = size;
-    let context = targetCanvas.getContext('2d');
-    context.fillStyle = '#ffffff';
-    context.textAlign = 'left';
-    context.font = '24px Arial';
-    context.fillText("", 0, 0);
-    //todo bug can't assign a canvas as a texture, extract the texture first.
-    this.nodeNameMap = new THREE.Texture(targetCanvas);
-    this.nodeNameMap.needsUpdate = true;
-
-    var mat = new THREE.SpriteMaterial({
-      map: this.nodeNameMap,
-      transparent: true,
-      useScreenCoordinates: false,
-      color: 0xffffff
-    });
-
-    this.nodeLabelSprite = new THREE.Sprite(mat);
-    this.nodeLabelSprite.scale.set(100, 50, 1);
-    this.nodeLabelSprite.position.set(0, 0, 0);
-    // if(previewAreaLeft.labelsVisible) {
-    //     this.brain.add(this.nodeLabelSprite);
-    // }
-    if (this.labelsVisible) {
-      this.brain.add(this.nodeLabelSprite);
-    }
 
 
-  };
+
 
   getCamera = () => {
     return this.camera;

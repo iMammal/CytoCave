@@ -783,13 +783,16 @@ class NodeManager {
     //console.log("Starting with " + matrixRow.size() + " edges.");
     matrixRow.forEach((weight, j) => {
       if (weight > threshold && weight <= maxThreshold) {
-
-        edges.push({
-          sourceNodeIndex: index,
-          targetNodeIndex: j[0],
-          weight: weight,
-          position: this.getNodePosition(this.index2node(j[0]))
-        });
+        let regionActive1 = this.previewArea.model.isRegionActive(this.index2node(index).object.name.group);
+        let regionActive2 = this.previewArea.model.isRegionActive(this.index2node(j[0]).object.name.group);
+        if (regionActive1 && regionActive2) {
+          edges.push({
+            sourceNodeIndex: index,
+            targetNodeIndex: j[0],
+            weight: weight,
+            position: this.getNodePosition(this.index2node(j[0]))
+          });
+        }
       }
     });
 
