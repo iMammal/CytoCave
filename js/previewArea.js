@@ -175,7 +175,7 @@ class PreviewArea {
 
     this.renderer.setAnimationLoop(this.animatePV); // done: this is the new way to do it in WebXR
 
-    this.addSkybox();
+    // this.addSkybox(); // Try starting without skybox
     this.initEdgeFlare();
     this.setEventListeners();
     this.nodeLabels = new NodeLabels(this,this.NodeManager);
@@ -192,6 +192,10 @@ class PreviewArea {
     this.lineplots = [document.getElementById('lineplot1')];//createElement('canvas');
     this.Hud2D = new Hud2D(this);
     this.linegraphs = new LineGraphs(this); //preViewArea_);
+
+    for(let i=1;i<this.model.getDataset().length;i++) {
+      this.drawEdgesGivenIndex(i);
+    }
 
   }
 
@@ -2406,7 +2410,24 @@ class PreviewArea {
     //this.animateShortestPathEdges();
   };
 
+  refreshEdges = () => {
+    for(let i=1;i<this.model.getDataset().length;i++) {
+      this.removeEdgeGivenIndex(i);
+    }
+
+    this.removeShortestPathEdgesFromScene();
+
+    for(let i=1;i<this.model.getDataset().length;i++) {
+        this.drawEdgesGivenIndex(i);
+    }
+    // this.edgesAllOn = true;
+    // } else {
+
+
+}
+
   removeEdgesFromScene = () => {
+    return;
     for (let i = 0; i < this.displayedEdges.length; ++i) {
       this.brain.remove(this.displayedEdges[i]);
     }
@@ -2571,7 +2592,7 @@ class PreviewArea {
     for (let [edge, targets] of activeEdges) {
       this.drawEdgesGivenNode(edge);
     }
-
+    this.redrawEdges();
   }
 
   //     if (getSpt())
@@ -2619,6 +2640,7 @@ class PreviewArea {
   updateScene = () => {
     console.log('%c  ' + 'updateScene', 'background: #222; color: #bada55');
     this.reset();
+    this.refreshEdges()
   };
 
   removeAllInstances = () => {

@@ -82,7 +82,7 @@ var addDimensionFactorSliderLeft = function (side) {
     if(side == 'Left') {
       panel.append("input")
         .attr("type", "range")
-        .attr("value", "1")
+        .attr("value", "2")
         .attr("id", "dimensionSliderLeft"+side)
         .attr("min","0.2")
         .attr("max", "4")
@@ -117,7 +117,7 @@ var addDimensionFactorSliderLeft = function (side) {
 
         panel.append("input")
         .attr("type", "range")
-        .attr("value", "1")
+        .attr("value", "2")
         .attr("id", "dimensionSliderLeft"+side)
         .attr("min","0.2")
         .attr("max", "4")
@@ -162,7 +162,7 @@ var addDimensionFactorSliderRight = function (side) {
     if(side === 'Left') {
       panel.append("input")
         .attr("type", "range")
-        .attr("value", "1")
+        .attr("value", "2")
         .attr("id", "dimensionSliderRight"+side)
         .attr("min","0.2")
         .attr("max", "4")
@@ -198,7 +198,7 @@ var addDimensionFactorSliderRight = function (side) {
 
         panel.append("input")
         .attr("type", "range")
-        .attr("value", "1")
+        .attr("value", "2")
         .attr("id", "dimensionSliderRight"+side)
         .attr("min","0.2")
         .attr("max", "4")
