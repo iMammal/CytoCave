@@ -12,18 +12,6 @@ class canvasGraph {
         this.ctx[key] = options[key];
 
     }
-    // example d3.csv fetch
-    // let dataset = [];
-    // d3.csv("https://localhost/dataRet?range=1-10").then(
-    //   function (data) {
-    //   console.log("d3Data");
-    //   console.log(data);
-    //     data.forEach(function (d) {
-    //       dataset.push(d);
-    //     } );
-    //   });
-    // console.log("d3Dataset");
-    // console.log(dataset);
 
 
     this.draw();

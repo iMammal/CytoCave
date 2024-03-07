@@ -62,7 +62,7 @@ var scanFolder = function (callback) {
 // rich_club: rich club affiliation: region name vs non-RichClub (optional)
 var loadLookUpTable = function (callback) {
     var labelsLUTFilename = "LookupTable_" + labelLUT + ".csv";
-    if((labelLUT === "Dynamic")) {  //} || (labelLUT === "DynamicPDO") || (labelLUT === "DynamicPDO2")) {
+    if(labelLUT === "Dynamic") {
         labelsLUTFilename = "LookupTable_Dynamic.php";
     } else if (labelLUT === "DynamicPDO") {
         labelsLUTFilename = "LookupTable_DynamicPDO.php";
@@ -104,23 +104,6 @@ var loadSubjectNetwork = function (fileNames, model, callback) {
         });
     }
     if (fileNames.network.toString().endsWith(".json")) {
-        // Papa.parse("data/" + folder + "/" + fileNames.network, {
-        //     download: true,
-        //     dynamicTyping: true,
-        //     delimiter: ',',
-        //     header: false,
-        //     skipEmptyLines: true,
-        //     complete: function (results) {
-        //         model.setConnectionMatrix(results);
-        //         console.log("NW loaded ... ");
-        //         callback(null, null);
-        //     }
-        // });
-        // fs.readFile("data/" + folder + "/" + fileNames.network, 'utf8', (err, jsonString) => {
-        //     if (err) {
-        //         console.error(`Failed to read the file ${filename}. Reason: ${err.message}`);
-        //         return;
-        //     }
 
         // Fetch a JSON file from the server
         fetch("data/" + folder + "/" + fileNames.network)
@@ -141,6 +124,23 @@ var loadSubjectNetwork = function (fileNames, model, callback) {
 
     }
 
+};
+
+var loadDetailsFile = function (fileName, model, callback = null, index) {
+    Papa.parse("data/" + folder + "/" + fileName, {
+        download: true,
+        dynamicTyping: true,
+        delimiter: ';',
+        header: false,
+        skipEmptyLines: true,
+        complete: function (results) {
+            //model.addNodeDetails(results.data);
+            console.log("Details Data for loaded for node: ", fileName);
+            if (callback !== null) {
+                callback(results.data, index);
+            }
+        }
+    });
 };
 
 var loadSubjectTopology = function (fileNames, model, callback) {
@@ -190,4 +190,4 @@ var loadMetricValues = function (callback) {
     })
 };
 
-export {scanFolder, loadMetricValues, loadLookUpTable, loadSubjectTopology, loadSubjectNetwork}
+export {scanFolder, loadMetricValues, loadLookUpTable, loadSubjectTopology, loadSubjectNetwork, loadDetailsFile, setFolder};

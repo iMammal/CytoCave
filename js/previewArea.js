@@ -51,7 +51,9 @@ import {
   // updateNodeSelection,
   updateNodeMoveOver,
     updateScenes,
-  previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove
+ previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove
+  // previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove,
+  //   updateHud2D
 } from './drawing'
 import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, removeGeometryButtons} from './GUI'
 import {scaleColorGroup} from './utils/scale'
@@ -71,6 +73,9 @@ import NeuroSlice from "./NeuroSlice";
 import NodeManager from "./NodeManager";
 import {modelLeft} from "./model";
 import { PathFinder } from "./PathFinder";
+import canvasGraph from "./canvasGraph";
+import  Hud2D  from "./Hud2d";
+import LineGraphs from './LineGraphs.js';
 
 class PreviewArea {
   constructor(canvas_, model_, name_) {
@@ -165,7 +170,7 @@ class PreviewArea {
     this.NodeManager = new NodeManager(this);
     this.rebindNodeManagerCallbacks();
 
-    this.renderer.setAnimationLoop(this.animatePV); // todo: this is the new way to do it in WebXR
+    this.renderer.setAnimationLoop(this.animatePV); // done: this is the new way to do it in WebXR
 
     this.addSkybox();
     this.initEdgeFlare();
@@ -177,7 +182,12 @@ class PreviewArea {
     //this.xrDolly = new THREE.Object3D();
     //this.imageSlices = new NeuroSlice('public/images','data/Cartana/SliceDepth0.csv',this.imagesLoadedCallback.bind(this));
 
-    this.labelAll();
+    //this.labelAll();
+
+    this.lineplotCanvas = document.createElement('canvas');
+    this.lineplots = [document.getElementById('lineplot1')];//createElement('canvas');
+    this.Hud2D = new Hud2D(this);
+    this.linegraphs = new LineGraphs(this); //preViewArea_);
 
   }
 
@@ -208,7 +218,6 @@ class PreviewArea {
     this.NodeManager.removeHighlight(node);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class
 
-
   }
 
   appearSelected = (node) => {
@@ -217,6 +226,7 @@ class PreviewArea {
     let index = this.NodeManager.node2index(node);
 
     this.NodeManager.restoreNodeByIndex(index);
+    this.model.loadNodeDetails(index);
     this.NodeManager.scaleNodeByIndex(index, 1.5);
     this.drawEdgesGivenIndex(index);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.
@@ -230,6 +240,9 @@ class PreviewArea {
 
       previewAreaLeft.NodeManager.select(index);  //if it's already selected in this tree selectNode does nothing so it's safe to call on both sides.
       previewAreaRight.NodeManager.select(index);
+
+
+      this.Hud2D.update();
 
   }
 
@@ -1555,7 +1568,7 @@ class PreviewArea {
     //console.log("Current value of  this.edgeFlareVisible: " + this.edgeFlareVisible);
     //count active edges in each node from get active edges function
     let count = 0;
-    //let edges = this.getAllSelectedNodesActiveEdges();
+    let edges = this.getAllSelectedNodesActiveEdges();
     //console.log("init Edge Flare Edges: ");
     //console.log(edges);
     let colorMatchMap = [];
@@ -1734,6 +1747,40 @@ class PreviewArea {
 
   }
 
+  //display details of the selected nodes
+  displaySelectedNodeDetails = () => {
+
+    // graph some data
+    //generate some fake data
+    let fakeData = [];
+    for (let i = 0; i < 25; i++) {
+      fakeData.push(Math.random());
+    }
+    this.lineplotData = fakeData;
+    this.graphOptions = {
+      width: 200,
+      height: 100,
+      color: 'white',
+      strokeStyle: 'white', // color of the line
+      lineWidth: 2,
+      lineJoin: 'round',
+      lineCap: 'round',
+      padding: 10,
+      grid: {
+        color: 'rgba(255, 255, 255, 0.5)',
+        width: 1,
+        height: 1
+      }
+    }
+
+    this.addNodeLabel(this.lineplotCanvas);
+
+    //let graph = new canvasGraph(this.lineplotCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
+    let graph = new canvasGraph(this.lineplots[0], this.lineplotData, this.graphOptions); // canvas, data, options
+    //this.flatMesh.position.set(-0.35, 0.4, 0);
+
+  }
+
   //listen for key presses
   keyPress = (event) => {
     //remove the event listener for keypresses if it is already listening
@@ -1758,12 +1805,15 @@ class PreviewArea {
     if (event.key === 'p') {
       this.toggleParticles();
     }
-    if (event.key === 'k') {
-      this.labelAll();
+    // if (event.key === 'k') {
+    //   this.labelAll();
+    // }
+    if (event.key === 'g') {
+      this.displaySelectedNodeDetails();
     }
     if (event.key === 's') {
       //toggle slice images.
-       if (this.imageSlices) {
+      if (this.imageSlices) {
         this.imageSlices.toggleSlices();
       }
     }
@@ -2376,6 +2426,11 @@ class PreviewArea {
     }
     if(this.xrInterface.isVRAvailable())
       this.xrInterface.update(this.xrInterface,time,frame);
+    else
+      // console.log("NOT XRing");
+      if(this.linegraphs !== null)
+        this.linegraphs.updateLinegraph();
+
 
     //limit this function to (fps)fps)
     // if (Date.now() - lastTime < 1000 / fps) {
@@ -3988,7 +4043,7 @@ class PreviewArea {
   // return undefined if no object was found
 
   getIntersectedObject = (vector) => {
-    //2d intersection
+
     let raycaster = new THREE.Raycaster();
 
     raycaster.setFromCamera(vector, this.camera);
@@ -4177,71 +4232,83 @@ class PreviewArea {
   //     return null;
   // }
 
-
-  // Update the text and position according to selected node
-  // The alignment, size and offset parameters are set by experimentation
-  // TODO needs more experimentation
-  updateNodeLabel = (text, nodeObject) => {    ///Index) {
-    if (this.labelsVisible === false) return;
-
-    let context = this.nspCanvas.getContext('2d');
-    context.textAlign = 'left';
-    // Find the length of the text and add enough _s to fill half of the canvas
-    let textLength = context.measureText(text).width;
-    let numUnderscores = Math.ceil((this.nspCanvas.width / 2 - textLength) / context.measureText("_").width);
-    for (let i = 0; i < numUnderscores; i++) {
-      text = text + "_";
-    }
-    //text = text + "___________________________";
-    context.clearRect(0, 0, 256 * 4, 256);
-    context.fillText(text, 5, 120);
-
-    this.nodeNameMap.needsUpdate = true;
-    //var pos = glyphs[nodeIndex].position;
-    let pos = nodeObject.point;
-    this.nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
-    //Set Renderorder of label sprites to 1 so they render before the edges and stop obscuring them with transparent planes and making them disappear
-    this.nodeLabelSprite.renderOrder = 1;
-    if (this.labelsVisible) {
-      this.nodeLabelSprite.needsUpdate = true;
-    }
-  };
-
-  // Adding Node label Sprite
-  addNodeLabel = () => {
-    //this.nspCanvas = document.createElement('canvas');
-    //moved to constructor.
-    let size = 256;
-    this.nspCanvas.width = size * 4;
-    this.nspCanvas.height = size;
-    let context = this.nspCanvas.getContext('2d');
-    context.fillStyle = '#ffffff';
-    context.textAlign = 'left';
-    context.font = '88px Arial';
-    context.fillText("", 0, 0);
-    //todo bug can't assign a canvas as a texture, extract the texture first.
-    this.nodeNameMap = new THREE.Texture(this.nspCanvas);
-    this.nodeNameMap.needsUpdate = true;
-
-    var mat = new THREE.SpriteMaterial({
-      map: this.nodeNameMap,
-      transparent: true,
-      useScreenCoordinates: false,
-      color: 0xffffff
-    });
-
-    this.nodeLabelSprite = new THREE.Sprite(mat);
-    this.nodeLabelSprite.scale.set(100, 50, 1);
-    this.nodeLabelSprite.position.set(0, 0, 0);
-    // if(previewAreaLeft.labelsVisible) {
-    //     this.brain.add(this.nodeLabelSprite);
-    // }
-    if (this.labelsVisible) {
-      this.brain.add(this.nodeLabelSprite);
-    }
-
-
-  };
+  // updateNodeSpritePos = (nodeObject, targetCanvas = this.nspCanvas) => {
+  //
+  //   let context = targetCanvas.getContext('2d');
+  //
+  //   let pos = nodeObject.point;
+  //   this.nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
+  //   if (true || this.labelsVisible) {
+  //     this.nodeLabelSprite.needsUpdate = true;
+  //   }
+  // }
+  //
+  // // Update the text and position according to selected node
+  // // The alignment, size and offset parameters are set by experimentation
+  // // TODO needs more experimentation
+  // updateNodeLabel = (text, nodeObject) => {    ///Index) {
+  //   //this.updateNodeSpritePos(nodeObject, this.lineplotCanvas);
+  //
+  //   if (this.labelsVisible === false) return;
+  //
+  //   let context = this.nspCanvas.getContext('2d');
+  //   context.textAlign = 'left';
+  //   // Find the length of the text and add enough _s to fill half of the canvas
+  //   let textLength = context.measureText(text).width;
+  //   let numUnderscores = Math.ceil((this.nspCanvas.width / 2 - textLength) / context.measureText("_").width);
+  //   for (let i = 0; i < numUnderscores; i++) {
+  //     text = text + "_";
+  //   }
+  //   //text = text + "___________________________";
+  //   context.clearRect(0, 0, 256 * 4, 256);
+  //   context.fillText(text, 5, 120);
+  //
+  //   this.nodeNameMap.needsUpdate = true;
+  //   //var pos = glyphs[nodeIndex].position;
+  //   let pos = nodeObject.point;
+  //   this.nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
+  //   //Set Renderorder of label sprites to 1 so they render before the edges and stop obscuring them with transparent planes and making them disappear
+  //   this.nodeLabelSprite.renderOrder = 1;
+  //   if (this.labelsVisible) {
+  //     this.nodeLabelSprite.needsUpdate = true;
+  //   }
+  // };
+  //
+  // // Adding Node label Sprite
+  //addNodeLabel = (targetCanvas = this.nspCanvas) => {
+  //   //this.nspCanvas = document.createElement('canvas');
+  //   //moved to constructor.
+  //   let size = 256;
+  //  targetCanvas.width = size * 4;
+  //  targetCanvas.height = size;
+  //  let context = targetCanvas.getContext('2d');
+  //   context.fillStyle = '#ffffff';
+  //   context.textAlign = 'left';
+  //  context.font = '88px Arial';
+  //   context.fillText("", 0, 0);
+  //   //todo bug can't assign a canvas as a texture, extract the texture first.
+  //  this.nodeNameMap = new THREE.Texture(targetCanvas);
+  //   this.nodeNameMap.needsUpdate = true;
+  //
+  //   var mat = new THREE.SpriteMaterial({
+  //     map: this.nodeNameMap,
+  //     transparent: true,
+  //     useScreenCoordinates: false,
+  //     color: 0xffffff
+  //   });
+  //
+  //   this.nodeLabelSprite = new THREE.Sprite(mat);
+  //   this.nodeLabelSprite.scale.set(100, 50, 1);
+  //   this.nodeLabelSprite.position.set(0, 0, 0);
+  //   // if(previewAreaLeft.labelsVisible) {
+  //   //     this.brain.add(this.nodeLabelSprite);
+  //   // }
+  //   if (this.labelsVisible) {
+  //     this.brain.add(this.nodeLabelSprite);
+  //   }
+  //
+  //
+  // };
 
   getCamera = () => {
     return this.camera;
