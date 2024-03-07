@@ -185,7 +185,7 @@ class PreviewArea {
 
     //this.imageSlices = new NeuroSlice('public/images','data/Cartana/SliceDepth0.csv',this.imagesLoadedCallback.bind(this));
 
-    //this.labelAll();
+    // this.labelAll();
     // this.NodeManager.selectAll();
 
     this.lineplotCanvas = document.createElement('canvas');
@@ -193,11 +193,14 @@ class PreviewArea {
     this.Hud2D = new Hud2D(this);
     this.linegraphs = new LineGraphs(this); //preViewArea_);
 
+    // Display all edges
     for(let i=1;i<this.model.getDataset().length;i++) {
       this.drawEdgesGivenIndex(i);
     }
 
-  }
+    this.toggleLabels();
+
+  } // End Constructor
 
   //reset previewArea to state
   reset = () => {
