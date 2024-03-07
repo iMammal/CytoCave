@@ -76,6 +76,7 @@ import { PathFinder } from "./PathFinder";
 import canvasGraph from "./canvasGraph";
 import  Hud2D  from "./Hud2d";
 import LineGraphs from './LineGraphs.js';
+import NodeLabels from "./nodeLabels";
 
 class PreviewArea {
   constructor(canvas_, model_, name_) {
@@ -175,11 +176,11 @@ class PreviewArea {
     this.addSkybox();
     this.initEdgeFlare();
     this.setEventListeners();
+    this.nodeLabels = new NodeLabels(this,this.NodeManager);
+    // this.nspCanvas = document.createElement('canvas');
+    // this.nodeNameMap = null;
+    // this.nodeLabelSprite = null;
 
-    this.nspCanvas = document.createElement('canvas');
-    this.nodeNameMap = null;
-    this.nodeLabelSprite = null;
-    //this.xrDolly = new THREE.Object3D();
     //this.imageSlices = new NeuroSlice('public/images','data/Cartana/SliceDepth0.csv',this.imagesLoadedCallback.bind(this));
 
     //this.labelAll();
@@ -196,7 +197,8 @@ class PreviewArea {
     this.removeAllInstances();
     //shut down all highlights before reset
     this.NodeManager.removeHighlights();
-    //for each three.js wireframe in this.Nodemanager.highlights, remove from scene
+    //this.nodeLabels.removeAllLabels();
+
     this.pathFinder = null;
     this.NodeManager = new NodeManager(this);
     this.updateNodesVisibility(true);
@@ -206,6 +208,10 @@ class PreviewArea {
     this.reInitEdgeFlare();
 
     this.setEdgeOpacity(this.edgeOpacity);  //maintains edge opacity between resets.
+    //restore nodelabels if they were visible
+    if (this.labelsVisible) {
+      this.nodeLabels.labelAllNodes();
+    }
   }
 
   appearUnselected = (node) => {
@@ -1805,15 +1811,15 @@ class PreviewArea {
     if (event.key === 'p') {
       this.toggleParticles();
     }
-    if (event.key === 'k') {
-      this.labelAll();
-    }
+    // if (event.key === 'k') {
+    //   this.labelAll();
+    // }
     if (event.key === 'g') {
-             displaySelectedNodeDetails();
+      this.displaySelectedNodeDetails();
     }
     if (event.key === 's') {
       //toggle slice images.
-        if (this.imageSlices) {
+      if (this.imageSlices) {
         this.imageSlices.toggleSlices();
       }
     }
@@ -1873,7 +1879,7 @@ class PreviewArea {
     //re-add the event listener for keypresses
 
   }
-
+  //callback for when the pathfinder finishes
   pathfinderFinished = (pathObject) => {
     console.log(pathObject);
     setTimeout(() => {
@@ -1906,13 +1912,14 @@ class PreviewArea {
       }
 
       // draw the path
-      this.shortestPathEdges.push(this.drawEdgeWithName(edgePoints,"Dijkstra Path", nodesI));
+      this.shortestPathEdges.push(this.drawEdgeWithName(edgePoints,"Dijkstra Path", nodesI,1));
     }, 50);
 
     console.log("pathfinder finished: " + pathObject + " path cost: " + pathObject.distance);
     this.pathFinder = null;
   }
 
+  //callback for when the pathfinder fails
   pathfinderFailed = (pathObject) => {
     //pop an alert with the failure message
     alert("Pathfinder failed: " + pathObject.message);
@@ -1946,13 +1953,17 @@ class PreviewArea {
   // toggle between showing and hiding labels
   toggleLabels = () => {
     if (this.labelsVisible) {
+      console.log("removing labels");
       this.labelsVisible = false;
+      this.nodeLabels.removeAllLabels();
       //this.hideLabels();
       //addNodeLabel();
     } else {
+      console.log("adding labels");
       this.labelsVisible = true;
       //this.showLabels();
-      this.addNodeLabel();
+      //this.nodeLabels.addNodeLabel();
+      this.nodeLabels.labelAllNodes();
     }
   }
 
@@ -1981,25 +1992,25 @@ class PreviewArea {
     }
   }
 
-  labelAllCallback = (nodeObject) => {
-    let index = this.NodeManager.node2index(nodeObject);
-    let region = this.model.getRegionByIndex(index);
-
-    this.addNodeLabel();
-    this.updateNodeLabel(index+'_'+region.name,nodeObject);
-    this.animatePV();
-  }
-
-  // select and label all nodes
-  labelAll = () => {
-    this.NodeManager.nodeSelectedCallback = this.labelAllCallback;
-    this.labelsVisible = true;
-    this.NodeManager.selectAll();
-    this.rebindNodeManagerCallbacks();
-    // this.NodeManager.deselectAll();
-    this.labelsVisible = false;
-    // this.model.setThreshold(0.0);
-  }
+  // labelAllCallback = (nodeObject) => {
+  //   let index = this.NodeManager.node2index(nodeObject);
+  //   let region = this.model.getRegionByIndex(index);
+  //
+  //   this.addNodeLabel();
+  //   this.updateNodeLabel(index+'_'+region.name,nodeObject);
+  //   this.animatePV();
+  // }
+  //
+  // // select and label all nodes
+  // labelAll = () => {
+  //   this.NodeManager.nodeSelectedCallback = this.labelAllCallback;
+  //   this.labelsVisible = true;
+  //   this.NodeManager.selectAll();
+  //   this.rebindNodeManagerCallbacks();
+  //   // this.NodeManager.deselectAll();
+  //   this.labelsVisible = false;
+  //   // this.model.setThreshold(0.0);
+  // }
 
 
   // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
@@ -3665,7 +3676,8 @@ class PreviewArea {
     return line2;
   };
 
-  drawEdgeWithName = (edge, ownerNode, nodes, opacity) => {
+  //drawEdgeWithName = (edge, ownerNode, nodes, opacity) => {
+  drawEdgeWithName = (edge, ownerNode, nodes, weight) => {
     //edge is an array of points
     //ownerNode is the name of the node that owns the edge//usually the source node index
     //nodes is an array of node indexes that are connected by the edge
@@ -3675,7 +3687,7 @@ class PreviewArea {
     // console.log("ownerNode: " + ownerNode);
     // console.log("nodes: ");
     // console.log(nodes);
-    let line = this.createLine(edge, ownerNode, nodes, opacity);
+    let line = this.createLine(edge, ownerNode, nodes, weight);
     this.brain.add(line);
     return line;
   };
@@ -4047,6 +4059,7 @@ class PreviewArea {
     let raycaster = new THREE.Raycaster();
 
     raycaster.setFromCamera(vector, this.camera);
+
     let nodes = this.scene.children.filter(o => o.name === 'NodeManager');
     let objectsIntersected = [];
     if (nodes.length > 0) {
@@ -4058,7 +4071,6 @@ class PreviewArea {
     } else {
       return null;
     }
-
     //return (this.objectsIntersected[0]) ? this.objectsIntersected[0] : null;
   };
 
@@ -4407,34 +4419,8 @@ class PreviewArea {
         color.copy(midColor);
       }
 
-
-      //
-
-      // old code for lerp colors based on position in the highlight list and size of dataset.
-      // let dsLength = this.model.getDataset().length;
-      // //lerp 3 colors based on the weight of the connection.
-      // if (colorIndex < (dsLength / 2) - dsLength*0.05) {
-      //   color.lerpColors(startColor, midColor, colorIndex / dsLength);
-      // } else if (colorIndex > (dsLength / 2) + dsLength*0.05) {
-      //   color.lerpColors(midColor, endColor, colorIndex / dsLength);
-      // } else {
-      //   color.copy(midColor);
-      // }
       this.NodeManager.highlightNodeByIndex(index,color.getHex());
-      // setTimeout(() => {
-      //   this.NodeManager.removeHighlightByIndex(index);
-      // } , 1000);
 
-    //this.NodeManager.highlightNodeByIndex(index);
-    //set a timeout to remove the context.
-    // setTimeout(() => {
-    //   //this.NodeManager.unhighlightNodeByIndex(index);
-    //   //todo: we are just doing this until deactivateContextOnNode is finished.
-    //   this.NodeManager.removeContextNodeByIndex(index);
-    //   //find the highlight in the scene with matching userdata index and remove it
-    //
-    //   //time before you can reactivate any context node.
-    // }, 1000);
   }
 
   deactivateContextOnNode = (node) => {
@@ -4447,15 +4433,7 @@ class PreviewArea {
     //this.NodeManager.removeContextNodeByIndex(index);
   }
 
-// }
-//
-// this.setAnimation = function (amp) {
-//     amplitude = amp;
-// }
-//
-// this.setFlahRate = function (freq) {
-//     frequency = freq;
-// }
+
 
 }
 
