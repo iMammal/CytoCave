@@ -146,6 +146,8 @@ class PreviewArea {
     this.particlesVisible = false;
     //this.edgeFlaresVisible = true;  //particles or flares?
 
+    this.edgesAllOn = false;
+
     this.edgeFlareVisible = 1; //true;
     this.labelsVisible = false;
     //this.particlesVisible = false;
@@ -1816,11 +1818,21 @@ class PreviewArea {
     if (event.key === 'k') {
       //this.labelAll();
       // this.NodeManager.selectAll();
-      for(let i=1;i<this.model.getDataset().length;i++) {
+
         // this.NodeManager.selectNode(this.NodeManager.index2node(i));
-        this.drawEdgesGivenIndex(i);
+        if (this.edgesAllOn === false) {
+          for(let i=1;i<this.model.getDataset().length;i++) {
+            this.drawEdgesGivenIndex(i);
+          }
+          this.edgesAllOn = true;
+        } else {
+          for(let i=1;i<this.model.getDataset().length;i++) {
+            this.removeEdgeGivenIndex(i);
+          }
+          this.edgesAllOn = false;
+        }
       }
-    }
+
     if (event.key === 'g') {
       this.displaySelectedNodeDetails();
     }
