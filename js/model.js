@@ -904,7 +904,7 @@ function Model(side) {
     this.finishedLoadingDetailsFile = function (data,index) {
       console.log("Finished loading details file");
       //console.log(data);
-        this.nodeDetailData.push({index: index, data: data});
+        this.nodeDetailData.push({index: index+' '+this.getDataset()[index].name, data: data});
     }
 
     // clusters can be hierarchical such as PLACE and PACE or not
