@@ -1805,15 +1805,15 @@ class PreviewArea {
     if (event.key === 'p') {
       this.toggleParticles();
     }
-    // if (event.key === 'k') {
-    //   this.labelAll();
-    // }
+    if (event.key === 'k') {
+      this.labelAll();
+    }
     if (event.key === 'g') {
-      this.displaySelectedNodeDetails();
+             displaySelectedNodeDetails();
     }
     if (event.key === 's') {
       //toggle slice images.
-      if (this.imageSlices) {
+        if (this.imageSlices) {
         this.imageSlices.toggleSlices();
       }
     }
