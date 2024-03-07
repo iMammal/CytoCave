@@ -175,7 +175,7 @@ class PreviewArea {
 
     this.renderer.setAnimationLoop(this.animatePV); // done: this is the new way to do it in WebXR
 
-    // this.addSkybox(); // Try starting without skybox
+    this.addSkybox(); // todo: Try starting without skybox but make the background black in all browsers.
     this.initEdgeFlare();
     this.setEventListeners();
     this.nodeLabels = new NodeLabels(this,this.NodeManager);
