@@ -79,7 +79,7 @@ class NodeLabels {
     let context = targetCanvas.getContext('2d');
     context.fillStyle = '#ffffff';
     context.textAlign = 'left';
-    context.font = '24px Arial';
+    context.font = '84px Arial';
     context.fillText("", 0, 0);
 
     this.nodeNameMap = new THREE.CanvasTexture(targetCanvas);
@@ -88,10 +88,11 @@ class NodeLabels {
     var mat = new THREE.SpriteMaterial({
       map: this.nodeNameMap,
       transparent: true,
-      useScreenCoordinates: false,
+      //useScreenCoordinates: false,
       color: 0xffffff,
       depthTest: true,
-      renderOrder: 1
+      // renderOrder: 1
+      //// drawOrder: 1
     });
 
     this.nodeLabelSprite = new THREE.Sprite(mat);
@@ -104,7 +105,7 @@ class NodeLabels {
     if (this.previewArea.labelsVisible) {
       this.previewArea.brain.add(this.nodeLabelSprite);
     }
-
+    this.nodeLabelSprite.renderOrder = 1;
   };
 
   labelAllNodes () {

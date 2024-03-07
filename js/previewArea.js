@@ -1815,7 +1815,11 @@ class PreviewArea {
     }
     if (event.key === 'k') {
       //this.labelAll();
-      this.NodeManager.selectAll();
+      // this.NodeManager.selectAll();
+      for(let i=1;i<this.model.getDataset().length;i++) {
+        // this.NodeManager.selectNode(this.NodeManager.index2node(i));
+        this.drawEdgesGivenIndex(i);
+      }
     }
     if (event.key === 'g') {
       this.displaySelectedNodeDetails();
