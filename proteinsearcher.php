@@ -48,7 +48,7 @@ $pdo->query('CREATE TABLE IF NOT EXISTS tempNetwork (source TEXT, target TEXT, i
 $pdo->query('DELETE FROM tempNetwork');
 
 // create table tempMetadata with columns label,complexId, geneName, confidence
-$pdo->query('CREATE TABLE IF NOT EXISTS tempMetadata (label TEXT, complexid TEXT, region_name TEXT, confidence TEXT, hemisphere TEXT)');
+$pdo->query('CREATE TABLE IF NOT EXISTS tempMetadata (label TEXT, complexid TEXT, region_name TEXT, uniprotAcc TEXT, confidence TEXT, hemisphere TEXT)');
 $pdo->query('DELETE FROM tempMetadata');
 
 // create table tempComplexes with columns complexNumber, complexId, confidence
@@ -161,6 +161,9 @@ foreach ($results as $row) {
   // split the genenames by space
   $genenames = explode(" ", $row['genenames']);
 
+  // split the Uniprot_ACCs by space
+  $uniprotAccs = explode(" ", $row['Uniprot_ACCs']);
+
   //generate the polygon points
   $M = count($genenames);
   $geneFlatCoordinates = generatePolygonPoints($M, $gridPoints[$complexcounter - 1], $gridDistance/3);
@@ -179,6 +182,8 @@ foreach ($results as $row) {
   foreach ($genenames as $genename) {
     //echo the genename with counter echo "Genename".$genecounter.": " . $genename . "<br>";
 
+    $uniprotAcc = $uniprotAccs[$mygenecounter];
+    echo "Uniprot_ACC: " . $uniprotAcc . "<br>";
 
     // push the gene label into the genesInComplexes array
     array_push($genesInComplexes[$complexId], $genecounter);
@@ -231,11 +236,12 @@ foreach ($results as $row) {
 //     }
 
 //insert into tempMetadata table the label, clusterid, region_name, and confidence with PDO
-    $query = 'INSERT INTO tempMetadata (label, complexid, region_name, confidence, hemisphere) VALUES (:label, :complexid, :region_name, :confidence, :hemisphere)';
+    $query = 'INSERT INTO tempMetadata (label, complexid, region_name, uniprotAcc, confidence, hemisphere) VALUES (:label, :complexid, :region_name, :uniprotAcc, :confidence, :hemisphere)';
     $stmt = $pdo->prepare($query);
     $stmt->bindValue(':label', $genecounter, PDO::PARAM_STR);
     $stmt->bindValue(':complexid', $complexId, PDO::PARAM_STR);
     $stmt->bindValue(':region_name', $genename, PDO::PARAM_STR);
+    $stmt->bindValue(':uniprotAcc', $uniprotAcc, PDO::PARAM_STR);
     $stmt->bindValue(':confidence', $row['Confidence'], PDO::PARAM_STR);
     $stmt->bindValue(':hemisphere', "left", PDO::PARAM_STR);
     $result = $stmt->execute();
@@ -248,6 +254,7 @@ foreach ($results as $row) {
       'label'=> $genecounter,
       'complexid'=> $complexId,
       'region_name'=> $genename,
+      'uniprotAccs'=> $uniprotAccs[$mygenecounter],
       'confidence'=>$row['Confidence'],
       'hemisphere'=> "left"
     );
