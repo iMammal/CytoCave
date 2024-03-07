@@ -184,6 +184,7 @@ class PreviewArea {
     //this.imageSlices = new NeuroSlice('public/images','data/Cartana/SliceDepth0.csv',this.imagesLoadedCallback.bind(this));
 
     //this.labelAll();
+    // this.NodeManager.selectAll();
 
     this.lineplotCanvas = document.createElement('canvas');
     this.lineplots = [document.getElementById('lineplot1')];//createElement('canvas');
@@ -236,8 +237,9 @@ class PreviewArea {
     this.NodeManager.scaleNodeByIndex(index, 1.5);
     this.drawEdgesGivenIndex(index);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.
-    this.NodeManager.removeHighlight(node); //our highlight color has precedence over the selected color so we need to remove it.
-    this.NodeManager.highlightNode(node, 0xFF0000); // selected node will be red
+    // In CYtoCave the nodes are all selected by default to show their edges. But highlighting is not done (idealy) until the user selects a node.
+    // this.NodeManager.removeHighlight(node); //our highlight color has precedence over the selected color so we need to remove it.
+    // this.NodeManager.highlightNode(node, 0xFF0000); // selected node will be red
     // set contextually selected nodes to appear highlighted
     //todo: do we have a slider for distance?
     this.NodeManager.activateContextAroundIndex(index, 0, 1);
@@ -1811,9 +1813,10 @@ class PreviewArea {
     if (event.key === 'p') {
       this.toggleParticles();
     }
-    // if (event.key === 'k') {
-    //   this.labelAll();
-    // }
+    if (event.key === 'k') {
+      //this.labelAll();
+      this.NodeManager.selectAll();
+    }
     if (event.key === 'g') {
       this.displaySelectedNodeDetails();
     }
