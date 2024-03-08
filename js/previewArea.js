@@ -51,7 +51,7 @@ import {
   // updateNodeSelection,
   updateNodeMoveOver,
     updateScenes,
- previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove
+ previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove, toggleFloatingLabel
   // previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove,
   //   updateHud2D
 } from './drawing'
@@ -1816,6 +1816,9 @@ class PreviewArea {
     if (event.key === 'l') {
       this.toggleLabels();
     }
+    if (event.key === 'j') {
+      toggleFloatingLabel();
+    }
     if (event.key === 'f') {
       this.toggleFlare();
     }
@@ -1984,7 +1987,7 @@ class PreviewArea {
       this.nodeLabels.removeAllLabels();
       //this.hideLabels();
       //addNodeLabel();
-    } else {
+    } else { //if (toggleFloatingLabel()) {
       console.log("adding labels");
       this.labelsVisible = true;
       //this.showLabels();
