@@ -40,7 +40,7 @@ if ($searchTerms == "" || $searchTerms == null || $searchTerms == "undefined") {
 
 // create table tempTopology with columns label, complexId with unique constraint on label that automatically increments with PDO
 // $db->exec('CREATE TABLE tempTopology (label TEXT, complexIdClustering TEXT, Flat_X REAL, Flat_Y REAL, Flat_Z REAL, PRIMARY KEY (label) )');
-$pdo->query('CREATE TABLE IF NOT EXISTS tempTopology (label INT PRIMARY KEY, complexIdClustering TEXT, Flat_X REAL, Flat_Y REAL, Flat_Z REAL)');
+$pdo->query('CREATE TABLE IF NOT EXISTS tempTopology (label INT PRIMARY KEY, complexIdClustering TEXT, Flat_X REAL, Flat_Y REAL, Flat_Z REAL, Square_X REAL, Square_Y REAL, Square_Z REAL)');
 $pdo->query('DELETE FROM tempTopology');
 
 // create table tempNetwork with columns source, target, interaction
@@ -83,6 +83,37 @@ function generateGridPointsWithDistance($N) {
     return $result;
 }
 
+function generateSquareGridPoints($N) {
+    $result = array(
+        'distance' => 0,
+        'points' => array()
+    );
+
+    // Determine the number of points per side for a square layout
+    $pointsPerSide = ceil(sqrt($N));
+
+    // Adjust the distance calculation for a 100x100 grid
+    $result['distance'] = 100 / max($pointsPerSide - 1, 1);
+
+    // Generate points for a square grid
+    for ($i = 0; $i < $pointsPerSide; $i++) {
+        for ($j = 0; $j < $pointsPerSide; $j++) {
+            // Check if we've added enough points
+            if (count($result['points']) >= $N) {
+                break 2; // Exit both loops
+            }
+
+            // Calculate the coordinates
+            $x = $i * $result['distance'];
+            $y = $j * $result['distance'];
+
+            // Add the coordinates to the array as floats
+            $result['points'][] = array((float) $x, (float) $y);
+        }
+    }
+
+    return $result;
+}
 
 function generatePolygonPoints($M, $centroid, $distance) {
     $points = array();
@@ -141,6 +172,13 @@ $grid = generateGridPointsWithDistance($N);
 $gridPoints = $grid['points'];
 $gridDistance = $grid['distance'];
 
+//generate the square grid points
+$gridSquare = generateSquareGridPoints($N);
+$gridPointsSquare = $gridSquare['points'];
+$gridDistanceSquare = $gridSquare['distance'];
+
+
+
 //echo the grid points
 echo "Grid points: " . json_encode($gridPoints) . "<br>";
 echo "Grid distance: " . $gridDistance . "<br>";
@@ -168,12 +206,16 @@ foreach ($results as $row) {
   $M = count($genenames);
   $geneFlatCoordinates = generatePolygonPoints($M, $gridPoints[$complexcounter - 1], $gridDistance/3);
 
+  $geneFlatCoordinatesSquare = generatePolygonPoints($M, $gridPointsSquare[$complexcounter - 1], $gridDistanceSquare/3);
+
     //echo the genenames
     echo "Genenames: " . json_encode($genenames) . "<br>";
 
     //echo the geneFlatCoordinates
     echo "GeneFlatCoordinates: " . json_encode($geneFlatCoordinates) . "<br>";
 
+    //echo the geneFlatCoordinatesSquare
+    echo "GeneFlatCoordinatesSquare: " . json_encode($geneFlatCoordinatesSquare) . "<br>";
 
   $mygenecounter = 0;
 
@@ -202,16 +244,22 @@ foreach ($results as $row) {
 //     }
 
 //insert into tempTopology table the HuMAP2_ID and genenames with label counting up from 1 with PDO
-    $stmt = $pdo->prepare('INSERT INTO tempTopology (label, complexIdClustering, Flat_X, Flat_Y, Flat_Z) VALUES (:label, :complexIdClustering, :Flat_X, :Flat_Y, :Flat_Z)');
+    $stmt = $pdo->prepare('INSERT INTO tempTopology (label, complexIdClustering, Flat_X, Flat_Y, Flat_Z , Square_X, Square_Y, Square_Z) VALUES (:label, :complexIdClustering, :Flat_X, :Flat_Y, :Flat_Z, :Square_X, :Square_Y, :Square_Z)');
     $stmt->bindValue(':label', $genecounter, PDO::PARAM_STR);
     $stmt->bindValue(':complexIdClustering', $complexcounter, PDO::PARAM_STR); // $row['HuMAP2_ID']
     $stmt->bindValue(':Flat_X', $geneFlatCoordinates[$mygenecounter][0], PDO::PARAM_STR);
     $stmt->bindValue(':Flat_Y', 0, PDO::PARAM_STR);
     $stmt->bindValue(':Flat_Z', $geneFlatCoordinates[$mygenecounter][1], PDO::PARAM_STR);
+    $stmt->bindValue(':Square_X', $geneFlatCoordinatesSquare[$mygenecounter][0], PDO::PARAM_STR);
+    $stmt->bindValue(':Square_Y', 0, PDO::PARAM_STR);
+    $stmt->bindValue(':Square_Z', $geneFlatCoordinatesSquare[$mygenecounter][1], PDO::PARAM_STR);
 
     $result = $stmt->execute();
     if (!$result) {
-      echo "Error inserting data: " . $pdo->errorInfo();
+        echo ':Square_X'.$geneFlatCoordinatesSquare[$mygenecounter][0].'<br>';
+        echo ':Square_Y.0.<br>';
+        echo ':Square_Z'.$geneFlatCoordinatesSquare[$mygenecounter][1].'<br>';
+        echo "Error inserting data into tempTopology: " . json_encode($pdo->errorInfo());
     }
 
     array_push($tempTopology,array(
@@ -246,7 +294,7 @@ foreach ($results as $row) {
     $stmt->bindValue(':hemisphere', "left", PDO::PARAM_STR);
     $result = $stmt->execute();
     if (!$result) {
-      echo "Error inserting data: " . $pdo->errorInfo();
+      echo "Error inserting data into tempMetadata: " . $pdo->errorInfo();
     }
 
 //     array_push(
