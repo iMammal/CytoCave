@@ -97,7 +97,7 @@ class NodeLabels {
 
     this.nodeLabelSprite = new THREE.Sprite(mat);
     this.nodeLabelSprite.scale.set(100, 50, 1);
-    this.nodeLabelSprite.position.set(300, 0, 0);
+    this.nodeLabelSprite.position.set(30000, 0, 0);
     // if(previewAreaLeft.labelsVisible) {
     //     this.brain.add(this.nodeLabelSprite);
     // }
