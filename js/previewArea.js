@@ -194,7 +194,7 @@ class PreviewArea {
     this.linegraphs = new LineGraphs(this); //preViewArea_);
 
     // Display all edges
-    for(let i=1;i<this.model.getDataset().length;i++) {
+    for(let i=0;i<this.model.getDataset().length;i++) {
       this.drawEdgesGivenIndex(i);
     }
 
@@ -1831,12 +1831,12 @@ class PreviewArea {
 
         // this.NodeManager.selectNode(this.NodeManager.index2node(i));
         if (this.edgesAllOn === false) {
-          for(let i=1;i<this.model.getDataset().length;i++) {
+          for(let i=0; i<this.model.getDataset().length;i++) {
             this.drawEdgesGivenIndex(i);
           }
           this.edgesAllOn = true;
         } else {
-          for(let i=1;i<this.model.getDataset().length;i++) {
+          for(let i=0;i<this.model.getDataset().length;i++) {
             this.removeEdgeGivenIndex(i);
           }
           this.edgesAllOn = false;
@@ -2417,13 +2417,13 @@ class PreviewArea {
   };
 
   refreshEdges = () => {
-    for(let i=1;i<this.model.getDataset().length;i++) {
+    for(let i=0;i<this.model.getDataset().length;i++) {
       this.removeEdgeGivenIndex(i);
     }
 
     this.removeShortestPathEdgesFromScene();
 
-    for(let i=1;i<this.model.getDataset().length;i++) {
+    for(let i=0;i<this.model.getDataset().length;i++) {
         this.drawEdgesGivenIndex(i);
     }
     // this.edgesAllOn = true;
