@@ -51,7 +51,9 @@ import {
   // updateNodeSelection,
   updateNodeMoveOver,
     updateScenes,
-  previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove
+ previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove, toggleFloatingLabel
+  // previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove,
+  //   updateHud2D
 } from './drawing'
 import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, removeGeometryButtons} from './GUI'
 import {scaleColorGroup} from './utils/scale'
@@ -71,6 +73,10 @@ import NeuroSlice from "./NeuroSlice";
 import NodeManager from "./NodeManager";
 import {modelLeft} from "./model";
 import { PathFinder } from "./PathFinder";
+import canvasGraph from "./canvasGraph";
+import  Hud2D  from "./Hud2d";
+import LineGraphs from './LineGraphs.js';
+import NodeLabels from "./nodeLabels";
 
 class PreviewArea {
   constructor(canvas_, model_, name_) {
@@ -140,6 +146,8 @@ class PreviewArea {
     this.particlesVisible = false;
     //this.edgeFlaresVisible = true;  //particles or flares?
 
+    this.edgesAllOn = false;
+
     this.edgeFlareVisible = 1; //true;
     this.labelsVisible = false;
     //this.particlesVisible = false;
@@ -165,28 +173,42 @@ class PreviewArea {
     this.NodeManager = new NodeManager(this);
     this.rebindNodeManagerCallbacks();
 
-    this.renderer.setAnimationLoop(this.animatePV); // todo: this is the new way to do it in WebXR
+    this.renderer.setAnimationLoop(this.animatePV); // done: this is the new way to do it in WebXR
 
-    this.addSkybox();
+    this.addSkybox(); // todo: Try starting without skybox but make the background black in all browsers.
     this.initEdgeFlare();
     this.setEventListeners();
+    this.nodeLabels = new NodeLabels(this,this.NodeManager);
+    // this.nspCanvas = document.createElement('canvas');
+    // this.nodeNameMap = null;
+    // this.nodeLabelSprite = null;
 
-    this.nspCanvas = document.createElement('canvas');
-    this.nodeNameMap = null;
-    this.nodeLabelSprite = null;
-    //this.xrDolly = new THREE.Object3D();
     //this.imageSlices = new NeuroSlice('public/images','data/Cartana/SliceDepth0.csv',this.imagesLoadedCallback.bind(this));
 
-    this.labelAll();
+    // this.labelAll();
+    // this.NodeManager.selectAll();
 
-  }
+    this.lineplotCanvas = document.createElement('canvas');
+    this.lineplots = [document.getElementById('lineplot1')];//createElement('canvas');
+    this.Hud2D = new Hud2D(this);
+    this.linegraphs = new LineGraphs(this); //preViewArea_);
+
+    // Display all edges
+    for(let i=0;i<this.model.getDataset().length;i++) {
+      this.drawEdgesGivenIndex(i);
+    }
+
+    this.toggleLabels();
+
+  } // End Constructor
 
   //reset previewArea to state
   reset = () => {
     this.removeAllInstances();
     //shut down all highlights before reset
     this.NodeManager.removeHighlights();
-    //for each three.js wireframe in this.Nodemanager.highlights, remove from scene
+    //this.nodeLabels.removeAllLabels();
+
     this.pathFinder = null;
     this.NodeManager = new NodeManager(this);
     this.updateNodesVisibility(true);
@@ -196,6 +218,10 @@ class PreviewArea {
     this.reInitEdgeFlare();
 
     this.setEdgeOpacity(this.edgeOpacity);  //maintains edge opacity between resets.
+    //restore nodelabels if they were visible
+    if (this.labelsVisible) {
+      this.nodeLabels.labelAllNodes();
+    }
   }
 
   appearUnselected = (node) => {
@@ -208,7 +234,6 @@ class PreviewArea {
     this.NodeManager.removeHighlight(node);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class
 
-
   }
 
   appearSelected = (node) => {
@@ -217,11 +242,13 @@ class PreviewArea {
     let index = this.NodeManager.node2index(node);
 
     this.NodeManager.restoreNodeByIndex(index);
+    this.model.loadNodeDetails(index);
     this.NodeManager.scaleNodeByIndex(index, 1.5);
     this.drawEdgesGivenIndex(index);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.
-    this.NodeManager.removeHighlight(node); //our highlight color has precedence over the selected color so we need to remove it.
-    this.NodeManager.highlightNode(node, 0xFF0000); // selected node will be red
+    // In CYtoCave the nodes are all selected by default to show their edges. But highlighting is not done (idealy) until the user selects a node.
+    // this.NodeManager.removeHighlight(node); //our highlight color has precedence over the selected color so we need to remove it.
+    // this.NodeManager.highlightNode(node, 0xFF0000); // selected node will be red
     // set contextually selected nodes to appear highlighted
     //todo: do we have a slider for distance?
     this.NodeManager.activateContextAroundIndex(index, 0, 1);
@@ -230,6 +257,9 @@ class PreviewArea {
 
       previewAreaLeft.NodeManager.select(index);  //if it's already selected in this tree selectNode does nothing so it's safe to call on both sides.
       previewAreaRight.NodeManager.select(index);
+
+
+      this.Hud2D.update();
 
   }
 
@@ -1555,7 +1585,7 @@ class PreviewArea {
     //console.log("Current value of  this.edgeFlareVisible: " + this.edgeFlareVisible);
     //count active edges in each node from get active edges function
     let count = 0;
-    //let edges = this.getAllSelectedNodesActiveEdges();
+    let edges = this.getAllSelectedNodesActiveEdges();
     //console.log("init Edge Flare Edges: ");
     //console.log(edges);
     let colorMatchMap = [];
@@ -1734,6 +1764,40 @@ class PreviewArea {
 
   }
 
+  //display details of the selected nodes
+  displaySelectedNodeDetails = () => {
+
+    // graph some data
+    //generate some fake data
+    let fakeData = [];
+    for (let i = 0; i < 25; i++) {
+      fakeData.push(Math.random());
+    }
+    this.lineplotData = fakeData;
+    this.graphOptions = {
+      width: 200,
+      height: 100,
+      color: 'white',
+      strokeStyle: 'white', // color of the line
+      lineWidth: 2,
+      lineJoin: 'round',
+      lineCap: 'round',
+      padding: 10,
+      grid: {
+        color: 'rgba(255, 255, 255, 0.5)',
+        width: 1,
+        height: 1
+      }
+    }
+
+    this.addNodeLabel(this.lineplotCanvas);
+
+    //let graph = new canvasGraph(this.lineplotCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
+    let graph = new canvasGraph(this.lineplots[0], this.lineplotData, this.graphOptions); // canvas, data, options
+    //this.flatMesh.position.set(-0.35, 0.4, 0);
+
+  }
+
   //listen for key presses
   keyPress = (event) => {
     //remove the event listener for keypresses if it is already listening
@@ -1752,6 +1816,9 @@ class PreviewArea {
     if (event.key === 'l') {
       this.toggleLabels();
     }
+    if (event.key === 'j') {
+      toggleFloatingLabel();
+    }
     if (event.key === 'f') {
       this.toggleFlare();
     }
@@ -1759,11 +1826,29 @@ class PreviewArea {
       this.toggleParticles();
     }
     if (event.key === 'k') {
-      this.labelAll();
+      //this.labelAll();
+      // this.NodeManager.selectAll();
+
+        // this.NodeManager.selectNode(this.NodeManager.index2node(i));
+        if (this.edgesAllOn === false) {
+          for(let i=0; i<this.model.getDataset().length;i++) {
+            this.drawEdgesGivenIndex(i);
+          }
+          this.edgesAllOn = true;
+        } else {
+          for(let i=0;i<this.model.getDataset().length;i++) {
+            this.removeEdgeGivenIndex(i);
+          }
+          this.edgesAllOn = false;
+        }
+      }
+
+    if (event.key === 'g') {
+      this.displaySelectedNodeDetails();
     }
     if (event.key === 's') {
       //toggle slice images.
-       if (this.imageSlices) {
+      if (this.imageSlices) {
         this.imageSlices.toggleSlices();
       }
     }
@@ -1823,7 +1908,7 @@ class PreviewArea {
     //re-add the event listener for keypresses
 
   }
-
+  //callback for when the pathfinder finishes
   pathfinderFinished = (pathObject) => {
     console.log(pathObject);
     setTimeout(() => {
@@ -1856,13 +1941,14 @@ class PreviewArea {
       }
 
       // draw the path
-      this.shortestPathEdges.push(this.drawEdgeWithName(edgePoints,"Dijkstra Path", nodesI));
+      this.shortestPathEdges.push(this.drawEdgeWithName(edgePoints,"Dijkstra Path", nodesI,1));
     }, 50);
 
     console.log("pathfinder finished: " + pathObject + " path cost: " + pathObject.distance);
     this.pathFinder = null;
   }
 
+  //callback for when the pathfinder fails
   pathfinderFailed = (pathObject) => {
     //pop an alert with the failure message
     alert("Pathfinder failed: " + pathObject.message);
@@ -1896,13 +1982,17 @@ class PreviewArea {
   // toggle between showing and hiding labels
   toggleLabels = () => {
     if (this.labelsVisible) {
+      console.log("removing labels");
       this.labelsVisible = false;
+      this.nodeLabels.removeAllLabels();
       //this.hideLabels();
       //addNodeLabel();
-    } else {
+    } else { //if (toggleFloatingLabel()) {
+      console.log("adding labels");
       this.labelsVisible = true;
       //this.showLabels();
-      this.addNodeLabel();
+      //this.nodeLabels.addNodeLabel();
+      this.nodeLabels.labelAllNodes();
     }
   }
 
@@ -1931,25 +2021,25 @@ class PreviewArea {
     }
   }
 
-  labelAllCallback = (nodeObject) => {
-    let index = this.NodeManager.node2index(nodeObject);
-    let region = this.model.getRegionByIndex(index);
-
-    this.addNodeLabel();
-    this.updateNodeLabel(index+'_'+region.name,nodeObject);
-    this.animatePV();
-  }
-
-  // select and label all nodes
-  labelAll = () => {
-    this.NodeManager.nodeSelectedCallback = this.labelAllCallback;
-    this.labelsVisible = true;
-    this.NodeManager.selectAll();
-    this.rebindNodeManagerCallbacks();
-    // this.NodeManager.deselectAll();
-    this.labelsVisible = false;
-    // this.model.setThreshold(0.0);
-  }
+  // labelAllCallback = (nodeObject) => {
+  //   let index = this.NodeManager.node2index(nodeObject);
+  //   let region = this.model.getRegionByIndex(index);
+  //
+  //   this.addNodeLabel();
+  //   this.updateNodeLabel(index+'_'+region.name,nodeObject);
+  //   this.animatePV();
+  // }
+  //
+  // // select and label all nodes
+  // labelAll = () => {
+  //   this.NodeManager.nodeSelectedCallback = this.labelAllCallback;
+  //   this.labelsVisible = true;
+  //   this.NodeManager.selectAll();
+  //   this.rebindNodeManagerCallbacks();
+  //   // this.NodeManager.deselectAll();
+  //   this.labelsVisible = false;
+  //   // this.model.setThreshold(0.0);
+  // }
 
 
   // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
@@ -2326,7 +2416,24 @@ class PreviewArea {
     //this.animateShortestPathEdges();
   };
 
+  refreshEdges = () => {
+    for(let i=0;i<this.model.getDataset().length;i++) {
+      this.removeEdgeGivenIndex(i);
+    }
+
+    this.removeShortestPathEdgesFromScene();
+
+    for(let i=0;i<this.model.getDataset().length;i++) {
+        this.drawEdgesGivenIndex(i);
+    }
+    // this.edgesAllOn = true;
+    // } else {
+
+
+}
+
   removeEdgesFromScene = () => {
+    return;
     for (let i = 0; i < this.displayedEdges.length; ++i) {
       this.brain.remove(this.displayedEdges[i]);
     }
@@ -2376,6 +2483,11 @@ class PreviewArea {
     }
     if(this.xrInterface.isVRAvailable())
       this.xrInterface.update(this.xrInterface,time,frame);
+    else
+      // console.log("NOT XRing");
+      if(this.linegraphs !== null)
+        this.linegraphs.updateLinegraph();
+
 
     //limit this function to (fps)fps)
     // if (Date.now() - lastTime < 1000 / fps) {
@@ -2486,7 +2598,7 @@ class PreviewArea {
     for (let [edge, targets] of activeEdges) {
       this.drawEdgesGivenNode(edge);
     }
-
+    this.redrawEdges();
   }
 
   //     if (getSpt())
@@ -2534,6 +2646,7 @@ class PreviewArea {
   updateScene = () => {
     console.log('%c  ' + 'updateScene', 'background: #222; color: #bada55');
     this.reset();
+    this.refreshEdges()
   };
 
   removeAllInstances = () => {
@@ -3525,9 +3638,9 @@ class PreviewArea {
     for (var i = 0; i < this.displayedEdges.length; i++) {
 
       this.displayedEdges[i].material.opacity = this.displayedEdges[i].material.userData.originalOpacity * opacity;
-      // console.log("originalOpacity: " + this.displayedEdges[i].material.userData.originalOpacity);
-      // console.log("slider opacity: " + opacity);
-      // console.log("actual opacity: " + this.displayedEdges[i].material.opacity);
+      console.log("originalOpacity: " + this.displayedEdges[i].material.userData.originalOpacity);
+      console.log("slider opacity: " + opacity);
+      console.log("actual opacity: " + this.displayedEdges[i].material.opacity);
       this.displayedEdges[i].material.needsUpdate = true;
     }
   };
@@ -3559,12 +3672,14 @@ class PreviewArea {
       transparent: true,
       opacity: opacity * this.getEdgeOpacity(),
       vertexColors: true, //THREE.VertexColors
-      //dashed: false,
+      //enable double sided rendering
+      //side: THREE.DoubleSide,
       worldUnits: true,
       linewidth: 10 * opacity,
       depthTest: true,
 
-      // Line2 not subject to linewidth limitations.
+      //alphaToCoverage: true,
+      // Due to limitations in the ANGLE layer on Windows platforms linewidth will always be 1.
     });
     material.userData = {
       originalOpacity: opacity
@@ -3608,6 +3723,7 @@ class PreviewArea {
     return line2;
   };
 
+  //drawEdgeWithName = (edge, ownerNode, nodes, opacity) => {
   drawEdgeWithName = (edge, ownerNode, nodes, weight) => {
     //edge is an array of points
     //ownerNode is the name of the node that owns the edge//usually the source node index
@@ -3986,10 +4102,11 @@ class PreviewArea {
   // return undefined if no object was found
 
   getIntersectedObject = (vector) => {
-    //2d intersection
+
     let raycaster = new THREE.Raycaster();
 
     raycaster.setFromCamera(vector, this.camera);
+
     let nodes = this.scene.children.filter(o => o.name === 'NodeManager');
     let objectsIntersected = [];
     if (nodes.length > 0) {
@@ -4001,7 +4118,6 @@ class PreviewArea {
     } else {
       return null;
     }
-
     //return (this.objectsIntersected[0]) ? this.objectsIntersected[0] : null;
   };
 
@@ -4175,71 +4291,83 @@ class PreviewArea {
   //     return null;
   // }
 
-
-  // Update the text and position according to selected node
-  // The alignment, size and offset parameters are set by experimentation
-  // TODO needs more experimentation
-  updateNodeLabel = (text, nodeObject) => {    ///Index) {
-    if (this.labelsVisible === false) return;
-
-    let context = this.nspCanvas.getContext('2d');
-    context.textAlign = 'left';
-    // Find the length of the text and add enough _s to fill half of the canvas
-    let textLength = context.measureText(text).width;
-    let numUnderscores = Math.ceil((this.nspCanvas.width / 2 - textLength) / context.measureText("_").width);
-    for (let i = 0; i < numUnderscores; i++) {
-      text = text + "_";
-    }
-    //text = text + "___________________________";
-    context.clearRect(0, 0, 256 * 4, 256);
-    context.fillText(text, 5, 120);
-
-    this.nodeNameMap.needsUpdate = true;
-    //var pos = glyphs[nodeIndex].position;
-    let pos = nodeObject.point;
-    this.nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
-    //Set Renderorder of label sprites to 1 so they render before the edges and stop obscuring them with transparent planes and making them disappear
-    this.nodeLabelSprite.renderOrder = 1;
-    if (this.labelsVisible) {
-      this.nodeLabelSprite.needsUpdate = true;
-    }
-  };
-
-  // Adding Node label Sprite
-  addNodeLabel = () => {
-    //this.nspCanvas = document.createElement('canvas');
-    //moved to constructor.
-    let size = 256;
-    this.nspCanvas.width = size * 4;
-    this.nspCanvas.height = size;
-    let context = this.nspCanvas.getContext('2d');
-    context.fillStyle = '#ffffff';
-    context.textAlign = 'left';
-    context.font = '88px Arial';
-    context.fillText("", 0, 0);
-    //todo bug can't assign a canvas as a texture, extract the texture first.
-    this.nodeNameMap = new THREE.Texture(this.nspCanvas);
-    this.nodeNameMap.needsUpdate = true;
-
-    var mat = new THREE.SpriteMaterial({
-      map: this.nodeNameMap,
-      transparent: true,
-      useScreenCoordinates: false,
-      color: 0xffffff
-    });
-
-    this.nodeLabelSprite = new THREE.Sprite(mat);
-    this.nodeLabelSprite.scale.set(100, 50, 1);
-    this.nodeLabelSprite.position.set(0, 0, 0);
-    // if(previewAreaLeft.labelsVisible) {
-    //     this.brain.add(this.nodeLabelSprite);
-    // }
-    if (this.labelsVisible) {
-      this.brain.add(this.nodeLabelSprite);
-    }
-
-
-  };
+  // updateNodeSpritePos = (nodeObject, targetCanvas = this.nspCanvas) => {
+  //
+  //   let context = targetCanvas.getContext('2d');
+  //
+  //   let pos = nodeObject.point;
+  //   this.nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
+  //   if (true || this.labelsVisible) {
+  //     this.nodeLabelSprite.needsUpdate = true;
+  //   }
+  // }
+  //
+  // // Update the text and position according to selected node
+  // // The alignment, size and offset parameters are set by experimentation
+  // // TODO needs more experimentation
+  // updateNodeLabel = (text, nodeObject) => {    ///Index) {
+  //   //this.updateNodeSpritePos(nodeObject, this.lineplotCanvas);
+  //
+  //   if (this.labelsVisible === false) return;
+  //
+  //   let context = this.nspCanvas.getContext('2d');
+  //   context.textAlign = 'left';
+  //   // Find the length of the text and add enough _s to fill half of the canvas
+  //   let textLength = context.measureText(text).width;
+  //   let numUnderscores = Math.ceil((this.nspCanvas.width / 2 - textLength) / context.measureText("_").width);
+  //   for (let i = 0; i < numUnderscores; i++) {
+  //     text = text + "_";
+  //   }
+  //   //text = text + "___________________________";
+  //   context.clearRect(0, 0, 256 * 4, 256);
+  //   context.fillText(text, 5, 120);
+  //
+  //   this.nodeNameMap.needsUpdate = true;
+  //   //var pos = glyphs[nodeIndex].position;
+  //   let pos = nodeObject.point;
+  //   this.nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
+  //   //Set Renderorder of label sprites to 1 so they render before the edges and stop obscuring them with transparent planes and making them disappear
+  //   this.nodeLabelSprite.renderOrder = 1;
+  //   if (this.labelsVisible) {
+  //     this.nodeLabelSprite.needsUpdate = true;
+  //   }
+  // };
+  //
+  // // Adding Node label Sprite
+  //addNodeLabel = (targetCanvas = this.nspCanvas) => {
+  //   //this.nspCanvas = document.createElement('canvas');
+  //   //moved to constructor.
+  //   let size = 256;
+  //  targetCanvas.width = size * 4;
+  //  targetCanvas.height = size;
+  //  let context = targetCanvas.getContext('2d');
+  //   context.fillStyle = '#ffffff';
+  //   context.textAlign = 'left';
+  //  context.font = '88px Arial';
+  //   context.fillText("", 0, 0);
+  //   //todo bug can't assign a canvas as a texture, extract the texture first.
+  //  this.nodeNameMap = new THREE.Texture(targetCanvas);
+  //   this.nodeNameMap.needsUpdate = true;
+  //
+  //   var mat = new THREE.SpriteMaterial({
+  //     map: this.nodeNameMap,
+  //     transparent: true,
+  //     useScreenCoordinates: false,
+  //     color: 0xffffff
+  //   });
+  //
+  //   this.nodeLabelSprite = new THREE.Sprite(mat);
+  //   this.nodeLabelSprite.scale.set(100, 50, 1);
+  //   this.nodeLabelSprite.position.set(0, 0, 0);
+  //   // if(previewAreaLeft.labelsVisible) {
+  //   //     this.brain.add(this.nodeLabelSprite);
+  //   // }
+  //   if (this.labelsVisible) {
+  //     this.brain.add(this.nodeLabelSprite);
+  //   }
+  //
+  //
+  // };
 
   getCamera = () => {
     return this.camera;
@@ -4338,34 +4466,8 @@ class PreviewArea {
         color.copy(midColor);
       }
 
-
-      //
-
-      // old code for lerp colors based on position in the highlight list and size of dataset.
-      // let dsLength = this.model.getDataset().length;
-      // //lerp 3 colors based on the weight of the connection.
-      // if (colorIndex < (dsLength / 2) - dsLength*0.05) {
-      //   color.lerpColors(startColor, midColor, colorIndex / dsLength);
-      // } else if (colorIndex > (dsLength / 2) + dsLength*0.05) {
-      //   color.lerpColors(midColor, endColor, colorIndex / dsLength);
-      // } else {
-      //   color.copy(midColor);
-      // }
       this.NodeManager.highlightNodeByIndex(index,color.getHex());
-      // setTimeout(() => {
-      //   this.NodeManager.removeHighlightByIndex(index);
-      // } , 1000);
 
-    //this.NodeManager.highlightNodeByIndex(index);
-    //set a timeout to remove the context.
-    // setTimeout(() => {
-    //   //this.NodeManager.unhighlightNodeByIndex(index);
-    //   //todo: we are just doing this until deactivateContextOnNode is finished.
-    //   this.NodeManager.removeContextNodeByIndex(index);
-    //   //find the highlight in the scene with matching userdata index and remove it
-    //
-    //   //time before you can reactivate any context node.
-    // }, 1000);
   }
 
   deactivateContextOnNode = (node) => {
@@ -4378,15 +4480,7 @@ class PreviewArea {
     //this.NodeManager.removeContextNodeByIndex(index);
   }
 
-// }
-//
-// this.setAnimation = function (amp) {
-//     amplitude = amp;
-// }
-//
-// this.setFlahRate = function (freq) {
-//     frequency = freq;
-// }
+
 
 }
 

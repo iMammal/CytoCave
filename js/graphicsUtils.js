@@ -7,7 +7,7 @@ import * as THREE from 'three'
 import * as math from './external-libraries/math.min.js'
 import {scaleColorGroup} from './utils/scale'
 
-var shpereRadius = 3.0;             // normal sphere radius
+var shpereRadius = 9.0;             // normal sphere radius was 3.0 for NeuroCave, now 9.0 here
 var sphereResolution = 12;
 var dimensionFactor = 1;
 var dimensionFactorLeftSphere = 1;

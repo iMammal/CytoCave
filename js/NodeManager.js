@@ -12,6 +12,7 @@ import {getNormalGeometry, getNormalMaterial} from "./graphicsUtils";
 import {previewAreaLeft} from "./drawing";
 
 class NodeManager {
+
   constructor(_previewArea) {
     this.model = _previewArea.getModel();
     this.scene = _previewArea.getSceneObject();
@@ -28,6 +29,7 @@ class NodeManager {
     this.nodesSelectedGeneralCallback = null;
     this.nodeSelectedCallback = null;
     this.onNodeUnselectCallback = null;
+    this.allNodesSelectedCallback = null;
     this.contextualNodes = [];
     this.contextualNodeDeactivated = null;
     this.contextualNodeActivated = null;
@@ -196,12 +198,12 @@ class NodeManager {
       console.log(node);
       throw new Error("node2index userData undefined, InstanceID: " + instanceId + " index: ?");
     }
-    if (instanceId >= node.object.userData.indexList.length) {
+    if(instanceId >= node.object.userData.indexList.length){
       console.log("instanceId is greater than length of indexList");
       throw new Error("instanceId is greater than length of indexList");
     }
-    let index = undefined;
-    if (instanceId === undefined || instanceId === null || isNaN(instanceId)) {
+    let index= undefined;
+    if(instanceId === undefined || instanceId === null || isNaN(instanceId)) {
       console.log("node2index  InstanceID: " + instanceId + " index: " + index + "InstanceID is null undefined or in any other way not a number")
       console.log("Falling back to node.id")
       index = node.object.userData.indexList[node.id];
@@ -427,12 +429,12 @@ class NodeManager {
       //add timeout to remove highlight.
       setTimeout(() => {
         this.removeHighlightByIndex(this.node2index(node));
-      }, 1000);
+      } , 1000);
     }
   }
 
-  highlightNode(node, color = 0xffffff) {
-    if (node == null || node === undefined || node.object === null || node.object === undefined) {
+  highlightNode(node,color = 0xffffff) {
+    if (node == null || node === undefined || node.object === null || node.object === undefined ) {
       console.log("highlightNode: node is null or undefined");
       console.log(node);
 
@@ -448,7 +450,7 @@ class NodeManager {
     //   }
     // }
     // // use some method to do above
-    if (this.highLights.some(highLight => highLight.userData.index === index)) {
+    if(this.highLights.some(highLight => highLight.userData.index === index)){
       return;
     }
 
@@ -457,7 +459,7 @@ class NodeManager {
     // Create a wireframe  slightly larger than the node.
     // const radius = 1.1;
     // const segments = 32;
-    const baseGeometry = getNormalGeometry(node.object.name.hemisphere, this.previewArea.name);
+    const baseGeometry = getNormalGeometry(node.object.name.hemisphere,this.previewArea.name);
     const wireframe = new THREE.WireframeGeometry(
       baseGeometry
     );
@@ -466,8 +468,8 @@ class NodeManager {
     const material = new THREE.LineBasicMaterial({
       color: color,
       transparent: true,
-      opacity: 0.2,
-      linewidth: 5
+      opacity: 0.8,
+      linewidth: 8
     });
 
     //figure out the size of the node so we can scale the highlight to match.
@@ -499,16 +501,16 @@ class NodeManager {
 
   }
 
-  highlightNodeByIndex(index, color = 0xffffff) {
+  highlightNodeByIndex(index, color= 0xffffff) {
 
     let node = this.index2node(index);
-    this.highlightNode(node, color);
+    this.highlightNode(node,color);
   }
 
   removeHighlights = () => {
     //remove all highlights.
     let i = this.highLights.length;
-    while (i--) {
+    while (i--)   {
       this.removeHighlightByIndex(this.highLights[i].userData.index);
     }
 
@@ -523,7 +525,6 @@ class NodeManager {
     this.removeHighlightByIndex(index);
 
   }
-
   removeHighlightByIndex(index) {
 
     // remove highlight from this.highLights where highlight.userData.index === index
@@ -589,6 +590,9 @@ class NodeManager {
       this.selectedNodes.push(index);
       this.selectedNodesChanged = true;
       this.selectedNodesCount++;
+      //
+      //this.model.loadNodeDetails(index); //this.model.getDataset()[index]);
+      //use the callback, right now it points to appearselected in previewarea as defined by previewarea.
       if (this.nodeSelectedCallback !== null) {
         this.nodeSelectedCallback(node);
       }
@@ -676,9 +680,12 @@ class NodeManager {
         }
         for (let i = 0; i < this.instances[group][hemisphere].userData.indexList.length; i++) {
           let index = this.instances[group][hemisphere].userData.indexList[i];
-          this.select(index);
+          this.select(index); // beware, the callbacks for each individual node are still called in select.
         }
       }
+    }
+    if(this.allNodesSelectedCallback !== null){
+      this.allNodesSelectedCallback();
     }
   }
 
@@ -716,9 +723,8 @@ class NodeManager {
   //If threshold is null or 0, the threshold filter is disabled.
   getEdges = (node, threshold = 0, topN = 0, distance = 0) => {
     //todo: move to model, remove edges as a concept from NodeManager
-
     let edges = []; //this.previewArea.model.getActiveEdges();
-    console.count("getEdges");
+    //console.count("getEdges");
     //console.log(edges);
     //return edges;
     //get the edges of the node at the instanceId.
@@ -790,7 +796,7 @@ class NodeManager {
         let distance2target = sourcePosition.distanceTo(targetPosition);
         return distance2target <= distance;
       });
-    }
+    } else {
 
     edges.sort((a, b) => {
       // sort by distance closest to farthest
@@ -802,9 +808,10 @@ class NodeManager {
       return aDistance - bDistance;
     });
 
+    }
 
-    if (topN !== null && topN > 0 && topN < edges.length) {
-      //console.log("TopN filter set topN to null or 0 to disable.");
+    if (topN !== null && topN > 0) {  // && topN < edges.length)
+      console.log("TopN filter set topN to null or 0 to disable.");
       edges = edges.slice(0, topN);
     }
     // console.log("Returning " + edges.length + " edges.");
@@ -828,84 +835,84 @@ class NodeManager {
   /*requires two nodes to be selected. the first node is the source node, the second node is the target node.
 * the path is calculated using the shortest path algorithm.
  */
-
-//todo remove stp stuff from nodemanager, superceded by PathFinder
-  calculateShortestPath(node1, node2, topN = null, distance = 0) {
-    //modified djikstra's algorithm.
-    //https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
-    //https://en.wikipedia.org/wiki/Shortest_path_problem
-    //https://en.wikipedia.org/wiki/Graph_traversal
-    //https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)
-    //https://en.wikipedia.org/wiki/Graph_theory
-
-
-    let sptSet = new Set();
-    let dist = new Map();
-    let prev = new Map();
-    this.stpQueue = [];
-    let sourceIndex = this.node2index(node1);
-    let targetIndex = this.node2index(node2);
-    //initialize the distance of all nodes to infinity.
-    for (let group in this.instances) {
-      for (let hemisphere in this.instances[group]) {
-        if (this.instances[group][hemisphere] === null) {
-          continue;
-        }
-        for (let i = 0; i < this.instances[group][hemisphere].userData.indexList.length; i++) {
-          let index = this.instances[group][hemisphere].userData.indexList[i];
-          dist.set(index, Infinity);
-          prev.set(index, null);
-        }
-      }
-    }
-    //set the distance of the source node to 0.
-    dist.set(sourceIndex, 0);
-    //add the source node to the queue.
-    this.stpQueue.push(sourceIndex);
-    while (this.stpQueue.length > 0 && !sptSet.has(targetIndex) && this.stpQueue.length < this.maxNodesToProcess) {
-      //get the node with the smallest distance from the queue.
-      let u = this.stpQueue.shift();
-      //add the node to the sptSet.
-      sptSet.add(u);
-      //get the edges of the node.
-      let edges = this.getEdgesByIndex(u, this.model.getThreshold(), topN, distance);
-      //for each edge.
-      for (let i = 0; i < edges.length; i++) {
-        //get the target node.
-        let v = edges[i].targetNodeIndex;
-        //if the target node is not in the sptSet.
-        if (!sptSet.has(v)) {
-          //calculate the distance from the source node to the target node.
-          let alt = dist.get(u) + edges[i].weight;
-          //if the distance is less than the current distance.
-          if (alt < dist.get(v)) {
-            //set the distance to the new distance.
-            dist.set(v, alt);
-            //set the previous node to the current node.
-            prev.set(v, u);
-            //add the target node to the queue.
-            this.stpQueue.push(v);
-          }
-        }
-
-      }
-    }
-    //the loop above will terminate when the queue is empty or the target node is in the sptSet.
-    //if the target node is in the sptSet, the shortest path has been found. otherwise there is no path.
-    //if the target node is in the sptSet, reconstruct the path.
-    let path = [];
-    if (sptSet.has(targetIndex)) {
-      let u = targetIndex;
-      while (prev.get(u) !== null) {
-        path.push(u);
-        u = prev.get(u);
-      }
-      path.push(sourceIndex);
-      path.reverse();
-    }
-    return path;
-
-  }
+//
+// //todo remove stp stuff from nodemanager, superceded by PathFinder
+//   calculateShortestPath(node1, node2, topN = null, distance = 0) {
+//     //modified djikstra's algorithm.
+//     //https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+//     //https://en.wikipedia.org/wiki/Shortest_path_problem
+//     //https://en.wikipedia.org/wiki/Graph_traversal
+//     //https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)
+//     //https://en.wikipedia.org/wiki/Graph_theory
+//
+//
+//     let sptSet = new Set();
+//     let dist = new Map();
+//     let prev = new Map();
+//     this.stpQueue = [];
+//     let sourceIndex = this.node2index(node1);
+//     let targetIndex = this.node2index(node2);
+//     //initialize the distance of all nodes to infinity.
+//     for (let group in this.instances) {
+//       for (let hemisphere in this.instances[group]) {
+//         if (this.instances[group][hemisphere] === null) {
+//           continue;
+//         }
+//         for (let i = 0; i < this.instances[group][hemisphere].userData.indexList.length; i++) {
+//           let index = this.instances[group][hemisphere].userData.indexList[i];
+//           dist.set(index, Infinity);
+//           prev.set(index, null);
+//         }
+//       }
+//     }
+//     //set the distance of the source node to 0.
+//     dist.set(sourceIndex, 0);
+//     //add the source node to the queue.
+//     this.stpQueue.push(sourceIndex);
+//     while (this.stpQueue.length > 0 && !sptSet.has(targetIndex) && this.stpQueue.length < this.maxNodesToProcess) {
+//       //get the node with the smallest distance from the queue.
+//       let u = this.stpQueue.shift();
+//       //add the node to the sptSet.
+//       sptSet.add(u);
+//       //get the edges of the node.
+//       let edges = this.getEdgesByIndex(u, this.model.getThreshold(), topN, distance);
+//       //for each edge.
+//       for (let i = 0; i < edges.length; i++) {
+//         //get the target node.
+//         let v = edges[i].targetNodeIndex;
+//         //if the target node is not in the sptSet.
+//         if (!sptSet.has(v)) {
+//           //calculate the distance from the source node to the target node.
+//           let alt = dist.get(u) + edges[i].weight;
+//           //if the distance is less than the current distance.
+//           if (alt < dist.get(v)) {
+//             //set the distance to the new distance.
+//             dist.set(v, alt);
+//             //set the previous node to the current node.
+//             prev.set(v, u);
+//             //add the target node to the queue.
+//             this.stpQueue.push(v);
+//           }
+//         }
+//
+//       }
+//     }
+//     //the loop above will terminate when the queue is empty or the target node is in the sptSet.
+//     //if the target node is in the sptSet, the shortest path has been found. otherwise there is no path.
+//     //if the target node is in the sptSet, reconstruct the path.
+//     let path = [];
+//     if (sptSet.has(targetIndex)) {
+//       let u = targetIndex;
+//       while (prev.get(u) !== null) {
+//         path.push(u);
+//         u = prev.get(u);
+//       }
+//       path.push(sourceIndex);
+//       path.reverse();
+//     }
+//     return path;
+//
+//   }
 
 
   /*supplemental example function that activates edges on nodes around the actual selected node.*/
@@ -977,7 +984,7 @@ class NodeManager {
         this.removeContextNodeByIndex(edges[i].targetNodeIndex);
       }
     }
-  }
+}
 
   /*same as above but uses the index of the node instead of the node itself.*/
   activateContextAroundIndex(index, distance, focusDepth = 1) {
@@ -1062,91 +1069,6 @@ class NodeManager {
     return this.instances[node.object.name.group][node.object.name.hemisphere].userData.contextualNodes.includes(index);
   }
 
-  setSTPQueue(queue) {
-    this.stpQueue = queue;
-  }
-
-  /*setup for stp, actual stp is performed by performSTPstep*/
-  setupSTP(node1, node2, topN = null, distance = 0) {
-    // setupSTP, STPstep is the actual algorithm. this just sets up the data structures
-    // and initializes the queue.
-    //get the edges of the source node.
-    let edges = this.getEdges(node1, 0, topN, distance);
-
-    //use class variables to store the data structures.
-    this.sptSet = new Set();
-    this.dist = new Map();
-    this.prev = new Map();
-    this.stpQueue = [];
-    this.sourceIndex = this.node2index(node1);
-    this.targetIndex = this.node2index(node2);
-    //initialize the distance of all nodes to infinity.
-    for (let group in this.instances) {
-      for (let hemisphere in this.instances[group]) {
-        if (this.instances[group][hemisphere] === null) {
-          continue;
-        }
-        for (let i = 0; i < this.instances[group][hemisphere].userData.indexList.length; i++) {
-          let index = this.instances[group][hemisphere].userData.indexList[i];
-          this.dist.set(index, Infinity);
-          this.prev.set(index, null);
-        }
-      }
-    }
-    //set the distance of the source node to 0.
-    this.dist.set(this.sourceIndex, 0);
-    //add the source node to the queue.
-    this.stpQueue.push(this.sourceIndex);
-    //activate the stp queue.
-    this.processSTP = true;
-    //clear the current path if there is one.
-    this.STPpath = [];
-  }
-
-  //perform a single step of the shortest path algorithm.
-  STPstep(queue, sptSet, dist, prev, topN = null, distance = 0) {
-    //get the node with the smallest distance from the queue.
-    let u = queue.shift();
-    //add the node to the sptSet.
-    sptSet.add(u);
-    //get the edges of the node.
-    let edges = this.getEdgesByIndex(u, 0, topN, distance);
-    //for each edge.
-    for (let i = 0; i < edges.length; i++) {
-      //get the target node.
-      let v = edges[i].targetNodeIndex;
-      //if the target node is not in the sptSet.
-      if (!sptSet.has(v)) {
-        //calculate the distance from the source node to the target node.
-        let alt = dist.get(u) + edges[i].weight;
-        //if the distance is less than the current distance.
-        if (alt < dist.get(v)) {
-          //set the distance to the new distance.
-          dist.set(v, alt);
-          //set the previous node to the current node.
-          prev.set(v, u);
-          //add the target node to the queue.
-          queue.push(v);
-        }
-      }
-    }
-    //the loop above will terminate when the queue is empty or the target node is in the sptSet.
-    //if the target node is in the sptSet, the shortest path has been found. otherwise there is no path.
-    //if the target node is in the sptSet, reconstruct the path.
-    if (sptSet.has(this.targetIndex)) {
-      let u = this.targetIndex;
-      while (prev.get(u) !== null) {
-        this.STPpath.push(u);
-        u = prev.get(u);
-      }
-      this.STPpath.push(this.sourceIndex);
-      this.STPpath.reverse();
-      //the path has been found, stop processing.
-      this.processSTP = false;
-      this.STPFinished = true;
-      this.STPRunning = false;
-    }
-  }
 
   //Given an index number return the available edges from that node.
   //Optional parameters are threshold, topN, and distance.
@@ -1174,6 +1096,7 @@ class NodeManager {
         this.sceneObject.add(this.instances[group][hemisphere]);
       }
     }
+    //set name of sceneObject to "NodeManager"
     this.sceneObject.name = "NodeManager";
     this.scene.add(this.sceneObject);
   }
@@ -1217,12 +1140,12 @@ class NodeManager {
 
       }
 
-      if (this.processSTP) {
-        this.STPstep(this.stpQueue, this.sptSet, this.dist, this.prev);
-        if (this.STPFinishedCallback !== null) {
-          this.STPFinishedCallback();
+        if(this.processSTP){
+            this.STPstep( this.stpQueue, this.sptSet, this.dist, this.prev);
+            if(this.STPFinishedCallback !== null){
+                this.STPFinishedCallback();
+            }
         }
-      }
 
     }
   }

@@ -30,6 +30,7 @@ var click = false;
 var hoverTimeout = false;
 var oldNodeIndex = -1;
 var hoverMode = 0;
+var floatingLabel = false;
 
 import * as THREE from 'three'
 import {isLoaded, dataFiles, mobile} from "./globals";
@@ -63,6 +64,12 @@ import {PreviewArea} from "./previewArea";
 import {setUpdateNeeded} from './utils/Dijkstra';
 import { setNodeInfoPanel, enableThresholdControls, addSearchPanel } from './GUI'
 import {setColorGroupScale} from './utils/scale'
+import {func} from "three/nodes";
+
+function toggleFloatingLabel() {
+    floatingLabel = !floatingLabel;
+    return floatingLabel;
+}
 
 // callback on mouse moving, expected action: node beneath pointer are drawn bigger
 function onDocumentMouseMove(model, event) {
@@ -155,10 +162,11 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     if (nodeExistAndVisible) {
         setNodeInfoPanel(region, nodeIdx);
         // if (vr) {  //todo: this can be used outside of VR to help get node label info next to the node itself, not in the screen corner
+        if (floatingLabel) {
             let labeltext = region.group+" "+region.name+" "+region.label;
-             previewAreaLeft.updateNodeLabel(labeltext,  intersectedObject);
-             previewAreaRight.updateNodeLabel(labeltext, intersectedObject);
-        // }
+             previewAreaLeft.nodeLabels.updateNodeLabel(labeltext,  intersectedObject);
+             previewAreaRight.nodeLabels.updateNodeLabel(labeltext, intersectedObject);
+        }
     }
 
     if (nodeExistAndVisible && previewAreaLeft.NodeManager.isSelected(intersectedObject)) { // not selected
@@ -1082,5 +1090,5 @@ export {
     onMouseUp,
     onDocumentMouseMove,
     onMouseDown,
-
+    toggleFloatingLabel
 }

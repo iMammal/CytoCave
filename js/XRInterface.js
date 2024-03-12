@@ -87,8 +87,8 @@ class XRInterface {
     //this.previewArea.NodeManager.contextualNodeActivated = this.dragSelectNode.bind(this);
     //if preview area camera is not at 0,0,0, set it to 0,0,0
     if(this.previewArea.camera.position.x !== 0 || this.previewArea.camera.position.y !== 0 || this.previewArea.camera.position.z !== 0){
-      //console.log("Camera position is not 0,0,0, setting to 0,0,0");
-      //this.previewArea.camera.position.set(0,0,0);
+      console.log("Camera position is not 0,0,0, setting to 0,0,0");
+      this.previewArea.camera.position.set(0,0,0);
     }
     this._camera = this.previewArea.camera;
     this._controls = this.previewArea.controls;

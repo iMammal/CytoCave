@@ -14,6 +14,8 @@ import {Platonics} from "./polyhedron";
 import * as math from 'mathjs'
 import {sunflower} from "./graphicsUtils";
 import {setNodeInfoPanel} from "./GUI";
+import {loadDetailsFile} from "./utils/parsingData";
+
 
 function Model(side) {
     var groups = {};                    // contain nodes group affiliation according to Anatomy, place, rich club, id
@@ -73,6 +75,9 @@ function Model(side) {
     var clusteringGroupLevel = 4;       // clustering group level used for color coding, 1 to 4
     var clusteringRadius = 5;           // sphere radius of PLACE/PACE visualization
 
+    this.DetailsFilesList = [];
+    this.nodeDetailData = [];
+
     var name = side;
 
     // TODO: disable edge bundling for now to get rest of code working
@@ -89,6 +94,8 @@ function Model(side) {
         clusteringTopologies = [];
         clusters = {};
         nodesDistances = {};
+
+        this.DetailsFilesList = [];
 
         this.connectionMatrix = [];
         distanceMatrix = [];
@@ -862,6 +869,44 @@ function Model(side) {
         this.setCentroids(centroids, topology, 0);
     };
 
+    this.setDetailFiles = function (data, loc) {
+        this.DetailsFilesList = [];
+        // data[0] is assumed to contain a string header
+        for (var j = 1; j < data.length; j++) {
+            this.DetailsFilesList.push(data[j][loc]);
+        }
+
+    }
+
+    // this.addNodeDetails = function (data) {
+    //     this.nodeDetailData.push(data);
+    //
+    // }
+
+    this.loadNodeDetails = function (index) {
+        //var file = "/3NeuroCave/data/SciVisIEEE2023/"+this.DetailsFilesList[index];
+        // var fileData = [];
+        // d3.csv(file, function (error, data) {
+        //     if (error) throw error;
+        //     fileData = data;
+        //     console.log("fileData:", fileData);
+        // });
+        // //return fileData;
+        // //done:This proabably Needs to wait for the file to be loaded...
+        // this.nodeDetailDeta.push(fileData);
+
+        loadDetailsFile(this.DetailsFilesList[index], this, this.finishedLoadingDetailsFile.bind(this),index);
+
+    }
+
+    //this.nodeDetailData = [];
+
+    this.finishedLoadingDetailsFile = function (data,index) {
+      console.log("Finished loading details file");
+      //console.log(data);
+        this.nodeDetailData.push({index: index+' '+this.getDataset()[index].name, data: data});
+    }
+
     // clusters can be hierarchical such as PLACE and PACE or not
     this.setClusters = function (data, loc, name, heatmap = false) {
         var clusteringData = [];
@@ -969,6 +1014,8 @@ function Model(side) {
                 topologies.push(dataType);
                 clusteringTopologies.push(dataType);
                 //heatmapTopologies.push(dataType);
+            } else if (dataType === "DetailsFile" ) {
+                this.setDetailFiles(data, i);
             } else { // all other topologies
                 this.setCentroids(data, dataType, i);
                 topologies.push(dataType);
