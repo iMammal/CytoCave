@@ -3525,9 +3525,9 @@ class PreviewArea {
     for (var i = 0; i < this.displayedEdges.length; i++) {
 
       this.displayedEdges[i].material.opacity = this.displayedEdges[i].material.userData.originalOpacity * opacity;
-      console.log("originalOpacity: " + this.displayedEdges[i].material.userData.originalOpacity);
-      console.log("slider opacity: " + opacity);
-      console.log("actual opacity: " + this.displayedEdges[i].material.opacity);
+      // console.log("originalOpacity: " + this.displayedEdges[i].material.userData.originalOpacity);
+      // console.log("slider opacity: " + opacity);
+      // console.log("actual opacity: " + this.displayedEdges[i].material.opacity);
       this.displayedEdges[i].material.needsUpdate = true;
     }
   };
@@ -3559,14 +3559,12 @@ class PreviewArea {
       transparent: true,
       opacity: opacity * this.getEdgeOpacity(),
       vertexColors: true, //THREE.VertexColors
-      //enable double sided rendering
-      //side: THREE.DoubleSide,
+      //dashed: false,
       worldUnits: true,
       linewidth: 10 * opacity,
       depthTest: true,
 
-      //alphaToCoverage: true,
-      // Due to limitations in the ANGLE layer on Windows platforms linewidth will always be 1.
+      // Line2 not subject to linewidth limitations.
     });
     material.userData = {
       originalOpacity: opacity
@@ -3610,7 +3608,7 @@ class PreviewArea {
     return line2;
   };
 
-  drawEdgeWithName = (edge, ownerNode, nodes, opacity) => {
+  drawEdgeWithName = (edge, ownerNode, nodes, weight) => {
     //edge is an array of points
     //ownerNode is the name of the node that owns the edge//usually the source node index
     //nodes is an array of node indexes that are connected by the edge
@@ -3620,7 +3618,7 @@ class PreviewArea {
     // console.log("ownerNode: " + ownerNode);
     // console.log("nodes: ");
     // console.log(nodes);
-    let line = this.createLine(edge, ownerNode, nodes, opacity);
+    let line = this.createLine(edge, ownerNode, nodes, weight);
     this.brain.add(line);
     return line;
   };
