@@ -1,6 +1,7 @@
 body {
     margin: 0;
     font-family: 'Fjord', s           bbb0ans-serif;
+    overflow: hidden;
 }
 
 button {
