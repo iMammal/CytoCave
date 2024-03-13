@@ -633,7 +633,7 @@ var addToggleLinePlotsButton = function () {
 
             //get id linePlots if class hidden remove it, else add it
             var linePlots = document.getElementById("linePlots");
-            if (checked) {
+            if (!checked) {
                 linePlots.classList.add("hidden");
             } else {
                 linePlots.classList.remove("hidden");
