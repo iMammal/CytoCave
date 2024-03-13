@@ -618,14 +618,14 @@ var removeElementsFromEdgePanel = function () {
 };
 
 // add "Toggle Line Plots" button to toggle:
-// the visibility of the line plots overlaying the 3D scene on the left side 
+// the visibility of the line plots overlaying the 3D scene on the left side
 var addToggleLinePlotsButton = function () {
-    var menu = d3.select("#nodeInfoPanel");
+    var menu = d3.select("#linePlotsButton");
 
     menu.append("button")
         .text("Line Plots")
         .attr("id", "changeModalityBtn")
-        .on("click", function () { 
+        .on("click", function () {
             var input = $('#toggleLinePlotsBtn');
             var checked = input.data("checked");
             input.data("checked", !checked);
