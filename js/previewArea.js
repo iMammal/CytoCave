@@ -228,7 +228,8 @@ class PreviewArea {
     previewAreaLeft.NodeManager.deselectNode(node);
     previewAreaRight.NodeManager.deselectNode(node);
     this.NodeManager.restoreNode(node);
-    this.removeEdgeGivenNode(node);
+    // todo: add a global to control edge behavior on [un]select
+    if (false) this.removeEdgeGivenNode(node);
     //this.NodeManager.removeContextNodesFromAroundObject(node);
     this.NodeManager.removeHighlight(node);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class
