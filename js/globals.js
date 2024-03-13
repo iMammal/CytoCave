@@ -45,9 +45,13 @@ var metric = stringToBoolean(url.searchParams.get("metric"));
 if( metric == undefined){
     metric = false;
 }
+
+let neuro = stringToBoolean(url.searchParams.get("neuro"));
+
+let removeEdgesOnUnselect = stringToBoolean(url.searchParams.get("edges"));
+
 var mobile = stringToBoolean(url.searchParams.get("mobile"));
 
-var neuro = stringToBoolean(url.searchParams.get("neuro"));
 
 if( mobile == undefined){
     mobile = false;

@@ -25,7 +25,7 @@ import {TrackballControls} from "three/examples/jsm/controls/TrackballControls";
 //import * as quat from "./external-libraries/gl-matrix/quat.js";
 
 // import {isLoaded, dataFiles  , mobile} from "./globals";
-import {mobile, atlas} from './globals';
+import {mobile, atlas, removeEdgesOnUnselect} from './globals';
 import {getNormalGeometry, getNormalMaterial} from './graphicsUtils.js'
 import { XRInterface } from './XRInterface.js'
 import {
@@ -229,7 +229,7 @@ class PreviewArea {
     previewAreaRight.NodeManager.deselectNode(node);
     this.NodeManager.restoreNode(node);
     // todo: add a global to control edge behavior on [un]select
-    if (false) this.removeEdgeGivenNode(node);
+    if (removeEdgesOnUnselect) this.removeEdgeGivenNode(node);
     //this.NodeManager.removeContextNodesFromAroundObject(node);
     this.NodeManager.removeHighlight(node);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class
