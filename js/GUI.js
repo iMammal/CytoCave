@@ -292,7 +292,7 @@ var addFlashRateSlider = function () {
 // adds a button to toggle skybox visibility
 var addSkyboxButton = function (side) {
 
-    var menu = d3.select("#nodeInfoPanelRight");
+    var menu = d3.select("#skyboxButton");
     menu.append("button")
         .text("Skybox")
         .attr("id", "skyboxVisibilityBtn")
