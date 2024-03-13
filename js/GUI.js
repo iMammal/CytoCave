@@ -623,12 +623,23 @@ var addToggleLinePlotsButton = function () {
     var menu = d3.select("#linePlotsButton");
 
     menu.append("button")
-        .text("Line Plots")
+        .text("Show Line Plots")
         .attr("id", "toggleLinePlotsBtn")
         .on("click", function () {
             var input = $('#toggleLinePlotsBtn');
             var checked = input.data("checked");
             input.data("checked", !checked);
+            input.text(checked ? "Hide Line Plots" : "Show Line Plots");
+            // set the visibility of the line plots by setting the z-index of the canvas
+            // to a value greater than 0
+            var z = checked ? 2 : -12;
+            // for (var i = 0; i < 3; i++) {
+                var canvas = document.getElementById('linePlotContainer') //'lineplot' + i);
+                if (canvas) {
+                    canvas.style.zIndex = z;
+                }
+            // }
+
             // changeModality(!checked);
             // updateScenes();
         });
