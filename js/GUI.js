@@ -629,6 +629,8 @@ var addToggleLinePlotsButton = function () {
             var input = $('#toggleLinePlotsBtn');
             var checked = input.data("checked");
             input.data("checked", !checked);
+            input.text(checked ? "Hide Line Plots" : "Show Line Plots");
+
             //get id linePlots if class hidden remove it, else add it
             var linePlots = document.getElementById("linePlots");
             if (checked) {
