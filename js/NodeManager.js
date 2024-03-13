@@ -370,9 +370,21 @@ class NodeManager {
   }
 
   restoreNode(node) {
-    this.restoreNodePosition(node);
-    this.restoreNodeColor(node);
-    this.restoreNodeScale(node);
+    //get index of node
+    let index = this.node2index(node);
+    let inode = this.index2node(index);
+    let inodeindex = this.node2index(inode);
+    if (index !== inodeindex) {
+      console.log("index: " + index + " inodeindex: " + inodeindex);
+      console.log("node: ");
+      console.log(node);
+      console.log("inode: ");
+      console.log(inode);
+      throw new Error("index and inodeindex do not match");
+    }
+    this.restoreNodePosition(inode);
+    this.restoreNodeColor(inode);
+    this.restoreNodeScale(inode);
   }
 
   restoreNodeByIndex(index) {
