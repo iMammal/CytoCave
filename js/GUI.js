@@ -633,10 +633,18 @@ var addToggleLinePlotsButton = function () {
 
             //get id linePlots if class hidden remove it, else add it
             var linePlots = document.getElementById("linePlots");
-            if (!checked) {
-                linePlots.classList.add("hidden");
-            } else {
-                linePlots.classList.remove("hidden");
+            // if (!checked) {
+            //     linePlots.classList.add("hidden");
+            // } else {
+            //     linePlots.classList.remove("hidden");
+            // }
+            // set the visibility of the line plots by setting the z-index of the canvas
+            // to a value greater than 0
+            var z = checked ? 2 : -12;
+            // for (var i = 0; i < 3; i++) {
+            // var canvas = document.getElementById('linePlotContainer') //'lineplot' + i);
+            if (linePlots) {
+                linePlots.style.zIndex = z;
             }
         });
 
