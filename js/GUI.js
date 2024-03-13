@@ -629,8 +629,13 @@ var addToggleLinePlotsButton = function () {
             var input = $('#toggleLinePlotsBtn');
             var checked = input.data("checked");
             input.data("checked", !checked);
-            // changeModality(!checked);
-            // updateScenes();
+            //get id linePlots if class hidden remove it, else add it
+            var linePlots = document.getElementById("linePlots");
+            if (checked) {
+                linePlots.classList.add("hidden");
+            } else {
+                linePlots.classList.remove("hidden");
+            }
         });
 
     menu.append("br");
