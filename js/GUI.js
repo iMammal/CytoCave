@@ -617,6 +617,27 @@ var removeElementsFromEdgePanel = function () {
     removeTopNSlider();
 };
 
+// add "Toggle Line Plots" button to toggle:
+// the visibility of the line plots overlaying the 3D scene on the left side 
+var addToggleLinePlotsButton = function () {
+    var menu = d3.select("#nodeInfoPanel");
+
+    menu.append("button")
+        .text("Line Plots")
+        .attr("id", "changeModalityBtn")
+        .on("click", function () { 
+            var input = $('#toggleLinePlotsBtn');
+            var checked = input.data("checked");
+            input.data("checked", !checked);
+            // changeModality(!checked);
+            // updateScenes();
+        });
+
+    menu.append("br");
+
+    $('#toggleLinePlotsBtn').data("checked", true);
+};
+
 // add "Change Modality" button to toggle between:
 // edge threshold and top N edges
 var addModalityButton = function () {
@@ -1471,4 +1492,4 @@ var toggleMenus = function (e) {
 
 var getShortestPathVisMethod = function () { return shortestPathVisMethod }
 
-export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons
+export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addToggleLinePlotsButton, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons

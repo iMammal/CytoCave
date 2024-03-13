@@ -36,6 +36,7 @@ import {isLoaded, dataFiles, mobile} from "./globals";
 import {
     addEdgeBundlingCheck,
     addModalityButton,
+    addToggleLinePlotsButton,
 	  addLateralityCheck,
     removeGeometryButtons,
     addOpacitySlider,
@@ -515,6 +516,7 @@ var initControls = function () {
     // add controls
     addOpacitySlider();
     // addEdgeBundlingCheck();
+    addToggleLinePlotsButton();
     addModalityButton();
     addThresholdSlider();
 	//addLateralityCheck();
