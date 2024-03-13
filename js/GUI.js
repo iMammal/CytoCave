@@ -624,7 +624,7 @@ var addToggleLinePlotsButton = function () {
 
     menu.append("button")
         .text("Line Plots")
-        .attr("id", "changeModalityBtn")
+        .attr("id", "toggleLinePlotsBtn")
         .on("click", function () { 
             var input = $('#toggleLinePlotsBtn');
             var checked = input.data("checked");
