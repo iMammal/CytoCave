@@ -292,7 +292,7 @@ var addFlashRateSlider = function () {
 // adds a button to toggle skybox visibility
 var addSkyboxButton = function (side) {
 
-    var menu = d3.select("#nodeInfoPanelRight");
+    var menu = d3.select("#skyboxButton");
     menu.append("button")
         .text("Skybox")
         .attr("id", "skyboxVisibilityBtn")
@@ -629,19 +629,13 @@ var addToggleLinePlotsButton = function () {
             var input = $('#toggleLinePlotsBtn');
             var checked = input.data("checked");
             input.data("checked", !checked);
-            input.text(checked ? "Hide Line Plots" : "Show Line Plots");
-            // set the visibility of the line plots by setting the z-index of the canvas
-            // to a value greater than 0
-            var z = checked ? 2 : -12;
-            // for (var i = 0; i < 3; i++) {
-                var canvas = document.getElementById('linePlotContainer') //'lineplot' + i);
-                if (canvas) {
-                    canvas.style.zIndex = z;
-                }
-            // }
-
-            // changeModality(!checked);
-            // updateScenes();
+            //get id linePlots if class hidden remove it, else add it
+            var linePlots = document.getElementById("linePlots");
+            if (checked) {
+                linePlots.classList.add("hidden");
+            } else {
+                linePlots.classList.remove("hidden");
+            }
         });
 
     menu.append("br");
