@@ -37,7 +37,8 @@ import {isLoaded, dataFiles, mobile} from "./globals";
 import {
     addEdgeBundlingCheck,
     addModalityButton,
-	addLateralityCheck,
+    addToggleLinePlotsButton,
+	  addLateralityCheck,
     removeGeometryButtons,
     addOpacitySlider,
     addThresholdSlider,
@@ -252,6 +253,7 @@ function onMiddleClick(event) {
             root = undefined;
             visibleNodes.fill(true);
         } else { // enable spt
+            spt = true;
             spt = true;
             // compute the shortest path for the two models
             previewAreaLeft.computeShortestPathForNode(nodeIndex);
@@ -522,6 +524,7 @@ var initControls = function () {
     // add controls
     addOpacitySlider();
     // addEdgeBundlingCheck();
+    addToggleLinePlotsButton();
     addModalityButton();
     addThresholdSlider();
 	//addLateralityCheck();
@@ -801,6 +804,7 @@ var changeColorGroup = function (name, side) {
         previewAreaLeft.updateNodesColor();
         createLegend(modelLeft, "Left");
         //redrawScene("Left")   // This is not needed as the redrawScene is called in the updateNodesVisibility
+        previewAreaLeft.setSelectedNodes(tempNodesSelected);
     }
 
     if (side !== "Left" || side === "Both" ) {

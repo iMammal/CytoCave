@@ -227,13 +227,11 @@ class PreviewArea {
   appearUnselected = (node) => {
     previewAreaLeft.NodeManager.deselectNode(node);
     previewAreaRight.NodeManager.deselectNode(node);
-
     this.NodeManager.restoreNode(node);
     this.removeEdgeGivenNode(node);
-    this.NodeManager.removeContextNodesFromAroundObject(node);
+    //this.NodeManager.removeContextNodesFromAroundObject(node);
     this.NodeManager.removeHighlight(node);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class
-
   }
 
   appearSelected = (node) => {
@@ -251,9 +249,9 @@ class PreviewArea {
     // this.NodeManager.highlightNode(node, 0xFF0000); // selected node will be red
     // set contextually selected nodes to appear highlighted
     //todo: do we have a slider for distance?
-    this.NodeManager.activateContextAroundIndex(index, 0, 1);
+    //this.NodeManager.activateContextAroundIndex(index, 0, 1);
 
-    // for mirring to the other side
+    // for mirroring to the other side
 
       previewAreaLeft.NodeManager.select(index);  //if it's already selected in this tree selectNode does nothing so it's safe to call on both sides.
       previewAreaRight.NodeManager.select(index);

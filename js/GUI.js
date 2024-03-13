@@ -293,7 +293,7 @@ var addFlashRateSlider = function () {
 // adds a button to toggle skybox visibility
 var addSkyboxButton = function (side) {
 
-    var menu = d3.select("#nodeInfoPanelRight");
+    var menu = d3.select("#skyboxButton");
     menu.append("button")
         .text("Skybox")
         .attr("id", "skyboxVisibilityBtn")
@@ -616,6 +616,42 @@ var removeTopNSlider= function () {
 var removeElementsFromEdgePanel = function () {
     removeThresholdSlider();
     removeTopNSlider();
+};
+
+// add "Toggle Line Plots" button to toggle:
+// the visibility of the line plots overlaying the 3D scene on the left side
+var addToggleLinePlotsButton = function () {
+    var menu = d3.select("#linePlotsButton");
+
+    menu.append("button")
+        .text("Show Line Plots")
+        .attr("id", "toggleLinePlotsBtn")
+        .on("click", function () {
+            var input = $('#toggleLinePlotsBtn');
+            var checked = input.data("checked");
+            input.data("checked", !checked);
+            input.text(checked ? "Hide Line Plots" : "Show Line Plots");
+
+            //get id linePlots if class hidden remove it, else add it
+            var linePlots = document.getElementById("linePlots");
+            // if (!checked) {
+            //     linePlots.classList.add("hidden");
+            // } else {
+            //     linePlots.classList.remove("hidden");
+            // }
+            // set the visibility of the line plots by setting the z-index of the canvas
+            // to a value greater than 0
+            var z = checked ? 2 : -12;
+            // for (var i = 0; i < 3; i++) {
+            // var canvas = document.getElementById('linePlotContainer') //'lineplot' + i);
+            if (linePlots) {
+                linePlots.style.zIndex = z;
+            }
+        });
+
+    menu.append("br");
+
+    $('#toggleLinePlotsBtn').data("checked", true);
 };
 
 // add "Change Modality" button to toggle between:
@@ -1526,4 +1562,4 @@ var toggleMenus = function (e) {
 
 var getShortestPathVisMethod = function () { return shortestPathVisMethod }
 
-export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons
+export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addToggleLinePlotsButton, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons
