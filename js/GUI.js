@@ -1482,7 +1482,9 @@ var searchElement = function(intext,side) {
     } else {
         setNodeInfoPanel(teststri.name,index,"FOUND: " + index + ":" + teststri.name);
         //setNodesFocused(getNodesFocused().length,index);
-        updateNodeSelection(modelSide, null, isLeft, index);
+        previewAreaLeft.NodeManager.highlightNodeByIndex(index);
+        previewAreaRight.NodeManager.highlightNodeByIndex(index);
+        // updateNodeSelection(modelSide, null, isLeft, index);
         setNodesFocused(getNodesFocused().length,index);
 
     }
