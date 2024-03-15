@@ -1441,6 +1441,7 @@ var enableRightSearching = function (value) {
 var searchElement = function(intext,side) {
 
     let index = -1;
+    let indexList = [];
     let teststri,isLeft = false;
 
     console.log("Search Text" + intext);
@@ -1456,8 +1457,9 @@ var searchElement = function(intext,side) {
 
                 if (teststri && teststri.name.includes(intext) && !getNodesSelected().includes(i)) {
                     index = i;
+                    indexList.push(i)
                     isLeft = true;
-                    break;
+                    // break;
                 }
             }
             if (i < modelRight.getDataset().length) {
@@ -1465,8 +1467,9 @@ var searchElement = function(intext,side) {
 
                 if (teststri && teststri.name.includes(intext) && !getNodesSelected().includes(i)) {
                     index = i;
+                    indexList.push(i)
                     isLeft = false;
-                    break;
+                    // break;
                 }
             }
 
@@ -1475,21 +1478,23 @@ var searchElement = function(intext,side) {
 
     } else { // It is a number
         index = parseInt(intext)-1;
+
     }
 
     let modelSide = (isLeft) ? modelLeft : modelRight;
-    if (index < 0 || index > modelSide.getDataset().length) {
+    if (index < 0 || index > modelSide.getDataset().length || indexList.length === 0) {
         alert("Node not found");
     } else {
-        setNodeInfoPanel(teststri.name,index,"FOUND: " + index + ":" + teststri.name);
-        //setNodesFocused(getNodesFocused().length,index);
-        previewAreaLeft.NodeManager.highlightNodeByIndex(index);
-        previewAreaRight.NodeManager.highlightNodeByIndex(index);
-        // updateNodeSelection(modelSide, null, isLeft, index);
-        setNodesFocused(getNodesFocused().length,index);
-
+        setNodeInfoPanel(teststri.name, index, "FOUND: " + index + ":" + teststri.name);
+        for(let idx = 0; idx < indexList.length; idx++) {
+            index = indexList[idx];
+            //setNodesFocused(getNodesFocused().length,index);
+            previewAreaLeft.NodeManager.highlightNodeByIndex(index);
+            previewAreaRight.NodeManager.highlightNodeByIndex(index);
+            // updateNodeSelection(modelSide, null, isLeft, index);
+            setNodesFocused(getNodesFocused().length, index);
+        }
     }
-
 
 }
 
