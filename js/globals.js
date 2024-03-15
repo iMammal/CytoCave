@@ -50,6 +50,8 @@ let neuro = stringToBoolean(url.searchParams.get("neuro"));
 
 let removeEdgesOnUnselect = stringToBoolean(url.searchParams.get("edges"));
 
+let experimental = stringToBoolean(url.searchParams.get("experimental"));
+
 var mobile = stringToBoolean(url.searchParams.get("mobile"));
 
 
@@ -69,4 +71,4 @@ console.log('This is ' + ((mobile)?'Mobile':'Desktop') + ' version');
 
 
 
-export {labelLUT,atlas,folder,dataFiles,metric,mobile,neuro,isLoaded,setDataFile,getAtlas,setAtlas,getDataFile}
+export {labelLUT,atlas,folder,dataFiles,metric,mobile,neuro,isLoaded,setDataFile,getAtlas,setAtlas,getDataFile,experimental,removeEdgesOnUnselect}

@@ -33,7 +33,7 @@ var hoverMode = 0;
 var floatingLabel = false;
 
 import * as THREE from 'three'
-import {isLoaded, dataFiles, mobile} from "./globals";
+import {isLoaded, dataFiles, mobile,experimental} from "./globals";
 import {
     addEdgeBundlingCheck,
     addModalityButton,

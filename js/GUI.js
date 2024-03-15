@@ -17,7 +17,7 @@ var rightSearching = false;
 var leftSearching = false;
 
 // initialize subject selection drop down menus
-import {getDataFile,setDataFile,atlas,neuro} from "./globals.js";
+import {getDataFile,setDataFile,atlas,neuro,experimental} from "./globals.js";
 import {
     changeSceneToSubject,
     changeActiveGeometry,
@@ -947,6 +947,7 @@ var addColorGroupList = function() {
     //document.getElementById("syncColorRight").hidden = true; //.onclick = function () {
     document.getElementById("syncColorRight").onclick = function () {
         //previewAreaRight.syncCameraWith(previewAreaLeft.getCamera());
+        if(!experimental){ alert("This feature is experimental and may not work as expected. Add '&experimental=1' to URL to disable this message."); } else
         if (this.innerHTML === "Unlock") {
             document.getElementById("colorCodingLeft").hidden = false;
             document.getElementById("allToggleLeft").hidden = false;
