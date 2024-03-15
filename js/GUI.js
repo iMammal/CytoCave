@@ -705,6 +705,7 @@ var createLegend = function(model,side) {
     var legendMenu;
 
     if (side === "Left") {
+        if(!experimental) return;
         legendMenu = document.getElementById("legendLeft");
     } else {
         legendMenu = document.getElementById("legend");
