@@ -55,7 +55,7 @@ import {
   // previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove,
   //   updateHud2D
 } from './drawing'
-import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, removeGeometryButtons} from './GUI'
+import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, searchMode, removeGeometryButtons} from './GUI'
 import {scaleColorGroup} from './utils/scale'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
@@ -1801,6 +1801,8 @@ class PreviewArea {
   keyPress = (event) => {
     //remove the event listener for keypresses if it is already listening
     //window.removeEventListener('keypress', this.keyPress, false);
+
+    if(searchMode) return;
 
     if (event.key === 'c') {
       console.log("toggle control mode");

@@ -15,6 +15,7 @@ var enableSphereDimLock = true;
 var enableBoxDimLock = true;
 var rightSearching = false;
 var leftSearching = false;
+let searchMode = false;
 
 // initialize subject selection drop down menus
 import {getDataFile,setDataFile,atlas,neuro,experimental} from "./globals.js";
@@ -1567,8 +1568,9 @@ var toggleMenus = function (e) {
     $('#leftFslLabels').toggle();
     $('#vrLeft').toggle();
     $('#vrRight').toggle();
+    searchMode = !searchMode;
 };
 
 var getShortestPathVisMethod = function () { return shortestPathVisMethod }
 
-export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addToggleLinePlotsButton, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons
+export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addToggleLinePlotsButton, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend, searchMode} //hideVRMaximizeButtons
