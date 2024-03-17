@@ -13,7 +13,7 @@ class XRInterface {
     this.assignPreviewData();
 
 
-
+ 
     this.initializeControllers();
     this.initializeXRSettings();
 
@@ -28,6 +28,7 @@ class XRInterface {
     this.enableVR = true;
     this.activateVR = false;
 
+    this.sprintFactor = 1.0;
 
     this.initializeControlCallbacks();
 
@@ -442,14 +443,18 @@ class XRInterface {
 
     //find final translation and rotation based on thumbstick movement and delta time
 
-    let sprintFactor = 1.0;
+
     if (leftThumbstickPress) {
-        sprintFactor = 10.0 + delta * 12.0;
+        this.sprintFactor = this.sprintFactor + delta * 12.0;
+    } else {
+    	this.sprintFactor = 1.0;
     }
+
+    //console.log("left thumbstick button:", leftThumbstickPress, this.sprintFactor);
 
     //use axes 3 for forward and backward movement, -1 is forward, 1 is backward
     if (leftgamepad.axes[3] > this.XRControlDeadzone || leftgamepad.axes[3] < -this.XRControlDeadzone) {
-      translation.z = leftgamepad.axes[3] * this.XRMaximumSpeed * delta * sprintFactor;
+      translation.z = leftgamepad.axes[3] * this.XRMaximumSpeed * delta * this.sprintFactor;
     }
     // //use axes 2 for strafing left and right, -1 is left, 1 is right
     // if (leftgamepad.axes[2] > this.XRControlDeadzone || leftgamepad.axes[2] < -this.XRControlDeadzone) {
