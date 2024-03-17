@@ -444,7 +444,7 @@ class XRInterface {
 
     let sprintFactor = 1.0;
     if (leftThumbstickPress) {
-        sprintFactor = 1.0 + delta * 2.0;
+        sprintFactor = 10.0 + delta * 12.0;
     }
 
     //use axes 3 for forward and backward movement, -1 is forward, 1 is backward
