@@ -437,11 +437,19 @@ class XRInterface {
     let rotation = new THREE.Vector3(0, 0, 0);
     let translationDistance = 0;
     let rotDistance = 0;
+    let leftThumbstickPress = leftgamepad.buttons[3].pressed;
+    let rightThumbstickPress = rightgamepad.buttons[3].pressed;
+
     //find final translation and rotation based on thumbstick movement and delta time
+
+    let sprintFactor = 1.0;
+    if (leftThumbstickPress) {
+        sprintFactor = 1.0 + delta * 2.0;
+    }
 
     //use axes 3 for forward and backward movement, -1 is forward, 1 is backward
     if (leftgamepad.axes[3] > this.XRControlDeadzone || leftgamepad.axes[3] < -this.XRControlDeadzone) {
-      translation.z = leftgamepad.axes[3] * this.XRMaximumSpeed * delta;
+      translation.z = leftgamepad.axes[3] * this.XRMaximumSpeed * delta * sprintFactor;
     }
     // //use axes 2 for strafing left and right, -1 is left, 1 is right
     // if (leftgamepad.axes[2] > this.XRControlDeadzone || leftgamepad.axes[2] < -this.XRControlDeadzone) {
