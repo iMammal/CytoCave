@@ -25,7 +25,7 @@ import {TrackballControls} from "three/examples/jsm/controls/TrackballControls";
 //import * as quat from "./external-libraries/gl-matrix/quat.js";
 
 // import {isLoaded, dataFiles  , mobile} from "./globals";
-import {mobile, atlas, removeEdgesOnUnselect} from './globals';
+import {mobile, atlas, removeEdgesOnUnselect,startNoEdges,startNoLabels} from './globals';
 import {getNormalGeometry, getNormalMaterial} from './graphicsUtils.js'
 import { XRInterface } from './XRInterface.js'
 import {
@@ -194,12 +194,15 @@ class PreviewArea {
     this.linegraphs = new LineGraphs(this); //preViewArea_);
 
     // Display all edges
-    for(let i=0;i<this.model.getDataset().length;i++) {
-      this.drawEdgesGivenIndex(i);
+    if (!startNoEdges) {
+      for (let i = 0; i < this.model.getDataset().length; i++) {
+        this.drawEdgesGivenIndex(i);
+      }
     }
 
-    this.toggleLabels();
-
+    if(!startNoLabels) {
+      this.toggleLabels();
+    }
   } // End Constructor
 
   //reset previewArea to state
