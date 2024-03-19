@@ -244,7 +244,12 @@ class PreviewArea {
     let index = this.NodeManager.node2index(node);
 
     this.NodeManager.restoreNodeByIndex(index);
-    this.model.loadNodeDetails(index);
+    this.model.loadNodeDetails(index); // fetch evidence plot for node
+    // fetch evidence plot for node's neighbors
+    for (let edge of this.NodeManager.getEdges(node)) {
+      let neighborI = edge.targetNodeIndex;
+      this.model.loadNodeDetails(neighborI);
+    }
     this.NodeManager.scaleNodeByIndex(index, 1.5);
     this.drawEdgesGivenIndex(index);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.
