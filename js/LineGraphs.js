@@ -82,7 +82,7 @@ class LineGraphs {
             //clear the canvas
             renderContext.clearRect(0, 0, renderCanvas.width, renderCanvas.height);
             //set the font color
-            renderContext.fillStyle = 'white';
+            renderContext.fillStyle = 'yellow'; //'green'; //'white';
             //set the font size and font family
             renderContext.font = '12px Arial';
             console.log("nodeDetailData: ", this.previewArea.model.nodeDetailData[i])
