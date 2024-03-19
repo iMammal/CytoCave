@@ -137,7 +137,7 @@ var loadDetailsFile = function (fileName, model, callback = null, index) {
             //model.addNodeDetails(results.data);
             console.log("Details Data for loaded for node: ", fileName);
             if (callback !== null) {
-                callback(results.data, index);
+                callback(results.data, index, fileName);
             }
         }
     });

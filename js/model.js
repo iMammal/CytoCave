@@ -901,10 +901,10 @@ function Model(side) {
 
     //this.nodeDetailData = [];
 
-    this.finishedLoadingDetailsFile = function (data,index) {
+    this.finishedLoadingDetailsFile = function (data,index,filename) {
       console.log("Finished loading details file");
       //console.log(data);
-        this.nodeDetailData.push({index: index+' '+this.getDataset()[index].name, data: data});
+        this.nodeDetailData.push({index: index+' '+this.getDataset()[index].name+' '+filename.split('=')[1].split('&')[0], data: data });
     }
 
     // clusters can be hierarchical such as PLACE and PACE or not
