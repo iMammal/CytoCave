@@ -258,7 +258,7 @@ class PreviewArea {
     // this.NodeManager.highlightNode(node, 0xFF0000); // selected node will be red
     // set contextually selected nodes to appear highlighted
     //todo: do we have a slider for distance?
-    //this.NodeManager.activateContextAroundIndex(index, 0, 1);
+    this.NodeManager.activateContextAroundIndex(index, 0, 1);
 
     // for mirroring to the other side
 

@@ -480,7 +480,7 @@ class NodeManager {
     const material = new THREE.LineBasicMaterial({
       color: color,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.4,
       linewidth: 8
     });
 
