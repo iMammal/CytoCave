@@ -43,7 +43,7 @@ class LineGraphs {
             this.renderTextures = [];
             this.graphObjects = [];
         }
-        const maxGraphs = 8;
+        const maxGraphs = 30;
         let dataSetCount = this.previewArea.model.nodeDetailData.length;
         console.log("dataSetCount: ", dataSetCount);
         //check for existing lineplot canvas and reuse if available
