@@ -13,7 +13,7 @@ class XRInterface {
     this.assignPreviewData();
 
 
-
+ 
     this.initializeControllers();
     this.initializeXRSettings();
 
@@ -28,6 +28,7 @@ class XRInterface {
     this.enableVR = true;
     this.activateVR = false;
 
+    this.sprintFactor = 1.0;
 
     this.initializeControlCallbacks();
 
@@ -87,8 +88,8 @@ class XRInterface {
     //this.previewArea.NodeManager.contextualNodeActivated = this.dragSelectNode.bind(this);
     //if preview area camera is not at 0,0,0, set it to 0,0,0
     if(this.previewArea.camera.position.x !== 0 || this.previewArea.camera.position.y !== 0 || this.previewArea.camera.position.z !== 0){
-      console.log("Camera position is not 0,0,0, setting to 0,0,0");
-      this.previewArea.camera.position.set(0,0,0);
+      // console.log("Camera position is not 0,0,0, setting to 0,0,0");
+      // this.previewArea.camera.position.set(0,0,0);
     }
     this._camera = this.previewArea.camera;
     this._controls = this.previewArea.controls;
@@ -437,11 +438,23 @@ class XRInterface {
     let rotation = new THREE.Vector3(0, 0, 0);
     let translationDistance = 0;
     let rotDistance = 0;
+    let leftThumbstickPress = leftgamepad.buttons[3].pressed;
+    let rightThumbstickPress = rightgamepad.buttons[3].pressed;
+
     //find final translation and rotation based on thumbstick movement and delta time
+
+
+    if (leftThumbstickPress) {
+        this.sprintFactor = this.sprintFactor + delta * 12.0;
+    } else {
+    	this.sprintFactor = 1.0;
+    }
+
+    //console.log("left thumbstick button:", leftThumbstickPress, this.sprintFactor);
 
     //use axes 3 for forward and backward movement, -1 is forward, 1 is backward
     if (leftgamepad.axes[3] > this.XRControlDeadzone || leftgamepad.axes[3] < -this.XRControlDeadzone) {
-      translation.z = leftgamepad.axes[3] * this.XRMaximumSpeed * delta;
+      translation.z = leftgamepad.axes[3] * this.XRMaximumSpeed * delta * this.sprintFactor;
     }
     // //use axes 2 for strafing left and right, -1 is left, 1 is right
     // if (leftgamepad.axes[2] > this.XRControlDeadzone || leftgamepad.axes[2] < -this.XRControlDeadzone) {

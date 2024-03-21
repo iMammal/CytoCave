@@ -15,9 +15,10 @@ var enableSphereDimLock = true;
 var enableBoxDimLock = true;
 var rightSearching = false;
 var leftSearching = false;
+let searchMode = false;
 
 // initialize subject selection drop down menus
-import {getDataFile,setDataFile,atlas,neuro} from "./globals.js";
+import {getDataFile,setDataFile,atlas,neuro,experimental} from "./globals.js";
 import {
     changeSceneToSubject,
     changeActiveGeometry,
@@ -293,7 +294,7 @@ var addFlashRateSlider = function () {
 // adds a button to toggle skybox visibility
 var addSkyboxButton = function (side) {
 
-    var menu = d3.select("#nodeInfoPanelRight");
+    var menu = d3.select("#skyboxButton");
     menu.append("button")
         .text("Skybox")
         .attr("id", "skyboxVisibilityBtn")
@@ -618,6 +619,42 @@ var removeElementsFromEdgePanel = function () {
     removeTopNSlider();
 };
 
+// add "Toggle Line Plots" button to toggle:
+// the visibility of the line plots overlaying the 3D scene on the left side
+var addToggleLinePlotsButton = function () {
+    var menu = d3.select("#linePlotsButton");
+
+    menu.append("button")
+        .text("Show Line Plots")
+        .attr("id", "toggleLinePlotsBtn")
+        .on("click", function () {
+            var input = $('#toggleLinePlotsBtn');
+            var checked = input.data("checked");
+            input.data("checked", !checked);
+            input.text(checked ? "Hide Line Plots" : "Show Line Plots");
+
+            //get id linePlots if class hidden remove it, else add it
+            var linePlots = document.getElementById("linePlots");
+            // if (!checked) {
+            //     linePlots.classList.add("hidden");
+            // } else {
+            //     linePlots.classList.remove("hidden");
+            // }
+            // set the visibility of the line plots by setting the z-index of the canvas
+            // to a value greater than 0
+            var z = checked ? 2 : -12;
+            // for (var i = 0; i < 3; i++) {
+            // var canvas = document.getElementById('linePlotContainer') //'lineplot' + i);
+            if (linePlots) {
+                linePlots.style.zIndex = z;
+            }
+        });
+
+    menu.append("br");
+
+    $('#toggleLinePlotsBtn').data("checked", true);
+};
+
 // add "Change Modality" button to toggle between:
 // edge threshold and top N edges
 var addModalityButton = function () {
@@ -669,6 +706,7 @@ var createLegend = function(model,side) {
     var legendMenu;
 
     if (side === "Left") {
+        if(!experimental) return;
         legendMenu = document.getElementById("legendLeft");
     } else {
         legendMenu = document.getElementById("legend");
@@ -911,6 +949,7 @@ var addColorGroupList = function() {
     //document.getElementById("syncColorRight").hidden = true; //.onclick = function () {
     document.getElementById("syncColorRight").onclick = function () {
         //previewAreaRight.syncCameraWith(previewAreaLeft.getCamera());
+        if(!experimental){ alert("This feature is experimental and may not work as expected. Add '&experimental=1' to URL to disable this message."); } else
         if (this.innerHTML === "Unlock") {
             document.getElementById("colorCodingLeft").hidden = false;
             document.getElementById("allToggleLeft").hidden = false;
@@ -1404,6 +1443,7 @@ var enableRightSearching = function (value) {
 var searchElement = function(intext,side) {
 
     let index = -1;
+    let indexList = [];
     let teststri,isLeft = false;
 
     console.log("Search Text" + intext);
@@ -1419,8 +1459,9 @@ var searchElement = function(intext,side) {
 
                 if (teststri && teststri.name.includes(intext) && !getNodesSelected().includes(i)) {
                     index = i;
+                    indexList.push(i)
                     isLeft = true;
-                    break;
+                    // break;
                 }
             }
             if (i < modelRight.getDataset().length) {
@@ -1428,8 +1469,9 @@ var searchElement = function(intext,side) {
 
                 if (teststri && teststri.name.includes(intext) && !getNodesSelected().includes(i)) {
                     index = i;
+                    indexList.push(i)
                     isLeft = false;
-                    break;
+                    // break;
                 }
             }
 
@@ -1438,19 +1480,23 @@ var searchElement = function(intext,side) {
 
     } else { // It is a number
         index = parseInt(intext)-1;
+
     }
 
     let modelSide = (isLeft) ? modelLeft : modelRight;
-    if (index < 0 || index > modelSide.getDataset().length) {
+    if (index < 0 || index > modelSide.getDataset().length || indexList.length === 0) {
         alert("Node not found");
     } else {
-        setNodeInfoPanel(teststri.name,index,"FOUND: " + index + ":" + teststri.name);
-        //setNodesFocused(getNodesFocused().length,index);
-        updateNodeSelection(modelSide, null, isLeft, index);
-        setNodesFocused(getNodesFocused().length,index);
-
+        setNodeInfoPanel(teststri.name, index, "FOUND: " + index + ":" + teststri.name);
+        for(let idx = 0; idx < indexList.length; idx++) {
+            index = indexList[idx];
+            //setNodesFocused(getNodesFocused().length,index);
+            previewAreaLeft.NodeManager.highlightNodeByIndex(index);
+            previewAreaRight.NodeManager.highlightNodeByIndex(index);
+            // updateNodeSelection(modelSide, null, isLeft, index);
+            setNodesFocused(getNodesFocused().length, index);
+        }
     }
-
 
 }
 
@@ -1522,8 +1568,9 @@ var toggleMenus = function (e) {
     $('#leftFslLabels').toggle();
     $('#vrLeft').toggle();
     $('#vrRight').toggle();
+    searchMode = !searchMode;
 };
 
 var getShortestPathVisMethod = function () { return shortestPathVisMethod }
 
-export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons
+export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addToggleLinePlotsButton, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend, searchMode} //hideVRMaximizeButtons

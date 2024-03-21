@@ -25,7 +25,7 @@ import {TrackballControls} from "three/examples/jsm/controls/TrackballControls";
 //import * as quat from "./external-libraries/gl-matrix/quat.js";
 
 // import {isLoaded, dataFiles  , mobile} from "./globals";
-import {mobile, atlas} from './globals';
+import {mobile, atlas, removeEdgesOnUnselect,startNoEdges,startNoLabels} from './globals';
 import {getNormalGeometry, getNormalMaterial} from './graphicsUtils.js'
 import { XRInterface } from './XRInterface.js'
 import {
@@ -55,7 +55,7 @@ import {
   // previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove,
   //   updateHud2D
 } from './drawing'
-import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, removeGeometryButtons} from './GUI'
+import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, searchMode, removeGeometryButtons} from './GUI'
 import {scaleColorGroup} from './utils/scale'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
@@ -194,12 +194,15 @@ class PreviewArea {
     this.linegraphs = new LineGraphs(this); //preViewArea_);
 
     // Display all edges
-    for(let i=0;i<this.model.getDataset().length;i++) {
-      this.drawEdgesGivenIndex(i);
+    if (!startNoEdges) {
+      for (let i = 0; i < this.model.getDataset().length; i++) {
+        this.drawEdgesGivenIndex(i);
+      }
     }
 
-    this.toggleLabels();
-
+    if(!startNoLabels) {
+      this.toggleLabels();
+    }
   } // End Constructor
 
   //reset previewArea to state
@@ -227,13 +230,12 @@ class PreviewArea {
   appearUnselected = (node) => {
     previewAreaLeft.NodeManager.deselectNode(node);
     previewAreaRight.NodeManager.deselectNode(node);
-
     this.NodeManager.restoreNode(node);
-    this.removeEdgeGivenNode(node);
-    this.NodeManager.removeContextNodesFromAroundObject(node);
+    // todo: add a global to control edge behavior on [un]select
+    if (removeEdgesOnUnselect) this.removeEdgeGivenNode(node);
+    //this.NodeManager.removeContextNodesFromAroundObject(node);
     this.NodeManager.removeHighlight(node);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class
-
   }
 
   appearSelected = (node) => {
@@ -242,7 +244,12 @@ class PreviewArea {
     let index = this.NodeManager.node2index(node);
 
     this.NodeManager.restoreNodeByIndex(index);
-    this.model.loadNodeDetails(index);
+    this.model.loadNodeDetails(index); // fetch evidence plot for node
+    // fetch evidence plot for node's neighbors
+    for (let edge of this.NodeManager.getEdges(node)) {
+      let neighborI = edge.targetNodeIndex;
+      this.model.loadNodeDetails(neighborI);
+    }
     this.NodeManager.scaleNodeByIndex(index, 1.5);
     this.drawEdgesGivenIndex(index);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.
@@ -253,7 +260,7 @@ class PreviewArea {
     //todo: do we have a slider for distance?
     this.NodeManager.activateContextAroundIndex(index, 0, 1);
 
-    // for mirring to the other side
+    // for mirroring to the other side
 
       previewAreaLeft.NodeManager.select(index);  //if it's already selected in this tree selectNode does nothing so it's safe to call on both sides.
       previewAreaRight.NodeManager.select(index);
@@ -1802,6 +1809,8 @@ class PreviewArea {
   keyPress = (event) => {
     //remove the event listener for keypresses if it is already listening
     //window.removeEventListener('keypress', this.keyPress, false);
+
+    if(searchMode) return;
 
     if (event.key === 'c') {
       console.log("toggle control mode");
