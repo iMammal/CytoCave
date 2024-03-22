@@ -139,6 +139,19 @@ button > input[type="checkbox"] {
   z-index: 100
 }
 
+#linePlots {
+  position: absolute;
+  top: 6%;
+  left: 0;
+  width: 20%;
+  height: 70%;
+  z-index: -12;
+  background-color: rgba(0, 0, 0, 0);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.7) transparent;
+}
+
 .legend::-webkit-scrollbar {
   width: 12px;
 }

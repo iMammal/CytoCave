@@ -125,6 +125,7 @@ class XRHud {
       // }
       //briefer method to create a lineplot?
       linedata = this.previewArea.model.nodeDetailData[i].data.map((d) => d[1]);
+      linedata = linedata.filter((d) => !isNaN(d));
       let graph = new canvasGraph(renderCanvas, linedata, this.graphOptions);
       //add index as line of text at bottom of canvas
       renderContext.fillText(this.previewArea.model.nodeDetailData[i].index, 10, 90);

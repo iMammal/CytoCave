@@ -1,6 +1,6 @@
-*-<?php
+<?php
 
-89+/// require_once('.env'); // Assuming the file is located in the parent directory
+/// require_once('.env'); // Assuming the file is located in the parent directory
 // $db_host = getenv('DB_HOST');
 // $db_name = getenv('DB_NAME');
 // $db_user = getenv('DB_USER');
@@ -31,7 +31,17 @@ $db_password = $db_config['password'];
 // }
 // Using PDO
 // $pdo = new PDO('mysql:host='+$db_host+';dbname='+$db_name, $db_user, $db_password);
-
+try {
+  //check that database exists if not create it
+  echo "Database " . $db_name . "\n";
+  $pdo = new PDO("mysql:host=$db_host", $db_user, $db_password);
+  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  $sql = "CREATE DATABASE IF NOT EXISTS $db_name";
+  $pdo->exec($sql);
+  echo "Database successful\n";
+} catch(PDOException $e) {
+  echo "<br>" . $e->getMessage();
+}
 try {
   // Check DSN format for MySQL
   $dsn = 'mysql:host=' . $db_host . ';dbname=' . $db_name;
@@ -56,10 +66,18 @@ $pdo->query('CREATE TABLE IF NOT EXISTS pin (id INTEGER AUTO_INCREMENT PRIMARY K
 //load humap2_ppis_genename_20200821.pairsWprob.csv
 $pisCsv = fopen('humap2_ppis_genename_20200821.csv', 'r');
 
+//check if file is open or not
+if ($pisCsv === FALSE) {
+  echo "Error opening file\n";
+} else {
+  echo "File opened\n";
+}
+
+
 //start transaction
 //$db->exec('BEGIN');
 // $mysqli->query('BEGIN');
-$pdo->query('BEGIN');
+//$pdo->query('BEGIN');
 
 //iterate through each row of the csv file add to the database
 //while (($data = fgetcsv($pisCsv, 0, "\t")) !== FALSE) {
@@ -90,7 +108,7 @@ while (FALSE && ($data = fgetcsv($pisCsv, 0, ",")) !== FALSE) {
       }
 
 }
-
+//$pdo->query('END');
 //commit transaction
 //$db->exec('COMMIT');
 // $mysqli->query('COMMIT');
@@ -98,7 +116,7 @@ $pdo->query('COMMIT');
 
 // Close the CSV file
 fclose($pisCsv);
-
+echo "CSV1 file closed\n";
 //close the database
 // $db->close();
 // $mysqli->close();
@@ -111,17 +129,22 @@ fclose($pisCsv);
 // $db->exec('CREATE TABLE IF NOT EXISTS HuMAP2_ID (id INTEGER PRIMARY KEY, HuMAP2_ID TEXT, Confidence TEXT, Uniprot_ACCs TEXT, genenames TEXT)');
 // $mysqli->query('CREATE TABLE IF NOT EXISTS HuMAP2_ID (id INTEGER PRIMARY KEY, HuMAP2_ID TEXT, Confidence TEXT, Uniprot_ACCs TEXT, genenames TEXT)');
 $pdo->query('CREATE TABLE IF NOT EXISTS HuMAP2_ID (id INTEGER AUTO_INCREMENT PRIMARY KEY, HuMAP2_ID TEXT, Confidence TEXT, Uniprot_ACCs TEXT, genenames TEXT)');
-
+echo "Table created\n";
 //load humap2_complexes_20200809.csv
 $dataCsv2 = fopen('humap2_complexes_20200809.csv', 'r');
+if ($dataCsv2 === FALSE) {
+  echo "Error opening file\n";
+} else {
+  echo "File opened\n";
+}
 
 //start transaction
 // $db->exec('BEGIN');
 // $mysqli->query('BEGIN');
-$pdo->query('BEGIN');
-
+//$pdo->query('BEGIN');
+echo "Transaction started\n";
 //iterate through each row of the csv file add to the database // Change FALSE to TRUE to load the data
-while (FALSE && ($data = fgetcsv($dataCsv2, 0, ",")) !== FALSE) {
+while (TRUE && ($data = fgetcsv($dataCsv2, 0, ",")) !== FALSE) {
 //   $stmt = $db->prepare('INSERT INTO HuMAP2_ID (HuMAP2_ID, Confidence, Uniprot_ACCs, genenames) VALUES (:HuMAP2_ID, :Confidence, :Uniprot_ACCs, :genenames)');
 //   $stmt->bindValue(':HuMAP2_ID', $data[0], SQLITE3_TEXT);
 //   $stmt->bindValue(':Confidence', $data[1], SQLITE3_TEXT);
@@ -132,6 +155,7 @@ while (FALSE && ($data = fgetcsv($dataCsv2, 0, ",")) !== FALSE) {
 //     $sql = "INSERT INTO HuMAP2_ID (HuMAP2_ID, Confidence, Uniprot_ACCs, genenames) VALUES ('".$data[0]."', '".$data[1]."', '".$data[2]."', '".$data[3]."')";
 //     $result = $mysqli->query($sql);
     $sql = "INSERT INTO HuMAP2_ID (HuMAP2_ID, Confidence, Uniprot_ACCs, genenames) VALUES ('".$data[0]."', '".$data[1]."', '".$data[2]."', '".$data[3]."')";
+    echo $sql;
     $result = $pdo->query($sql);
 
 //   if (!$result) {
@@ -144,12 +168,13 @@ while (FALSE && ($data = fgetcsv($dataCsv2, 0, ",")) !== FALSE) {
         echo "Error inserting data: " . $pdo->error;
       }
 }
-
+//$pdo->query('END');
+echo "Transaction ended\n";
 //commit transaction
 // $db->exec('COMMIT');
 // $mysqli->query('COMMIT');
 $pdo->query('COMMIT');
-
+echo "Transaction committed\n";
 //close the database
 // $db->close();
 // $mysqli->close();
