@@ -47,7 +47,7 @@ $results = $pdo->query('SELECT * FROM tempTopology');
 //no header
 // $header = false;
 
-echo "label,Square,,,complexIdClustering,DetailsFile\n";
+echo "label,Straight,,,Square,,,complexIdClustering,DetailsFile\n";
 
 //iterate through each row of the result
 // while ($row = $results->fetchArray()) {
