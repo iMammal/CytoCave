@@ -34,10 +34,12 @@ class canvasGraph {
   drawData() {
     let xStep = this.canvas.width / this.data.length;
     let yStep = this.canvas.height / Math.max(...this.data);
+    console.log("xStep: ", xStep, " yStep: ", yStep);
     this.ctx.beginPath();
     this.ctx.moveTo(0, this.canvas.height - this.data[0] * yStep);
     for (let i = 1; i < this.data.length; i++) {
       this.ctx.lineTo(i * xStep, this.canvas.height - this.data[i] * yStep);
+      console.log("i: ", i, " x: ", i * xStep, " y: ", this.canvas.height - this.data[i] * yStep);
     }
     this.ctx.stroke();
   }

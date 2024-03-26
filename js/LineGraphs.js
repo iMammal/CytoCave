@@ -6,12 +6,13 @@ import * as THREE from 'three';
 import canvasGraph from './canvasGraph.js';
 
 class LineGraphs {
-    constructor(preViewArea_) {
+    constructor(preViewArea_, container) {
         this.previewArea = preViewArea_;
-
+        this.lineplotCanvas = [];
+        this.container = document.getElementById(container);
         this.lineplotData = [];
         this.graphObjects = [];
-        this.renderTextures = [];
+        //this.renderTextures = [];
         // this.init();
         this.debug = false;
         this.initGraphs();
@@ -28,7 +29,14 @@ class LineGraphs {
         //     this.context[i] = this.canvas[i].getContext('2d');
         //
 
-
+    needsUpdate() {
+      //needs a proper test.
+      this.nddl = this.previewArea.model.nodeDetailData.length;
+      if(this.nddl != this.lastNDDL){
+        this.lastNDDL = this.nddl;
+        return true;
+      }
+    }
     initGraphs() {
         //if there are already graph objects, remove them
         if (this.graphObjects.length > 0) {
@@ -74,9 +82,15 @@ class LineGraphs {
             if (renderCanvas === null) {
                 renderCanvas = document.createElement('canvas');
                 renderCanvas.id = 'lineplot' + i;
+                this.container.appendChild(renderCanvas);
+                //append a break element to the container
+                let br = document.createElement('br');
+                this.container.appendChild(br);
             }
             //let renderCanvas = document.createElement('canvas', {id: 'lineplot'});
-            renderCanvas.width = 200;
+            //renderCanvas.width = 200;
+          //rendercanvas to 100% width of container
+            renderCanvas.width = this.container.clientWidth;
             renderCanvas.height = 100;
             let renderContext = renderCanvas.getContext('2d');
             //clear the canvas
@@ -94,29 +108,35 @@ class LineGraphs {
             // }
             //briefer method to create a lineplot?
             linedata = this.previewArea.model.nodeDetailData[i].data.map((d) => d[1]);
+            console.log("linedata size: ", linedata.length);
+            console.log(linedata);
+            //drop anything in data that is not a number
+            linedata = linedata.filter((d) => !isNaN(d));
             let graph = new canvasGraph(renderCanvas, linedata, this.graphOptions);
             //add index as line of text at bottom of canvas
-            renderContext.fillText(this.previewArea.model.nodeDetailData[i].index, 120, 90);
+            let textlength = renderContext.measureText(this.previewArea.model.nodeDetailData[i].index).width;
+            let textoffset = this.container.clientWidth - textlength - 10;
+            renderContext.fillText(this.previewArea.model.nodeDetailData[i].index, textoffset, 90);
             //create a texture from the canvas
-            this.renderTextures.push(new THREE.CanvasTexture(renderCanvas));
+            //this.renderTextures.push(new THREE.CanvasTexture(renderCanvas));
             //create a material from the texture
-            let renderMaterial = new THREE.MeshBasicMaterial({
-                map: this.renderTextures[this.renderTextures.length - 1],
-                transparent: true
-            });
+            // let renderMaterial = new THREE.MeshBasicMaterial({
+            //     map: this.renderTextures[this.renderTextures.length - 1],
+            //     transparent: true
+            // });
             //create a plane geometry
-            let renderGeometry = new THREE.PlaneGeometry(2, 1);
+//            let renderGeometry = new THREE.PlaneGeometry(2, 1);
             //create a mesh from the material and geometry
-            let renderMesh = new THREE.Mesh(renderGeometry, renderMaterial);
+  //          let renderMesh = new THREE.Mesh(renderGeometry, renderMaterial);
             //scale the mesh to 1/10th of a meter
-            renderMesh.scale.set(0.1, 0.1, 0.1);
+//            renderMesh.scale.set(0.1, 0.1, 0.1);
             //track the mesh in the graphObjects array
-            this.graphObjects.push(renderMesh);
+ //           this.graphObjects.push(renderMesh);
             // add the mesh to the hud
             ///// this.hud.add(renderMesh);
             //position the first graph in the top left corner of the hud
             //position subsequent graphs below the previous graph
-            renderMesh.position.set(-0.35, 0.4 - (0.12 * i), 0);
+ //           renderMesh.position.set(-0.35, 0.4 - (0.12 * i), 0);
         }
         //clean up the nodeDetailData array, remove the oldest data sets if there are more than maxGraphs
         if (this.previewArea.model.nodeDetailData.length > maxGraphs) {

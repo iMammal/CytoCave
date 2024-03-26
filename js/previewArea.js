@@ -77,6 +77,7 @@ import canvasGraph from "./canvasGraph";
 import  Hud2D  from "./Hud2d";
 import LineGraphs from './LineGraphs.js';
 import NodeLabels from "./nodeLabels";
+import nodeLabels from "./nodeLabels";
 
 class PreviewArea {
   constructor(canvas_, model_, name_) {
@@ -190,8 +191,9 @@ class PreviewArea {
 
     this.lineplotCanvas = document.createElement('canvas');
     this.lineplots = [document.getElementById('lineplot1')];//createElement('canvas');
-    this.Hud2D = new Hud2D(this);
-    this.linegraphs = new LineGraphs(this); //preViewArea_);
+    //this.Hud2D = new Hud2D(this);
+    //let container = document.getElementById('linePlots');
+    this.linegraphs = new LineGraphs(this,'linePlots'); //preViewArea_);
 
     // Display all edges
     if (!startNoEdges) {
@@ -266,7 +268,7 @@ class PreviewArea {
       previewAreaRight.NodeManager.select(index);
 
 
-      this.Hud2D.update();
+      //this.Hud2D.update();
 
   }
 
@@ -1776,11 +1778,11 @@ class PreviewArea {
 
     // graph some data
     //generate some fake data
-    let fakeData = [];
-    for (let i = 0; i < 25; i++) {
-      fakeData.push(Math.random());
-    }
-    this.lineplotData = fakeData;
+    // let fakeData = [];
+    // for (let i = 0; i < 25; i++) {
+    //   fakeData.push(Math.random());
+    // }
+    //this.lineplotData = fakeData;
     this.graphOptions = {
       width: 200,
       height: 100,
@@ -1797,11 +1799,29 @@ class PreviewArea {
       }
     }
 
-    this.addNodeLabel(this.lineplotCanvas);
+    //this.nodeLabels.addNodeLabel(this.lineplotCanvas);
 
     //let graph = new canvasGraph(this.lineplotCanvas, this.lineplotData, this.graphOptions); // canvas, data, options
-    let graph = new canvasGraph(this.lineplots[0], this.lineplotData, this.graphOptions); // canvas, data, options
-    //this.flatMesh.position.set(-0.35, 0.4, 0);
+    for(let i=0;i<this.model.nodeDetailData[i].length;i++) {
+      let linedata = this.model.nodeDetailData[i].data.map((d) => d[1]);
+      let element = document.getElementById('lineplot' + i);
+      if(!element) {
+        let canvas = document.createElement('canvas');
+        canvas.id = 'lineplot' + i;
+        canvas.width = 200;
+        canvas.height = 100;
+        canvas.style.position = 'absolute';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.zIndex = 100;
+        this.lineplots.push(canvas);
+      }
+      //prepare our data
+
+
+      let graph = new canvasGraph(this.lineplots[i], linedata, this.graphOptions); // canvas, data, options
+
+    }
 
   }
 
@@ -2494,7 +2514,7 @@ class PreviewArea {
       this.xrInterface.update(this.xrInterface,time,frame);
     else
       // console.log("NOT XRing");
-      if(this.linegraphs !== null)
+      if(this.linegraphs.needsUpdate())
         this.linegraphs.updateLinegraph();
 
 
