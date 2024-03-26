@@ -246,12 +246,13 @@ class PreviewArea {
     let index = this.NodeManager.node2index(node);
 
     this.NodeManager.restoreNodeByIndex(index);
-    this.model.loadNodeDetails(index); // fetch evidence plot for node
-    // fetch evidence plot for node's neighbors
-    for (let edge of this.NodeManager.getEdges(node)) {
-      let neighborI = edge.targetNodeIndex;
-      this.model.loadNodeDetails(neighborI);
-    }
+    // move this out to drawing.onLeftClick()
+    // this.model.loadNodeDetails(index); // fetch evidence plot for node
+    // // fetch evidence plot for node's neighbors
+    // for (let edge of this.NodeManager.getEdges(node)) {
+    //   let neighborI = edge.targetNodeIndex;
+    //   this.model.loadNodeDetails(neighborI);
+    // }
     this.NodeManager.scaleNodeByIndex(index, 1.5);
     this.drawEdgesGivenIndex(index);
     this.reInitEdgeFlare(); //just until i move it to the node manager or it's own class.
@@ -264,11 +265,17 @@ class PreviewArea {
 
     // for mirroring to the other side
 
-      previewAreaLeft.NodeManager.select(index);  //if it's already selected in this tree selectNode does nothing so it's safe to call on both sides.
-      previewAreaRight.NodeManager.select(index);
 
+      if (this.name === 'Right')  {
+        previewAreaLeft.NodeManager.select(index);
+        //previewAreaRight.NodeManager.select(index);
+      } else {
+        //if it's already selected in this tree selectNode does nothing so it's safe to call on both sides.
+        previewAreaRight.NodeManager.select(index);
+        //previewAreaLeft.NodeManager.select(index);
+      }
 
-      //this.Hud2D.update();
+      // this.Hud2D.update();
 
   }
 
