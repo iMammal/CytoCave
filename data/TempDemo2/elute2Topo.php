@@ -47,7 +47,7 @@ $results = $pdo->query('SELECT * FROM tempTopology');
 //no header
 // $header = false;
 
-echo "label,Flat,,,complexIdClustering,DetailsFile\n";
+echo "label,Square,,,complexIdClustering,DetailsFile\n";
 
 //iterate through each row of the result
 // while ($row = $results->fetchArray()) {
@@ -60,10 +60,15 @@ foreach ($results as $row) {
 
   // if $metadata[$row['uniprotAccs']] is not in $elution, then skip
     if (!array_key_exists($metadata[$row['label']]['uniprotAcc'], $elution)) {
-        echo $row['label'] .   "," . $row['Flat_X']. "," . $row['Flat_Y']. "," . $row['Flat_Z']."," . $row['complexIdClustering'] . ",\n";
+//         echo $row['label'] .   "," . $row['Flat_X']. "," . $row['Flat_Y']. "," . $row['Flat_Z']."," . $row['complexIdClustering'] . ",\n";
+//
+//     } else {
+//         echo $row['label'] .   "," . $row['Flat_X']. "," . $row['Flat_Y']. "," . $row['Flat_Z']."," . $row['complexIdClustering'] . ",proteinCFMSelute.php?rep=2&prot=".$metadata[$row['label']]['uniprotAcc'] ."\n";
+//     }
+        echo $row['label'] .   "," . $row['Flat_X']. "," . $row['Flat_Y']. "," . $row['Flat_Z']. ", ". $row['Square_X'].", ". $row['Square_Y'].", ". $row['Square_Z'] . "," . $row['complexIdClustering'] . ",\n";
 
     } else {
-        echo $row['label'] .   "," . $row['Flat_X']. "," . $row['Flat_Y']. "," . $row['Flat_Z']."," . $row['complexIdClustering'] . ",proteinCFMSelute.php?rep=2&prot=".$metadata[$row['label']]['uniprotAcc'] ."\n";
+        echo $row['label'] .   "," . $row['Flat_X']. "," . $row['Flat_Y']. "," . $row['Flat_Z']. ", ". $row['Square_X'].", ". $row['Square_Y'].", ". $row['Square_Z']. "," . $row['complexIdClustering'] . ",proteinCFMSelute.php?rep=2&prot=".$metadata[$row['label']]['uniprotAcc'] ."\n";
     }
 }
 ?>
