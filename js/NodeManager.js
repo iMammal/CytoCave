@@ -9,7 +9,9 @@
 import * as THREE from 'three';
 
 import {getNormalGeometry, getNormalMaterial} from "./graphicsUtils";
-import {previewAreaLeft} from "./drawing";
+import {previewAreaLeft,getThresholdModality} from "./drawing";
+
+let distanceMode = false;
 
 class NodeManager {
 
@@ -784,22 +786,27 @@ class NodeManager {
     //         });
     //     }
     // }
-    //console.log("Starting with " + matrixRow.size() + " edges.");
-    matrixRow.forEach((weight, j) => {
-      if (weight > threshold && weight <= maxThreshold) {
-        let regionActive1 = this.previewArea.model.isRegionActive(this.index2node(index).object.name.group);
-        let regionActive2 = this.previewArea.model.isRegionActive(this.index2node(j[0]).object.name.group);
-        if (regionActive1 && regionActive2) {
-          edges.push({
-            sourceNodeIndex: index,
-            targetNodeIndex: j[0],
-            weight: weight,
-            position: this.getNodePosition(this.index2node(j[0]))
-          });
-        }
-      }
-    });
 
+    if(true) {
+      //console.log("Starting with " + matrixRow.size() + " edges.");
+      matrixRow.forEach((weight, j) => {
+        if (weight > threshold && weight <= maxThreshold) {
+          let regionActive1 = this.previewArea.model.isRegionActive(this.index2node(index).object.name.group);
+          let regionActive2 = this.previewArea.model.isRegionActive(this.index2node(j[0]).object.name.group);
+          if (regionActive1 && regionActive2) {
+            edges.push({
+              sourceNodeIndex: index,
+              targetNodeIndex: j[0],
+              weight: weight,
+              position: this.getNodePosition(this.index2node(j[0]))
+            });
+          }
+        }
+      });
+    }
+
+    // attempt to implement focusDepth with recursion
+    // needs deduplication filter for childEdges
     if (focusDepth > 1) {
       let childEdges = [];
       for (let edge of edges) {
@@ -837,21 +844,21 @@ class NodeManager {
         let distance2target = sourcePosition.distanceTo(targetPosition);
         return distance2target <= distance;
       });
-    } else {
+    } else if (distanceMode) {
 
-    edges.sort((a, b) => {
-      // sort by distance closest to farthest
-      let sourcePosition = this.getNodePosition(node);
-      let aPosition = this.getNodePosition(this.index2node(a.targetNodeIndex));
-      let bPosition = this.getNodePosition(this.index2node(b.targetNodeIndex));
-      let aDistance = sourcePosition.distanceTo(aPosition);
-      let bDistance = sourcePosition.distanceTo(bPosition);
-      return aDistance - bDistance;
-    });
+      edges.sort((a, b) => {
+        // sort by distance closest to farthest
+        let sourcePosition = this.getNodePosition(node);
+        let aPosition = this.getNodePosition(this.index2node(a.targetNodeIndex));
+        let bPosition = this.getNodePosition(this.index2node(b.targetNodeIndex));
+        let aDistance = sourcePosition.distanceTo(aPosition);
+        let bDistance = sourcePosition.distanceTo(bPosition);
+        return aDistance - bDistance;
+      });
 
     }
 
-    if (topN !== null && topN > 0) {  // && topN < edges.length)
+    if (!getThresholdModality() &&  topN !== null && topN > 0) {  // && topN < edges.length)
       console.log("TopN filter set topN to null or 0 to disable.");
       edges = edges.slice(0, topN);
     }
