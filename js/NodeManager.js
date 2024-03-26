@@ -733,9 +733,17 @@ class NodeManager {
   //If distance is 0, the distance filter is disabled.
   //If topN is null or 0, the topN filter is disabled.
   //If threshold is null or 0, the threshold filter is disabled.
-  getEdges = (node, threshold = 0, topN = 0, distance = 0) => {
+  getEdges = (node, threshold = 0, topN = 0, distance = 0, focusDepth = 1) => {
+
     //todo: move to model, remove edges as a concept from NodeManager
     let edges = []; //this.previewArea.model.getActiveEdges();
+
+    // if focusDepth is explicitly set to 0 exit returning empty array.
+    // this is to catch infinite recursions
+    if(!focusDepth) return edges;
+
+
+
     //console.count("getEdges");
     //console.log(edges);
     //return edges;
@@ -792,6 +800,27 @@ class NodeManager {
       }
     });
 
+    if (focusDepth > 1) {
+      let childEdges = [];
+      for (let edge of edges) {
+        let nbrIdx = edge.targetNodeIndex;
+        let nbr = this.index2node(nbrIdx);
+        //todo: recursion is baaaad, umKay?
+        let newEdges = this.getEdges(node, threshold, topN, distance, focusDepth - 1);
+        for (let newEdge of newEdges) {
+          childEdges.push(newEdge);
+        }
+      }
+      for (let childEdge of childEdges) {
+        if (!edges.some((a, b) => {
+          //sort by weight
+          return ((b.targetNodeIndex === a.targetNodeIndex) && (b.sourceNodeIndex === a.sourceNodeIndex));
+        },childEdge)) {
+          //includes(childEdge))
+          edges.push(childEdge);
+        }
+      }
+    }
 
     edges.sort((a, b) => {
       //sort by weight
@@ -828,6 +857,8 @@ class NodeManager {
     }
     // console.log("Returning " + edges.length + " edges.");
     // console.log(edges);
+
+
     return edges;
 
   }
@@ -933,7 +964,7 @@ class NodeManager {
   /* focusDepth is the number of hops to activate focus on.
   */
   activateContextAroundNode(node, distance, focusDepth = 1, topN = null, processby = "edgeweight") {
-    // nodes around the are either physically close to the node or connected to the node by an edge.
+    // nodes around the are node either physically close to the node or connected to the node by an edge.
     // if the node is already selected, do nothing.
 
     if (this.inContext(node)) {
@@ -950,7 +981,7 @@ class NodeManager {
         topN = null;
       }
       //get the edges of the node.
-      edges = this.getEdges(node, previewAreaLeft.model.getThreshold(), topN, distance);
+      edges = this.getEdges(node, previewAreaLeft.model.getThreshold(), topN, distance, focusDepth);
 
       //sort by threshold
       edges.sort((a, b) => {
