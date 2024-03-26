@@ -883,6 +883,10 @@ function Model(side) {
     //
     // }
 
+    this.clearAllDetails = function () {
+        this.nodeDetailData  = [];
+    }
+
     this.loadNodeDetails = function (index) {
         //var file = "/3NeuroCave/data/SciVisIEEE2023/"+this.DetailsFilesList[index];
         // var fileData = [];
