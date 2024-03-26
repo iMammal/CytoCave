@@ -8,12 +8,17 @@ $db_name = $db_config['name'];
 $db_user = $db_config['user'];
 $db_password = $db_config['password'];
 
+
 // $db = new SQLite3('humap2.db');
 $pdo = new PDO("mysql:host=$db_host;dbname=$db_name", $db_user, $db_password);
 
 if (!$pdo) {
   die("Connection failed: " . mysqli_connect_error());
 }
+
+
+$debug = false;
+$debug = $_GET['debug'];
 
 //get gene name from the url
 $searchTerms = $_GET['search'];
@@ -26,7 +31,7 @@ if ($searchTerms == "" || $searchTerms == null || $searchTerms == "undefined") {
   echo json_encode($error);
   ///$db->close();
   //exit();
-  $searchGene = "GAK";
+  $searchGene = "PSMB5"; //"GAK";
 }
 
 // drop tables tempTopology, tempNetwork, tempMetadata if they exist
@@ -136,6 +141,35 @@ function generatePolygonPoints($M, $centroid, $distance) {
     return $points;
 }
 
+
+// read pin table into memory
+$results = $pdo->query('SELECT proteinA, proteinB, interaction FROM pin LIMIT 100000');
+$pin = array();
+$geneInterX = array();
+// while ($row = $results->fetchArray()) {
+
+// load PIN as sparse matrix
+foreach ($results as $row) {
+  //array_push($pin, $row);
+//   $pin[$row['proteinA']][$row['proteinB']] = $row['interaction'];
+
+    if($row[2] > 0.05) {
+        $pin[$row[0]][$row[1]] = $row[2];
+        $pin[$row[1]][$row[0]] = $row[2];
+
+        $genesInterX[$row[0]] = $row[1];
+        $genesInterX[$row[1]] = $row[0];
+
+        if($debug > 4) echo json_encode($row);
+        if($debug > 3) echo $row['proteinA'].','.$row['proteinB'].':'.$row['interaction'].'<BR>';
+    }
+}
+
+if($debug > 2) print_r($pin);
+
+
+
+
 //execute the query to get the number of rows from the database
 // $query = "SELECT COUNT(*) FROM table_name";
 $query = 'SELECT count(*)  FROM HuMAP2_ID where genenames like "%'.$searchGene.'%" ';
@@ -197,13 +231,31 @@ foreach ($results as $row) {
   $genesInComplexes[$complexId] = array();
 
   // split the genenames by space
-  $genenames = explode(" ", $row['genenames']);
+  $genenamesRaw = explode(" ", $row['genenames']);
+
+  $genenames = array();
 
   // split the Uniprot_ACCs by space
-  $uniprotAccs = explode(" ", $row['Uniprot_ACCs']);
+  $uniprotAccsRaw = explode(" ", $row['Uniprot_ACCs']);
+
+  $uniprotAccs = array();
+
+  $geneIndex = 0;
+  foreach ( $genenamesRaw as $gene) {
+    if($genesInterX[$gene]){
+        array_push($genenames,$gene);
+        array_push($uniprotAccs,$uniprotAccsRaw[$geneIndex]);
+        $geneIndex = $geneIndex + 1;
+    }
+  }
+
+
 
   //generate the polygon points
   $M = count($genenames);
+
+
+
   $geneFlatCoordinates = generatePolygonPoints($M, $gridPoints[$complexcounter - 1], $gridDistance/3);
 
   $geneFlatCoordinatesSquare = generatePolygonPoints($M, $gridPointsSquare[$complexcounter - 1], $gridDistanceSquare/3);
@@ -283,6 +335,8 @@ foreach ($results as $row) {
 //       echo "Error inserting data: " . $db->lastErrorMsg();
 //     }
 
+
+
 //insert into tempMetadata table the label, clusterid, region_name, and confidence with PDO
     $query = 'INSERT INTO tempMetadata (label, complexid, region_name, uniprotAcc, confidence, hemisphere) VALUES (:label, :complexid, :region_name, :uniprotAcc, :confidence, :hemisphere)';
     $stmt = $pdo->prepare($query);
@@ -319,14 +373,6 @@ foreach ($results as $row) {
 }
 
 
-// read pin table into memory
-$results = $pdo->query('SELECT proteinA, proteinB, interaction FROM pin LIMIT 100000');
-$pin = array();
-// while ($row = $results->fetchArray()) {
-foreach ($results as $row) {
-  array_push($pin, $row);
-}
-
 $source = null;
 $target = null;
 $interaction = null;
@@ -339,13 +385,16 @@ $interaction = null;
 //for ($c = 1; $c < $complexcounter; $c++) {
 foreach ($complexMap as $complexId => $c) {
     // get all the genes in the complex
-    $genesInComplex = $pdo->query('SELECT label FROM tempMetadata WHERE complexid = "'.$complexId.'"');
+    $genesInComplex = $pdo->query('SELECT label,region_name FROM tempMetadata WHERE complexid = "'.$complexId.'"');
     // Todo: popular the genesInComplex array from table tempMetadata isntead of query
 
     $genesInComplexArray = array();
 //     while ($row = $genesInComplex->fetchArray()) {
     foreach ($genesInComplex as $row) {
-        array_push($genesInComplexArray, $row['label']);
+        if ($genesInterX[$row['region_name']]) {
+            echo "INSERTING".json_encode($row)."<BR>";
+            array_push($genesInComplexArray, $row['label']);
+        }
     }
     //echo the genes in the complex
     echo "Genes in complex: " . json_encode($genesInComplexArray) . "<br>";
@@ -439,16 +488,21 @@ foreach ($complexMap as $complexId => $c) {
 //                         return $item['proteinA'] === $source && $item['proteinB'] === $target;
 //                     }), 'interaction');
 
-                    foreach ($pin as $row) {
-                      if ($row['proteinA'] === $source && $row['proteinB'] === $target)  {  //&& $row['column2'] === $value2) {
-                        $interaction = $row['interaction'];
-                      }
-                    }
+
 
 //                 $interaction = current($interaction);
 //                     $interaction = array_map(function($item) use ($source, $target) {
 //                         return $item['proteinA'] === $source['region_name'] && $item['proteinB'] === $target['region_name'];
 //                     }, $pin);
+
+
+                // read interaction from sparse matrix
+                $interaction = $pin[$source][$target];
+
+                //echo the source, target, and interaction
+                if($debug) {
+                    echo "Source: " . json_encode($source) . " Target: " . json_encode($target)  . " Interaction: " . json_encode($interaction) . "<br>";
+                }
 
                 // if the interaction is empty, query the pin table to get the interaction for the target and source
 
@@ -467,11 +521,12 @@ foreach ($complexMap as $complexId => $c) {
 //                         }), 'interaction');
 //                         $interaction = current($interaction);
 
-                    foreach ($pin as $row) {
-                      if ($row['proteinA'] === $target && $row['proteinB'] === $source)  {  //&& $row['column2'] === $value2) {
-                        $interaction = $row['interaction'];
-                      }
-                    }
+//                     foreach ($pin as $row) {
+//                       if ($row['proteinA'] === $target && $row['proteinB'] === $source)  {  //&& $row['column2'] === $value2) {
+//                         $interaction = $row['interaction'];
+//                       }
+//                     }
+
 
 //                         $interaction = array_map(function($item) use ($source, $target) {
 //                             return $item['proteinA'] === $target['region_name'] && $item['proteinB'] === $source['region_name'];
@@ -479,10 +534,6 @@ foreach ($complexMap as $complexId => $c) {
 //                     $interaction = current($interaction);
 
                 }
-
-                //echo the source, target, and interaction
-                echo "Source: " . json_encode($source) . " Target: " . json_encode($target)  . " Interaction: " . json_encode($interaction) . "<br>";
-
 
 //                 if ( ($interaction['interaction'] != "") ) { //}&& ($sameComplex == 1 ) ) {
                 if ($interaction) {
@@ -497,16 +548,27 @@ foreach ($complexMap as $complexId => $c) {
 //                       echo "Error inserting data: " . $db->lastErrorMsg();
 //                     }
 
-                    $stmt = $pdo->prepare('INSERT INTO tempNetwork (source, target, interaction) VALUES (:source, :target, :interaction)');
-                    $stmt->bindValue(':source', $genesInComplexArray[$i], PDO::PARAM_STR);
-                    $stmt->bindValue(':target', $genesInComplexArray[$j], PDO::PARAM_STR);
-//                     $stmt->bindValue(':interaction', $interaction['interaction'], PDO::PARAM_STR);
-                    $stmt->bindValue(':interaction', $interaction, PDO::PARAM_STR);
-                    $result = $stmt->execute();
-                    if (!$result) {
-                      echo "Error inserting data: " . $pdo->errorInfo();
-                    }
+                    if ( ($interaction > 0.05) ) {
 
+
+                        //echo the source, target, and interaction
+                        if($debug) {
+                            echo "Source: " . json_encode($source) . " Target: " . json_encode($target)  . " Interaction: " . json_encode($interaction) . "<br>";
+                        } else {
+                            //echo "Interaction: " . json_encode($interaction) ."<BR>";
+                        }
+
+
+                        $stmt = $pdo->prepare('INSERT INTO tempNetwork (source, target, interaction) VALUES (:source, :target, :interaction)');
+                        $stmt->bindValue(':source', $genesInComplexArray[$i], PDO::PARAM_STR);
+                        $stmt->bindValue(':target', $genesInComplexArray[$j], PDO::PARAM_STR);
+    //                     $stmt->bindValue(':interaction', $interaction['interaction'], PDO::PARAM_STR);
+                        $stmt->bindValue(':interaction', $interaction, PDO::PARAM_STR);
+                        $result = $stmt->execute();
+                        if (!$result) {
+                          echo "Error inserting data: " . $pdo->errorInfo();
+                        }
+                    }
                 }
             }
         }
