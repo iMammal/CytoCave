@@ -311,7 +311,21 @@ function onLeftClick(previewArea, event) {
             }
         } else if (complexes === 'all') {
             previewArea.model.clearAllDetails();
-            for (let nodeIdx of  previewArea.NodeManager.instances[objectIntersected.object.name.group]['left'].userData.indexList){ //.object.parent.children){
+            let nodesInComplex = previewArea.NodeManager.instances[objectIntersected.object.name.group]['left'].userData.indexList;
+            // sort nodexInComplex by edge weight with objectIntersected node with selected node first
+            let selectedNodeIndex = previewArea.NodeManager.node2index(objectIntersected);
+            nodesInComplex.sort((a,b) => {
+                // let aDist = previewArea.model.getDistance(selectedNodeIndex, a);
+                // let bDist = previewArea.model.getDistance(selectedNodeIndex, b);
+                if(a === selectedNodeIndex) return -1;
+                if(b === selectedNodeIndex) return 1;
+                let aDist = previewArea.model.getConnectionMatrixRow(selectedNodeIndex).toArray()[a];
+                let bDist = previewArea.model.getConnectionMatrixRow(selectedNodeIndex).toArray()[b];
+                let diff = bDist - aDist;
+                return diff;
+            });
+
+            for (let nodeIdx of nodesInComplex) { //  previewArea.NodeManager.instances[objectIntersected.object.name.group]['left'].userData.indexList){ //.object.parent.children){
                 // let neighborI = previewArea.NodeManager.node2index(node); //edge.targetNodeIndex;
                 previewArea.model.loadNodeDetails(nodeIdx); // fetch evidence plot for node
             }
