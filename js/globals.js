@@ -55,6 +55,9 @@ let startNoEdges = stringToBoolean(url.searchParams.get("noEdges"));
 let startNoLabels = stringToBoolean(url.searchParams.get("noLabels"));
 let experimental = stringToBoolean(url.searchParams.get("experimental"));
 let complexes = (url.searchParams.get("complexes"));
+if( complexes == undefined){
+    complexes = "all";
+}
 
 var mobile = stringToBoolean(url.searchParams.get("mobile"));
 
