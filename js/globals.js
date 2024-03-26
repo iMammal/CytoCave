@@ -54,6 +54,7 @@ let removeEdgesOnUnselect = stringToBoolean(url.searchParams.get("keepedges"));
 let startNoEdges = stringToBoolean(url.searchParams.get("noEdges"));
 let startNoLabels = stringToBoolean(url.searchParams.get("noLabels"));
 let experimental = stringToBoolean(url.searchParams.get("experimental"));
+let complexes = (url.searchParams.get("complexes"));
 
 var mobile = stringToBoolean(url.searchParams.get("mobile"));
 
@@ -74,4 +75,4 @@ console.log('This is ' + ((mobile)?'Mobile':'Desktop') + ' version');
 
 
 
-export {labelLUT,atlas,folder,dataFiles,metric,mobile,neuro,isLoaded,setDataFile,getAtlas,setAtlas,getDataFile,experimental,removeEdgesOnUnselect,startNoEdges,startNoLabels}
+export {labelLUT,atlas,folder,dataFiles,metric,mobile,neuro,isLoaded,setDataFile,getAtlas,setAtlas,getDataFile,experimental,removeEdgesOnUnselect,startNoEdges,startNoLabels,complexes}

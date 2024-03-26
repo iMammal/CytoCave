@@ -33,7 +33,7 @@ var hoverMode = 0;
 var floatingLabel = false;
 
 import * as THREE from 'three'
-import {isLoaded, dataFiles, mobile,experimental} from "./globals";
+import {isLoaded, dataFiles, mobile,experimental,complexes} from "./globals";
 import {
     addEdgeBundlingCheck,
     addModalityButton,
@@ -66,6 +66,9 @@ import {setUpdateNeeded} from './utils/Dijkstra';
 import { setNodeInfoPanel, enableThresholdControls, addSearchPanel } from './GUI'
 import {setColorGroupScale} from './utils/scale'
 import {func} from "three/nodes";
+import nodeManager from "./NodeManager";
+import {isNumber} from "mathjs";
+import node from "three/addons/nodes/core/Node";
 
 function toggleFloatingLabel() {
     floatingLabel = !floatingLabel;
@@ -289,6 +292,32 @@ function onLeftClick(previewArea, event) {
   //console.log("objectIntersected: ", objectIntersected);
     if(objectIntersected.object.name.type === 'region')
         previewArea.NodeManager.toggleSelectNode(objectIntersected);
+
+    if (complexes){ // if complexes selection mode enabled, display lineplots for whole complex
+        let neighborI = previewArea.NodeManager.node2index(objectIntersected); //edge.targetNodeIndex;
+        previewArea.model.loadNodeDetails(neighborI); // fetch evidence plot for node
+        if ( (complexes === 'nbrs') || (parseInt(complexes)) ) {
+            // fetch evidence plot for node's neighbors
+            let detailsMax = parseInt(complexes) ? complexes : 9999;
+            let depth = parseInt(detailsMax);
+            for (let edge of previewArea.NodeManager.getEdges(objectIntersected, 0,0, 0, depth)) {
+                neighborI = edge.targetNodeIndex;
+                previewArea.model.loadNodeDetails(neighborI);
+                if (detailsMax) {
+                    //detailsMax = detailsMax - 1;
+                } else {
+                    break;
+                }
+            }
+        } else if (complexes === 'all') {
+            // previewArea
+            for (let nodeIdx of  previewArea.NodeManager.instances[objectIntersected.object.name.group]['left'].userData.indexList){ //.object.parent.children){
+                // let neighborI = previewArea.NodeManager.node2index(node); //edge.targetNodeIndex;
+                previewArea.model.loadNodeDetails(nodeIdx); // fetch evidence plot for node
+            }
+        }
+
+    }
 
 }
 
