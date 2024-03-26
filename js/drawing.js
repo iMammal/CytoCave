@@ -310,11 +310,13 @@ function onLeftClick(previewArea, event) {
                 }
             }
         } else if (complexes === 'all') {
-            // previewArea
+            previewArea.model.clearAllDetails();
             for (let nodeIdx of  previewArea.NodeManager.instances[objectIntersected.object.name.group]['left'].userData.indexList){ //.object.parent.children){
                 // let neighborI = previewArea.NodeManager.node2index(node); //edge.targetNodeIndex;
                 previewArea.model.loadNodeDetails(nodeIdx); // fetch evidence plot for node
             }
+            // previewArea.linegraphs.updateLinegraph();
+
         }
 
     }
