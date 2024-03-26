@@ -95,8 +95,17 @@ class LineGraphs {
             let renderContext = renderCanvas.getContext('2d');
             //clear the canvas
             renderContext.clearRect(0, 0, renderCanvas.width, renderCanvas.height);
+
+            let nodeIndex = parseInt(this.previewArea.model.nodeDetailData[i].index.split(' ')[0]);
+            let node = this.previewArea.NodeManager.index2node(nodeIndex);
+            let nodeColor = node.object.material.color;
+
+
             //set the font color
-            renderContext.fillStyle = 'yellow'; //'green'; //'white';
+            // construct color string from nodeColor rgb values
+            let nodeColorRGB = 'rgb(' + Math.round(nodeColor.r * 255) + ',' + Math.round(nodeColor.g * 255) + ',' + Math.round(nodeColor.b * 255) + ')';
+            renderContext.fillStyle = nodeColorRGB; //   'yellow'; //'green'; //'white';
+
             //set the font size and font family
             renderContext.font = '12px Arial';
             console.log("nodeDetailData: ", this.previewArea.model.nodeDetailData[i])
