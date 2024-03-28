@@ -224,12 +224,12 @@ $tempNetwork = array();
 //generate the grid points
 $grid = generateGridPointsWithDistance($N);
 $gridPoints = $grid['points'];
-$gridDistance = $grid['distance'];
+$gridDistance = $grid['distance'] * 0.85;
 
 //generate the square grid points
 $gridSquare = generateSquareGridPoints($N);
 $gridPointsSquare = $gridSquare['points'];
-$gridDistanceSquare = $gridSquare['distance'];
+$gridDistanceSquare = $gridSquare['distance'] * 0.85;
 
 
 
