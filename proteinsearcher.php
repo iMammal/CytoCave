@@ -70,7 +70,7 @@ function generateGridPointsWithDistance($N) {
     );
 
     // Calculate the distance between points, avoiding division by zero when N=1
-    $result['distance'] = $N > 1 ? 100 / ($N - 1) : 100;
+    $result['distance'] = $N > 1 ? 200 / ($N - 1) : 200;
 
     // Generate points
     for ($i = 0; $i < $N; $i++) {
@@ -98,7 +98,7 @@ function generateSquareGridPoints($N) {
     $pointsPerSide = ceil(sqrt($N));
 
     // Adjust the distance calculation for a 100x100 grid
-    $result['distance'] = 100 / max($pointsPerSide - 1, 1);
+    $result['distance'] = 200 / max($pointsPerSide - 1, 1);
 
     // Generate points for a square grid
     for ($i = 0; $i < $pointsPerSide; $i++) {
@@ -256,9 +256,9 @@ foreach ($results as $row) {
 
 
 
-  $geneFlatCoordinates = generatePolygonPoints($M, $gridPoints[$complexcounter - 1], $gridDistance/3);
+  $geneFlatCoordinates = generatePolygonPoints($M, $gridPoints[$complexcounter - 1], $gridDistance/(3-$M/30));
 
-  $geneFlatCoordinatesSquare = generatePolygonPoints($M, $gridPointsSquare[$complexcounter - 1], $gridDistanceSquare/3);
+  $geneFlatCoordinatesSquare = generatePolygonPoints($M, $gridPointsSquare[$complexcounter - 1], $gridDistanceSquare/(3-$M/30));
 
     //echo the genenames
     echo "Genenames: " . json_encode($genenames) . "<br>";
