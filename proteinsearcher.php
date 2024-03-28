@@ -31,7 +31,7 @@ if ($searchTerms == "" || $searchTerms == null || $searchTerms == "undefined") {
   echo json_encode($error);
   ///$db->close();
   //exit();
-  $searchGene = "PSMB5"; //"GAK";
+  $searchGene = "PSMB5 CCT5"; //"GAK";
 }
 
 //get gene name from the url
@@ -72,7 +72,7 @@ $pdo->query('DELETE FROM tempMetadata');
 //$db->exec('CREATE TABLE tempGenes (geneNumber INTEGER, geneName TEXT)');
 
 
-function generateGridPointsWithDistance($N) {
+function generateGridPointsWithDistance($N,$y = 50) {
     $result = array(
         'distance' => 0,
         'points' => array()
@@ -88,7 +88,7 @@ function generateGridPointsWithDistance($N) {
 
         // For simplicity, set y to a fixed value, e.g., 50, to place points in the middle of the grid vertically.
         // Alternatively, distribute Y evenly if the problem requires.
-        $y = 50;
+//         $y = 50; // get this from the input or calculate it based on the number of points
 
         // Add the coordinates to the array as floats.
         $result['points'][] = array((float) $x, (float) $y);
@@ -178,10 +178,15 @@ if($debug > 2) print_r($pin);
 
 
 
+// replaces spaces in SearchGene with commas
+$searchGene = str_replace(' ', "%' or genenames like '%", $searchGene);
+
 
 //execute the query to get the number of rows from the database
 // $query = "SELECT COUNT(*) FROM table_name";
-$query = 'SELECT count(*)  FROM HuMAP2_ID where genenames like "%'.$searchGene.'%" ';
+//$query = 'SELECT count(*)  FROM HuMAP2_ID where genenames like "%'.$searchGene.'%" '; //todo: Do we want to search substrings?
+$query = "SELECT count(*)  FROM HuMAP2_ID where genenames like '%".$searchGene."%' "; // or multiple genes, or both?
+if ($debug) echo $query; //'SELECT count(*)  FROM HuMAP2_ID where genenames in ("'.$searchGene.'") '; //dump php variable to console
 $result = $pdo->query($query);
 
 if($result) {
@@ -189,10 +194,15 @@ if($result) {
     $numRows = $result->fetch(PDO::FETCH_NUM);
     echo "Number of rows: " . $numRows[0];
     $N = $numRows[0];
+} else {
+    echo "Error getting number of rows: " . $pdo->errorInfo();
+    $N = 0;
 }
 
 //execute the query to get the HuMAP2_ID, Confidence, Uniprot_ACCs, and genenames from the database
-$query = 'SELECT HuMAP2_ID, Confidence, Uniprot_ACCs, genenames FROM HuMAP2_ID where genenames like "%'.$searchGene.'%" ';
+//$query = 'SELECT HuMAP2_ID, Confidence, Uniprot_ACCs, genenames FROM HuMAP2_ID where genenames like "%'.$searchGene.'%" '; //todo: Do we want to search substrings?
+//$query = 'SELECT HuMAP2_ID, Confidence, Uniprot_ACCs, genenames FROM HuMAP2_ID where genenames  "('.$searchGene.')" '; // or multiple genes, or both?
+$query = "SELECT HuMAP2_ID, Confidence, Uniprot_ACCs, genenames FROM HuMAP2_ID where genenames like '%".$searchGene."%' "; //todo: Do we want to search substrings?
 //dump php variable to console
 //var_dump($query);
 $results = $pdo->query($query);
@@ -200,6 +210,7 @@ $results = $pdo->query($query);
 echo json_encode($results);
 $genecounter = 1;
 $complexcounter = 1;
+$searchTermCounter = 1;
 
 $jsonReturn = array();
 
