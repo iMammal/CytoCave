@@ -85,6 +85,10 @@ var setDimensionFactorLeftSphere = function(value){
     dimensionFactorLeftSphere = value;
 };
 
+var getDimensionFactorLeftSphere = function(){
+    return dimensionFactorLeftSphere;
+}
+
 // scaling the glyphs
 var setDimensionFactorRightSphere = function(value){
 
@@ -95,6 +99,9 @@ var setDimensionFactorRightSphere = function(value){
     dimensionFactorRightSphere = value;
 };
 
+var getDimensionFactorRightSphere = function(){
+    return dimensionFactorRightSphere;
+}
 
 // scaling the glyphs
 var setDimensionFactorLeftBox = function(value){
@@ -106,6 +113,10 @@ var setDimensionFactorLeftBox = function(value){
     dimensionFactorLeftBox = value;
 };
 
+var getDimensionFactorLeftBox = function(){
+    return dimensionFactorLeftBox;
+}
+
 // scaling the glyphs
 var setDimensionFactorRightBox = function(value){
 
@@ -115,6 +126,10 @@ var setDimensionFactorRightBox = function(value){
 
     dimensionFactorRightBox = value;
 };
+
+var getDimensionFactorRightBox = function(){
+    return dimensionFactorRightBox;
+}
 
 // return the material for a node (vertex) according to its state: active or transparent
 //todo: change to static reusable materials
@@ -177,4 +192,4 @@ var sunflower = function(n, R, c, v1, v2) {
     return math.transpose(points);
 };
 
-export {sphereResolution,getSphereResolution,setSphereResolution,sunflower, setDimensionFactorLeftSphere, setDimensionFactorRightSphere, setDimensionFactorLeftBox,setDimensionFactorRightBox, setDimensionFactor,getNormalGeometry,getNormalMaterial}
+export {sphereResolution,getSphereResolution,setSphereResolution,sunflower, setDimensionFactorLeftSphere, setDimensionFactorRightSphere, setDimensionFactorLeftBox,setDimensionFactorRightBox, setDimensionFactor,getNormalGeometry,getNormalMaterial,getDimensionFactorLeftSphere,getDimensionFactorRightSphere,getDimensionFactorLeftBox,getDimensionFactorRightBox}

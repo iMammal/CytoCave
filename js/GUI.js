@@ -128,6 +128,8 @@ var addDimensionFactorSliderLeft = function (side) {
             setDimensionFactorRightSphere(this.value);
             if (enableRightDimLock) {
                 setDimensionFactorRightBox(this.value);
+                previewAreaRight.nodeLabels.removeAllLabels();  //.scale.set(this.value, this.value, this.value);
+                previewAreaRight.nodeLabels.labelAllNodes();       //getNodesFocused(), modelRight);
                 document.getElementById("dimensionSliderRightRight").value = this.value;
             }
             if (enableSphereDimLock) {
@@ -206,7 +208,10 @@ var addDimensionFactorSliderRight = function (side) {
         .attr("max", "4")
         .attr("step","0.1")
         .on("change", function () {
-            setDimensionFactorRightBox(this.value);
+            setDimensionFactorRightBox(this.value);   // repurposed for label text
+            previewAreaRight.nodeLabels.removeAllLabels();  //.scale.set(this.value, this.value, this.value);
+            previewAreaRight.nodeLabels.labelAllNodes();       //getNodesFocused(), modelRight);
+
             if (enableRightDimLock) {
                 setDimensionFactorRightSphere(this.value);
                 document.getElementById("dimensionSliderLeftRight").value = this.value;
@@ -224,10 +229,15 @@ var addDimensionFactorSliderRight = function (side) {
         });
     }
 
+
+    // panel.append("label")
+    //     .attr("for", "dimensionSlider")
+    //     .attr("id", "dimensionSliderLabel"+side)
+    //     .text(side + " Box Size ");
     panel.append("label")
         .attr("for", "dimensionSlider")
         .attr("id", "dimensionSliderLabel"+side)
-        .text(side + " Box Size ");
+        .text(side + " Text Size ");
 
     panel.append("label")
         .attr("for", "enable"+side+"DimLock")

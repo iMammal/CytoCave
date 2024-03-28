@@ -1,6 +1,6 @@
 //sprite labels for nodes
 import * as THREE from "three";
-
+import {getDimensionFactorLeftSphere,getDimensionFactorRightSphere,getDimensionFactorLeftBox,getDimensionFactorRightBox } from "./graphicsUtils";
 class NodeLabels {
     constructor(_previewArea, _nodeManager) {
         this.labels = [];
@@ -79,7 +79,7 @@ class NodeLabels {
     let context = targetCanvas.getContext('2d');
     context.fillStyle = '#ffffff';
     context.textAlign = 'left';
-    context.font = '84px Arial';
+    context.font = getDimensionFactorRightBox()*21+'px Arial';
     context.fillText("", 0, 0);
 
     this.nodeNameMap = new THREE.CanvasTexture(targetCanvas);
