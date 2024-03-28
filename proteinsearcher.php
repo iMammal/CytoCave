@@ -34,6 +34,15 @@ if ($searchTerms == "" || $searchTerms == null || $searchTerms == "undefined") {
   $searchGene = "PSMB5"; //"GAK";
 }
 
+//get gene name from the url
+$scaleFactor = $_GET['scale'];
+//sanitize the sclae factor
+$scaleFactor = filter_var($scaleFactor, FILTER_SANITIZE_STRING);
+//if search term is empty, set it to empty string
+if ($scaleFactor == "" || $scaleFactor == null || $scaleFactor == "undefined") {
+    $scaleFactor = 30;
+ }
+
 // drop tables tempTopology, tempNetwork, tempMetadata if they exist
 // $db->exec('DROP TABLE IF EXISTS tempTopology');
 // $db->exec('DROP TABLE IF EXISTS tempNetwork');
@@ -256,9 +265,9 @@ foreach ($results as $row) {
 
 
 
-  $geneFlatCoordinates = generatePolygonPoints($M, $gridPoints[$complexcounter - 1], $gridDistance/(3-$M/30));
+  $geneFlatCoordinates = generatePolygonPoints($M, $gridPoints[$complexcounter - 1], $gridDistance/(3-$M/$scaleFactor));
 
-  $geneFlatCoordinatesSquare = generatePolygonPoints($M, $gridPointsSquare[$complexcounter - 1], $gridDistanceSquare/(3-$M/30));
+  $geneFlatCoordinatesSquare = generatePolygonPoints($M, $gridPointsSquare[$complexcounter - 1], $gridDistanceSquare/(3-$M/$scaleFactor));
 
     //echo the genenames
     echo "Genenames: " . json_encode($genenames) . "<br>";
