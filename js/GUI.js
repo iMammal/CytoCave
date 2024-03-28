@@ -26,6 +26,7 @@ import {
     updateScenes,
     redrawEdges,
     updateOpacity,
+    updateEdgeWidth,
     updateNodesVisiblity,
     updateNodeSelection,
     getSpt,
@@ -399,6 +400,36 @@ var addConThresholdSlider = function () {
         .text(neuro?"Contra-Threshold @ ":"Inter-Threshold @ "  + max / 2 / thresholdMultiplier);
 
 };
+
+// add edge line width slider 0 to 1
+var addLineWidthSlider = function () {
+    let lineWidthVal = 0.85;
+    if(previewAreaLeft) {
+        //todo: due to reasons, previewarea  may not exist when this is called
+        //the default value is set to 0.5, but it should be set to the current value
+        //set the default value in previewArea to change the default here, update the val above
+        //to display that value.
+        lineWidthVal = previewAreaLeft.getEdgeWidth();
+    }
+
+    var menu = d3.select("#edgeInfoPanel");
+    menu.append("label")
+        .attr("for", "lineWidthSlider")
+        .attr("id", "lineWidthSliderLabel")
+        .text("Edge Width @ " + lineWidthVal);
+    menu.append("input")
+        .attr("type", "range")
+        .attr("value", lineWidthVal*100)
+        .attr("id", "lineWidthSlider")
+        .attr("min", 0)
+        .attr("max", 100)
+        .attr("step",1)
+        .on("change", function () {
+            updateEdgeWidth(Math.floor(this.value)/100);
+            document.getElementById("lineWidthSliderLabel").innerHTML = "Edge Width @ " + this.value;
+        });
+};
+
 
 // add opacity slider 0 to 1
 var addOpacitySlider = function () {
@@ -1573,4 +1604,4 @@ var toggleMenus = function (e) {
 
 var getShortestPathVisMethod = function () { return shortestPathVisMethod }
 
-export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addToggleLinePlotsButton, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend, searchMode} //hideVRMaximizeButtons
+export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addLineWidthSlider, addToggleLinePlotsButton, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend, searchMode} //hideVRMaximizeButtons

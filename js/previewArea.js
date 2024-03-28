@@ -135,6 +135,7 @@ class PreviewArea {
     // shortest path
     this.shortestPathEdges = [];
     this.edgeOpacity = 0.5;
+    this.edgeWidth = 0.85;  // Max is 1.0
     this.amplitude = 0.0015;
     this.frequency = 0.5;
 
@@ -223,6 +224,8 @@ class PreviewArea {
     this.reInitEdgeFlare();
 
     this.setEdgeOpacity(this.edgeOpacity);  //maintains edge opacity between resets.
+    // this.setEdgeWidth(this.edgeWidth);  //maintains edge width between resets.
+
     //restore nodelabels if they were visible
     if (this.labelsVisible) {
       this.nodeLabels.labelAllNodes();
@@ -3685,6 +3688,21 @@ class PreviewArea {
     return this.edgeOpacity;
   }
 
+  setEdgeWidth = (width) => {
+    this.edgeWidth = width;
+    for (var i = 0; i < this.displayedEdges.length; i++) {
+      this.displayedEdges[i].material.linewidth = this.displayedEdges[i].material.userData.originalOpacity * 4 * width;
+      console.log("originalWidth: " + this.displayedEdges[i].material.userData.originalWidth);
+      console.log("slider width: " + width);
+      console.log("actual width: " + this.displayedEdges[i].material.linewidth);
+      this.displayedEdges[i].material.needsUpdate = true;
+    }
+  }
+
+    getEdgeWidth = () => {
+      return this.edgeWidth;
+    }
+
   // create a line using start and end points and give it a name
   // TODO use this to allow different line sizes
   // https://github.com/spite/THREE.MeshLine#create-a-threemeshline-and-assign-the-geometry
@@ -3711,14 +3729,15 @@ class PreviewArea {
       //enable double sided rendering
       //side: THREE.DoubleSide,
       worldUnits: true,
-      linewidth: 10 * opacity,
+      linewidth: 4 * opacity,
       depthTest: true,
 
       //alphaToCoverage: true,
       // Due to limitations in the ANGLE layer on Windows platforms linewidth will always be 1.
     });
     material.userData = {
-      originalOpacity: opacity
+      originalOpacity: opacity, // * this.edgeOpacity,
+      originalWidth: 4 * opacity * this.edgeWidth
     }
 
     let geometry = new LineGeometry();

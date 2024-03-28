@@ -41,6 +41,7 @@ import {
 	  addLateralityCheck,
     removeGeometryButtons,
     addOpacitySlider,
+    addLineWidthSlider,
     addThresholdSlider,
     addColorGroupList, addColorGroupListLeft,
     addTopologyMenu,
@@ -568,6 +569,7 @@ function onKeyPress(event) {
 var initControls = function () {
     // add controls
     addOpacitySlider();
+    addLineWidthSlider();
     // addEdgeBundlingCheck();
     addToggleLinePlotsButton();
     addModalityButton();
@@ -785,9 +787,14 @@ var redrawEdges = function () {
 };
 
 
-var updateOpacity = function (opacity) {
+let updateOpacity = function (opacity) {
   previewAreaLeft.setEdgeOpacity(opacity);
   previewAreaRight.setEdgeOpacity(opacity);
+};
+
+let updateEdgeWidth = function (width) {
+    previewAreaLeft.setEdgeWidth(width);
+    previewAreaRight.setEdgeWidth(width);
 };
 
 var removeEdgesGivenNodeFromScenes = function (nodeIndex) {
@@ -1118,6 +1125,7 @@ export {
     //updateNodeSelection,
     redrawEdges,
     updateOpacity,
+    updateEdgeWidth,
     glyphNodeDictionary,
     previewAreaLeft,
     previewAreaRight,
