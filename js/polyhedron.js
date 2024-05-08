@@ -35,34 +35,81 @@ function Platonics() {
         // faces = [];
         // const vertices = [];
 
-// Define square size and number of squares
-        const size = 1;
-        const numSquares = 30;
-
-// Loop to create vertices and faces for each square
-        for (let i = 0; i < numSquares; i++) {
-            // Offset for each square along the centerline
-            const offset = i * size;
-
-            // Define square vertices (clockwise order)
-            const v1 = [0, 0, offset];
-            const v2 = [size, 0, offset];
-            const v3 = [size, size, offset];
-            const v4 = [0, size, offset];
-
-            // Add square vertices to the vertices array
-            vertices.push(...v1, ...v2, ...v3, ...v4);
-
-            // Define square faces //(each square has two faces)
-            // const face1 = [0 + 4 * i, 1 + 4 * i, 2 + 4 * i, 0 + 4 * i]; // Bottom face
-            const face2 = [2 + 4 * i, 3 + 4 * i, 1 + 4 * i, 0 + 4 * i]; // Top face
-
-            // Add square faces to the squares array
-            faces.push(face2); //, face2);
-        }
+// // Define square size and number of squares
+//         const size = 1;
+//         const numSquares = 30;
+//
+// // Loop to create vertices and faces for each square
+//         for (let i = 0; i < numSquares; i++) {
+//             // Offset for each square along the centerline
+//             const offset = i * size;
+//
+//             // Define square vertices (clockwise order)
+//             const v1 = [0, 0, offset];
+//             const v2 = [size, 0, offset];
+//             const v3 = [size, size, offset];
+//             const v4 = [0, size, offset];
+//
+//             // Add square vertices to the vertices array
+//             vertices.push(...v1, ...v2, ...v3, ...v4);
+//
+//             // Define square faces //(each square has two faces)
+//             // const face1 = [0 + 4 * i, 1 + 4 * i, 2 + 4 * i, 0 + 4 * i]; // Bottom face
+//             const face2 = [2 + 4 * i, 3 + 4 * i, 1 + 4 * i, 0 + 4 * i]; // Top face
+//
+//             // Add square faces to the squares array
+//             faces.push(face2); //, face2);
+//         }
 
         // console.log("Vertices:", vertices);
         // console.log("Faces:", faces);
+
+        vertices = [
+            [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
+            [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1],
+            [0, 0, 2], [1, 0, 2], [1, 1, 2], [0, 1, 2],
+            [0, 0, 3], [1, 0, 3], [1, 1, 3], [0, 1, 3],
+            [0, 0, 4], [1, 0, 4], [1, 1, 4], [0, 1, 4],
+            [0, 0, 5], [1, 0, 5], [1, 1, 5], [0, 1, 5],
+            [0, 0, 6], [1, 0, 6], [1, 1, 6], [0, 1, 6],
+            [0, 0, 7], [1, 0, 7], [1, 1, 7], [0, 1, 7],
+            [0, 0, 8], [1, 0, 8], [1, 1, 8], [0, 1, 8],
+            [0, 0, 9], [1, 0, 9], [1, 1, 9], [0, 1, 9],
+            [0, 0, 10], [1, 0, 10], [1, 1, 10], [0, 1, 10],
+            [0, 0, 11], [1, 0, 11], [1, 1, 11], [0, 1, 11],
+            [0, 0, 12], [1, 0, 12], [1, 1, 12], [0, 1, 12],
+            [0, 0, 13], [1, 0, 13], [1, 1, 13], [0, 1, 13],
+            [0, 0, 14], [1, 0, 14], [1, 1, 14], [0, 1, 14],
+            [0, 0, 15], [1, 0, 15], [1, 1, 15], [0, 1, 15],
+            [0, 0, 16], [1, 0, 16], [1, 1, 16], [0, 1, 16],
+            [0, 0, 17], [1, 0, 17], [1, 1, 17], [0, 1, 17],
+            [0, 0, 18], [1, 0, 18], [1, 1, 18], [0, 1, 18],
+            [0, 0, 19], [1, 0, 19], [1, 1, 19], [0, 1, 19],
+
+        ];
+        faces = [
+            [0, 1, 2, 4],
+            [5, 5, 6, 7],
+            [8, 9,10,11],
+            [12,13,14,15],
+            [16,17,18,19],
+            [20,21,22,23],
+            [24,25,26,27],
+            [28,29,30,31],
+            [32,33,34,35],
+            [36,37,38,39],
+            [40,41,42,43],
+            [44,45,46,47],
+            [48,49,50,51],
+            [52,53,54,55],
+            [56,57,58,59],
+            [60,61,62,63],
+            [64,65,66,67],
+            [68,69,70,71],
+            [72,73,74,75]
+
+        ];
+
 
         numberOfVerticesPerFace = 3;
         centerAndNormalize();
