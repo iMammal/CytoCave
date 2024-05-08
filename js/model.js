@@ -804,6 +804,7 @@ function Model(side) {
         var platonic = new Platonics();
         var isHierarchical = topology === "PLACE" || topology === "PACE";
         var isHeatmap = topology.indexOf("HEATMAP") !== -1;
+        var isTree = topology.indexOf("Tree") !== -1;
         var level = isHierarchical ? clusteringLevel - 1 : 0;
         var cluster = clusters[topology][level];
         var totalNNodes = cluster.length;
@@ -819,7 +820,9 @@ function Model(side) {
             return;
         }
 
-        if (maxNumberOfClusters < 4)
+        if (isTree)
+            platonic.createTree();
+        else if (maxNumberOfClusters < 4)
             platonic.createTetrahedron();
         else if (maxNumberOfClusters < 7)
             platonic.createCube();
@@ -832,7 +835,9 @@ function Model(side) {
             return;
         }
         // use one of the faces to compute primary variables
+
         var face = platonic.getFace(0);
+
         var coneAxis = math.mean(face, 0);
         coneAxis = math.divide(coneAxis, math.norm(coneAxis));
         var theta = Math.abs(Math.acos(math.dot(coneAxis, face[0])));
@@ -853,7 +858,9 @@ function Model(side) {
                 console.error("Can not visualize clustering data.");
                 return;
             }
+
             face = platonic.getFace(i);
+
             coneAxis = math.mean(face, 0);
             coneAxis = math.divide(coneAxis, math.norm(coneAxis));
             v1 = math.subtract(face[0], face[1]);
@@ -1018,6 +1025,11 @@ function Model(side) {
                 topologies.push(dataType);
                 clusteringTopologies.push(dataType);
                 //heatmapTopologies.push(dataType);
+            } else if ( dataType.includes("Tree" ) {
+                this.setClusters(data, i, dataType, true);
+                this.computeNodesLocationForClusters(dataType);
+                topologies.push(dataType);
+                clusteringTopologies.push(dataType);
             } else if (dataType === "DetailsFile" ) {
                 this.setDetailFiles(data, i);
             } else { // all other topologies

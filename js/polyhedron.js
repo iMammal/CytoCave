@@ -30,16 +30,54 @@ function Platonics() {
         return face;
     };
 
+    this.createTree = function() {
+
+        // faces = [];
+        // const vertices = [];
+
+// Define square size and number of squares
+        const size = 1;
+        const numSquares = 30;
+
+// Loop to create vertices and faces for each square
+        for (let i = 0; i < numSquares; i++) {
+            // Offset for each square along the centerline
+            const offset = i * size;
+
+            // Define square vertices (clockwise order)
+            const v1 = [0, 0, offset];
+            const v2 = [size, 0, offset];
+            const v3 = [size, size, offset];
+            const v4 = [0, size, offset];
+
+            // Add square vertices to the vertices array
+            vertices.push(...v1, ...v2, ...v3, ...v4);
+
+            // Define square faces //(each square has two faces)
+            const face1 = [0 + 4 * i, 1 + 4 * i, 2 + 4 * i, 0 + 4 * i]; // Bottom face
+            //const face2 = [2 + 4 * i, 3 + 4 * i, 1 + 4 * i, 0 + 4 * i]; // Top face
+
+            // Add square faces to the squares array
+            faces.push(face1); //, face2);
+        }
+
+        console.log("Vertices:", vertices);
+        console.log("Faces:", squares);
+
+        numberOfVerticesPerFace = 3;
+        centerAndNormalize();
+    };
+
     this.createTetrahedron = function() {
 
         vertices = [[0, 0, 0],
-                    [1, 1, 0],
-                    [1, 0, 1],
-                    [0, 1, 1]];
+            [1, 1, 0],
+            [1, 0, 1],
+            [0, 1, 1]];
         faces = [[0, 1, 2],
-                 [0, 2, 3],
-                 [0, 3, 1],
-                 [3, 2, 1]];
+            [0, 2, 3],
+            [0, 3, 1],
+            [3, 2, 1]];
 
         numberOfVerticesPerFace = 3;
         centerAndNormalize();
