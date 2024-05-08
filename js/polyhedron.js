@@ -54,11 +54,11 @@ function Platonics() {
             vertices.push(...v1, ...v2, ...v3, ...v4);
 
             // Define square faces //(each square has two faces)
-            const face1 = [0 + 4 * i, 1 + 4 * i, 2 + 4 * i, 0 + 4 * i]; // Bottom face
-            //const face2 = [2 + 4 * i, 3 + 4 * i, 1 + 4 * i, 0 + 4 * i]; // Top face
+            // const face1 = [0 + 4 * i, 1 + 4 * i, 2 + 4 * i, 0 + 4 * i]; // Bottom face
+            const face2 = [2 + 4 * i, 3 + 4 * i, 1 + 4 * i, 0 + 4 * i]; // Top face
 
             // Add square faces to the squares array
-            faces.push(face1); //, face2);
+            faces.push(face2); //, face2);
         }
 
         // console.log("Vertices:", vertices);
