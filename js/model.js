@@ -1025,7 +1025,7 @@ function Model(side) {
                 topologies.push(dataType);
                 clusteringTopologies.push(dataType);
                 //heatmapTopologies.push(dataType);
-            } else if ( dataType.includes("Tree" ) {
+            } else if ( dataType.includes("Tree" ) ) {
                 this.setClusters(data, i, dataType, true);
                 this.computeNodesLocationForClusters(dataType);
                 topologies.push(dataType);
