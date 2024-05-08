@@ -62,7 +62,7 @@ function Platonics() {
         }
 
         console.log("Vertices:", vertices);
-        console.log("Faces:", squares);
+        console.log("Faces:", faces);
 
         numberOfVerticesPerFace = 3;
         centerAndNormalize();
