@@ -795,6 +795,26 @@ function Model(side) {
         return this.graph.path(rootIndex, targetId);
     }
 
+    this.treeLevel = function (nNodes, face) {
+        let points = new Array(nNodes);
+        //var n = face.length;
+        let scaleFactor = 4.0;
+        let faceLength = math.sqrt( math.sum( math.dot(math.subtract(face[2],face[0]),math.subtract(face[2],face[0]) ) ) );
+        let faceDelta = scaleFactor *  faceLength / nNodes;
+        let x = face[0][0], y = face[0][1], z = face[0][2];
+        for (let i = 0; i < nNodes; i++) {
+
+            // for (var j = 0; j < n; j++) {
+
+            x += faceDelta;//[j][0];
+            y += faceDelta;//[j][1];
+            // z += faceDelta;//[j][2];
+            //}
+            points[i] = [x, y, z];
+        }
+        return points;
+    }
+
     // compute the position of each node for a clustering topology according to clustering data
     // in case of PLACE or PACE, clustering level can be 1 to 4, clusters[topology][level]
     // in case of other clustering techniques: Q-modularity, no hierarchy information is applied
@@ -866,11 +886,23 @@ function Model(side) {
             v1 = math.subtract(face[0], face[1]);
             v1 = math.divide(v1, math.norm(v1));
             v2 = math.cross(coneAxis, v1);
-            center = math.multiply(coneH, coneAxis);
-            var points = sunflower(nNodes, coneR, center, v1, v2);
-            // normalize and store
-            for (var k = 0; k < nNodes; k++) {
-                centroids[clusterIdx[k] + 1] = math.multiply(clusteringRadius, math.divide(points[k], math.norm(points[k])));
+            if(isTree) {
+                let points =  this.treeLevel(nNodes,  face );
+                // normalize and store
+                for (var k = 0; k < nNodes; k++) {
+                    centroids[clusterIdx[k] + 1] = points[k];
+                }
+            } else {
+                coneH = face[0][2] * 3;
+
+                center = math.multiply(coneH, coneAxis);
+
+                let points = sunflower(nNodes, coneR, center, v1, v2);
+
+                // normalize and store
+                for (var k = 0; k < nNodes; k++) {
+                    centroids[clusterIdx[k] + 1] = math.multiply(clusteringRadius, math.divide(points[k], math.norm(points[k])));
+                }
             }
         }
         this.setCentroids(centroids, topology, 0);
