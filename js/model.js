@@ -874,7 +874,7 @@ function Model(side) {
                 if (cluster[s] == (i + 1)) clusterIdx.push(s);
             }
             var nNodes = clusterIdx.length;
-            if(nNodes < 2) {
+            if(!isTree && (nNodes < 2) ) {
                 console.error("Can not visualize clustering data.");
                 return;
             }
