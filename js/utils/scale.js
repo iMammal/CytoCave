@@ -52,7 +52,7 @@ var scaleColorGroup = function(model, group) {
 
     if(model.getActiveGroupName().indexOf("Heatmap") != -1){
 
-        color = groupColor(filteredGroup);
+        color = groupColor(model.getActiveGroup().sort().indexOf(filteredGroup));
 
     }
 
