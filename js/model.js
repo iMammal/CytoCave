@@ -808,7 +808,7 @@ function Model(side) {
             // for (var j = 0; j < n; j++) {
 
             x += faceDelta;//[j][0];
-            y += faceDelta;//[j][1];
+            // y += faceDelta;//[j][1];
             // z += faceDelta;//[j][2];
             //}
             points[i] = [x, y, z];
@@ -886,7 +886,13 @@ function Model(side) {
 
                 for (var k = 0; k < nNodes; k++) {
                     let point = {...centroids[i]};
-                    point[1] = point[1] + k + 1;
+                    //point[1] = point[1] + k + 1;
+                    // create circle of radius 1
+                    let angle = 2 * Math.PI * k / nNodes;
+                    point[2] = point[2] + 0.35 * Math.cos(angle);
+                    point[1] = point[1] + 2 + 0.35 +Math.sin(angle);
+                    point[0] = point[0] + .1;
+
                     centroids[clusterIdx[k] + 1] = point;
                 }
                 continue;
