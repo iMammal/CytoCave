@@ -15,6 +15,7 @@ import * as math from 'mathjs'
 import {sunflower} from "./graphicsUtils";
 import {setNodeInfoPanel} from "./GUI";
 import {loadDetailsFile} from "./utils/parsingData";
+import {Atlas} from "./atlas";
 
 
 function Model(side) {
@@ -871,12 +872,24 @@ function Model(side) {
         for (var i = 0; i < nClusters; i++) {
             var clusterIdx = [];
             for (var s = 0; s < totalNNodes; s++) {
-                if (cluster[s] == (i + 1)) clusterIdx.push(s);
+		//    console.log(s);
+                //if( (!isTree || (atlas.getRegion(s+1).hemisphere === 'left') ) && 
+		if((cluster[s] == (i + 1)) ) clusterIdx.push(s);
             }
             var nNodes = clusterIdx.length;
             if(!isTree && (nNodes < 2) ) {
                 console.error("Can not visualize clustering data.");
                 return;
+            }
+
+            if (isTree && atlas.getRegion(clusterIdx[0]+1).hemisphere === 'right') {
+
+                for (var k = 0; k < nNodes; k++) {
+                    let point = {...centroids[i]};
+                    point[1] = point[1] + k + 1;
+                    centroids[clusterIdx[k] + 1] = point;
+                }
+                continue;
             }
 
             face = platonic.getFace(i);
@@ -890,6 +903,7 @@ function Model(side) {
                 let points =  this.treeLevel(nNodes,  face );
                 // normalize and store
                 for (var k = 0; k < nNodes; k++) {
+
                     centroids[clusterIdx[k] + 1] = points[k];
                 }
             } else {
@@ -907,6 +921,8 @@ function Model(side) {
         }
         this.setCentroids(centroids, topology, 0);
     };
+
+
 
     this.setDetailFiles = function (data, loc) {
         this.DetailsFilesList = [];
@@ -951,11 +967,16 @@ function Model(side) {
     }
 
     // clusters can be hierarchical such as PLACE and PACE or not
-    this.setClusters = function (data, loc, name, heatmap = false) {
+    this.setClusters = function (data, loc, name, heatmap = false, treemap = false) {
         var clusteringData = [];
+
+        // in treemap data, only left hemisphere is used for clustering... but we need to store all data
+        // let dataLength = treemap? data.length;
         // data[0] is assumed to contain a string header
         for (var j = 1; j < data.length; j++) {
-            clusteringData.push(data[j][loc]);
+            if( true ) { // treemap && (atlas.getRegion(j).hemisphere === 'left') ) {
+                clusteringData.push(data[j][loc]);
+            }
         }
         var temp = [];
         if (name === "PLACE" || name === "PACE") { // PLACE
@@ -1058,7 +1079,7 @@ function Model(side) {
                 clusteringTopologies.push(dataType);
                 //heatmapTopologies.push(dataType);
             } else if ( dataType.includes("Tree" ) ) {
-                this.setClusters(data, i, dataType, true);
+                this.setClusters(data, i, dataType, true, true);
                 this.computeNodesLocationForClusters(dataType);
                 topologies.push(dataType);
                 clusteringTopologies.push(dataType);
