@@ -18,7 +18,7 @@ var leftSearching = false;
 let searchMode = false;
 
 // initialize subject selection drop down menus
-import {getDataFile,setDataFile,atlas,neuro,experimental} from "./globals.js";
+import {getDataFile,setDataFile,atlas,mcts,neuro,experimental} from "./globals.js";
 import {
     changeSceneToSubject,
     changeActiveGeometry,
@@ -163,10 +163,12 @@ var addDimensionFactorSliderRight = function (side) {
 
 	console.log("#nodeInfoPanel"+side);
 
+    let initialVal = mcts? "0.2" : "1";
+
     if(side === 'Left') {
       panel.append("input")
         .attr("type", "range")
-        .attr("value", "1")
+        .attr("value", initialVal)
         .attr("id", "dimensionSliderRight"+side)
         .attr("min","0.2")
         .attr("max", "4")
@@ -202,7 +204,7 @@ var addDimensionFactorSliderRight = function (side) {
 
         panel.append("input")
         .attr("type", "range")
-        .attr("value", "1")
+        .attr("value", initialVal)
         .attr("id", "dimensionSliderRight"+side)
         .attr("min","0.2")
         .attr("max", "4")

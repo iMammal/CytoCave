@@ -8,8 +8,9 @@
 
 import * as THREE from 'three';
 
-import {getNormalGeometry, getNormalMaterial} from "./graphicsUtils";
+import {getNormalGeometry, getNormalMaterial, setDimensionFactorLeftBox, setDimensionFactorRightBox} from "./graphicsUtils";
 import {previewAreaLeft,getThresholdModality} from "./drawing";
+import {mcts} from "./globals";
 
 let distanceMode = false;
 
@@ -108,6 +109,10 @@ class NodeManager {
   }
 
   CreateInstanceMeshes() {
+    if(mcts){
+      setDimensionFactorLeftBox(0.1);
+      setDimensionFactorRightBox(0.1);
+    }
     //create instance mesh for each group
     let LeftNormalGeometry = getNormalGeometry("left", this.previewArea.name);
     console.log("LeftNormalGeometry Side: " + this.previewArea.name);
