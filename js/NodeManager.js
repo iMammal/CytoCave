@@ -46,6 +46,7 @@ class NodeManager {
     this.rootNode = null;
     this.numberSelected = 0;
     this.processQueue = false;
+    // if(mcts) this.model.setActiveGroup('LevelTree');
     this.CreateInstanceMeshes();
     this.PositionAndColorNodes();
     this.addInstancesToScene();

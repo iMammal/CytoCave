@@ -43,7 +43,6 @@ function Model(side) {
     this.maxConnectionMatrix = 1;
 
 
-
     var threshold = 0;                  // threshold for the edge value, default to 0, max, all edges  //todo this is currently being used a a weight threshold. maybe scale to 0-1? figure out what it's supposed to actually threshold.
     var conthreshold = 0;               // threshold for the contralateral edge value, default to 1, max, no edges
     var numberOfEdges = 0;              // threshold the number of edges for shortest paths, 0 for all edges, topN edges if not in shortest path.
@@ -75,6 +74,8 @@ function Model(side) {
     var clusteringLevel = 4;            // default PLACE/PACE level
     var clusteringGroupLevel = 4;       // clustering group level used for color coding, 1 to 4
     var clusteringRadius = 5;           // sphere radius of PLACE/PACE visualization
+    this.maxNumberOfLeftClusters = 0;   // max number of left clusters
+    // this.maxNumberOfRightClusters = 0;  // max number of right clusters
 
     this.DetailsFilesList = [];
     this.nodeDetailData = [];
@@ -181,6 +182,8 @@ function Model(side) {
                 groups[topology] = heatmaps[topology][heatmaps[topology].length - 1];
             }
         }
+
+
 
         activeGroup = names[0];
         this.prepareDataset();
@@ -481,6 +484,26 @@ function Model(side) {
                 regions[element] = {
                     active: true,
                     state: 'active'
+                }
+        }
+    };
+
+    // set all regions inactive
+    this.setLeftRegionsActivated = function () {
+        regions = {};
+        for (var i = 0; i < groups[activeGroup].length; i++) {
+            var element = groups[activeGroup][i];
+            if  (regions[element] === undefined)
+                if ( element <= this.maxNumberOfLeftClusters ) {
+                    regions[element] = {
+                        active: true,
+                        state: 'active'
+                    }
+                } else {
+                    regions[element] = {
+                        active: false,
+                        state: 'inactive'
+                    }
                 }
         }
     };
@@ -884,6 +907,7 @@ function Model(side) {
 
             if (isTree && atlas.getRegion(clusterIdx[0]+1).hemisphere === 'right') {
 
+
                 for (var k = 0; k < nNodes; k++) {
                     let point = {...centroids[i]};
                     //point[1] = point[1] + k + 1;
@@ -897,6 +921,8 @@ function Model(side) {
                 }
                 continue;
             }
+
+            this.maxNumberOfLeftClusters = i;
 
             face = platonic.getFace(i);
 

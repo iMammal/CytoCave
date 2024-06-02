@@ -937,7 +937,7 @@ var addColorGroupList = function() {
         var el = document.createElement("option");
         el.textContent = names[i];
         el.value = names[i];
-        el.selected = (i==0);
+        el.selected = (i==1);
         select.appendChild(el);
     }
 

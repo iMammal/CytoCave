@@ -33,7 +33,7 @@ var hoverMode = 0;
 var floatingLabel = false;
 
 import * as THREE from 'three'
-import {isLoaded, dataFiles, mobile,experimental,complexes} from "./globals";
+import {isLoaded, dataFiles, mobile,experimental,mcts,complexes} from "./globals";
 import {
     addEdgeBundlingCheck,
     addModalityButton,
@@ -596,8 +596,13 @@ var initControls = function () {
     //addFlashRateSlider();
     addSkyboxButton();
 
-    modelLeft.setAllRegionsActivated();
-    modelRight.setAllRegionsActivated();
+    if(mcts && modelLeft.getActiveGroup() === 'LevelTree' && modelRight.getActiveGroup() === 'LevelTree') {
+        modelLeft.setLeftRegionsActivated();
+        modelRight.setLeftRegionsActivated();
+    } else {
+        modelLeft.setAllRegionsActivated();
+        modelRight.setAllRegionsActivated();
+    }
 
     createLegend(modelLeft);
 
@@ -849,7 +854,10 @@ var changeColorGroup = function (name, side) {
     if (side !== "Right" || side === "Both") {
         //previewAreaLeft.removeAllInstances();
         modelLeft.setActiveGroup(name);
-        modelLeft.setAllRegionsActivated();
+        if(mcts && name === 'LevelTree')
+            modelLeft.setLeftRegionsActivated();
+        else
+            modelLeft.setAllRegionsActivated();
         modelLeft.getDataset(true);
         //previewAreaLeft.drawRegions();
         previewAreaLeft.updateNodesVisibility();
@@ -862,7 +870,10 @@ var changeColorGroup = function (name, side) {
     if (side !== "Left" || side === "Both" ) {
         //previewAreaRight.removeAllInstances();
         modelRight.setActiveGroup(name);
-        modelRight.setAllRegionsActivated();
+        if(mcts && name === 'LevelTree')
+            modelRight.setLeftRegionsActivated();
+        else
+            modelRight.setAllRegionsActivated();
         modelRight.getDataset(true);
         //previewAreaRight.drawRegions();
         previewAreaRight.updateNodesVisibility();
