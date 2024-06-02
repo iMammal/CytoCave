@@ -596,11 +596,14 @@ var initControls = function () {
     //addFlashRateSlider();
     addSkyboxButton();
 
-    if(mcts && modelLeft.getActiveGroup() === 'LevelTree' && modelRight.getActiveGroup() === 'LevelTree') {
+    if(mcts && (modelLeft.getActiveTopology() === 'LevelTree' || modelLeft.getActiveTopology() === 'TreeLevel') ) {
         modelLeft.setLeftRegionsActivated();
-        modelRight.setLeftRegionsActivated();
     } else {
         modelLeft.setAllRegionsActivated();
+    }
+    if(mcts && (modelRight.getActiveTopology() === 'LevelTree' || modelRight.getActiveTopology() === 'TreeLevel') ) {
+        modelRight.setLeftRegionsActivated();
+    } else {
         modelRight.setAllRegionsActivated();
     }
 
@@ -854,7 +857,7 @@ var changeColorGroup = function (name, side) {
     if (side !== "Right" || side === "Both") {
         //previewAreaLeft.removeAllInstances();
         modelLeft.setActiveGroup(name);
-        if(mcts && name === 'LevelTree')
+        if(mcts && (name === 'LevelTree') || (name === 'TreeLevel'))
             modelLeft.setLeftRegionsActivated();
         else
             modelLeft.setAllRegionsActivated();
@@ -870,7 +873,7 @@ var changeColorGroup = function (name, side) {
     if (side !== "Left" || side === "Both" ) {
         //previewAreaRight.removeAllInstances();
         modelRight.setActiveGroup(name);
-        if(mcts && name === 'LevelTree')
+        if(mcts && (name === 'LevelTree') || (name === 'TreeLevel'))
             modelRight.setLeftRegionsActivated();
         else
             modelRight.setAllRegionsActivated();
@@ -932,8 +935,10 @@ var changeActiveGeometry = function (model, side, type) {
 
     if(side !== "Left") {
 
-
-        modelRight.setAllRegionsActivated();
+        if (mcts && (type === 'LevelTree') || (type === 'TreeLevel'))
+            modelRight.setLeftRegionsActivated();
+        else
+            modelRight.setAllRegionsActivated();
         modelRight.getDataset(true);
         previewAreaRight.reset();
 
@@ -942,8 +947,10 @@ var changeActiveGeometry = function (model, side, type) {
 
     } else {
 
-
-        modelLeft.setAllRegionsActivated();
+        if (mcts && (type === 'LevelTree') || (type === 'TreeLevel'))
+            modelLeft.setLeftRegionsActivated();
+        else
+            modelLeft.setAllRegionsActivated();
         modelLeft.getDataset(true);
         previewAreaLeft.reset();
         previewAreaLeft.updateNodesVisibility();
@@ -1003,7 +1010,10 @@ var changeSceneToSubject = function (subjectId, model, previewArea, side) {
                     model.setActiveGroup(activeGroup);
                     model.setClusteringLevel(level1);
                     model.updateClusteringGroupLevel(level2);
-                    model.setAllRegionsActivated();
+                    if (mcts) // && (type === 'LevelTree') || (type === 'TreeLevel'))
+                        model.setLeftRegionsActivated();
+                    else
+                        model.setAllRegionsActivated();
                     model.setCurrentRegionsInformation(info);
                     model.computeEdgesForTopology(type); //model.getActiveTopology());
                     changeActiveGeometry(model, side, type);
