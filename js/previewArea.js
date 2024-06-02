@@ -25,7 +25,7 @@ import {TrackballControls} from "three/examples/jsm/controls/TrackballControls";
 //import * as quat from "./external-libraries/gl-matrix/quat.js";
 
 // import {isLoaded, dataFiles  , mobile} from "./globals";
-import {mobile, atlas, removeEdgesOnUnselect,startNoEdges,startNoLabels} from './globals';
+import {mobile, atlas, removeEdgesOnUnselect, startNoEdges, startNoLabels, mcts} from './globals';
 import {getNormalGeometry, getNormalMaterial} from './graphicsUtils.js'
 import { XRInterface } from './XRInterface.js'
 import {
@@ -50,8 +50,14 @@ import {
   //activeVR,
   // updateNodeSelection,
   updateNodeMoveOver,
-    updateScenes,
- previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove, toggleFloatingLabel
+  updateScenes,
+  previewAreaLeft,
+  previewAreaRight,
+  onMouseDown,
+  onMouseUp,
+  onDocumentMouseMove,
+  toggleFloatingLabel,
+  updateNodesVisiblity
   // previewAreaLeft, previewAreaRight, onMouseDown, onMouseUp, onDocumentMouseMove,
   //   updateHud2D
 } from './drawing'
@@ -280,6 +286,15 @@ class PreviewArea {
 
       // this.Hud2D.update();
 
+    // Toggle the group whole index is the node index plus the number of Left clusters
+    if(mcts) {
+      this.model.toggleRegion(index + this.model.maxNumberOfLeftClusters);
+
+      if (this.model.getRegionState(index + this.model.maxNumberOfLeftClusters) == 'transparent')
+        updateNodesVisiblity("Left");
+      else
+        updateScenes("Left");
+    }
   }
 
   GroupSelectedCallback() {
