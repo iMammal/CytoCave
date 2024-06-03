@@ -596,12 +596,12 @@ var initControls = function () {
     //addFlashRateSlider();
     addSkyboxButton();
 
-    if(mcts && (modelLeft.getActiveTopology() === 'LevelTree' || modelLeft.getActiveTopology() === 'TreeLevel') ) {
+    if(mcts) { //} && (modelLeft.getActiveTopology() === 'LevelTree' || modelLeft.getActiveTopology() === 'TreeLevel') ) {
         modelLeft.setLeftRegionsActivated();
     } else {
         modelLeft.setAllRegionsActivated();
     }
-    if(mcts && (modelRight.getActiveTopology() === 'LevelTree' || modelRight.getActiveTopology() === 'TreeLevel') ) {
+    if(mcts) { //} && (modelRight.getActiveTopology() === 'LevelTree' || modelRight.getActiveTopology() === 'TreeLevel') ) {
         modelRight.setLeftRegionsActivated();
     } else {
         modelRight.setAllRegionsActivated();
@@ -760,7 +760,7 @@ var enableEdgeBundling = function (enable) {
 
 // updating scenes: redrawing glyphs and displayed edges
 //todo compare with redrawScene
-var updateScenes = function (side) {
+var updateScenes = function (side, clear = true) {
   let selectedNodes = getNodesSelected();
     console.log("Drawing Scene Update "+side);
     if (side !== "Right") {
@@ -773,8 +773,8 @@ var updateScenes = function (side) {
         previewAreaRight.updateScene();
         createLegend(modelRight,"Right");
     }
-    previewAreaLeft.setSelectedNodes(selectedNodes);
-    previewAreaRight.setSelectedNodes(selectedNodes);
+    previewAreaLeft.setSelectedNodes(selectedNodes,clear);
+    previewAreaRight.setSelectedNodes(selectedNodes,clear);
 
 };
 
@@ -857,7 +857,7 @@ var changeColorGroup = function (name, side) {
     if (side !== "Right" || side === "Both") {
         //previewAreaLeft.removeAllInstances();
         modelLeft.setActiveGroup(name);
-        if(mcts && (name === 'LevelTree') || (name === 'TreeLevel'))
+        if(mcts) // && (name === 'LevelTree') || (name === 'TreeLevel'))
             modelLeft.setLeftRegionsActivated();
         else
             modelLeft.setAllRegionsActivated();
@@ -873,7 +873,7 @@ var changeColorGroup = function (name, side) {
     if (side !== "Left" || side === "Both" ) {
         //previewAreaRight.removeAllInstances();
         modelRight.setActiveGroup(name);
-        if(mcts && (name === 'LevelTree') || (name === 'TreeLevel'))
+        if(mcts) // && (name === 'LevelTree') || (name === 'TreeLevel'))
             modelRight.setLeftRegionsActivated();
         else
             modelRight.setAllRegionsActivated();
@@ -935,7 +935,7 @@ var changeActiveGeometry = function (model, side, type) {
 
     if(side !== "Left") {
 
-        if (mcts && (type === 'LevelTree') || (type === 'TreeLevel'))
+        if (mcts) // && (type === 'LevelTree') || (type === 'TreeLevel'))
             modelRight.setLeftRegionsActivated();
         else
             modelRight.setAllRegionsActivated();
@@ -947,7 +947,7 @@ var changeActiveGeometry = function (model, side, type) {
 
     } else {
 
-        if (mcts && (type === 'LevelTree') || (type === 'TreeLevel'))
+        if (mcts) // && (type === 'LevelTree') || (type === 'TreeLevel'))
             modelLeft.setLeftRegionsActivated();
         else
             modelLeft.setAllRegionsActivated();

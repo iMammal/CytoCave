@@ -275,6 +275,7 @@ class PreviewArea {
     // for mirroring to the other side
 
 
+    if(!mcts) // Do not sync selections for MCTS mode
       if (this.name === 'Right')  {
         previewAreaLeft.NodeManager.select(index);
         //previewAreaRight.NodeManager.select(index);
@@ -292,8 +293,8 @@ class PreviewArea {
 
       if (this.model.getRegionState(index + this.model.maxNumberOfLeftClusters) == 'transparent')
         updateNodesVisiblity(this.name);
-      else
-        updateScenes(this.name);
+       else
+        updateScenes(this.name,false);
     }
   }
 
@@ -3298,9 +3299,9 @@ class PreviewArea {
     //     return selectedNodes;
     // }
 
-  setSelectedNodes = (nodes) => {
+  setSelectedNodes = (nodes, clear = true) => {
     //todo update to use NodeManager mass assignment NodeManager.SetSelectedNodes([#indexs],clear: bool).
-    this.NodeManager.setSelectedNodes(nodes, true);
+    this.NodeManager.setSelectedNodes(nodes, clear);
     // return;
     // //accepts an array of dataset indexes and sets the selected flag to true for each node
     // //sets selections globally across all instances

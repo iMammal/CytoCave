@@ -494,7 +494,7 @@ function Model(side) {
         for (var i = 0; i < groups[activeGroup].length; i++) {
             var element = groups[activeGroup][i];
             if  (regions[element] === undefined)
-                if ( element <= this.maxNumberOfLeftClusters ) {
+                if ( ( element <= this.maxNumberOfLeftClusters ) || ( typeof(element) !== "number" ) ) {
                     regions[element] = {
                         active: true,
                         state: 'active'
