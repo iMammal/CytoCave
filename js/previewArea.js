@@ -291,9 +291,9 @@ class PreviewArea {
       this.model.toggleRegion(index + this.model.maxNumberOfLeftClusters);
 
       if (this.model.getRegionState(index + this.model.maxNumberOfLeftClusters) == 'transparent')
-        updateNodesVisiblity("Left");
+        updateNodesVisiblity(this.name);
       else
-        updateScenes("Left");
+        updateScenes(this.name);
     }
   }
 
