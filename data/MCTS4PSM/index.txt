@@ -1,4 +1,6 @@
 subjectID,network,topology
+PSM3elute1,psmnet2.csv,mctstopo3elute1dets.csv
+PSM3elute2,psmnet2.csv,mctstopo3elute2dets.csv
 PSM3,psmnet2.csv,mctstopo3.csv
 PSM2,psmnet2.csv,mctstopo2.csv
 PSM,mctsnet.csv,mctstopo.csv

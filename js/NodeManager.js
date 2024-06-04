@@ -111,8 +111,8 @@ class NodeManager {
 
   CreateInstanceMeshes() {
     if(mcts){
-      setDimensionFactorLeftBox(0.1);
-      setDimensionFactorRightBox(0.1);
+      setDimensionFactorLeftBox(0.3);
+      setDimensionFactorRightBox(0.3);
     }
     //create instance mesh for each group
     let LeftNormalGeometry = getNormalGeometry("left", this.previewArea.name);

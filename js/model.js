@@ -75,7 +75,7 @@ function Model(side) {
     var clusteringGroupLevel = 4;       // clustering group level used for color coding, 1 to 4
     var clusteringRadius = 5;           // sphere radius of PLACE/PACE visualization
     this.maxNumberOfLeftClusters = 0;   // max number of left clusters
-    // this.maxNumberOfRightClusters = 0;  // max number of right clusters
+    this.maxNumberOfLeftNodes = 0;  // max number of left nodes
 
     this.DetailsFilesList = [];
     this.nodeDetailData = [];
@@ -937,6 +937,8 @@ function Model(side) {
                 for (var k = 0; k < nNodes; k++) {
 
                     centroids[clusterIdx[k] + 1] = points[k];
+
+                    this.maxNumberOfLeftNodes += 1;
                 }
             } else {
                 coneH = face[0][2] * 3;

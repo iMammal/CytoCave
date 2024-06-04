@@ -275,8 +275,8 @@ class PreviewArea {
     // for mirroring to the other side
 
 
-    if(!mcts) // Do not sync selections for MCTS mode
-      if (this.name === 'Right')  {
+    if(!mcts || (index > this.model.maxNumberOfLeftNodes) ) { // Do not sync selections for MCTS mode
+      if (this.name === 'Right') {
         previewAreaLeft.NodeManager.select(index);
         //previewAreaRight.NodeManager.select(index);
       } else {
@@ -287,8 +287,9 @@ class PreviewArea {
 
       // this.Hud2D.update();
 
-    // Toggle the group whole index is the node index plus the number of Left clusters
-    if(mcts) {
+      // Toggle the group whole index is the node index plus the number of Left clusters
+    } else {
+
       this.model.toggleRegion(index + this.model.maxNumberOfLeftClusters);
 
       if (this.model.getRegionState(index + this.model.maxNumberOfLeftClusters) == 'transparent')

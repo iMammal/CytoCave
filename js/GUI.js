@@ -86,7 +86,7 @@ var addDimensionFactorSliderLeft = function (side) {
         .attr("type", "range")
         .attr("value", "1")
         .attr("id", "dimensionSliderLeft"+side)
-        .attr("min","0.2")
+        .attr("min","0.5")
         .attr("max", "4")
         .attr("step","0.1")
         .on("change", function () {
@@ -163,7 +163,7 @@ var addDimensionFactorSliderRight = function (side) {
 
 	console.log("#nodeInfoPanel"+side);
 
-    let initialVal = mcts? "0.2" : "1";
+    let initialVal = mcts? "0.3" : "1";
 
     if(side === 'Left') {
       panel.append("input")
