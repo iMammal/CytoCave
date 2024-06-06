@@ -55,6 +55,7 @@ import {
     createLegend,
     addAnimationSlider,
     addFlashRateSlider,
+    addLabelScalingSlider,
     addSkyboxButton,
     //hideVRMaximizeButtons,
     toggleMenus
@@ -70,6 +71,7 @@ import {func} from "three/nodes";
 import nodeManager from "./NodeManager";
 import {isNumber} from "mathjs";
 import node from "three/addons/nodes/core/Node";
+import {setDimensionFactorLeftBox, setDimensionFactorRightBox} from "./graphicsUtils";
 
 function toggleFloatingLabel() {
     floatingLabel = !floatingLabel;
@@ -574,7 +576,7 @@ var initControls = function () {
     addToggleLinePlotsButton();
     addModalityButton();
     addThresholdSlider();
-	//addLateralityCheck();
+    //addLateralityCheck();
     addColorGroupList();
     addColorGroupListLeft();
     addTopologyMenu(modelLeft, 'Left');
@@ -594,18 +596,26 @@ var initControls = function () {
     addSearchPanel();
     //addAnimationSlider();
     //addFlashRateSlider();
+    addLabelScalingSlider("Left");
+    addLabelScalingSlider("Right");
     addSkyboxButton();
 
-    if(mcts) { //} && (modelLeft.getActiveTopology() === 'LevelTree' || modelLeft.getActiveTopology() === 'TreeLevel') ) {
+    if (mcts) { //} && (modelLeft.getActiveTopology() === 'LevelTree' || modelLeft.getActiveTopology() === 'TreeLevel') ) {
         modelLeft.setLeftRegionsActivated();
     } else {
         modelLeft.setAllRegionsActivated();
     }
-    if(mcts) { //} && (modelRight.getActiveTopology() === 'LevelTree' || modelRight.getActiveTopology() === 'TreeLevel') ) {
+    if (mcts) { //} && (modelRight.getActiveTopology() === 'LevelTree' || modelRight.getActiveTopology() === 'TreeLevel') ) {
         modelRight.setLeftRegionsActivated();
     } else {
         modelRight.setAllRegionsActivated();
     }
+
+    if (mcts) {
+        setDimensionFactorLeftBox(0.3);
+        setDimensionFactorRightBox(0.3);
+    }
+
 
     createLegend(modelLeft);
 

@@ -1,3 +1,5 @@
+import NodeLabels from "./nodeLabels.js";
+
 /**
  * Created by giorgioconte on 31/01/15.
  */
@@ -44,6 +46,7 @@ import {
 } from './drawing'
 import {modelLeft,modelRight} from './model'
 import {setDimensionFactorLeftSphere,setDimensionFactorRightSphere,setDimensionFactorLeftBox,setDimensionFactorRightBox} from './graphicsUtils.js'
+// import {setDimensionFactorLabel} from './nodeLabels.js'; // accessed through PreviewAreas
 import { scaleColorGroup } from "./utils/scale";
 import { PreviewArea }  from './previewArea.js';
 import { forEach } from "./external-libraries/gl-matrix/vec3.js";
@@ -211,8 +214,6 @@ var addDimensionFactorSliderRight = function (side) {
         .attr("step","0.1")
         .on("change", function () {
             setDimensionFactorRightBox(this.value);   // repurposed for label text
-            previewAreaRight.nodeLabels.removeAllLabels();  //.scale.set(this.value, this.value, this.value);
-            previewAreaRight.nodeLabels.labelAllNodes();       //getNodesFocused(), modelRight);
 
             if (enableRightDimLock) {
                 setDimensionFactorRightSphere(this.value);
@@ -239,7 +240,7 @@ var addDimensionFactorSliderRight = function (side) {
     panel.append("label")
         .attr("for", "dimensionSlider")
         .attr("id", "dimensionSliderLabel"+side)
-        .text(side + " Text Size ");
+        .text(side + " Cube Size ");
 
     panel.append("label")
         .attr("for", "enable"+side+"DimLock")
@@ -299,6 +300,34 @@ var addFlashRateSlider = function () {
             previewAreaRight.setFlahRate(Math.floor(this.value)/100);
             document.getElementById("flashRateSliderLabel").innerHTML = "Flash rate @ " + this.value/100.00;
           updateScenes();
+        });
+    menu.append("br");
+};
+
+// add Animation slider 0 to 1
+var addLabelScalingSlider = function (side = "Right") {
+    var menu = d3.select("#nodeInfoPanel"+side); //Right");
+    menu.append("label")
+        .attr("for", "labelScalingSlider")
+        .attr("id", side+"labelScalingSliderLabel")
+        .text(side+" Label Size @ " + 0.5);
+    menu.append("input")
+        .attr("type", "range")
+        .attr("value", 50)
+        .attr("id", "labelScalingSlider")
+        .attr("min", 0)
+        .attr("max", 100)
+        .attr("step",1)
+        .on("change", function () {
+            // previewAreaRight.nodeLabels.removeAllLabels();  //.scale.set(this.value, this.value, this.value);
+            if(side === "Right") {
+                previewAreaRight.nodeLabels.setDimensionFactorLabel(this.value/100);
+                previewAreaRight.nodeLabels.labelAllNodes();       //getNodesFocused(), modelRight);
+            } else {
+                previewAreaLeft.nodeLabels.setDimensionFactorLabel(this.value/100);
+                previewAreaLeft.nodeLabels.labelAllNodes();       //getNodesFocused(), modelRight);
+            }
+            document.getElementById(side+"labelScalingSliderLabel").innerHTML = side+" Label Size @ " + this.value/100.00;
         });
     menu.append("br");
 };
@@ -1616,4 +1645,4 @@ var toggleMenus = function (e) {
 
 var getShortestPathVisMethod = function () { return shortestPathVisMethod }
 
-export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addLineWidthSlider, addToggleLinePlotsButton, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend, searchMode} //hideVRMaximizeButtons
+export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addLineWidthSlider, addToggleLinePlotsButton, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend, searchMode, addLabelScalingSlider} //hideVRMaximizeButtons

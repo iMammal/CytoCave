@@ -9,12 +9,22 @@ class NodeLabels {
         this.nspCanvas = document.createElement('canvas');
         this.nodeNameMap = null;
         this.nodeLabelSprite = null;
+        this.dimensionFactorLabel = 0.63
 
         this._state = {
             labelsVisible: this.previewArea.labelsVisible
         };
     }
 
+  getDimensionFactorRightLabel() {
+    return this.dimensionFactorLabel;
+  }
+
+  setDimensionFactorLabel(value) {
+    this.dimensionFactorLabel = value;
+  }
+
+    // Remove all labels
     removeAllLabels() {
       console.log("removeAllLabels");
       let foundsprites = this.previewArea.brain.children.filter((child) => {
@@ -79,7 +89,7 @@ class NodeLabels {
     let context = targetCanvas.getContext('2d');
     context.fillStyle = '#ffffff';
     context.textAlign = 'left';
-    context.font = getDimensionFactorRightBox()*21+'px Arial';
+    context.font = this.getDimensionFactorRightLabel()*5*21+'px Arial';
     context.fillText("", 0, 0);
 
     this.nodeNameMap = new THREE.CanvasTexture(targetCanvas);

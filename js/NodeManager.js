@@ -110,7 +110,7 @@ class NodeManager {
   }
 
   CreateInstanceMeshes() {
-    if(mcts){
+    if(false && mcts){
       setDimensionFactorLeftBox(0.4);
       setDimensionFactorRightBox(0.4);
     }

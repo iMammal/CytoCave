@@ -131,6 +131,7 @@ var getDimensionFactorRightBox = function(){
     return dimensionFactorRightBox;
 }
 
+
 // return the material for a node (vertex) according to its state: active or transparent
 //todo: change to static reusable materials
 let materialGroups = {};
