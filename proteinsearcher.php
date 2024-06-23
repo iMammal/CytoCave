@@ -36,7 +36,7 @@ if ($searchTerms == "" || $searchTerms == null || $searchTerms == "undefined") {
 
 //get gene name from the url
 $scaleFactor = $_GET['scale'];
-//sanitize the sclae factor
+//sanitize the scale factor
 $scaleFactor = filter_var($scaleFactor, FILTER_SANITIZE_STRING);
 //if search term is empty, set it to empty string
 if ($scaleFactor == "" || $scaleFactor == null || $scaleFactor == "undefined") {
