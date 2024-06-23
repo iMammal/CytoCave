@@ -12,6 +12,7 @@ label;region_name;Score_Max;hemisphere
 11;ADCI;01400-02799;left
 12;ADCJ;0-01400;left
 13;ADCK;01400-02799;left
+132;AI;01400-02799;left
 14;ADCL;01400-02799;left
 15;ADE;02800-04199;left
 16;ADEC;01400-02799;left
@@ -130,7 +131,6 @@ label;region_name;Score_Max;hemisphere
 129;AF;01400-02799;left
 130;AG;01400-02799;left
 131;AH;01400-02799;left
-132;AI;01400-02799;left
 133;AJ;01400-02799;left
 134;AK;01400-02799;left
 135;AL;01400-02799;left
@@ -158,8 +158,8 @@ label;region_name;Score_Max;hemisphere
 157;PSMB5_C;15;right
 158;PSMB2_D;15;right
 159;PSMB1_E;15;right
-160;PSMA7_F;15;right
-161;PSMB6_G;15;right
+160;PSMA7_F;15;righ
+161;PSMB6_G;15;riht
 162;PSMB7_H;15;right
 163;PSMA4_I;15;right
 164;PSMA3_J;15;right
@@ -196,7 +196,8 @@ label;region_name;Score_Max;hemisphere
 195;PSMB4_B;18;right
 196;PSMB5_C;18;right
 197;PSMB2_D;18;right
-198;PSMB1_E;18;right
+
++198;PSMB1_E;18;right
 199;PSMA7_F;18;right
 200;PSMB6_G;18;right
 201;PSMB7_H;18;right
@@ -1973,3 +1974,16 @@ label;region_name;Score_Max;hemisphere
 1972;PSMA6_K;154;right
 1973;PSMA5_L;154;right
 1974;PSMA2_M;154;right
+1975;PSMA8_A;155;right
+1976;PSMB4_B;155;right
+1977;PSMB5_C;155;right
+1978;PSMB2_D;155;right
+1979;PSMB1_E;155;right
+1980;PSMA7_F;155;right
+1981;PSMB6_G;155;right
+1982;PSMB7_H;155;right
+1983;PSMA4_I;155;right
+1984;PSMA3_J;155;right
+1985;PSMA6_K;155;right
+1986;PSMA5_L;155;right
+1987;PSMA2_M;155;right
