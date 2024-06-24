@@ -55,6 +55,7 @@ let startNoEdges = stringToBoolean(url.searchParams.get("noEdges"));
 let startNoLabels = stringToBoolean(url.searchParams.get("noLabels"));
 let experimental = stringToBoolean(url.searchParams.get("experimental"));
 let mcts = stringToBoolean(url.searchParams.get("mcts"));
+let mctsflat = stringToBoolean(url.searchParams.get("mctsflat"));
 let complexes = (url.searchParams.get("complexes"));
 if( complexes == undefined){
     complexes = "all";
@@ -79,4 +80,4 @@ console.log('This is ' + ((mobile)?'Mobile':'Desktop') + ' version');
 
 
 
-export {labelLUT,atlas,folder,dataFiles,metric,mobile,neuro,isLoaded,setDataFile,getAtlas,setAtlas,getDataFile,mcts,experimental,removeEdgesOnUnselect,startNoEdges,startNoLabels,complexes}
+export {labelLUT,atlas,folder,dataFiles,metric,mobile,neuro,isLoaded,setDataFile,getAtlas,setAtlas,getDataFile,mcts,mctsflat,experimental,removeEdgesOnUnselect,startNoEdges,startNoLabels,complexes}

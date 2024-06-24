@@ -25,7 +25,7 @@ import {TrackballControls} from "three/examples/jsm/controls/TrackballControls";
 //import * as quat from "./external-libraries/gl-matrix/quat.js";
 
 // import {isLoaded, dataFiles  , mobile} from "./globals";
-import {mobile, atlas, removeEdgesOnUnselect, startNoEdges, startNoLabels, mcts} from './globals';
+import {mobile, atlas, removeEdgesOnUnselect, startNoEdges, startNoLabels, mcts, mctsflat} from './globals';
 import {getNormalGeometry, getNormalMaterial} from './graphicsUtils.js'
 import { XRInterface } from './XRInterface.js'
 import {
@@ -275,7 +275,7 @@ class PreviewArea {
     // for mirroring to the other side
 
 
-    if(!mcts || (index > this.model.maxNumberOfLeftNodes) ) { // Do not sync selections for MCTS mode
+    if(!mcts || ( mcts && (index > this.model.maxNumberOfLeftNodes) ) ) { // Do not sync selections for MCTS mode
       if (this.name === 'Right') {
         previewAreaLeft.NodeManager.select(index);
         //previewAreaRight.NodeManager.select(index);
@@ -285,17 +285,29 @@ class PreviewArea {
         //previewAreaLeft.NodeManager.select(index);
       }
 
+
       // this.Hud2D.update();
 
       // Toggle the group whole index is the node index plus the number of Left clusters
     } else {
 
-      this.model.toggleRegion(index + this.model.maxNumberOfLeftClusters);
+      if (mctsflat) {
+        // build a string with region_name of each node in NodesSelected
+        let region_names = 'HuMAP2_03805';
+        for (let node of this.NodeManager.getSelectedNodes()) {
+          region_names +=  '+' + this.model.getRegionByIndex(node).name ;
+        }
+        console.log('region_names: ' + region_names);
+      } else {
 
-      if (this.model.getRegionState(index + this.model.maxNumberOfLeftClusters) == 'transparent')
-        updateNodesVisiblity(this.name);
-       else
-        updateScenes(this.name,false);
+        this.model.toggleRegion(index + this.model.maxNumberOfLeftClusters);
+
+        if (this.model.getRegionState(index + this.model.maxNumberOfLeftClusters) == 'transparent')
+          updateNodesVisiblity(this.name); // This does infinite  recursion things. Not sure why it ever works but it does eventually exit the recursion loop.
+         else
+          updateScenes(this.name,false);
+
+      }
     }
   }
 
