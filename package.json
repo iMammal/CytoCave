@@ -4,6 +4,7 @@
   "description": "![alt text](readme_images/f2500withInset.png \"CytoCave\")",
   "main": "index.js",
   "dependencies": {
+    "axios": "^1.7.2",
     "csv-parser": "^3.0.0",
     "d3": "^7.6.1",
     "d3-dsv": "^3.0.1",

@@ -875,7 +875,7 @@ function Model(side) {
         else if (maxNumberOfClusters <= 20)
             platonic.createIcosahedron();
         else {
-            console.error("Can not visualize clustering data.");
+            console.error("Can not visualize clustering data.", maxNumberOfClusters,",",nClusters,",",topology);
             return;
         }
         // use one of the faces to compute primary variables

@@ -25,7 +25,7 @@ import {TrackballControls} from "three/examples/jsm/controls/TrackballControls";
 //import * as quat from "./external-libraries/gl-matrix/quat.js";
 
 // import {isLoaded, dataFiles  , mobile} from "./globals";
-import {mobile, atlas, removeEdgesOnUnselect, startNoEdges, startNoLabels, mcts, mctsflat} from './globals';
+import {mobile, atlas, removeEdgesOnUnselect, startNoEdges, startNoLabels, mcts, mctsflat, folder} from './globals';
 import {getNormalGeometry, getNormalMaterial} from './graphicsUtils.js'
 import { XRInterface } from './XRInterface.js'
 import {
@@ -82,8 +82,10 @@ import { PathFinder } from "./PathFinder";
 import canvasGraph from "./canvasGraph";
 import  Hud2D  from "./Hud2d";
 import LineGraphs from './LineGraphs.js';
+
 import NodeLabels from "./nodeLabels";
 import nodeLabels from "./nodeLabels";
+import axios from "axios";
 
 class PreviewArea {
   constructor(canvas_, model_, name_) {
@@ -298,6 +300,16 @@ class PreviewArea {
           region_names +=  '+' + this.model.getRegionByIndex(node).name ;
         }
         console.log('region_names: ' + region_names);
+        // fetch the complex for the region_names
+        //this.model.loadComplex(region_names);
+        //"data/" + folder +
+        axios.get("proteinsearcher4mcts1.php?search=" + region_names)
+            .then((response) => {
+              //console.log(response.data);
+            })
+            .catch((error) => {
+              console.error('Error:', error.message);
+            });
       } else {
 
         this.model.toggleRegion(index + this.model.maxNumberOfLeftClusters);
