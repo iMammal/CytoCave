@@ -29,7 +29,7 @@
 $test = true; //false;
 
 if ($test) {
-    $fudge = 142;
+    $fudge = 141;
 } else {
     $fudge = -1;
 }
@@ -47,7 +47,7 @@ if ($test) {
 //    echo implode(',', $row) . "\n";
     // echo source, target, interaction
 //     echo ($row['source']-1) . "," . ($row['target']-1) . "," . $row['interaction'] . "\n";
-    echo ($row['source']+142) . "," . ($row['target']+142) . "," . $row['interaction'] . "\n";
+    echo ($row['source']+$fudge) . "," . ($row['target']+$fudge) . "," . 14000*$row['interaction'] . "\n";
 
   }
 ?>
