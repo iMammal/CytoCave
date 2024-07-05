@@ -142,7 +142,7 @@ label;region_name;Score_Max;hemisphere
 141;AMK;0-01400;left
 142;PSMA8_A;14;right
 143;PSMB4_B;14;right
-144;PSMB5_C;14:;right
+144;PSMB5_C;14;right
 145;PSMB2_D;14;right
 146;PSMB1_E;14;right
 147;PSMA7_F;14;right
@@ -158,8 +158,8 @@ label;region_name;Score_Max;hemisphere
 157;PSMB5_C;15;right
 158;PSMB2_D;15;right
 159;PSMB1_E;15;right
-160;PSMA7_F;15;righ
-161;PSMB6_G;15;riht
+160;PSMA7_F;15;right
+161;PSMB6_G;15;right
 162;PSMB7_H;15;right
 163;PSMA4_I;15;right
 164;PSMA3_J;15;right
@@ -196,8 +196,7 @@ label;region_name;Score_Max;hemisphere
 195;PSMB4_B;18;right
 196;PSMB5_C;18;right
 197;PSMB2_D;18;right
-
-+198;PSMB1_E;18;right
+198;PSMB1_E;18;right
 199;PSMA7_F;18;right
 200;PSMB6_G;18;right
 201;PSMB7_H;18;right
