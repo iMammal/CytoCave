@@ -30,6 +30,7 @@ class NodeManager {
     this.selectedNodesCount = 0;
     this.selectedNodesChanged = false;
     this.nodesSelectedGeneralCallback = null;
+    this.nodePreSelectionCallback = null;
     this.nodeSelectedCallback = null;
     this.onNodeUnselectCallback = null;
     this.allNodesSelectedCallback = null;
@@ -577,7 +578,9 @@ class NodeManager {
     }
 
 
-    let value = this.instances[node.object.name.group][node.object.name.hemisphere].userData.selectedNodes.includes(index);
+    let value = null;
+    if(this.instances[node.object.name.group][node.object.name.hemisphere])
+      value = this.instances[node.object.name.group][node.object.name.hemisphere].userData.selectedNodes.includes(index);
 
     // verify the value is valid
     if (value === undefined || value === null) {
@@ -649,7 +652,10 @@ class NodeManager {
     if (this.isSelected(node)) {
       this.deselectNode(node);
     } else {
-      this.selectNode(node);
+      if (this.nodePreSelectionCallback !== null) {
+        this.nodePreSelectionCallback(node);
+        this.selectNode(node);
+      }
     }
   }
 
@@ -779,6 +785,11 @@ class NodeManager {
     }
     let index = this.node2index(node);
     let matrixRow = this.model.getConnectionMatrixRow(index);
+
+    // console.log("Matrix Row, index:" + matrixRow.size() + " " + index);
+    // console.log(matrixRow);
+
+
 
 
     //

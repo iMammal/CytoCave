@@ -819,6 +819,38 @@ function Model(side) {
         return this.graph.path(rootIndex, targetId);
     }
 
+    // Given index of node, Add complex to Dataset and instances
+    this.addComplex = function (index) {
+        //dataset[index].complex = complex;
+        // instances.push(complex);
+        console.log("Complex added to dataset");
+
+         // console.log("Dataset:", dataset);
+         // console.log("Instances:",this.instances);
+
+        // Add complex to dataset
+        for (let k = 0; k < 14; k++)
+        {
+            // foreach k in A B C D E F G H I J K L M:
+
+
+            let point = {...dataset[index].position};
+            point.x = point.x + 0.5;
+            point.y = point.y + 0.5;
+            point.z = point.z + 0.5;
+            dataset.push({
+                position: point,
+                name: "Complex_"+k.toString(),
+                group: dataset[index].group,
+                hemisphere: "right",
+                label: ( dataset.length+1 ).toString()
+            });
+
+        }
+
+    };
+
+
     this.treeLevel = function (nNodes, face) {
         let points = new Array(nNodes);
         //var n = face.length;

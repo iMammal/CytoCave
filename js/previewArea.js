@@ -234,6 +234,13 @@ class PreviewArea {
     this.setEdgeOpacity(this.edgeOpacity);  //maintains edge opacity between resets.
     // this.setEdgeWidth(this.edgeWidth);  //maintains edge width between resets.
 
+    // Display all edges
+    if (!startNoEdges) {
+      for (let i = 0; i < this.model.getDataset().length; i++) {
+        this.drawEdgesGivenIndex(i);
+      }
+    }
+
     //restore nodelabels if they were visible
     if (this.labelsVisible) {
       this.nodeLabels.labelAllNodes();
@@ -277,7 +284,14 @@ class PreviewArea {
     // for mirroring to the other side
 
 
-    if(!mcts || ( mcts && (index > this.model.maxNumberOfLeftNodes) ) ) { // Do not sync selections for MCTS mode
+  }
+
+    // this is a callback function that is called BEFORE a node is selected
+
+  preSelectNodeAction = (node) => {
+    let index = this.NodeManager.node2index(node);
+
+    if (!mcts || (mcts && (index > this.model.maxNumberOfLeftNodes))) { // Do not sync selections for MCTS mode
       if (this.name === 'Right') {
         previewAreaLeft.NodeManager.select(index);
         //previewAreaRight.NodeManager.select(index);
@@ -297,7 +311,7 @@ class PreviewArea {
         // build a string with region_name of each node in NodesSelected
         let region_names = 'HuMAP2_03805';
         for (let node of this.NodeManager.getSelectedNodes()) {
-          region_names +=  '+' + this.model.getRegionByIndex(node).name ;
+          region_names += '+' + this.model.getRegionByIndex(node).name;
         }
         console.log('region_names: ' + region_names);
         // fetch the complex for the region_names
@@ -310,14 +324,19 @@ class PreviewArea {
             .catch((error) => {
               console.error('Error:', error.message);
             });
-      } else {
+
+        // add the complex to the scene
+        this.model.addComplex(index);
+
+
+      } else {  // MCTS mode with hidden complex nodes
 
         this.model.toggleRegion(index + this.model.maxNumberOfLeftClusters);
 
         if (this.model.getRegionState(index + this.model.maxNumberOfLeftClusters) == 'transparent')
           updateNodesVisiblity(this.name); // This does infinite  recursion things. Not sure why it ever works but it does eventually exit the recursion loop.
-         else
-          updateScenes(this.name,false);
+        else
+          updateScenes(this.name, false);
 
       }
     }
@@ -3718,9 +3737,9 @@ class PreviewArea {
     for (var i = 0; i < this.displayedEdges.length; i++) {
 
       this.displayedEdges[i].material.opacity = this.displayedEdges[i].material.userData.originalOpacity * opacity;
-      console.log("originalOpacity: " + this.displayedEdges[i].material.userData.originalOpacity);
-      console.log("slider opacity: " + opacity);
-      console.log("actual opacity: " + this.displayedEdges[i].material.opacity);
+      // console.log("originalOpacity: " + this.displayedEdges[i].material.userData.originalOpacity);
+      // console.log("slider opacity: " + opacity);
+      // console.log("actual opacity: " + this.displayedEdges[i].material.opacity);
       this.displayedEdges[i].material.needsUpdate = true;
     }
   };
@@ -4512,6 +4531,7 @@ class PreviewArea {
 
   rebindNodeManagerCallbacks() {
     this.NodeManager.nodesSelectedGeneralCallback = this.GroupSelectedCallback.bind(this);
+    this.NodeManager.nodePreSelectionCallback = this.preSelectNodeAction.bind(this);
     this.NodeManager.nodeSelectedCallback = this.appearSelected.bind(this);
     this.NodeManager.onNodeUnselectCallback = this.appearUnselected.bind(this);
     this.NodeManager.contextualNodeActivated = this.activateContextExampleOnNode.bind(this);
