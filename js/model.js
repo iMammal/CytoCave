@@ -828,6 +828,12 @@ function Model(side) {
          // console.log("Dataset:", dataset);
          // console.log("Instances:",this.instances);
 
+        // Create complex
+        // let complex = [];
+        // complex[left] = null;
+        // complex[right] = [];
+
+
         // Add complex to dataset
         for (let k = 0; k < 14; k++)
         {
@@ -835,8 +841,8 @@ function Model(side) {
 
 
             let point = {...dataset[index].position};
-            point.x = point.x + 0.5;
-            point.y = point.y + 0.5;
+            point.x = point.x + 0.5 * k;
+            point.y = point.y + 0.5 * k;
             point.z = point.z + 0.5;
             dataset.push({
                 position: point,
@@ -845,6 +851,9 @@ function Model(side) {
                 hemisphere: "right",
                 label: ( dataset.length+1 ).toString()
             });
+
+            // add complex to instances
+            // instances.push(complex);
 
         }
 

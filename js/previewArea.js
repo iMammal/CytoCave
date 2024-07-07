@@ -217,14 +217,18 @@ class PreviewArea {
   } // End Constructor
 
   //reset previewArea to state
-  reset = () => {
+  reset = (activeNM = null) => {
     this.removeAllInstances();
     //shut down all highlights before reset
     this.NodeManager.removeHighlights();
     //this.nodeLabels.removeAllLabels();
 
     this.pathFinder = null;
-    this.NodeManager = new NodeManager(this);
+    if(false) { //activeNM) {
+        this.NodeManager = activeNM;
+    } else {
+      this.NodeManager = new NodeManager(this);
+    }
     this.updateNodesVisibility(true);
     this.rebindNodeManagerCallbacks();
     this.removeEdgesFromScene();
@@ -288,7 +292,8 @@ class PreviewArea {
 
     // this is a callback function that is called BEFORE a node is selected
 
-  preSelectNodeAction = (node) => {
+  // preSelectNodeAction = (node) => {
+  preSelectNodeAction(node){
     let index = this.NodeManager.node2index(node);
 
     if (!mcts || (mcts && (index > this.model.maxNumberOfLeftNodes))) { // Do not sync selections for MCTS mode
@@ -325,9 +330,18 @@ class PreviewArea {
               console.error('Error:', error.message);
             });
 
+        let startIndex = this.model.getDataset().length;
+
         // add the complex to the scene
         this.model.addComplex(index);
 
+        // reset the previewArea to draw the  new nodes and edges for the complex
+        // this.reset(this.NodeManager);
+
+        // Add new nodes and edges to the scene
+        this.NodeManager.CreateInstanceMeshes();
+        this.NodeManager.PositionAndColorNodes(startIndex);
+        this.NodeManager.addInstancesToScene()
 
       } else {  // MCTS mode with hidden complex nodes
 

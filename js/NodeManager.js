@@ -24,6 +24,9 @@ class NodeManager {
     this.groups = this.previewArea.listGroups();
     this.groupCount = this.groups.length;
     this.instances = {};
+    this.topIndexes = {};
+    this.lastTopIndexes = {};
+
     this.selectedNodes = [];
     this.focusedNodes = []; //todo: what is a focused node?
 
@@ -81,22 +84,27 @@ class NodeManager {
     }
   }
 
-  PositionAndColorNodes() {
+  PositionAndColorNodes(startIndex = 0) { //, endIndex = 0) {
     let dataset = this.model.getDataset();
-    let topIndexes = {};
-    for (let i = 0; i < dataset.length; i++) {
+    if (startIndex === 0)
+      this.topIndexes = {};
+    else
+        this.lastTopIndexes = this.topIndexes;
+    for (let i = startIndex; i < dataset.length; i++) {
       let instance = this.instances[dataset[i].group][dataset[i].hemisphere];
       let position = dataset[i].position;
-      if (topIndexes[dataset[i].group] === undefined) {
-        topIndexes[dataset[i].group] = {
+      if (this.topIndexes[dataset[i].group] === undefined) {
+        this.topIndexes[dataset[i].group] = {
           left: 0,
           right: 0
         };
       }
-      let index = topIndexes[dataset[i].group][dataset[i].hemisphere];
+
+      // keeps track in how many instances are in each group and hemisphere
+      let index = this.topIndexes[dataset[i].group][dataset[i].hemisphere];
       instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
       instance.setColorAt(index, instance.material.color);
-      topIndexes[dataset[i].group][dataset[i].hemisphere]++;
+      this.topIndexes[dataset[i].group][dataset[i].hemisphere]++;
       if (instance.userData.indexList === undefined) {
         instance.userData.indexList = [];
       }
@@ -1151,11 +1159,15 @@ class NodeManager {
     return edges;
   }
 
+
   addInstancesToScene() {
     //add each instance to the scene.
     for (let group in this.instances) {
       for (let hemisphere in this.instances[group]) {
         if (this.instances[group][hemisphere] === null) {
+          continue;
+        }
+        if( ( Object.keys(this.lastTopIndexes).length > 0)  && (this.lastTopIndexes[group][hemisphere] > this.instances[group][hemisphere].userData.indexList.length)) {
           continue;
         }
         // console.log("adding instance to scene");
