@@ -833,17 +833,22 @@ function Model(side) {
         // complex[left] = null;
         // complex[right] = [];
 
+        let nNodes = 14;
 
         // Add complex to dataset
-        for (let k = 0; k < 14; k++)
+        for (let k = 0; k < nNodes; k++)
         {
             // foreach k in A B C D E F G H I J K L M:
 
 
             let point = {...dataset[index].position};
-            point.x = point.x + 0.5 * k;
-            point.y = point.y + 0.5 * k;
-            point.z = point.z + 0.5;
+            // point.x = point.x + 0.5 * k;
+            // point.y = point.y + 0.5 * k;
+            // point.z = point.z + 0.5;
+            let angle = 2.0 * Math.PI * k / nNodes;
+            point.z = point.z + 30.35 * Math.cos(angle);
+            point.y = point.y + 80.8642 + 30.35 * Math.sin(angle);
+            point.x = point.x ;
             dataset.push({
                 position: point,
                 name: "Complex_"+k.toString(),
@@ -955,7 +960,7 @@ function Model(side) {
                     // create circle of radius 1
                     let angle = 2.0 * Math.PI * k / nNodes;
                     point[2] = point[2] + 0.35 * Math.cos(angle);
-                    point[1] = point[1] + 0.8642 + 0.35 +Math.sin(angle);
+                    point[1] = point[1] + 0.8642 + 0.35 * Math.sin(angle);
                     point[0] = point[0] ;
 
                     centroids[clusterIdx[k] + 1] = point;
