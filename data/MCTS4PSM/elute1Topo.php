@@ -59,7 +59,7 @@ if ($test) {
 
         //iterate through each row of the result, skip header
     foreach ($mctstopo as $row) {
-        if (($row[0] == 'label') || ($row[0] > 142)) {
+        if (($row[0] == 'label') || ($row[0] > 141)) {
             continue;
 
         }

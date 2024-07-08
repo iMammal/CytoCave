@@ -1,5 +1,5 @@
 subjectID,network,topology
-PSM,mctsnet.csv,mctstopo.csv
+PSM,psmnet3.csv,mctstopo.csv
 PSM3elute1,psmnet2.csv,mctstopo3elute1dets.csv
 PSM3elute2,psmnet2.csv,mctstopo3elute2dets.csv
 Elute1,tempNetw.php,elute1Topo.php
