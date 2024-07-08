@@ -216,8 +216,17 @@ class PreviewArea {
     }
   } // End Constructor
 
+  reset = () => {
+
+    this.NodeManager.needsReset = true;
+
+  }
+
   //reset previewArea to state
-  reset = (activeNM = null) => {
+  resetActions = () => {
+
+    let tempNodesSelected = this.getSelectedNodes();
+
     this.removeAllInstances();
     //shut down all highlights before reset
     this.NodeManager.removeHighlights();
@@ -229,6 +238,9 @@ class PreviewArea {
     } else {
       this.NodeManager = new NodeManager(this);
     }
+
+    this.setSelectedNodes(tempNodesSelected);
+
     this.updateNodesVisibility(true);
     this.rebindNodeManagerCallbacks();
     this.removeEdgesFromScene();
@@ -249,6 +261,8 @@ class PreviewArea {
     if (this.labelsVisible) {
       this.nodeLabels.labelAllNodes();
     }
+
+    this.needsReset = false;
   }
 
   appearUnselected = (node) => {
@@ -292,7 +306,7 @@ class PreviewArea {
 
     // this is a callback function that is called BEFORE a node is selected
 
-  // preSelectNodeAction = (node) => {
+    // preSelectNodeAction = (node) => {
   preSelectNodeAction(node){
     let index = this.NodeManager.node2index(node);
 
@@ -315,14 +329,14 @@ class PreviewArea {
       if (mctsflat) {
         // build a string with region_name of each node in NodesSelected
         let region_names = 'HuMAP2_03805';
-        for (let node of this.NodeManager.getSelectedNodes()) {
-          region_names += '+' + this.model.getRegionByIndex(node).name;
+        for (let nodeidx of this.NodeManager.getSelectedNodes()) {
+          region_names += '+' + this.model.getRegionByIndex(nodeidx).name;
         }
         console.log('region_names: ' + region_names);
         // fetch the complex for the region_names
         //this.model.loadComplex(region_names);
         //"data/" + folder +
-        axios.get("proteinsearcher4mcts1.php?search=" + region_names)
+        axios.get("proteinsearcher4mcts1.php?search=" + region_names + "+" + this.model.getRegionByIndex(index).name)
             .then((response) => {
               //console.log(response.data);
             })
@@ -336,12 +350,14 @@ class PreviewArea {
         this.model.addComplex(index);
 
         // reset the previewArea to draw the  new nodes and edges for the complex
-        // this.reset(this.NodeManager);
+        this.reset(); //this.NodeManager);
 
-        // Add new nodes and edges to the scene
-        this.NodeManager.CreateInstanceMeshes();
-        this.NodeManager.PositionAndColorNodes(startIndex);
-        this.NodeManager.addInstancesToScene()
+
+
+        //Todo: Add new nodes and edges to the scene
+        // this.NodeManager.CreateInstanceMeshes();
+        // this.NodeManager.PositionAndColorNodes(startIndex);
+        // this.NodeManager.addInstancesToScene()
 
       } else {  // MCTS mode with hidden complex nodes
 
@@ -2590,7 +2606,11 @@ class PreviewArea {
   //todo: add fps slider
   // calls the animation updates.
   animatePV(time,frame) {
+
+    if(this.NodeManager.needsReset) this.resetActions();
+
     this.NodeManager.update();
+
     if(this.pathFinder && this.pathFinder.active) {
       this.pathFinder.update();
     }

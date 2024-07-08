@@ -54,6 +54,7 @@ class NodeManager {
     this.CreateInstanceMeshes();
     this.PositionAndColorNodes();
     this.addInstancesToScene();
+    this.needsReset = false;
 
     this.highLights = [];
 
