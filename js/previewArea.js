@@ -86,6 +86,7 @@ import LineGraphs from './LineGraphs.js';
 import NodeLabels from "./nodeLabels";
 import nodeLabels from "./nodeLabels";
 import axios from "axios";
+import {PDBLoader} from "three/addons/loaders/PDBLoader";
 
 class PreviewArea {
   constructor(canvas_, model_, name_) {
@@ -203,6 +204,56 @@ class PreviewArea {
     //this.Hud2D = new Hud2D(this);
     //let container = document.getElementById('linePlots');
     this.linegraphs = new LineGraphs(this,'linePlots'); //preViewArea_);
+
+    // protein 3d structure model
+    const ploader = new PDBLoader();
+    ploader.load('https://files.rcsb.org/view/1mbs.pdb', function (pdb) {
+      const geometryAtoms = pdb.geometryAtoms;
+      const geometryBonds = pdb.geometryBonds;
+      const json = pdb.json;
+      const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+      const sphereGeo = new THREE.IcosahedronGeometry(1, 3);
+      let apositions = geometryAtoms.getAttribute('position');
+      let acolors = geometryAtoms.getAttribute('color');
+      const apos = new THREE.Vector3();
+      const acol = new THREE.Color();
+
+      let molGroup = new THREE.Group();
+      for (let i = 0; i < apositions.count; i++) {
+        apos.fromBufferAttribute(apositions, i);
+        acol.fromBufferAttribute(acolors, i);
+        let material = new THREE.MeshStandardMaterial({color: acol});
+        let mesh = new THREE.Mesh(sphereGeo, material);
+        mesh.position.copy(apos);
+        mesh.scale.set(0.1, 0.1, 0.1);
+        molGroup.add(mesh);
+
+        const atom = json.atoms[i];
+
+
+      }
+
+      //connect atoms with bonds
+      let bpositions = geometryBonds.getAttribute('position');
+      let start = new THREE.Vector3();
+      let end = new THREE.Vector3();
+      for (let i = 0; i < bpositions.count; i += 2) {
+        start.fromBufferAttribute(bpositions, i);
+        end.fromBufferAttribute(bpositions, i + 1);
+        let line = new Line2();
+        let matLine = new LineMaterial({color: 0xffffff, linewidth: 0.0025});
+        let geo = new LineGeometry();
+        geo.setPositions([start.x, start.y, start.z, end.x, end.y, end.z]);
+        line.geometry = geo;
+        line.material = matLine;
+        molGroup.add(line);
+      }
+
+
+      this.scene.add(molGroup);
+    }.bind(this));
+
+
 
     // Display all edges
     if (!startNoEdges) {
