@@ -225,7 +225,7 @@ foreach ($searchGeneArray as $gene) {
     }
 }
 
-echo "Searchinng for: " . json_encode($searchGeneList);
+echo "Searching for: " . json_encode($searchGeneList);
 
 
 
@@ -394,6 +394,13 @@ echo "Grid distance: " . $gridDistance . "<br>";
 foreach ($results as $row) {
 foreach ( $searchGeneList[0] as $assy) {
 
+  // skip the first element of the searchGeneList where assy contains HuMAP2_
+    if (strpos($assy, 'HuMAP2_')  === 0 )
+    {
+        echo "Skipping First Assembly: " . $assy . "<br>";
+        continue;
+    }
+
   //echo the HuMAP2_ID, Confidence, Uniprot_ACCs, and genenames
   echo "HuMAP2_ID: " . $row['HuMAP2_ID'] . " Confidence: " . $row['Confidence'] . " Uniprot_ACCs: " . $row['Uniprot_ACCs'] . " genenames: " . $row['genenames'] . "<br>";
 
@@ -418,6 +425,7 @@ foreach ( $searchGeneList[0] as $assy) {
   $uniprotAccsRaw = explode(" ", $row['Uniprot_ACCs']);
 
   $uniprotAccs = array();
+
 
   $geneIndex = 0;
   foreach ( $genenamesRaw as $gene) {
@@ -533,16 +541,21 @@ foreach ($complexMap as $complexId => $c) {
     // print complexId
     echo "ComplexId: " . json_encode($complexId) . "<br>";
 
+    if (false && strpos($searchGeneList[0][$c-1], 'HuMAP2_') === 0) {
+        echo "Skipping First Assembly: " . $searchGeneList[0][$c-1] . "<br>";
+        continue;
+    }
+
     $genesInComplex = $genesInComplexes[$complexId];
 
-    echo "complex and paths: " . json_encode($searchGeneList[0][$c-1]) . "<br>";
+    echo "complex and paths: " . json_encode($searchGeneList[0][$c]) . "<br>";
 
     //$assypath =  $searchGeneList[0][$c-1] ? $searchGeneList[0][$c-1] : "";
     // if  $searchGeneList[0][$c-1] does not contain HuMAP2_ then set it to empty string
-    $assypath =  strpos($searchGeneList[0][$c-1], 'HuMAP2_') === 0 ? "" : $searchGeneList[0][$c-1];
+    $assypath =  strpos($searchGeneList[0][$c], 'HuMAP2_') === 0 ? "" : $searchGeneList[0][$c];
 
     // assypath to all caps
-    $assypath = strtoupper($assypath);
+         $assypath = strtoupper($assypath);
 
     // print the assembly path
     echo "assembly path: " . json_encode($assypath) . "<br>";

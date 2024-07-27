@@ -853,12 +853,14 @@ function Model(side) {
                 position: point,
                 name: "Complex_"+k.toString(),
                 group: dataset[index].group,
+                originIndex: index,
                 hemisphere: "right",
                 label: ( dataset.length+1 ).toString()
             });
 
             // add complex to instances
             // instances.push(complex);
+
 
         }
 

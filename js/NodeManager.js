@@ -577,7 +577,7 @@ class NodeManager {
     //check if the node is selected.
     //this is true if the node is in the userData.selectedNodes of the instance.
     //throw an error if hemisphere or group are not set
-    if (node.object.name.hemisphere === undefined || node.object.name.group === undefined) {
+    if (!node || node.object.name.hemisphere === undefined || node.object.name.group === undefined) {
       console.log("NodeManager.isSelected: hemisphere or group not set");
       console.log(node);
     }
@@ -587,6 +587,7 @@ class NodeManager {
     }
 
 
+    //todo: More safety checks here
     let value = null;
     if(this.instances[node.object.name.group][node.object.name.hemisphere])
       value = this.instances[node.object.name.group][node.object.name.hemisphere].userData.selectedNodes.includes(index);

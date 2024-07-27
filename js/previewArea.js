@@ -220,6 +220,7 @@ class PreviewArea {
 
     this.NodeManager.needsReset = true;
 
+
   }
 
   //reset previewArea to state
@@ -328,15 +329,16 @@ class PreviewArea {
 
       if (mctsflat) {
         // build a string with region_name of each node in NodesSelected
-        let region_names = 'HuMAP2_03805';
+        let complex_names = 'HuMAP2_03805';
         for (let nodeidx of this.NodeManager.getSelectedNodes()) {
-          region_names += '+' + this.model.getRegionByIndex(nodeidx).name;
+          complex_names += '+' + this.model.getRegionByIndex(nodeidx).name;
         }
-        console.log('region_names: ' + region_names);
+        complex_names  += "+" + this.model.getRegionByIndex(index).name;
+        console.log('complex_names: ' + complex_names);
         // fetch the complex for the region_names
         //this.model.loadComplex(region_names);
         //"data/" + folder +
-        axios.get("proteinsearcher4mcts1.php?search=" + region_names + "+" + this.model.getRegionByIndex(index).name)
+        axios.get("proteinsearcher4mcts1.php?search=" + complex_names)
             .then((response) => {
               //console.log(response.data);
             })
@@ -347,11 +349,12 @@ class PreviewArea {
         let startIndex = this.model.getDataset().length;
 
         // add the complex to the scene
-        this.model.addComplex(index);
+        if(this.name === "Left") {this.model.addComplex(index);}
 
         // reset the previewArea to draw the  new nodes and edges for the complex
         this.reset(); //this.NodeManager);
 
+        // this.refreshEdges()
 
 
         //Todo: Add new nodes and edges to the scene
@@ -2607,7 +2610,10 @@ class PreviewArea {
   // calls the animation updates.
   animatePV(time,frame) {
 
-    if(this.NodeManager.needsReset) this.resetActions();
+    if(this.NodeManager.needsReset) {
+      this.resetActions();
+      this.refreshEdges();
+    }
 
     this.NodeManager.update();
 

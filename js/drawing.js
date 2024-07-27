@@ -123,12 +123,15 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
         return;
     }
 
+    let previewArea = model.getName() === "Left" ? previewAreaLeft : previewAreaRight;
+
+
     //console.log("intersected Object Moveover: ");
     //console.log(intersectedObject);
     //check if the intersected object is a node, if it is the name.type will be 'region'
     //if it is a node, get the node index and the region name
     if (intersectedObject.object.name.type == 'region') {
-        nodeIdx = previewAreaLeft.NodeManager.node2index(intersectedObject); //.instanceId);
+        nodeIdx = previewArea.NodeManager.node2index(intersectedObject); //.instanceId);
         if (intersectedObject) {
             //nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
             region = model.getRegionByIndex(nodeIdx);
@@ -140,19 +143,38 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
         return;
     }
 
+
+
     //todo based on the code below this is only supposed to highlight the node if it is visible.
     //this is not working anyway so i'm just highlighting the node under the mouse.
     //further modified to not rehighlight the selected nodes.
   //console.info("hightlight triggered line 132 file drawing.js, node idx is ", nodeIdx);
   if(!previewAreaLeft.NodeManager.indexIsSelected(nodeIdx) && !previewAreaRight.NodeManager.indexIsSelected(nodeIdx) ) {
-    previewAreaLeft.NodeManager.highlightNodeByIndex(nodeIdx);
-    previewAreaRight.NodeManager.highlightNodeByIndex(nodeIdx);
-    setTimeout(() =>  {
-      //remove the highlight after 1 second
-      //don't remove the highlight if the node is selected.
-      if(!previewAreaLeft.NodeManager.indexIsSelected(nodeIdx) && !previewAreaRight.NodeManager.indexIsSelected(nodeIdx) ) {
-      previewAreaLeft.NodeManager.removeHighlightByIndex(nodeIdx);
-      previewAreaRight.NodeManager.removeHighlightByIndex(nodeIdx);
+
+      let dataset = previewAreaLeft.model.getDataset();
+      if(dataset[nodeIdx].originIndex !== undefined) {
+        previewAreaLeft.NodeManager.highlightNodeByIndex(dataset[nodeIdx].originIndex);
+        // previewAreaRight.NodeManager.highlightNodeByIndex(nodeIdx);
+       } //else {
+        previewAreaLeft.NodeManager.highlightNodeByIndex(nodeIdx);
+        previewAreaRight.NodeManager.highlightNodeByIndex(nodeIdx);
+      // }
+
+
+      setTimeout(() =>  {
+        //remove the highlight after 1 second
+        //don't remove the highlight if the node is selected.
+        if(!previewAreaLeft.NodeManager.indexIsSelected(nodeIdx) && !previewAreaRight.NodeManager.indexIsSelected(nodeIdx) ) {
+            previewAreaLeft.NodeManager.removeHighlightByIndex(nodeIdx);
+            previewAreaRight.NodeManager.removeHighlightByIndex(nodeIdx);
+        } else {
+            //console.log("Node is selected, not removing highlight");
+
+
+        }
+      if(mcts && (dataset[nodeIdx].originIndex !== undefined) ) {
+          previewAreaLeft.NodeManager.removeHighlightByIndex(dataset[nodeIdx].originIndex);
+          // previewAreaRight.refreshEdges();
       }
     } , 1000);
   }
@@ -176,7 +198,9 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
         }
     }
 
-    if (nodeExistAndVisible && previewAreaLeft.NodeManager.isSelected(intersectedObject)) { // not selected
+
+    // if the node is visible and the node is not selected
+    if (nodeExistAndVisible && previewArea.NodeManager.isSelected(intersectedObject)) { // not selected
         if (hoverTimeout && oldNodeIndex == nodeIdx) {
             // create a selected node (bigger) from the pointed node
             pointedObject = intersectedObject.object;
@@ -954,6 +978,8 @@ var changeActiveGeometry = function (model, side, type) {
 
         previewAreaRight.updateNodesVisibility();
         previewAreaRight.setSelectedNodes(tempNodesSelected);
+        // previewAreaRight.refreshEdges();
+
 
     } else {
 
@@ -965,6 +991,7 @@ var changeActiveGeometry = function (model, side, type) {
         previewAreaLeft.reset();
         previewAreaLeft.updateNodesVisibility();
         previewAreaLeft.setSelectedNodes(tempNodesSelected);
+        // previewAreaLeft.refreshEdges();
 
     }
     model.computeEdgesForTopology(model.getActiveTopology());
