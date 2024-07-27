@@ -207,9 +207,13 @@ class PreviewArea {
 
     // protein 3d structure model
     const ploader = new PDBLoader();
-    ploader.load('https://files.rcsb.org/view/1mbs.pdb', function (pdb) {
+    //https://files.rcsb.org/view/1mbs.pdb
+    ploader.load('https://files.rcsb.org/view/7YQC.pdb', function (pdb) {
       const geometryAtoms = pdb.geometryAtoms;
       const geometryBonds = pdb.geometryBonds;
+
+      const seqres = pdb.seqres;
+
       const json = pdb.json;
       const boxGeo = new THREE.BoxGeometry(1, 1, 1);
       const sphereGeo = new THREE.IcosahedronGeometry(1, 3);
@@ -228,15 +232,14 @@ class PreviewArea {
         mesh.scale.set(0.1, 0.1, 0.1);
         molGroup.add(mesh);
 
-        const atom = json.atoms[i];
-
 
       }
-
+      //for each atom in json.atoms connect the bonds, change color of bonds based on atom type
       //connect atoms with bonds
       let bpositions = geometryBonds.getAttribute('position');
       let start = new THREE.Vector3();
       let end = new THREE.Vector3();
+
       for (let i = 0; i < bpositions.count; i += 2) {
         start.fromBufferAttribute(bpositions, i);
         end.fromBufferAttribute(bpositions, i + 1);
@@ -249,10 +252,46 @@ class PreviewArea {
         molGroup.add(line);
       }
 
+      //create lines from every atom to it's nearest neighbor
+      let geoAtoms = geometryAtoms.getAttribute('position');
+      let atoms = [];
+      for (let i = 0; i < geoAtoms.count; i++) {
+        let pos = new THREE.Vector3();
+        pos.fromBufferAttribute(geoAtoms, i);
+        atoms.push(pos);
+      }
+      let lines = [];
+      for (let i = 0; i < atoms.length; i++) {
+        let minDist = 1000000;
+        let minIndex = -1;
+        for (let j = 0; j < atoms.length; j++) {
+          if (i === j) {
+            continue;
+          }
+          let dist = atoms[i].distanceTo(atoms[j]);
+          if (dist < minDist) {
+            minDist = dist;
+            minIndex = j;
+          }
+        }
+        let line = new Line2();
+        let matLine = new LineMaterial({color: 0xff0000, linewidth: 0.0025});
+        let geo = new LineGeometry();
+        geo.setPositions([atoms[i].x, atoms[i].y, atoms[i].z, atoms[minIndex].x, atoms[minIndex].y, atoms[minIndex].z]);
+        line.geometry = geo;
+        line.material = matLine;
+        molGroup.add(line);
+      }
+
+
+
+      //scale and position the molecule
+      molGroup.scale.set(10, 10, 10);
+      molGroup.position.set(0, 0, 0);
+
 
       this.scene.add(molGroup);
     }.bind(this));
-
 
 
     // Display all edges
