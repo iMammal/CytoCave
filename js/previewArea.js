@@ -207,7 +207,6 @@ class PreviewArea {
 
     // protein 3d structure model
     const ploader = new PDBLoader();
-    //https://files.rcsb.org/view/1mbs.pdb
     ploader.load('https://files.rcsb.org/view/7YQC.pdb', function (pdb) {
       const geometryAtoms = pdb.geometryAtoms;
       const geometryBonds = pdb.geometryBonds;
@@ -282,12 +281,39 @@ class PreviewArea {
         line.material = matLine;
         molGroup.add(line);
       }
-
+      // for every node that only has one connection connect it to the second closest node
+      for (let i = 0; i < atoms.length; i++) {
+        let minDist = 1000000;
+        let minIndex = -1;
+        let secondMinDist = 1000000;
+        let secondMinIndex = -1;
+        for (let j = 0; j < atoms.length; j++) {
+          if (i === j) {
+            continue;
+          }
+          let dist = atoms[i].distanceTo(atoms[j]);
+          if (dist < minDist) {
+            secondMinDist = minDist;
+            secondMinIndex = minIndex;
+            minDist = dist;
+            minIndex = j;
+          }
+        }
+        if (secondMinIndex !== -1) {
+          let line = new Line2();
+          let matLine = new LineMaterial({color: 0x00ff00, linewidth: 0.0025});
+          let geo = new LineGeometry();
+          geo.setPositions([atoms[i].x, atoms[i].y, atoms[i].z, atoms[secondMinIndex].x, atoms[secondMinIndex].y, atoms[secondMinIndex].z]);
+          line.geometry = geo;
+          line.material = matLine;
+          molGroup.add(line);
+        }
+      }
 
 
       //scale and position the molecule
       molGroup.scale.set(10, 10, 10);
-      molGroup.position.set(0, 0, 0);
+      molGroup.position.set(-1000-181, -1500+313, -932- 400);
 
 
       this.scene.add(molGroup);
