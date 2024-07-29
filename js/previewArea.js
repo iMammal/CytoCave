@@ -86,7 +86,8 @@ import LineGraphs from './LineGraphs.js';
 import NodeLabels from "./nodeLabels";
 import nodeLabels from "./nodeLabels";
 import axios from "axios";
-import {PDBLoader} from "three/addons/loaders/PDBLoader";
+// import {PDBLoader} from "three/addons/loaders/PDBLoader";
+import {SuperPDBLoader} from "./SuperPDBLoader";
 
 class PreviewArea {
   constructor(canvas_, model_, name_) {
@@ -205,119 +206,166 @@ class PreviewArea {
     //let container = document.getElementById('linePlots');
     this.linegraphs = new LineGraphs(this,'linePlots'); //preViewArea_);
 
+
     // protein 3d structure model
-    const ploader = new PDBLoader();
+    // const ploader = new SuperPDBLoader();
+    // ploader.load('https://files.rcsb.org/view/7YQC.pdb', function (pdb) {
+    //   const geometryAtoms = pdb.geometryAtoms;
+    //   const geometryBonds = pdb.geometryBonds;
+    //
+    //   const seqres = pdb.seqres;
+    //
+    //   const json = pdb.json;
+    //   const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+    //   const sphereGeo = new THREE.IcosahedronGeometry(1, 3);
+    //   let apositions = geometryAtoms.getAttribute('position');
+    //   let acolors = geometryAtoms.getAttribute('color');
+    //   const apos = new THREE.Vector3();
+    //   const acol = new THREE.Color();
+    //
+    //   let molGroup = new THREE.Group();
+    //   for (let i = 0; i < apositions.count; i++) {
+    //     apos.fromBufferAttribute(apositions, i);
+    //     acol.fromBufferAttribute(acolors, i);
+    //     let material = new THREE.MeshStandardMaterial({color: acol});
+    //     let mesh = new THREE.Mesh(sphereGeo, material);
+    //     mesh.position.copy(apos);
+    //     mesh.scale.set(0.1, 0.1, 0.1);
+    //     molGroup.add(mesh);
+    //   }
+    //
+    //   //for each atom in json.atoms connect the bonds, change color of bonds based on atom type
+    //   //connect atoms with bonds
+    //   let bpositions = geometryBonds.getAttribute('position');
+    //   let start = new THREE.Vector3();
+    //   let end = new THREE.Vector3();
+    //
+    //   for (let i = 0; i < bpositions.count; i += 2) {
+    //     start.fromBufferAttribute(bpositions, i);
+    //     end.fromBufferAttribute(bpositions, i + 1);
+    //     let line = new Line2();
+    //     let matLine = new LineMaterial({color: 0xffffff, linewidth: 0.0025});
+    //     let geo = new LineGeometry();
+    //     geo.setPositions([start.x, start.y, start.z, end.x, end.y, end.z]);
+    //     line.geometry = geo;
+    //     line.material = matLine;
+    //     molGroup.add(line);
+    //   }
+    //
+    //
+    //   // for every node that only has one connection connect it to the second closest node
+    //   for (let i = 0; i < atoms.length; i++) {
+    //     let minDist = 1000000;
+    //     let minIndex = -1;
+    //     let secondMinDist = 1000000;
+    //     let secondMinIndex = -1;
+    //     for (let j = 0; j < atoms.length; j++) {
+    //       if (i === j) {
+    //         continue;
+    //       }
+    //       let dist = atoms[i].distanceTo(atoms[j]);
+    //       if (dist < minDist) {
+    //         secondMinDist = minDist;
+    //         secondMinIndex = minIndex;
+    //         minDist = dist;
+    //         minIndex = j;
+    //       }
+    //     }
+    //     if (secondMinIndex !== -1) {
+    //       let line = new Line2();
+    //       let matLine = new LineMaterial({color: 0x00ff00, linewidth: 0.0025});
+    //       let geo = new LineGeometry();
+    //       geo.setPositions([atoms[i].x, atoms[i].y, atoms[i].z, atoms[secondMinIndex].x, atoms[secondMinIndex].y, atoms[secondMinIndex].z]);
+    //       line.geometry = geo;
+    //       line.material = matLine;
+    //       molGroup.add(line);
+    //     }
+    //   }
+    //
+    //
+    //   //scale and position the molecule
+    //   molGroup.scale.set(10, 10, 10);
+    //   molGroup.position.set(-1000-181, -1500+313, -932- 400);
+    //
+    //
+    //   this.scene.add(molGroup);
+    // }.bind(this));
+
+    const ploader = new SuperPDBLoader();
     ploader.load('https://files.rcsb.org/view/7YQC.pdb', function (pdb) {
-      const geometryAtoms = pdb.geometryAtoms;
-      const geometryBonds = pdb.geometryBonds;
+      const chainColors = {
+        A: 0xff0000,
+        B: 0x00ff00,
+        C: 0x0000ff,
+        // Add more colors for other chains if necessary
+      };
 
-      const seqres = pdb.seqres;
-
-      const json = pdb.json;
-      const boxGeo = new THREE.BoxGeometry(1, 1, 1);
       const sphereGeo = new THREE.IcosahedronGeometry(1, 3);
-      let apositions = geometryAtoms.getAttribute('position');
-      let acolors = geometryAtoms.getAttribute('color');
-      const apos = new THREE.Vector3();
-      const acol = new THREE.Color();
-
       let molGroup = new THREE.Group();
-      for (let i = 0; i < apositions.count; i++) {
-        apos.fromBufferAttribute(apositions, i);
-        acol.fromBufferAttribute(acolors, i);
-        let material = new THREE.MeshStandardMaterial({color: acol});
-        let mesh = new THREE.Mesh(sphereGeo, material);
-        mesh.position.copy(apos);
-        mesh.scale.set(0.1, 0.1, 0.1);
-        molGroup.add(mesh);
 
+      Object.keys(pdb).forEach(chainId => {
+        const chainData = pdb[chainId];
+        const color = chainColors[chainId] || 0xffffff;  // Default to white if color not specified
 
-      }
-      //for each atom in json.atoms connect the bonds, change color of bonds based on atom type
-      //connect atoms with bonds
-      let bpositions = geometryBonds.getAttribute('position');
-      let start = new THREE.Vector3();
-      let end = new THREE.Vector3();
+        // Create atoms
+        chainData.forEach(atom => {
+          const [x, y, z, colorArray, element] = atom;
+          let material = new THREE.MeshStandardMaterial({ color: new THREE.Color(color) });
+          let mesh = new THREE.Mesh(sphereGeo, material);
+          mesh.position.set(x, y, z);
+          mesh.scale.set(0.1, 0.1, 0.1);
+          molGroup.add(mesh);
+        });
 
-      for (let i = 0; i < bpositions.count; i += 2) {
-        start.fromBufferAttribute(bpositions, i);
-        end.fromBufferAttribute(bpositions, i + 1);
-        let line = new Line2();
-        let matLine = new LineMaterial({color: 0xffffff, linewidth: 0.0025});
-        let geo = new LineGeometry();
-        geo.setPositions([start.x, start.y, start.z, end.x, end.y, end.z]);
-        line.geometry = geo;
-        line.material = matLine;
-        molGroup.add(line);
-      }
+        // Create bonds between nearest and second nearest neighbors
+        for (let i = 0; i < chainData.length; i++) {
+          let minDist = Infinity;
+          let minIndex = -1;
+          let secondMinDist = Infinity;
+          let secondMinIndex = -1;
 
-      //create lines from every atom to it's nearest neighbor
-      let geoAtoms = geometryAtoms.getAttribute('position');
-      let atoms = [];
-      for (let i = 0; i < geoAtoms.count; i++) {
-        let pos = new THREE.Vector3();
-        pos.fromBufferAttribute(geoAtoms, i);
-        atoms.push(pos);
-      }
-      let lines = [];
-      for (let i = 0; i < atoms.length; i++) {
-        let minDist = 1000000;
-        let minIndex = -1;
-        for (let j = 0; j < atoms.length; j++) {
-          if (i === j) {
-            continue;
+          for (let j = 0; j < chainData.length; j++) {
+            if (i === j) continue;
+            const dist = new THREE.Vector3(chainData[i][0], chainData[i][1], chainData[i][2])
+                .distanceTo(new THREE.Vector3(chainData[j][0], chainData[j][1], chainData[j][2]));
+
+            if (dist < minDist) {
+              secondMinDist = minDist;
+              secondMinIndex = minIndex;
+              minDist = dist;
+              minIndex = j;
+            } else if (dist < secondMinDist) {
+              secondMinDist = dist;
+              secondMinIndex = j;
+            }
           }
-          let dist = atoms[i].distanceTo(atoms[j]);
-          if (dist < minDist) {
-            minDist = dist;
-            minIndex = j;
+
+          if (minIndex !== -1) {
+            createBond(molGroup, chainData[i], chainData[minIndex], 0x00ff00);
+          }
+
+          if (secondMinIndex !== -1) {
+            createBond(molGroup, chainData[i], chainData[secondMinIndex], 0x00ff00);
           }
         }
-        let line = new Line2();
-        let matLine = new LineMaterial({color: 0xff0000, linewidth: 0.0025});
-        let geo = new LineGeometry();
-        geo.setPositions([atoms[i].x, atoms[i].y, atoms[i].z, atoms[minIndex].x, atoms[minIndex].y, atoms[minIndex].z]);
-        line.geometry = geo;
-        line.material = matLine;
-        molGroup.add(line);
-      }
-      // for every node that only has one connection connect it to the second closest node
-      for (let i = 0; i < atoms.length; i++) {
-        let minDist = 1000000;
-        let minIndex = -1;
-        let secondMinDist = 1000000;
-        let secondMinIndex = -1;
-        for (let j = 0; j < atoms.length; j++) {
-          if (i === j) {
-            continue;
-          }
-          let dist = atoms[i].distanceTo(atoms[j]);
-          if (dist < minDist) {
-            secondMinDist = minDist;
-            secondMinIndex = minIndex;
-            minDist = dist;
-            minIndex = j;
-          }
-        }
-        if (secondMinIndex !== -1) {
-          let line = new Line2();
-          let matLine = new LineMaterial({color: 0x00ff00, linewidth: 0.0025});
-          let geo = new LineGeometry();
-          geo.setPositions([atoms[i].x, atoms[i].y, atoms[i].z, atoms[secondMinIndex].x, atoms[secondMinIndex].y, atoms[secondMinIndex].z]);
-          line.geometry = geo;
-          line.material = matLine;
-          molGroup.add(line);
-        }
-      }
+      });
 
-
-      //scale and position the molecule
       molGroup.scale.set(10, 10, 10);
       molGroup.position.set(-1000-181, -1500+313, -932- 400);
-
-
       this.scene.add(molGroup);
     }.bind(this));
+
+    function createBond(group, atom1, atom2, color) {
+      const start = new THREE.Vector3(atom1[0], atom1[1], atom1[2]);
+      const end = new THREE.Vector3(atom2[0], atom2[1], atom2[2]);
+      const line = new Line2();
+      const matLine = new LineMaterial({ color: color, linewidth: 0.0025 });
+      const geo = new LineGeometry();
+      geo.setPositions([start.x, start.y, start.z, end.x, end.y, end.z]);
+      line.geometry = geo;
+      line.material = matLine;
+      group.add(line);
+    }
 
 
     // Display all edges
