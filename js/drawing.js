@@ -337,6 +337,16 @@ function onLeftClick(previewArea, event) {
 
             //put the selected node coordinates in a variable
             let selectedNodeCoords = objectIntersected.point;
+            let positions = [];
+            positions[0] = previewArea.NodeManager.index2node(neighborIdx[0]).point;
+            positions[1] = previewArea.NodeManager.index2node(neighborIdx[1]).point;
+            positions[2] = selectedNodeCoords;
+
+            // offset selectedNodeCoords by half of vector from neighbor to selected node to avoid overlap
+            let offset = positions[0].sub(positions[1]).sub(positions[2]).multiplyScalar(0.5); //new THREE.Vector3().subVectors(positions[2], positions[0]).multiplyScalar(0.5);
+
+            // add offset to selectedNodeCoords
+            selectedNodeCoords.sub(offset);
 
             previewArea.loadTrimerStructure(trimerNames, selectedNodeCoords);
 
