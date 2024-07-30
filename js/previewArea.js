@@ -88,6 +88,7 @@ import nodeLabels from "./nodeLabels";
 import axios from "axios";
 // import {PDBLoader} from "three/addons/loaders/PDBLoader";
 import {SuperPDBLoader} from "./SuperPDBLoader";
+import {proteinStructure} from "./proteinStructure";
 
 class PreviewArea {
   constructor(canvas_, model_, name_) {
