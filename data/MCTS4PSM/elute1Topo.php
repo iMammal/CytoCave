@@ -98,7 +98,7 @@ foreach ($results as $row) {
         echo $row['label'] .   "," . $row['Flat_X']. "," . $row['Flat_Y']. "," . $row['Flat_Z']. ", ". $row['Square_X'].", ". $row['Square_Y'].", ". $row['Square_Z'] . "," . $row['complexIdClustering'] . ",1,\n";
 
     } else {
-        echo $row['label'] .   "," . $row['Flat_X']. "," . $row['Flat_Y']. "," . $row['Flat_Z']. ", ". $row['Square_X'].", ". $row['Square_Y'].", ". $row['Square_Z']. "," . $row['complexIdClustering'] . ",1,,proteinCFMSelute.php?rep=1&prot=".$metadata[$row['label']]['uniprotAcc'] ."\n";
+        echo $row['label'] .   "," . $row['Flat_X']. "," . $row['Flat_Y']. "," . $row['Flat_Z']. ", ". $row['Square_X'].", ". $row['Square_Y'].", ". $row['Square_Z']. "," . $row['complexIdClustering'] . ",1,proteinCFMSelute.php?rep=1&prot=".$metadata[$row['label']]['uniprotAcc'] ."\n";
     }
 }
 ?>
