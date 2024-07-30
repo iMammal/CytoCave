@@ -33,7 +33,7 @@ var hoverMode = 0;
 var floatingLabel = false;
 
 import * as THREE from 'three'
-import {isLoaded, dataFiles, mobile,experimental,mcts,complexes} from "./globals";
+import {isLoaded, dataFiles, mobile, experimental, mcts, complexes, mctsflat} from "./globals";
 import {
     addEdgeBundlingCheck,
     addModalityButton,
@@ -319,6 +319,30 @@ function onLeftClick(previewArea, event) {
   //console.log("objectIntersected: ", objectIntersected);
     if(objectIntersected.object.name.type === 'region')
         previewArea.NodeManager.toggleSelectNode(objectIntersected);
+
+    if(mcts && mctsflat) {
+        let nodeIdx = previewArea.NodeManager.node2index(objectIntersected);
+        let dataset = previewArea.model.getDataset();
+        let neighborIdx = [];
+        let trimerNames = [];
+        let edges = previewArea.NodeManager.getEdges(objectIntersected, 0,0, 0, 1);
+        if (edges.length == 2) {
+            //previewArea.NodeManager.toggleSelectNodeByIndex(dataset[nodeIdx].originIndex);
+            neighborIdx[0] = edges[0].targetNodeIndex;
+            neighborIdx[1] = edges[1].targetNodeIndex;
+
+            trimerNames[0] = dataset[neighborIdx[0]].name;
+            trimerNames[1] = dataset[neighborIdx[1]].name;
+            trimerNames[2] = dataset[nodeIdx].name;
+
+            //put the selected node coordinates in a variable
+            let selectedNodeCoords = objectIntersected.point;
+
+            previewArea.loadTrimerStructure(trimerNames, selectedNodeCoords);
+
+                // previewArea.model.loadNodeDetails(neighborI);
+        }
+    }
 
     if (complexes){ // if complexes selection mode enabled, display lineplots for whole complex
         let neighborI = previewArea.NodeManager.node2index(objectIntersected); //edge.targetNodeIndex;
