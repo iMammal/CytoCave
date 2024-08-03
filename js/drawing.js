@@ -179,6 +179,29 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     } , 1000);
   }
 
+
+  if (mcts && mctsflat && previewAreaRight.NodeManager.isSelected(intersectedObject)) {
+
+      let dataset = previewAreaLeft.model.getDataset();
+      if (dataset[nodeIdx].originIndex !== undefined) {
+          previewAreaLeft.NodeManager.highlightNodeByIndex(dataset[nodeIdx].originIndex);
+          // previewAreaRight.NodeManager.highlightNodeByIndex(nodeIdx);
+      } //else {
+      previewAreaLeft.NodeManager.highlightNodeByIndex(nodeIdx);
+      previewAreaRight.NodeManager.highlightNodeByIndex(nodeIdx);
+      // }
+
+
+      setTimeout(() => {
+          //remove the highlight after 1 second
+          //don't remove the highlight if the node is selected.
+          if (!previewAreaLeft.NodeManager.indexIsSelected(nodeIdx) && !previewAreaRight.NodeManager.indexIsSelected(nodeIdx)) {
+              previewAreaLeft.NodeManager.removeHighlightByIndex(nodeIdx);
+              previewAreaRight.NodeManager.removeHighlightByIndex(nodeIdx);
+          }
+      }, 1000);
+  }
+
     //nodeIdx = intersectedObject.object.getDatasetIndex(intersectedObject.instanceId);
     // if (intersectedObject) {
     //     nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
