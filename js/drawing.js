@@ -84,7 +84,46 @@ function onDocumentMouseMove(model, event) {
     // (such as the mouse's TrackballControls)
     // do we want that?
    // event.preventDefault();
-   let intersectedObject = getIntersectedObject(event);
+   let intersectedObject = getIntersectedObject(event,"region");
+   let protientypeObject = getIntersectedObject(event,"atom");
+   if(protientypeObject) {
+        // console.log("protientypeObject: ");
+        // console.log(protientypeObject);
+        let protien = protientypeObject.object;
+        let aIndex = protien.userData.originIndex;
+        let children = protien.parent.children;
+        children.forEach(function(child) {
+            if(child.userData.originIndex === aIndex) {
+                // console.log("child: ");
+                // console.log(child);
+                //calculate center point of all children
+                let center = new THREE.Vector3();
+                let count = 0;
+                children.forEach(function(child) {
+                    center.add(child.position);
+                    count++;
+                });
+                center.divideScalar(count);
+                // console.log("center: ");
+                // console.log(center);
+                //calculate distance from center to farthest child
+                let maxDistance = 0;
+                children.forEach(function(child) {
+                    let distance = center.distanceTo(child.position);
+                    if(distance > maxDistance) {
+                        maxDistance = distance;
+                    }
+                });
+                // console.log("maxDistance: ");
+                // console.log(maxDistance);
+                // console.log("center: ");
+                // console.log(center);
+
+
+            }
+        });
+   }
+
    //  console.log("intersectedObject: ");
    //  console.log(intersectedObject);
     let isLeft = event.clientX < window.innerWidth/2;
@@ -296,7 +335,7 @@ function onMiddleClick(event) {
   if(isLeft && previewAreaLeft.name !== 'Left') {
       throw new Error("left click processed on right preview area");
   }
-    var intersectedObject = getIntersectedObject(event);
+    var intersectedObject = getIntersectedObject(event,"region");
     if (intersectedObject) {
         let nodeIndex = isLeft ? previewAreaLeft.NodeManager.node2index(intersectedObject) : previewAreaRight.NodeManager.node2index(intersectedObject);
         if (nodeIndex == undefined || nodeIndex < 0)
@@ -332,7 +371,7 @@ function onLeftClick(previewArea, event) {
         return;
     }
     //event.preventDefault();
-    let objectIntersected = getIntersectedObject(event);
+    let objectIntersected = getIntersectedObject(event,"region");
     if(!objectIntersected) {
         return;
     }
@@ -383,7 +422,7 @@ function onLeftClick(previewArea, event) {
             trimerNamesToColors.push({name: trimerNames[1], color: nbrs[1].object.material.color});
             trimerNamesToColors.push({name: trimerNames[2], color: objectIntersected.object.material.color});
 
-            previewArea.loadTrimerStructure(trimerNames, selectedNodeCoords, trimerNamesToColors);
+            previewArea.loadTrimerStructure(trimerNames, selectedNodeCoords, trimerNamesToColors,[previewArea.NodeManager.node2index(nbrs[0]), previewArea.NodeManager.node2index(nbrs[1]), nodeIdx]);
 
                 // previewArea.model.loadNodeDetails(neighborI);
         }
@@ -938,7 +977,7 @@ var mapCoordinates = function (event, isLeft) {
 // get intersected object beneath the mouse pointer
 // detects which scene: left or right
 // return undefined if no object was found
-let getIntersectedObject = (event) => {
+let getIntersectedObject = (event,filter) => {
 
     var isLeft = event.clientX < window.innerWidth / 2;
     var vector = mapCoordinates(event, isLeft);
@@ -947,7 +986,7 @@ let getIntersectedObject = (event) => {
     // console.log("clientX: ", event.clientX);
     // console.log("clientY: ", event.clientY);
     // console.log("Vector: ", vector);
-    let iObject = isLeft ? previewAreaLeft.getIntersectedObject(vector) : previewAreaRight.getIntersectedObject(vector);
+    let iObject = isLeft ? previewAreaLeft.getIntersectedObject(vector,filter) : previewAreaRight.getIntersectedObject(vector,filter);
 
     return iObject;
 };

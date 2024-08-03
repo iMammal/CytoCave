@@ -7,7 +7,7 @@ import {LineGeometry} from "three/addons/lines/LineGeometry";
 
 class proteinStructure {
 
-    constructor(pdbUrl, _previewArea, _x, _y, _z, _colors) {
+    constructor(pdbUrl, _previewArea, _x, _y, _z, _colors, _originIndexes=0) {
         this.previewArea = _previewArea;
         this.renderStyle = '';
         this.url = pdbUrl;
@@ -19,7 +19,9 @@ class proteinStructure {
         this.posy = _y;
         this.posz = _z;
         this.chainColors = { A: _colors[0], B: _colors[1], C: _colors[2] };
-
+        this.originIndexes = _originIndexes;
+        console.log("Origin Indexes:");
+        console.log(this.originIndexes);
     } // End of Constructor
 
     loadpdb(pdbUrl) {
@@ -27,36 +29,79 @@ class proteinStructure {
         this.ploader.load(pdbUrl,this.pdbLoadCallback.bind(this));
     }
 
+
     pdbLoadCallback(pdb) {
-        const chainColorsDefault = {
-            A: 0xff0000,
-            B: 0x00ff00,
-            C: 0x0000ff,
-            D: 0xffff00,
-            E: 0xff00ff,
-            F: 0x00ffff,
-            G: 0xffffff
-            // Add more colors for other chains if necessary
-        };
+        // const chainColorsDefault = {
+        //     A: 0xff0000,
+        //     B: 0x00ff00,
+        //     C: 0x0000ff,
+        //     D: 0xffff00,
+        //     E: 0xff00ff,
+        //     F: 0x00ffff,
+        //     G: 0xffffff
+        //     // Add more colors for other chains if necessary
+        // };
 
         const sphereGeo = new THREE.IcosahedronGeometry(1, 3);
         this.molGroup = new THREE.Group();
+        this.molGroup.name = "molGroup";
 
+        let count = 0;
+        console.log("Origin Indexes:");
+        console.log(this.originIndexes);
         Object.keys(pdb).forEach(chainId => {
             const chainData = pdb[chainId];
             const color = this.chainColors[chainId] || 0xffffff;  // Default to white if color not specified
+          let oIndex = 0;
+          switch (chainId) {
+            case 'A':
+              oIndex = 0
+              break;
+            case 'B':
+              oIndex = 1
+              break;
+            case 'C':
+              oIndex = 2
+              break;
+            default:
+              oIndex = 0
+              break;
+            }
+
+            //create custom material with ghostly highlights
+
+
+
 
             // Create atoms
             chainData.forEach(atom => {
                 const [x, y, z, colorArray, element] = atom;
-                let material = new THREE.MeshStandardMaterial({color: new THREE.Color(color)});
-                let mesh = new THREE.Mesh(sphereGeo, material);
+
+            //    let material = new THREE.MeshStandardMaterial({color: new THREE.Color(color)});
+              var material = new THREE.MeshPhongMaterial({
+                color: new THREE.Color(color),
+                emissive: 0x072534,
+                side: THREE.DoubleSide,
+                flatShading: true
+              });
+
+              let mesh = new THREE.Mesh(sphereGeo, material);
                 mesh.position.set(x, y, z);
                 if (this.renderStyle === 'ballAndStick') {
                     mesh.scale.set(0.1, 0.1, 0.1);
                 } else {
                     mesh.scale.set(0.81, 0.81, 0.81);
                 }
+
+                mesh.name= {
+                  name: element,
+                  type: "atom",
+                }
+
+                mesh.userData = {
+                  originIndex: this.originIndexes[oIndex],
+                }
+
                 this.molGroup.add(mesh);
             });
 
@@ -97,6 +142,7 @@ class proteinStructure {
 
         this.molGroup.scale.set(1.10, 1.10, 1.10);
         this.molGroup.position.set(this.posx, this.posy, this.posz); //-1000 - 181, -1500 + 313, -932 - 400);
+
         this.previewArea.scene.add(this.molGroup);
     }
 

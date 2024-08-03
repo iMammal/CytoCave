@@ -223,7 +223,7 @@ class PreviewArea {
   } // End Constructor
 
 
-  loadTrimerStructure(chainNamesArray,position,colors) {
+  loadTrimerStructure(chainNamesArray,position,colors,originIndexes) {
     //for each name in chainNamesArray split on underscore to get letter to the right of it into lettersArray
     //for each letter in lettersArray
 
@@ -272,7 +272,7 @@ class PreviewArea {
 
     let pdbUrl = "http://localhost/AF/" + folderName + "/unrelaxed_model_1_rw.pdb";
 
-    let ps = new proteinStructure(pdbUrl,this,position.x,position.y,position.z, colorsArray);
+    let ps = new proteinStructure(pdbUrl,this,position.x,position.y,position.z, colorsArray, originIndexes);
     // ps.setPosition(position.x,position.y,position.z);
 
     this.pdbProteinArray.push( ps );
@@ -2675,6 +2675,16 @@ class PreviewArea {
   //todo: add fps slider
   // calls the animation updates.
   animatePV(time,frame) {
+    //frame limit to 60fps
+    //console.log("animatePV");
+    this.lastTime = this.lastTime || 0;
+    if(time < this.lastTime+1000/60) {
+
+      return;
+    }
+
+    this.lastTime = time;
+
 
     if(this.NodeManager.needsReset) {
       this.resetActions();
@@ -4322,20 +4332,36 @@ class PreviewArea {
   // detects which scene: left or right
   // return undefined if no object was found
 
-  getIntersectedObject = (vector) => {
+  getIntersectedObject = (vector,filter) => {
 
     let raycaster = new THREE.Raycaster();
 
     raycaster.setFromCamera(vector, this.camera);
 
-    let nodes = this.scene.children.filter(o => o.name === 'NodeManager');
+
+      let nodes = this.scene.children.filter(o => o.name === 'NodeManager')
+
+      let protein = this.scene.children.filter(o => o.name === 'molGroup')
+
     let objectsIntersected = [];
-    if (nodes.length > 0) {
+    if (nodes.length > 0 && filter==='region') {
+      //console.log('filtering for: ' + filter);
       for(let i = 0; i < nodes.length; i++) {
         let intersects = raycaster.intersectObjects(nodes[i].children);
         objectsIntersected = objectsIntersected.concat(intersects);
       }
-      return (objectsIntersected.find(o => o.object.name.type === 'region'));
+      return (objectsIntersected.find(o => o.object.name.type === filter));
+    } else if(protein.length > 0 && filter==='atom') {
+      //console.log('filtering for: ' + filter);
+      for(let i = 0; i < protein.length; i++) {
+        let intersects = raycaster.intersectObjects(protein[i].children);
+        objectsIntersected = objectsIntersected.concat(intersects);
+      }
+      objectsIntersected.forEach(o => console.log(o.object.name));
+      return (objectsIntersected.find(o => o.object.name.type === filter ));
+      // let intersects = raycaster.intersectObjects(protein[0].children);
+      // return intersects.find(o => o.object.name.type === filter);
+
     } else {
       return null;
     }
