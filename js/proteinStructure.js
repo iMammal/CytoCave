@@ -7,7 +7,7 @@ import {LineGeometry} from "three/addons/lines/LineGeometry";
 
 class proteinStructure {
 
-    constructor(pdbUrl, _previewArea, _x, _y, _z) {
+    constructor(pdbUrl, _previewArea, _x, _y, _z, _colors) {
         this.previewArea = _previewArea;
         this.renderStyle = '';
         this.url = pdbUrl;
@@ -18,6 +18,7 @@ class proteinStructure {
         this.posx = _x;
         this.posy = _y;
         this.posz = _z;
+        this.chainColors = { A: _colors[0], B: _colors[1], C: _colors[2] };
 
     } // End of Constructor
 
@@ -27,7 +28,7 @@ class proteinStructure {
     }
 
     pdbLoadCallback(pdb) {
-        const chainColors = {
+        const chainColorsDefault = {
             A: 0xff0000,
             B: 0x00ff00,
             C: 0x0000ff,
@@ -43,7 +44,7 @@ class proteinStructure {
 
         Object.keys(pdb).forEach(chainId => {
             const chainData = pdb[chainId];
-            const color = chainColors[chainId] || 0xffffff;  // Default to white if color not specified
+            const color = this.chainColors[chainId] || 0xffffff;  // Default to white if color not specified
 
             // Create atoms
             chainData.forEach(atom => {

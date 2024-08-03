@@ -335,12 +335,18 @@ function onLeftClick(previewArea, event) {
             trimerNames[1] = dataset[neighborIdx[1]].name;
             trimerNames[2] = dataset[nodeIdx].name;
 
+            let nbrs = [];
+            nbrs.push(previewArea.NodeManager.index2node(neighborIdx[0]));
+            nbrs.push(previewArea.NodeManager.index2node(neighborIdx[1]));
+
             //put the selected node coordinates in a variable
             let selectedNodeCoords = objectIntersected.point;
             let positions = [];
-            positions[0] = previewArea.NodeManager.index2node(neighborIdx[0]).point;
-            positions[1] = previewArea.NodeManager.index2node(neighborIdx[1]).point;
+            positions[0] = nbrs[0].point;
+            positions[1] = nbrs[1].point;
             positions[2] = selectedNodeCoords;
+
+
 
             // offset selectedNodeCoords by half of vector from neighbor to selected node to avoid overlap
             let offset = positions[0].sub(positions[1]).sub(positions[2]).multiplyScalar(0.5); //new THREE.Vector3().subVectors(positions[2], positions[0]).multiplyScalar(0.5);
@@ -348,7 +354,13 @@ function onLeftClick(previewArea, event) {
             // add offset to selectedNodeCoords
             selectedNodeCoords.sub(offset);
 
-            previewArea.loadTrimerStructure(trimerNames, selectedNodeCoords);
+            let trimerNamesToColors = []
+
+            trimerNamesToColors.push({name: trimerNames[0], color: nbrs[0].object.material.color});
+            trimerNamesToColors.push({name: trimerNames[1], color: nbrs[1].object.material.color});
+            trimerNamesToColors.push({name: trimerNames[2], color: objectIntersected.object.material.color});
+
+            previewArea.loadTrimerStructure(trimerNames, selectedNodeCoords, trimerNamesToColors);
 
                 // previewArea.model.loadNodeDetails(neighborI);
         }
