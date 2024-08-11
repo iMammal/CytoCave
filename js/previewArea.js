@@ -371,6 +371,11 @@ class PreviewArea {
 
   }
 
+  setCommand(command, value) {
+    this.NodeManager.setCommand(command, value);
+
+  }
+
     // this is a callback function that is called BEFORE a node is selected
 
     // preSelectNodeAction = (node) => {
@@ -407,6 +412,7 @@ class PreviewArea {
         axios.get("proteinsearcher4mcts1.php?search=" + complex_names)
             .then((response) => {
               //console.log(response.data);
+
             })
             .catch((error) => {
               console.error('Error:', error.message);
