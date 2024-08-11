@@ -56,6 +56,11 @@ class NodeManager {
     this.addInstancesToScene();
     this.needsReset = false;
 
+    this.command = [];
+    // {
+    //     command: null,
+    //     value: null
+    // }
     this.highLights = [];
 
 
@@ -461,6 +466,32 @@ class NodeManager {
         this.removeHighlightByIndex(this.node2index(node));
       } , 1000);
     }
+  }
+
+  setCommand(command, value) {
+    //set a command for the NodeManager.
+    //this can be used to trigger different behaviors in the NodeManager.
+    //for example, setting a command to "highlight" could trigger the NodeManager to highlight a node.
+    //this is not currently used.
+    let newCommand = {
+      command: command,
+      value: value
+    };
+    this.command.push(newCommand);
+  }
+
+  getCommand() {
+    //get the current command.
+    return this.command.pop();
+  }
+
+  clearCommand() {
+    //clear the command.
+    this.command = [];
+    // {
+    //   command: null,
+    //   value: null
+    // };
   }
 
   highlightNode(node,color = 0xffffff) {

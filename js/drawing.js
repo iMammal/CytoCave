@@ -779,6 +779,35 @@ var initCanvas = function () {
     //previewAreaLeft.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
     //previewAreaRight.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
     window.addEventListener("keypress", onKeyPress, true);
+    // window.addEventListener("mousedown", function (event) {};
+    // window.addEventListener("mouseup", function (event) {};
+    // window.addEventListener("mousemove", function (event) {};
+    // window.addEventListener("dblclick", function (event) {};
+    // window.addEventListener("resize", function (event) {};
+    // window.addEventListener("vrdisplaypresentchange", function (event) {};
+    // window.addEventListener("vrdisplayconnect", function (event) {};
+    // window.addEventListener("vrdisplaydisconnect", function (event) {};
+    // window.addEventListener("vrdisplayactivate", function (event) {};
+    // window.addEventListener("vrdisplaydeactivate", function (event) {};
+    // window.addEventListener("vrdisplayblur", function (event) {};
+    // window.addEventListener("vrdisplayfocus", function (event) {};
+    // window.addEventListener("vrdisplaypointerrestricted", function (event) {};
+    // window.addEventListener("vrdisplaypointerunrestricted", function (event) {};
+    // window.addEventListener("vrdisplaypointerlockchange", function (event) {};
+    // window.addEventListener("vrdisplaypointerlockerror", function (event) {};
+    // window.addEventListener("vrdisplaypresentchange", function (event) {};
+    // window.addEventListener("vrdisplayactivate", function (event) {};
+    // window.addEventListener("vrdisplaydeactivate", function (event) {};
+
+    // window.addEventListener('DOMContentLoaded', () => { });
+
+    setInterval(() => {
+        // Your operation here
+        //console.log("intervalFunction");
+        intervalFunction();
+
+    }, 400);
+
 
     // $(window).resize( (e) => {
     //     //e.preventDefault();
@@ -797,6 +826,86 @@ var initCanvas = function () {
     // previewAreas constructor will kick off the rendering loop.
     // previewAreaLeft.requestAnimate();
     // previewAreaRight.requestAnimate();
+};
+
+// regular interval function handler
+var intervalFunction = function () {
+
+    // dispatch REST API commands
+    console.log("intervalFunction: This operation runs every 400ms or so");
+
+    let prvLeftCommand = previewAreaLeft.getCommand();
+    // let prvRightCommand = previewAreaRight.getCommand();
+    if(prvLeftCommand) {
+        // previewAreaLeft.dispatchCommand();
+        // previewAreaRight.dispatchCommand();
+        // if(previewAreaLeft.getCommand().command === 'highlight') {
+        //     let nodeIndex = previewAreaLeft.getCommand().nodeIndex;
+        //     previewAreaLeft.NodeManager.highlightNodeByIndex(nodeIndex);
+        //     previewAreaRight.NodeManager.highlightNodeByIndex(nodeIndex);
+        //     setTimeout(() => {
+        //         previewAreaLeft.NodeManager.removeHighlightByIndex(nodeIndex);
+        //         previewAreaRight.NodeManager.removeHighlightByIndex(nodeIndex);
+        //     }, 1000);
+
+        // if(previewAreaLeft.getCommand().command === 'select') {
+        //     let nodeIndex = previewAreaLeft.getCommand().nodeIndex;
+        //     previewAreaLeft.NodeManager.selectNodeByIndex(nodeIndex);
+        //     previewAreaRight.NodeManager.selectNodeByIndex(nodeIndex);
+        // }
+
+        // if(previewAreaLeft.getCommand().command === 'deselect') {
+        //     let nodeIndex = previewAreaLeft.getCommand().nodeIndex;
+        //     previewAreaLeft.NodeManager.deselectNodeByIndex(nodeIndex);
+        //     previewAreaRight.NodeManager.deselectNodeByIndex(nodeIndex);
+        // }
+
+        // if(previewAreaLeft.getCommand().command === 'loadTrimer') {
+        //     let trimerNames = previewAreaLeft.getCommand().trimerNames;
+        //     let selectedNodeCoords = previewAreaLeft.getCommand().selectedNodeCoords;
+        //     let trimerNamesToColors = previewAreaLeft.getCommand().trimerNamesToColors;
+        //     let trimerNodeIndices = previewAreaLeft.getCommand().trimerNodeIndices;
+        //     previewAreaLeft.loadTrimerStructure(trimerNames, selectedNodeCoords, trimerNamesToColors, trimerNodeIndices);
+        // }
+
+        if(prvLeftCommand.command === 'loadSubjectAndTopologyRight') {
+            let subjectId = prvLeftCommand.value[0];//'subjectId'];
+            let topology = prvLeftCommand.value[1];//'topology'];
+            // previewAreaRight
+            changeSceneToSubject(subjectId, previewAreaRight.getModel(), previewAreaRight, previewAreaRight.name,topology);
+            // previewAreaLeft.clearCommand();
+        }
+
+        if(prvLeftCommand.command === 'loadSubjectRight') {
+            let subjectId = prvLeftCommand.value; //['subjectId'];
+            // previewAreaRight
+            changeSceneToSubject(subjectId, previewAreaRight.getModel(), previewAreaRight, previewAreaRight.name);
+            // previewAreaLeft.clearCommand();
+        }
+
+        if(prvLeftCommand.command === 'changeTopologyRight') {
+            let topology = prvLeftCommand.value; //['topology'];
+            // previewAreaRight
+            changeActiveGeometry(previewAreaRight.getModel(), previewAreaRight.name, topology,);
+            // previewAreaLeft.clearCommand();
+        }
+
+
+
+    }
+
+    // // update the scene
+    // previewAreaLeft.updateScene();
+    // previewAreaRight.updateScene();
+    // // update the camera
+    // previewAreaLeft.updateCamera();
+    // previewAreaRight.updateCamera();
+    // // update the controls
+    // previewAreaLeft.updateControls();
+    // previewAreaRight.updateControls();
+    // // update the renderer
+    // previewAreaLeft.updateRenderer();
+    // previewAreaRight.updateRenderer();
 };
 
 // set the threshold for both models
@@ -1125,15 +1234,15 @@ var updateShortestPathEdges = function (side) {
 };
 
 // change the subject in a specific scene
-var changeSceneToSubject = function (subjectId, model, previewArea, side) {
+var changeSceneToSubject = function (subjectId, model, previewArea, side, _type = null) {
     var fileNames = dataFiles[subjectId];
     removeGeometryButtons(side);
     var info = model.getCurrentRegionsInformation();
-    var type = model.getActiveTopology();
-    if(side !== "Left") {
+    var type = _type ? _type: model.getActiveTopology();
+    if(!_type && side !== "Left") {
         type = modelRight.getActiveTopology();
     }
-    if(side !== "Right") {
+    if(!_type && side !== "Right") {
         type = modelLeft.getActiveTopology();
     }
     let tempNodesSelected = getNodesSelected();

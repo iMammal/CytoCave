@@ -373,7 +373,16 @@ class PreviewArea {
 
   setCommand(command, value) {
     this.NodeManager.setCommand(command, value);
+  }
 
+    // setNodeMgrCommandAll(command, value) {};
+
+  getCommand() {
+    return this.NodeManager.getCommand();
+  }
+
+  clearCommand() {
+    this.NodeManager.clearCommand();
   }
 
     // this is a callback function that is called BEFORE a node is selected
@@ -412,6 +421,13 @@ class PreviewArea {
         axios.get("proteinsearcher4mcts1.php?search=" + complex_names)
             .then((response) => {
               //console.log(response.data);
+
+              // push commands to queue in reverse order so they pop off in correct order
+
+              // this.setCommand('changeTopologyRight', 'Straight');
+              // this.setCommand('loadSubjectRight', 4);
+                this.setCommand('loadSubjectAndTopologyRight', [4, 'Straight']);
+
 
             })
             .catch((error) => {
