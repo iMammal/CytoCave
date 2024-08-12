@@ -213,7 +213,7 @@ var addDimensionFactorSliderRight = function (side) {
         .attr("max", "4")
         .attr("step","0.1")
         .on("change", function () {
-            setDimensionFactorRightBox(this.value);   // repurposed for label text
+            setDimensionFactorRightBox(this.value);   // repurposed for label text once but not any more
 
             if (enableRightDimLock) {
                 setDimensionFactorRightSphere(this.value);

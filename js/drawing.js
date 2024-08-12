@@ -890,6 +890,10 @@ var intervalFunction = function () {
             // previewAreaLeft.clearCommand();
         }
 
+        if(prvLeftCommand.command === 'setScaleRightBox') {
+            let scale = prvLeftCommand.value;
+            setDimensionFactorRightBox(scale);
+        }
 
 
     }

@@ -426,7 +426,8 @@ class PreviewArea {
 
               // this.setCommand('changeTopologyRight', 'Straight');
               // this.setCommand('loadSubjectRight', 4);
-                this.setCommand('loadSubjectAndTopologyRight', [4, 'Straight']);
+              this.setCommand('setScaleRightBox', 1.75);
+              this.setCommand('loadSubjectAndTopologyRight', [4, 'Straight']);
 
 
             })
