@@ -20,6 +20,10 @@ class proteinStructure {
         this.posz = _z;
         this.chainColors = { A: _colors[0], B: _colors[1], C: _colors[2] };
         this.originIndexes = _originIndexes;
+        this.boxpoints = [[[-1100.0, -1150.0, -1193.2], [1118.1, 1131.3, 1140.0]],
+            [[-11010.0, -1150.0, -1193.2], [1118.1, 1131.3, 1140.0]],
+            [[-11020.0, -1150.0, -1193.2], [1118.1, 1131.3, 1140.0]]];
+        this.boxGeometry = [null, null, null];
         console.log("Origin Indexes:");
         console.log(this.originIndexes);
     } // End of Constructor
@@ -68,6 +72,8 @@ class proteinStructure {
               break;
             }
 
+
+
             //create custom material with ghostly highlights
 
 
@@ -105,6 +111,17 @@ class proteinStructure {
                 this.molGroup.add(mesh);
             });
 
+
+
+            for (let i = 0; i < chainData.length; i++) {
+                this.boxpoints[oIndex][0][0] = Math.max(this.boxpoints[oIndex][0][0], chainData[i][0]);
+                this.boxpoints[oIndex][0][1] = Math.max(this.boxpoints[oIndex][0][1], chainData[i][1]);
+                this.boxpoints[oIndex][0][2] = Math.max(this.boxpoints[oIndex][0][2], chainData[i][2]);
+                this.boxpoints[oIndex][1][0] = Math.min(this.boxpoints[oIndex][1][0], chainData[i][0]);
+                this.boxpoints[oIndex][1][1] = Math.min(this.boxpoints[oIndex][1][1], chainData[i][1]);
+                this.boxpoints[oIndex][1][2] = Math.min(this.boxpoints[oIndex][1][2], chainData[i][2]);
+            }
+
             // Create bonds between nearest and second nearest neighbors
             if (this.renderStyle === 'ballAndStick') {
                 for (let i = 0; i < chainData.length; i++) {
@@ -139,6 +156,20 @@ class proteinStructure {
                 }
             }
         });
+
+        //Create wireframe Box for each chain
+
+
+
+        // let box = new THREE.Box3().setFromObject(this.molGroup);
+        // let boxHelper = new THREE.Box3Helper(box, 0xffff00);
+        // this.molGroup.add(boxHelper);
+
+        // let boxpoints = new THREE.Box3().setFromObject(this.molGroup).getPoints();
+        this.boxGeometry[0] = new THREE.BufferGeometry().setFromPoints(this.boxpoints[0]);
+        this.boxGeometry[1] = new THREE.BufferGeometry().setFromPoints(this.boxpoints[1]);
+        this.boxGeometry[2] = new THREE.BufferGeometry().setFromPoints(this.boxpoints[2]);
+
 
         this.molGroup.scale.set(1.10, 1.10, 1.10);
         this.molGroup.position.set(this.posx, this.posy, this.posz); //-1000 - 181, -1500 + 313, -932 - 400);

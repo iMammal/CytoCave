@@ -281,6 +281,9 @@ class PreviewArea {
 
 }
 
+  highlightChains(nodeIdx) {
+    console.log('highlightChains: ',nodeIdx);
+  };
 
   reset = () => {
 
@@ -4739,6 +4742,7 @@ class PreviewArea {
 
       this.NodeManager.highlightNodeByIndex(index,color.getHex());
 
+      this.highlightChains(index);
   }
 
   deactivateContextOnNode = (node) => {

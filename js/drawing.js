@@ -175,6 +175,9 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
             //nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
             region = model.getRegionByIndex(nodeIdx);
             nodeRegion = model.getGroupNameByNodeIndex(nodeIdx);
+            if(model.getName() === "right") {
+                previewArea.highlightChains(nodeIdx);
+            }
         }
     } else {
         // you can test for things other than our instances and route accordingly
@@ -197,6 +200,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
        } //else {
         previewAreaLeft.NodeManager.highlightNodeByIndex(nodeIdx);
         previewAreaRight.NodeManager.highlightNodeByIndex(nodeIdx);
+        previewAreaRight.highlightChains(nodeIdx);
       // }
 
 
