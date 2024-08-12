@@ -271,7 +271,7 @@ class PreviewArea {
             //create the atoms and bonds
 
     // let pdbUrl = "http://localhost/AF/" + folderName + "/unrelaxed_model_1_rw.pdb";
-    let pdbUrl = "/AF/" + folderName + "/unrelaxed_model_1_rw.pdb";
+    let pdbUrl = "AF/" + folderName + "/unrelaxed_model_1_rw.pdb";
 
     let ps = new proteinStructure(pdbUrl,this,position.x,position.y,position.z, colorsArray, originIndexes);
     // ps.setPosition(position.x,position.y,position.z);
