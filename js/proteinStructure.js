@@ -3,6 +3,7 @@ import * as THREE from "three";
 import {Line2} from "three/addons/lines/Line2";
 import {LineMaterial} from "three/addons/lines/LineMaterial";
 import {LineGeometry} from "three/addons/lines/LineGeometry";
+// import {getNormalGeometry} from "./graphicsUtils";
 
 
 class proteinStructure {
@@ -15,6 +16,8 @@ class proteinStructure {
         //https://files.rcsb.org/view/7YQC.pdb
         this.loadpdb(pdbUrl);
         this.molGroup = null;
+        // this.highlight = null;
+        this.highLights = [];
         this.posx = _x;
         this.posy = _y;
         this.posz = _z;
@@ -160,21 +163,156 @@ class proteinStructure {
         //Create wireframe Box for each chain
 
 
+        this.molGroup.scale.set(1.10, 1.10, 1.10);
+        this.molGroup.position.set(this.posx, this.posy, this.posz); //-1000 - 181, -1500 + 313, -932 - 400);
+
 
         // let box = new THREE.Box3().setFromObject(this.molGroup);
         // let boxHelper = new THREE.Box3Helper(box, 0xffff00);
         // this.molGroup.add(boxHelper);
 
+        // add this.xpos, this.ypos, this.zpos to this.boxpoints
+        // for(let i = 0; i < 3; i++) {
+        //     for(let j = 0; j < 2; j++) {
+        //         this.boxpoints[i][j][0] = this.boxpoints[i][j][0] + this.molGroup.position.x; //this.posx;
+        //         this.boxpoints[i][j][1] = this.boxpoints[i][j][1] +  this.molGroup.position.y;
+        //         this.boxpoints[i][j][2] = this.boxpoints[i][j][2] +  this.molGroup.position.z;
+        //
+        //     }
+        // }
+
+
+
         // let boxpoints = new THREE.Box3().setFromObject(this.molGroup).getPoints();
-        this.boxGeometry[0] = new THREE.BufferGeometry().setFromPoints(this.boxpoints[0]);
-        this.boxGeometry[1] = new THREE.BufferGeometry().setFromPoints(this.boxpoints[1]);
-        this.boxGeometry[2] = new THREE.BufferGeometry().setFromPoints(this.boxpoints[2]);
+        // this.boxGeometry[0] = new THREE.Box3().setFromPoints(this.boxpoints[0][0], this.boxpoints[0][1]);
+        // this.boxGeometry[1] = new THREE.Box3().setFromPoints(this.boxpoints[1][0], this.boxpoints[1][1]);
+        // this.boxGeometry[2] = new THREE.Box3().setFromPoints(this.boxpoints[2][0], this.boxpoints[2][1]);
+
+        // let min[3] be an array of Vector3 objects with the minimum x, y, and z values of the box
+        // let max[3] be an array of Vector3 objects with the maximum x, y, and z values of the box
+        // let boxGeometry[0] be a Box3 object with min[0] and max[0] as the min and max values
+        // let boxGeometry[1] be a Box3 object with min[1] and max[1] as the min and max values
+        // let boxGeometry[2] be a Box3 object with min[2] and max[2] as the min and max values
+
+        let  min = [new THREE.Vector3(this.boxpoints[0][0][0],this.boxpoints[0][0][1],this.boxpoints[0][0][2]),
+                                new THREE.Vector3(this.boxpoints[1][0][0],this.boxpoints[1][0][1],this.boxpoints[1][0][2]),
+                                new THREE.Vector3(this.boxpoints[2][0][0],this.boxpoints[2][0][1],this.boxpoints[2][0][2])];
+        let  max = [new THREE.Vector3(this.boxpoints[0][1][0],this.boxpoints[0][1][1],this.boxpoints[0][1][2]),
+            new THREE.Vector3(this.boxpoints[1][1][0],this.boxpoints[1][1][1],this.boxpoints[1][1][2]),
+            new THREE.Vector3(this.boxpoints[2][1][0],this.boxpoints[2][1][1],this.boxpoints[2][1][2])];
+        // for(let i = 0; i < 3; i++) {
+        //     min[i] = new THREE.Vector3(Math.min(this.boxpoints[i][0][0], this.boxpoints[i][1][0]), Math.min(this.boxpoints[i][0][1], this.boxpoints[i][1][1]), Math.min(this.boxpoints[i][0][2], this.boxpoints[i][1][2]));
+        //     max[i] = new THREE.Vector3(Math.max(this.boxpoints[i][0][0], this.boxpoints[i][1][0]), Math.max(this.boxpoints[i][0][1], this.boxpoints[i][1][1]), Math.max(this.boxpoints[i][0][2], this.boxpoints[i][1][2]));
+        //     this.boxGeometry[i] = new THREE.Box3(min[i], max[i]);
+        // }
 
 
-        this.molGroup.scale.set(1.10, 1.10, 1.10);
-        this.molGroup.position.set(this.posx, this.posy, this.posz); //-1000 - 181, -1500 + 313, -932 - 400);
+        this.boxGeometry[0] = new THREE.Box3(min[0], max[0]);
+        this.boxGeometry[1] = new THREE.Box3(min[1], max[1]);
+        this.boxGeometry[2] = new THREE.Box3(min[2], max[2]);
+
+
 
         this.previewArea.scene.add(this.molGroup);
+    }
+
+    // highlightAtom(atomIndex, color) {}
+
+    // highlightChain(chainId, color) {
+
+    highlightChainByID(chainId, color) {
+        this.molGroup.children.forEach(atom => {
+            if (atom.name.type === "atom") {
+                if (atom.userData.originIndex === this.originIndexes[chainId]) {
+                    atom.material.color.set(color);
+                }
+            }
+        });
+    }
+
+    removeHighlightByIndex(index) {
+        // remove highlight from this.highLights where highlight.userData.index === index
+        // count matching objects in this.highLights
+        // if count > 1
+        for (let i = 0; i < this.highLights.length; i++) {
+            if (this.highLights[i].userData.index === index) {
+                this.previewArea.remove(this.highLights[i]);
+                //remove from this.highLights list
+                this.highLights.splice(i, 1);
+            }
+        }
+    }
+
+    highlightChainByIndex(index) {
+
+        // let chainId = the index of the value of chainIndex in the originIndexes array
+        let chainId = this.originIndexes.indexOf(index);
+
+        if(chainId < 0) return; //this.drawBoxAroundChain(chainId);
+
+
+
+
+    // drawBoxAroundChain(chainId) {
+        let box = this.boxGeometry[chainId]; //new THREE.Box3().setFromObject(this.molGroup);
+        let boxHelper = new THREE.Box3Helper(box, 0xffff00);
+        // box.position.set(this.molGroup.position.x, this.molGroup.position.y, this.molGroup.position.z);
+        // box.translateY(111.1);
+        // boxHelper.scale.set(11.1, 11.1, 11.1);
+        // this.previewArea.scene.add(box);
+        // this.molGroup.add(box);
+
+        // compute box geometry for min and max points
+        let min = box.min;
+        let max = box.max;
+        let boxGeometry = new THREE.BoxGeometry(max.x - min.x, max.y - min.y, max.z - min.z);
+        let boxMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00, wireframe: true});
+        // let boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
+
+
+        // const baseGeometry = getNormalGeometry('left','Left');//node.object.name.hemisphere,this.previewArea.name);
+        const wireframe = new THREE.WireframeGeometry(
+            boxGeometry
+            // box
+        );
+
+
+
+        // Create a wireframe material with a low opacity.
+        const material = new THREE.LineBasicMaterial({
+            color: 0xffff00,
+            transparent: true,
+            opacity: 0.4,
+            linewidth: 8
+        });
+
+        //figure out the size of the node so we can scale the highlight to match.
+        let matrix = //new THREE.Matrix4();
+                this.molGroup.matrix; //object.getMatrixAt(this.molGroup, matrix);
+        let scale = matrix.getMaxScaleOnAxis();
+
+        let newHighlight = new THREE.LineSegments(wireframe, material);
+        // Create a wireframe mesh and set its position.
+        newHighlight = new THREE.LineSegments(wireframe, material);
+        if (newHighlight === null || newHighlight === undefined) {
+            throw new Error("highLight is null or undefined");
+        }
+        const position = this.getPosition();         //NodePosition(node);
+        newHighlight.position.set(position.x+min.x, position.y+min.y, position.z+min.z);
+        newHighlight.scale.set(scale * 1.02, scale * 1.02, scale * 1.02);
+        newHighlight.visible = true;
+        newHighlight.userData = {
+            type: "highlight",
+        //     group: node.object.name.group,
+        //     hemisphere: node.object.name.hemisphere,
+            index: index
+        }
+        // this.sceneObject.add(newHighlight);
+        this.previewArea.scene.add(newHighlight);
+        // this.molGroup.add(box);
+
+        this.highLights.push(newHighlight);
+
     }
 
     createBond(group, atom1, atom2, color) {

@@ -284,7 +284,35 @@ class PreviewArea {
 
   highlightChains(nodeIdx) {
     console.log('highlightChains: ',nodeIdx);
+
+    // for each ps in this.pdbProteinArray, call highlightChains(nodeIdx)
+    for (let ps of this.pdbProteinArray) {
+      ps.highlightChainByIndex(nodeIdx);
+    }
+
+
+
+    // // get the chain names for the nodeIdx
+    // let chainNamesArray = this.model.getChainNames(nodeIdx);
+    // // get the colors for the chain names
+    // let colors = this.model.getChainColors(nodeIdx);
+    // // get the origin indexes for the nodeIdx
+    //
+    // let originIndexes = this.model.getOriginIndexes(nodeIdx);
+    // // get the position for the nodeIdx
+    // let position = this.model.getPosition(nodeIdx);
+    // // load the trimer structure
+    // this.loadTrimerStructure(chainNamesArray,position,colors,originIndexes);
+    //
+
+
   };
+
+  removeChainHighlightByIndex(nodeIdx) {
+    for (let ps of this.pdbProteinArray) {
+      ps.removeChainHighlightByIndex(nodeIdx);
+    }
+  }
 
   reset = () => {
 

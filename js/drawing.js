@@ -232,6 +232,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
       } //else {
       previewAreaLeft.NodeManager.highlightNodeByIndex(nodeIdx);
       previewAreaRight.NodeManager.highlightNodeByIndex(nodeIdx);
+      previewAreaRight.highlightChains(nodeIdx);
       // }
 
 
@@ -241,6 +242,7 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
           if (!previewAreaLeft.NodeManager.indexIsSelected(nodeIdx) && !previewAreaRight.NodeManager.indexIsSelected(nodeIdx)) {
               previewAreaLeft.NodeManager.removeHighlightByIndex(nodeIdx);
               previewAreaRight.NodeManager.removeHighlightByIndex(nodeIdx);
+              previewAreaRight.removeChainHighlightByIndex(nodeIdx);
           }
       }, 1000);
   }
