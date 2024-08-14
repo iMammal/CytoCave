@@ -236,7 +236,7 @@ class proteinStructure {
         // if count > 1
         for (let i = 0; i < this.highLights.length; i++) {
             if (this.highLights[i].userData.index === index) {
-                this.previewArea.remove(this.highLights[i]);
+                this.previewArea.scene.remove(this.highLights[i]);
                 //remove from this.highLights list
                 this.highLights.splice(i, 1);
             }
@@ -297,7 +297,7 @@ class proteinStructure {
             throw new Error("highLight is null or undefined");
         }
         const position = this.getPosition();         //NodePosition(node);
-        let halfbox = new THREE.Vector3;y
+        let halfbox = new THREE.Vector3;
         halfbox.subVectors(max, min).multiplyScalar(0.5);
         let center = new THREE.Vector3;
         center.addVectors(min, halfbox);

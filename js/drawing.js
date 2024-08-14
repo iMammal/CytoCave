@@ -91,37 +91,58 @@ function onDocumentMouseMove(model, event) {
         // console.log(protientypeObject);
         let protien = protientypeObject.object;
         let aIndex = protien.userData.originIndex;
-        let children = protien.parent.children;
-        children.forEach(function(child) {
-            if(child.userData.originIndex === aIndex) {
-                // console.log("child: ");
-                // console.log(child);
-                //calculate center point of all children
-                let center = new THREE.Vector3();
-                let count = 0;
-                children.forEach(function(child) {
-                    center.add(child.position);
-                    count++;
-                });
-                center.divideScalar(count);
-                // console.log("center: ");
-                // console.log(center);
-                //calculate distance from center to farthest child
-                let maxDistance = 0;
-                children.forEach(function(child) {
-                    let distance = center.distanceTo(child.position);
-                    if(distance > maxDistance) {
-                        maxDistance = distance;
-                    }
-                });
-                // console.log("maxDistance: ");
-                // console.log(maxDistance);
-                // console.log("center: ");
-                // console.log(center);
+        // let children = protien.parent.children;
+
+       previewAreaLeft.NodeManager.highlightNodeByIndex(aIndex);
+       previewAreaRight.NodeManager.highlightNodeByIndex(aIndex);
+       previewAreaRight.highlightChains(aIndex);
+       // }
 
 
-            }
-        });
+       setTimeout(() => {
+           //remove the highlight after 1 second
+           //don't remove the highlight if the node is selected.
+           if (!previewAreaLeft.NodeManager.indexIsSelected(aIndex) && !previewAreaRight.NodeManager.indexIsSelected(aIndex)) {
+               previewAreaLeft.NodeManager.removeHighlightByIndex(aIndex);
+               previewAreaRight.NodeManager.removeHighlightByIndex(aIndex);
+           } else {
+               //console.log("Node is selected, not removing highlight");
+
+
+           }
+           previewAreaRight.removeChainHighlightByIndex(aIndex);
+       } , 1000);
+
+        // children.forEach(function(child) {
+        //     if(child.userData.originIndex === aIndex) {
+        //         // console.log("child: ");
+        //         // console.log(child);
+        //         //calculate center point of all children
+        //         let center = new THREE.Vector3();
+        //         let count = 0;
+        //         children.forEach(function(child) {
+        //             center.add(child.position);
+        //             count++;
+        //         });
+        //         center.divideScalar(count);
+        //         // console.log("center: ");
+        //         // console.log(center);
+        //         //calculate distance from center to farthest child
+        //         let maxDistance = 0;
+        //         children.forEach(function(child) {
+        //             let distance = center.distanceTo(child.position);
+        //             if(distance > maxDistance) {
+        //                 maxDistance = distance;
+        //             }
+        //         });
+        //         // console.log("maxDistance: ");
+        //         // console.log(maxDistance);
+        //         // console.log("center: ");
+        //         // console.log(center);
+        //
+        //
+        //     }
+        // });
    }
 
    //  console.log("intersectedObject: ");
@@ -215,7 +236,9 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
 
 
         }
-      if(mcts && (dataset[nodeIdx].originIndex !== undefined) ) {
+        previewAreaRight.removeChainHighlightByIndex(nodeIdx);
+
+          if(mcts && (dataset[nodeIdx].originIndex !== undefined) ) {
           previewAreaLeft.NodeManager.removeHighlightByIndex(dataset[nodeIdx].originIndex);
           // previewAreaRight.refreshEdges();
       }
@@ -242,8 +265,8 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
           if (!previewAreaLeft.NodeManager.indexIsSelected(nodeIdx) && !previewAreaRight.NodeManager.indexIsSelected(nodeIdx)) {
               previewAreaLeft.NodeManager.removeHighlightByIndex(nodeIdx);
               previewAreaRight.NodeManager.removeHighlightByIndex(nodeIdx);
-              previewAreaRight.removeChainHighlightByIndex(nodeIdx);
           }
+          previewAreaRight.removeChainHighlightByIndex(nodeIdx);
       }, 1000);
   }
 

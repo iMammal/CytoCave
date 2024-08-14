@@ -310,7 +310,7 @@ class PreviewArea {
 
   removeChainHighlightByIndex(nodeIdx) {
     for (let ps of this.pdbProteinArray) {
-      ps.removeChainHighlightByIndex(nodeIdx);
+      ps.removeHighlightByIndex(nodeIdx);
     }
   }
 
@@ -397,6 +397,10 @@ class PreviewArea {
     // set contextually selected nodes to appear highlighted
     //todo: do we have a slider for distance?
     this.NodeManager.activateContextAroundIndex(index, 0, 1);
+
+    // make camera look at selected node
+    this.camera.lookAt(this.NodeManager.getNodePosition(node));
+    this.controls.target.set(this.NodeManager.getNodePosition(node).x, this.NodeManager.getNodePosition(node).y, this.NodeManager.getNodePosition(node).z);
 
     // for mirroring to the other side
 
