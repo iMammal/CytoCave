@@ -273,7 +273,6 @@ class proteinStructure {
         // const baseGeometry = getNormalGeometry('left','Left');//node.object.name.hemisphere,this.previewArea.name);
         const wireframe = new THREE.WireframeGeometry(
             boxGeometry
-            // box
         );
 
 
@@ -298,7 +297,13 @@ class proteinStructure {
             throw new Error("highLight is null or undefined");
         }
         const position = this.getPosition();         //NodePosition(node);
-        newHighlight.position.set(position.x+min.x, position.y+min.y, position.z+min.z);
+        let halfbox = new THREE.Vector3;y
+        halfbox.subVectors(max, min).multiplyScalar(0.5);
+        let center = new THREE.Vector3;
+        center.addVectors(min, halfbox);
+
+        // newHighlight.position.set(position.x+min.x, position.y+min.y, position.z+min.z);
+        newHighlight.position.set(position.x+center.x, position.y+center.y, position.z+center.z);
         newHighlight.scale.set(scale * 1.02, scale * 1.02, scale * 1.02);
         newHighlight.visible = true;
         newHighlight.userData = {
