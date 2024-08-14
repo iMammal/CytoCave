@@ -447,11 +447,11 @@ function onLeftClick(previewArea, event) {
 
             let trimerNamesToColors = []
 
-            trimerNamesToColors.push({name: trimerNames[0], color: nbrs[0].object.material.color});
-            trimerNamesToColors.push({name: trimerNames[1], color: nbrs[1].object.material.color});
-            trimerNamesToColors.push({name: trimerNames[2], color: objectIntersected.object.material.color});
+            trimerNamesToColors.push({name: trimerNames[0], color: nbrs[0].object.material.color, index: neighborIdx[0]});
+            trimerNamesToColors.push({name: trimerNames[1], color: nbrs[1].object.material.color, index: neighborIdx[1]});
+            trimerNamesToColors.push({name: trimerNames[2], color: objectIntersected.object.material.color, index: nodeIdx});
 
-            previewArea.loadTrimerStructure(trimerNames, selectedNodeCoords, trimerNamesToColors,[previewArea.NodeManager.node2index(nbrs[0]), previewArea.NodeManager.node2index(nbrs[1]), nodeIdx]);
+            previewArea.loadTrimerStructure(trimerNames, selectedNodeCoords, trimerNamesToColors); //,[previewArea.NodeManager.node2index(nbrs[0]), previewArea.NodeManager.node2index(nbrs[1]), nodeIdx]);
 
                 // previewArea.model.loadNodeDetails(neighborI);
         }

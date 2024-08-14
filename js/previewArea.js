@@ -223,7 +223,7 @@ class PreviewArea {
   } // End Constructor
 
 
-  loadTrimerStructure(chainNamesArray,position,colors,originIndexes) {
+  loadTrimerStructure(chainNamesArray,position,colors) {  //},originIndexes) {
     //for each name in chainNamesArray split on underscore to get letter to the right of it into lettersArray
     //for each letter in lettersArray
 
@@ -233,6 +233,14 @@ class PreviewArea {
 
     let numbersArray = [];
     let colorsArray = [];
+
+    // // define an originStruct structure containing a color, an origin Index, and a position in the alphabet
+    // let originArray =  [];
+    // for(let n = 0; n < colors.length; n++)
+    //   originArray.push({color: colors[n], originIndex: originIndexes[n], position: 0};
+    // let origins = [];
+
+    // for each name in chainNamesArray
     for( name in chainNamesArray ) {
 
         // lettersArray.push(name.split('_')[1]);
@@ -252,7 +260,7 @@ class PreviewArea {
 
 
       for ( let c = 0; c < colors.length; c++) {
-        if (colors[c].name === chainNamesArray[name]) { colorsArray[ number+1 ] = colors[c].color; }
+        if (colors[c].name === chainNamesArray[name]) { colorsArray[ number+1 ] = colors[c];} //.color; }
       }
 
 
@@ -261,7 +269,10 @@ class PreviewArea {
 
     //sort the numbersArray ascending numerically
     numbersArray.sort(function(a, b){return a - b});
-    colorsArray.sort(function(a, b){return a - b});
+    colorsArray.sort(function(a, b){return a.color - b.color});
+
+    let colorsOnlyArray = [colorsArray[0].color, colorsArray[1].color, colorsArray[2].color];
+    let originIndexes = [colorsArray[0].index, colorsArray[1].index, colorsArray[2].index];
 
     // CREATE the foldername like PSM_1_2_3
     let folderName = "PSM_" + numbersArray.join("-");
@@ -273,7 +284,7 @@ class PreviewArea {
     // let pdbUrl = "http://localhost/AF/" + folderName + "/unrelaxed_model_1_rw.pdb";
     let pdbUrl = "AF/" + folderName + "/unrelaxed_model_1_rw.pdb";
 
-    let ps = new proteinStructure(pdbUrl,this,position.x,position.y,position.z, colorsArray, originIndexes);
+    let ps = new proteinStructure(pdbUrl,this,position.x,position.y,position.z, colorsOnlyArray, originIndexes);
     // ps.setPosition(position.x,position.y,position.z);
 
     this.pdbProteinArray.push( ps );
