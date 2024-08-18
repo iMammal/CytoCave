@@ -851,7 +851,7 @@ function Model(side) {
             point.x = point.x ;
             dataset.push({
                 position: point,
-                name: "Complex_"+k.toString(),
+                name: atlas.getRegion(index*13+142+k).region_name,  //"Complex_"+k.toString(),
                 group: dataset[index].group,
                 originIndex: index,
                 hemisphere: "right",
