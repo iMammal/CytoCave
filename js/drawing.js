@@ -475,7 +475,13 @@ function onLeftClick(previewArea, event) {
             }
         } else if (complexes === 'all') {
             previewArea.model.clearAllDetails();
-            let nodesInComplex = previewArea.NodeManager.instances[objectIntersected.object.name.group][objectIntersected.object.name.hemisphere].userData.indexList; //'left'
+
+            let nodesInComplex = [];
+            if (mctsflat) {
+                nodesInComplex = [141,142,143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153];
+            } else {
+                nodesInComplex = previewArea.NodeManager.instances[objectIntersected.object.name.group][objectIntersected.object.name.hemisphere].userData.indexList; //'left'
+            }
             // sort nodexInComplex by edge weight with objectIntersected node with selected node first
             let selectedNodeIndex = previewArea.NodeManager.node2index(objectIntersected);
             nodesInComplex.sort((a,b) => {
