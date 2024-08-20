@@ -487,7 +487,43 @@ a#magicWindowRight {
     margin-top: 1em;
 }
 
+#hourglass {
+    width: 100%;
+    margin: 10vh auto;
+    text-align: center;
+    position: absolute;
+    width: 360px;
+    height: 160px;
+    bottom: 100px;
+    right: 60%;
+    /*z-index: 1;*/
+}
+div i {
+    font-size: 10vw;
+    animation: spin, spinback;
+    animation-delay: 0.5s, 0.5s;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+}
 
+@keyframes spin {
+    100% {
+        -webkit-transform: rotate(180deg);
+        transform: rotate(180deg);
+    }
+}
+@keyframes spinback {
+    0% {
+        -webkit-transform: rotate(181deg);
+        transform: rotate(181deg);
+        color: #ffa500;
+    }
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+        color: white;
+    }
+}
 
 /*.label{*/
     /*color: black;*/
