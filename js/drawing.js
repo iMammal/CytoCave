@@ -419,6 +419,9 @@ function onLeftClick(previewArea, event) {
         let edges = previewArea.NodeManager.getEdges(objectIntersected, 0,0, 0, 1);
         if (edges.length == 2) {
             //previewArea.NodeManager.toggleSelectNodeByIndex(dataset[nodeIdx].originIndex);
+            document.getElementById('hourglass').style.zIndex = 4;    //classList.remove('hidden');
+            console.log("Show Hourglass");
+
             neighborIdx[0] = edges[0].targetNodeIndex;
             neighborIdx[1] = edges[1].targetNodeIndex;
 
@@ -451,9 +454,18 @@ function onLeftClick(previewArea, event) {
             trimerNamesToColors.push({name: trimerNames[1], color: nbrs[1].object.material.color, index: neighborIdx[1]});
             trimerNamesToColors.push({name: trimerNames[2], color: objectIntersected.object.material.color, index: nodeIdx});
 
+            // $('hourglass').style.zIndex = 4;    //classList.remove('hidden');
+
             previewArea.loadTrimerStructure(trimerNames, selectedNodeCoords, trimerNamesToColors); //,[previewArea.NodeManager.node2index(nbrs[0]), previewArea.NodeManager.node2index(nbrs[1]), nodeIdx]);
 
+            // document.getElementById('hourglass').style.zIndex = -4;    //classList.remove('hidden');
+
                 // previewArea.model.loadNodeDetails(neighborI);
+        } else {
+            if(!isLeft) {
+                document.getElementById('hourglass').style.zIndex = -4;    //classList.remove('hidden');
+                console.log("Hide Hourglass");
+            }
         }
     }
 
@@ -482,7 +494,7 @@ function onLeftClick(previewArea, event) {
             } else {
                 nodesInComplex = previewArea.NodeManager.instances[objectIntersected.object.name.group][objectIntersected.object.name.hemisphere].userData.indexList; //'left'
             }
-            // sort nodexInComplex by edge weight with objectIntersected node with selected node first
+            // sort nodesInComplex by edge weight with objectIntersected node with selected node first
             let selectedNodeIndex = previewArea.NodeManager.node2index(objectIntersected);
             nodesInComplex.sort((a,b) => {
                 // let aDist = previewArea.model.getDistance(selectedNodeIndex, a);
@@ -1309,9 +1321,13 @@ var changeSceneToSubject = function (subjectId, model, previewArea, side, _type 
                         model.setAllRegionsActivated();
                     model.setCurrentRegionsInformation(info);
                     model.computeEdgesForTopology(type); //model.getActiveTopology());
+
+                    document.getElementById('hourglass').style.zIndex = -4;
+
                     changeActiveGeometry(model, side, type);
                     if (side !== "right") previewAreaLeft.setSelectedNodes(tempNodesSelected);
                     if (side !== "left") previewAreaRight.setSelectedNodes(tempNodesSelected);
+
                     redrawScene(side);
                 })
             ;

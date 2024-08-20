@@ -496,7 +496,8 @@ a#magicWindowRight {
     height: 160px;
     bottom: 100px;
     right: 60%;
-    /*z-index: 1;*/
+    z-index: -4;
+    /*display: none;*/
 }
 div i {
     font-size: 10vw;

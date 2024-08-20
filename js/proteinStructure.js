@@ -214,6 +214,8 @@ class proteinStructure {
 
 
         this.previewArea.scene.add(this.molGroup);
+
+        document.getElementById('hourglass').style.zIndex = -4;
     }
 
     // highlightAtom(atomIndex, color) {}

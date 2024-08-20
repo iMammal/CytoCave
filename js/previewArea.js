@@ -455,11 +455,18 @@ class PreviewArea {
     } else {
 
       if (mctsflat) {
+        if (this.name !== 'Left') {
+          return;
+        }
         // build a string with region_name of each node in NodesSelected
         let complex_names = 'HuMAP2_03805';
         for (let nodeidx of this.NodeManager.getSelectedNodes()) {
           complex_names += '+' + this.model.getRegionByIndex(nodeidx).name;
         }
+
+        document.getElementById('hourglass').style.zIndex = 4; // show hourglass
+
+        // fetch the complex for the region_names
         complex_names  += "+" + this.model.getRegionByIndex(index).name;
         console.log('complex_names: ' + complex_names);
         // fetch the complex for the region_names
