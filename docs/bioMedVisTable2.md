@@ -1,0 +1,14 @@
+|                                             | Immersive 3D/VR improves comprehension for complex networks & clusters; room-scale/VR often reduces errors vs. 2D. (Ware & Franck, 1996; Alper & Forbes, 2010) | Motion cues (head-tracking, parallax) reduce errors more than stereo alone in network tracing tasks. (Ware & Franck, 1996; Ware & Mitchell, 2008) | Stereo depth helps in complex/overlapping structures but can add time cost; stereo highlighting aids counting tasks. (Kraus et al., 2005; Yang et al., 2018) | Providing overview with drill-down aids accuracy and reduces cognitive load in immersive tasks. (Poco et al., 2011; Sanftmann & Weiskopf, 2015) | Navigation design (walking/zoom/overview) changes accuracy and speed; rigid-body transitions aid object tracking. (Poco et al., 2011; Kraus et al., 2005) | Managing clutter (layering, sparsification) improves accuracy; naive 3D can harm performance. (Sanftmann & Weiskopf, 2015) | Guided tours and narrative techniques reduce cognitive load and boost comprehension. (Hullman & Diakopoulos, 2011) | Multi-user collaborative immersive analytics increases value for complex data analysis. (Isenberg et al., 2013) | Audio/haptics augment visual grouping and depth perception in 3D analysis. (Betella et al., 2014) | Tools fitting analyst workflows increase uptake; end-to-end reduces barriers. (Sedlmair et al., 2012) | Controlled studies confirm principles: stereo+motion ↓ errors; VR aids cluster tasks; nav design affects outcomes. (Multiple studies cited) |
+|:--------------------------------------------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| transomics2cytoscape (2014)                 | —  | —  | —  | ✓  | ✓  | ✓  | —  | —  | —  | ✓  | —  |
+| VRNetzer (Pirch, 2021)                      | ✓  | ✓  | (±) | ✓  | ✓  | ✓  | ✓  | (±) | —  | ✓  | —  |
+| CellexalVR (Legetth, 2021)                  | ✓  | ✓  | ✓  | ✓  | ✓  | ✓  | ✓  | ✓  | —  | ✓  | —  |
+| Corvo (Hyman, 2022)                         | ✓  | ✓  | (±) | ✓  | ✓  | ✓  | ✓  | —  | —  | ✓  | —  |
+| MiCellAnnGELo (Platt, 2022)                 | ✓  | ✓  | (±) | ✓  | ✓  | ✓  | ✓  | —  | —  | ✓  | —  |
+| BrainX3 (Betella, 2014)                     | ✓  | ✓  | ✓  | ✓  | ✓  | ✓  | —  | —  | ✓  | —  | —  |
+| 3D Renal Network (Bhavnani, 2010)           | ✓  | ✓  | ✓  | ✓  | ✓  | ✓  | —  | —  | —  | —  | —  |
+| PPI VR (Aouaa, 2018)                        | ✓  | ✓  | (±) | ✓  | ✓  | ✓  | —  | —  | —  | —  | —  |
+| Hybrid-Dim (Sommer, 2015)                   | ✓  | ✓  | ✓  | ✓  | ✓  | ✓  | ✓  | —  | ✓  | ✓  | —  |
+| VR + CmPI/VANTED (Sommer & Schreiber, 2016) | ✓  | ✓  | ✓  | ✓  | ✓  | ✓  | ✓  | —  | ✓  | ✓  | —  |
+| VisNEST (Nowke, 2013)                       | ✓  | ✓  | (±) | ✓  | ✓  | ✓  | —  | —  | —  | —  | —  |
+| Immersive Brain Conn. (Pester, 2021)        | ✓  | ✓  | (±) | ✓  | ✓  | ✓  | —  | —  | —  | —  | —  |
