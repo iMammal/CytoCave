@@ -29,13 +29,3 @@
 - **Usability** – Tools fitting analyst workflows increase uptake; end-to-end reduces barriers. (Sedlmair et al., 2012)  
 - **Evaluation** – Controlled studies confirm principles: stereo+motion ↓ errors; VR aids cluster tasks; nav design affects outcomes. (Multiple studies cited)  
 
----
-
-✅ This version is **compact and GitHub/print-friendly**:  
-- Short headers keep the table scannable.  
-- Full scholarly detail is preserved in the legend.  
-- `-Not supported-`, “Stereo supported (optional)”, “Single-user (no collab)”, etc., still make the cells descriptive.  
-
----
-
-Would you like me to also create a **visual summary figure** (e.g. heatmap or icon grid) to complement this table for presentations or the paper?
