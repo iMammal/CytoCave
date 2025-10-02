@@ -17,6 +17,31 @@
 | **Surgical AR VCUI (Javaheri, 2024)** | AR immersion | Head-tracked AR nav | -Not supported- | Surgical overlay detail + context | Voice-controlled overlays | -Not supported- | LLM resolves ambiguous commands | Multi-user OR team | -Not supported- | Integrated into surgical workflow | LLM-mediated speech control | **Formal study** – surgeons: task time ↓, workload ↓ [[Javaheri 2024]] |
 | **VOICE (2023, molecular viz)** | VR molecular viz | Head-tracked VR nav | Stereo rendering | Molecular overview + details | Conversational NL navigation | Sparsification in dense scenes | LLM conversational guide | Single-user (no collab) | -Not supported- | Integrated into molecular workflow | LLM-mediated NL conversation | **Expert evaluation** – educators, molecular scientists [[VOICE 2023]] |
 
+---
+
+### Evidence for LLM/Speech Benefits in Bio/Med Visualization
+
+- **Surgical AR VCUI (Javaheri et al., 2024)**  
+  *Context:* Voice-controlled AR surgical navigation assistant with LLM mediation.  
+  *Validation:* **Formal user study with surgeons** showed **significant reductions in task completion time and cognitive workload** compared with traditional speech UIs.  
+  *Take-away:* Provides the strongest controlled evidence that LLM-assisted voice improves performance in critical biomedical workflows.  
+
+- **VOICE (2023, Molecular Visualization)**  
+  *Context:* Conversational molecular visualization tool integrating LLM dialogue and VR navigation.  
+  *Validation:* **Expert evaluation** with molecular educators/scientists reported **improved usability and teaching potential**, but no controlled experiment.  
+  *Take-away:* Shows feasibility and perceived utility, but lacks quantitative testing.  
+
+- **AIDEN (Quantin et al., 2024)** & **NivTA (Jia et al., 2024)**  
+  *Context:* AIDEN (VR RDF/knowledge graphs with NL queries), NivTA (LLM tutor in a CAVE classroom).  
+  *Validation:* **Demonstration-only prototypes**; no formal user studies of LLM benefits.  
+  *Take-away:* Illustrate emerging uses of LLMs in biomedical/educational visualization, but evaluation gap remains.  
+
+---
+
+**Summary:**  
+- Only *one system* (Javaheri 2024) offers controlled empirical evidence that LLM-mediated speech improves biomedical visualization workflows.  
+- Others (VOICE, AIDEN, NivTA) demonstrate feasibility and early adoption but remain **unevaluated**.  
+- This highlights a **critical research gap**: formal studies are needed to verify whether LLM integration consistently improves accuracy, efficiency, and usability in biomedical visualization.
 
 ---
 
