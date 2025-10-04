@@ -23,53 +23,68 @@
 
 ---
 
-### Evidence for LLM/Speech Benefits in Bio/Med Visualization
+### Legend
 
-- **Surgical AR VCUI (Javaheri et al., 2024)**  
-  *Context:* Voice-controlled AR surgical navigation assistant with LLM mediation.  
-  *Validation:* **Formal user study with surgeons** showed **significant reductions in task completion time and cognitive workload** compared with traditional speech UIs.  
-  *Take-away:* Provides the strongest controlled evidence that LLM-assisted voice improves performance in critical biomedical workflows.  
+#### **Scope and Domain Categories**
+- **BioVis** – Visualization of *biological systems and data*, including molecular, cellular, ecological, genomic, and connectomic contexts (e.g., CellexalVR, BrainX3, FathomGPT).  
+- **MedVis** – Visualization for *medical, clinical, or anatomical* analysis, diagnosis, surgery, or training (e.g., Surgical AR VCUI, NivTA).  
+- **BioMedVis** – Systems at the *intersection* of biological and medical visualization, often translating biological data or structures to clinical or educational contexts (e.g., NeuroCave, AIDEN, MiCellAnnGELo).  
 
-- **VOICE (2023, Molecular Visualization)**  
-  *Context:* Conversational molecular visualization tool integrating LLM dialogue and VR navigation.  
-  *Validation:* **Expert evaluation** with molecular educators/scientists reported **improved usability and teaching potential**, but no controlled experiment.  
-  *Take-away:* Shows feasibility and perceived utility, but lacks quantitative testing.  
-
-- **AIDEN (Quantin et al., 2024)** & **NivTA (Jia et al., 2024)**  
-  *Context:* AIDEN (VR RDF/knowledge graphs with NL queries), NivTA (LLM tutor in a CAVE classroom).  
-  *Validation:* **Demonstration-only prototypes**; no formal user studies of LLM benefits.  
-  *Take-away:* Illustrate emerging uses of LLMs in biomedical/educational visualization, but evaluation gap remains.  
+> *This review adopts the union of BioVis and MedVis domains, including their overlap (BioMedVis), to reflect converging visualization practices across biological and medical sciences.*
 
 ---
 
-**Summary:**  
-- Only *one system* (Javaheri 2024) offers controlled empirical evidence that LLM-mediated speech improves biomedical visualization workflows.  
-- Others (VOICE, AIDEN, NivTA) demonstrate feasibility and early adoption but remain **unevaluated**.  
-- This highlights a **critical research gap**: formal studies are needed to verify whether LLM integration consistently improves accuracy, efficiency, and usability in biomedical visualization.
+#### **Foundational Principles**
+Derived from empirical visualization research and supported by controlled user studies.  
+These define the cognitive and perceptual design factors common across BioVis and MedVis applications.
+
+| Principle | Description | Representative Studies |
+|------------|--------------|------------------------|
+| **Immersion** | 3D/VR immersion enhances comprehension of complex spatial structures and clusters; however, its benefit is task-dependent. | Ware & Franck (1996); Alper & Forbes (2010) |
+| **Motion** | Head-tracking and motion parallax reduce spatial-reasoning errors more than static stereo alone. | Ware & Franck (1996); Ware & Mitchell (2008) |
+| **Stereo** | Stereo depth aids in disentangling overlaps but may increase time cost; optimal when user-controlled or optional. | Kraus et al. (2005); Yang et al. (2018) |
+| **Overview + Detail** | Providing global overviews with drill-down detail reduces cognitive load and improves accuracy. | Poco et al. (2011); Sanftmann & Weiskopf (2015) |
+| **Navigation** | Navigation style (walking, zooming, overview panels) affects speed and accuracy; smooth transitions preserve context. | Poco et al. (2011); Kraus et al. (2005) |
+| **Clutter** | Managing occlusion through layering, filtering, or sparsification improves accuracy; naïve 3D can hinder performance. | Sanftmann & Weiskopf (2015) |
+| **Guidance** | Narrative cues, guided tours, or workflow steps lower cognitive burden and aid interpretation. | Hullman & Diakopoulos (2011) |
+| **Collaboration** | Multi-user or shared immersive environments increase analytical value and engagement. | Isenberg et al. (2013) |
+| **Usability** | Tools aligned with domain workflows increase adoption and sustained use. | Sedlmair et al. (2012) |
 
 ---
 
-### Legend: Principles with Descriptions & Citations
+#### **Modalities / Technology Layers**
+These are *delivery mechanisms* rather than cognitive principles.  
+They represent how visualization systems extend interaction beyond visual channels.
 
-- **Immersion** – Immersive 3D/VR improves comprehension of complex networks & clusters; room-scale VR reduces errors vs. 2D. (Ware & Franck, 1996; Alper & Forbes, 2010)  
-- **Motion** – Head-tracking & parallax cues reduce errors more than stereo alone in network tracing tasks. (Ware & Franck, 1996; Ware & Mitchell, 2008)  
-- **Stereo** – Stereo depth helps in complex/overlapping structures but can add time cost; stereo highlighting aids counting tasks. (Kraus et al., 2005; Yang et al., 2018)  
-- **Overview+Detail** – Providing overview + drill-down aids accuracy and reduces cognitive load. (Poco et al., 2011; Sanftmann & Weiskopf, 2015)  
-- **Navigation** – Navigation design (walking/zoom/overview) changes accuracy & speed; rigid-body transitions aid object tracking. (Poco et al., 2011; Kraus et al., 2005)  
-- **Clutter** – Managing clutter (layering, sparsification) improves accuracy; naive 3D can harm performance. (Sanftmann & Weiskopf, 2015)  
-- **Guidance** – Guided tours and narrative techniques reduce cognitive load and boost comprehension. (Hullman & Diakopoulos, 2011)  
-- **Collaboration** – Multi-user collaborative immersive analytics increases value for complex data. (Isenberg et al., 2013)  
-- **Multi-sensory** – Audio/haptics augment visual grouping & depth perception. (Betella et al., 2014)  
-- **Usability** – Tools fitting analyst workflows increase uptake; end-to-end reduces barriers. (Sedlmair et al., 2012)
-- **LLM** – Natural language processing & LLMs enable conversational interaction, disambiguation, and guidance. Systems without this are marked -Not supported-. (VOICE 2023; Javaheri 2024; Quantin 2024; Jia 2024)
-- **Evaluation** – Controlled studies confirm principles: stereo+motion ↓ errors; VR aids cluster tasks; nav design affects outcomes. (Multiple studies cited)  
+| Modality | Description | Representative Studies |
+|-----------|--------------|------------------------|
+| **Multi-sensory** | Augments visual information with audio or haptic feedback to reinforce grouping and spatial cues. | Betella et al. (2014) |
+| **LLM Integration** | Incorporates natural-language or large-language-model interaction for querying, navigation, or explanation (e.g., conversational VR assistants, voice-controlled AR). | Quantin et al. (2024); Jia et al. (2024); Javaheri et al. (2024); VOICE (2023) |
 
-**Evaluation** –
+> *Modalities are context-dependent; they can enhance usability or accessibility but are not universally required for visualization effectiveness.*
 
-**Formal study** = controlled experiment with metrics (e.g., Javaheri 2024 surgical AR VCUI, task time/workload improvements).
+---
 
-**Expert evaluation** = limited domain expert feedback (e.g., VOICE 2023 molecular viz).
+#### **Evaluation Categories**
+Indicates the level of empirical validation reported by each system.
 
-**Demonstrations only** = case demos or prototypes without user studies (AIDEN, NivTA, CellexalVR, etc.).
+| Label | Meaning |
+|--------|---------|
+| **Formal study** | Controlled quantitative or mixed-methods evaluation measuring task performance, accuracy, or cognitive load. |
+| **Expert evaluation** | Qualitative feedback or heuristic testing by domain specialists without statistical analysis. |
+| **Demonstrations only** | Descriptive case studies or proofs of concept without user evaluation. |
+| **– Not supported –** | No evaluation or validation information reported. |
 
-**-Not supported-** = no evaluation reported.
+---
+
+#### **Interpretive Notes**
+- Cells showing *“Stereo supported (optional)”* indicate systems that **allow switching** between 2D and stereo modes, considered *supportive* rather than partial compliance.  
+- *Single-user (no collab)* marks systems designed for individual exploration but potentially extensible to multi-user modes.  
+- Systems integrating **LLM or speech interfaces** (AIDEN, NivTA, Surgical AR VCUI, VOICE, FathomGPT) are highlighted as early exemplars of conversational visualization.  
+- The **Evaluation** cluster shows that, across both BioVis and MedVis, empirical validation of immersive and LLM features remains limited — a gap this review identifies for future research.
+
+---
+
+### **Summary**
+This table and legend jointly map the evolution of visualization design from **foundational perceptual principles** toward **AI-augmented and multimodal interaction paradigms** across BioVis, MedVis, and BioMedVis domains.
+
