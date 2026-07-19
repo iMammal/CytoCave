@@ -29,7 +29,8 @@
     "prod": "webpack --mode=production",
     "local": "webpack --mode=production && http-server ./",
     "localdev": "webpack --watch --mode=development & http-server ./",
-    "localapi": "webpack --watch --mode=development & node server.js ",
+    "localapiunix": "webpack --watch --mode=development & node server.js ",
+    "localapi": "concurrently \"webpack --watch --mode=development\" \"node server.js\"",
     "devlocal": "concurrently \"webpack --watch --mode=development\" \"http-server ./\""
   },
   "repository": {
