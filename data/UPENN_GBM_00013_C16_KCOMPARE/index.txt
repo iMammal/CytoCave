@@ -1,0 +1,3 @@
+subjectID,network,topology
+UPENN-GBM-00013_11__n21760_s0_k20,UPENN-GBM-00013_11__n21760_s0_k20_edges.csv,UPENN-GBM-00013_11__n21760_s0_topology.csv
+UPENN-GBM-00013_11__n21760_s0_k40,UPENN-GBM-00013_11__n21760_s0_k40_edges.csv,UPENN-GBM-00013_11__n21760_s0_topology.csv

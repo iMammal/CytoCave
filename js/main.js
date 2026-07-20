@@ -8,6 +8,7 @@ import {queue} from "./external-libraries/queue";
 import {modelLeft,modelRight} from './model';
 import {initSubjectMenu} from './GUI';
 import {initControls,initCanvas} from './drawing';
+import {startRestSessionBridge} from './restSession';
 
 var init = function () {
 
@@ -33,6 +34,7 @@ var init = function () {
                     modelRight.createGroups();
                     initControls();
                     initCanvas();
+                    startRestSessionBridge();
                 })
             ;
         });

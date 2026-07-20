@@ -1,0 +1,17 @@
+{
+  "namespaces": {
+    "UPENN-GBM-00013_11__n21760_s0": {
+      "available_k_values": [
+        20,
+        40
+      ],
+      "case_id": "UPENN-GBM-00013_11",
+      "label_base": 0,
+      "node_count": 21760,
+      "node_hash": "ca408ea2661298e28e13bb5ef2736db1f5c4f37911e7b274e210cbd8530a6098",
+      "seed": 0
+    }
+  },
+  "next_label_base": 21760,
+  "version": 2
+}

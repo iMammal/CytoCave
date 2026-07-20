@@ -1317,7 +1317,8 @@ function PreviewArea(canvas_, model_, name_) {
         renderer = new THREE.WebGLRenderer({
             antialias: true,
             context: gl,
-            alpha: true
+            alpha: true,
+            preserveDrawingBuffer: true
         });
         camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / window.innerHeight, 0.1, 3000);
         initScene();

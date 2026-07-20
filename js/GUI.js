@@ -17,7 +17,7 @@ var rightSearching = false;
 var leftSearching = false;
 
 // initialize subject selection drop down menus
-import {getDataFile,setDataFile,atlas,neuro} from "./globals.js";
+import {getDataFile,setDataFile,atlas,neuro,getInitialSubjectId} from "./globals.js";
 import {
     changeSceneToSubject,
     changeActiveGeometry,
@@ -50,11 +50,12 @@ import { forEach } from "./external-libraries/gl-matrix/vec3.js";
 var initSubjectMenu = function (side) {
 
     var select = document.getElementById("subjectMenu" + side);
+    var initialSubjectId = getInitialSubjectId(side);
     for (var i = 0; i < getDataFile().length; ++i) {
         var el = document.createElement("option");
         el.textContent = getDataFile()[i].subjectID;
         el.value = getDataFile()[i].subjectID;
-        el.selected = (i==0);
+        el.selected = initialSubjectId ? (getDataFile()[i].subjectID === initialSubjectId) : (i==0);
         select.appendChild(el);
     }
     switch (side) {

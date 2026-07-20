@@ -8,3 +8,9 @@
 /.vs/NeuroCave/v17
 /.vs/NeuroCave/config
 /.vs
+
+.idea/
+node_modules/
+public/
+exports/
+*.log

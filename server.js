@@ -1,34 +1,493 @@
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
-const path = require('path');
-const app = express();
-const port = 3273; // 8080;
+const Papa = require('papaparse');
 
-app.use(bodyParser.json());
+const app = express();
+const port = process.env.PORT || 3273;
+
+const DATA_ROOT = path.resolve(__dirname, 'data');
+const EXPORT_ROOT = path.resolve(__dirname, 'exports');
+const DEFAULT_DATASET_FOLDER = 'UPENN_GBM_00013_C16_KCOMPARE';
+const DEFAULT_LOOKUP_TABLE = 'upenn_gbm_00013_c16_kcompare';
+const DEFAULT_LEFT_SUBJECT = 'UPENN-GBM-00013_11__n21760_s0_k20';
+const DEFAULT_RIGHT_SUBJECT = 'UPENN-GBM-00013_11__n21760_s0_k40';
+
+app.use(bodyParser.json({ limit: '50mb' }));
 
 let annotations = {};
+
+const baseSessionState = {
+  version: 1,
+  dataset: {
+    folder: DEFAULT_DATASET_FOLDER,
+    lookupTableId: DEFAULT_LOOKUP_TABLE
+  },
+  view: {
+    layout: 'side-by-side',
+    orientation: {
+      synchronized: true,
+      source: 'left'
+    },
+    colorBy: {
+      mode: 'kmeans_cluster',
+      left: 'KMeans_k20_c16_s0_Clustering',
+      right: 'KMeans_k40_c16_s0_Clustering'
+    },
+    nodeSizeBy: null,
+    highlightedCluster: null
+  },
+  renderPolicy: {
+    edgeMode: 'top_per_node',
+    topEdges: 5,
+    preserveCompleteMetadata: true
+  },
+  viewports: {
+    left: null,
+    right: null
+  }
+};
+
+let sessionState = clone(baseSessionState);
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function stableStringify(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(',')}]`;
+  }
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function revisionFor(state) {
+  return crypto.createHash('sha256').update(stableStringify(state)).digest('hex').slice(0, 16);
+}
+
+function stateWithRevision() {
+  const state = clone(sessionState);
+  state.revision = revisionFor(sessionState);
+  return state;
+}
+
+function ensureExportRoot() {
+  fs.mkdirSync(EXPORT_ROOT, { recursive: true });
+}
+
+function assertDataPath(targetPath) {
+  const resolved = path.resolve(targetPath);
+  if (resolved !== DATA_ROOT && !resolved.startsWith(DATA_ROOT + path.sep)) {
+    throw new Error(`Path escapes data root: ${targetPath}`);
+  }
+  return resolved;
+}
+
+function dataPath(folder, fileName = '') {
+  const folderPath = assertDataPath(path.join(DATA_ROOT, folder || ''));
+  const targetPath = assertDataPath(path.join(folderPath, fileName || ''));
+  if (targetPath !== folderPath && !targetPath.startsWith(folderPath + path.sep)) {
+    throw new Error(`Path escapes dataset folder: ${fileName}`);
+  }
+  return targetPath;
+}
+
+function publicDataUrl(folder, fileName) {
+  return `/data/${encodeURIComponent(folder)}/${encodeURIComponent(fileName)}`;
+}
+
+function fileInfo(folder, fileName) {
+  if (!fileName) return null;
+  const target = dataPath(folder, fileName);
+  if (!fs.existsSync(target)) return null;
+  const stat = fs.statSync(target);
+  return {
+    name: fileName,
+    bytes: stat.size,
+    url: publicDataUrl(folder, fileName)
+  };
+}
+
+function readTextIfExists(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) return null;
+  return fs.readFileSync(filePath, 'utf8');
+}
+
+function readJsonIfExists(filePath) {
+  const text = readTextIfExists(filePath);
+  if (!text) return null;
+  return JSON.parse(text);
+}
+
+function readCsvRecords(filePath) {
+  const text = fs.readFileSync(filePath, 'utf8');
+  const parsed = Papa.parse(text, {
+    delimiter: ',',
+    dynamicTyping: true,
+    header: true,
+    skipEmptyLines: true
+  });
+  if (parsed.errors && parsed.errors.length) {
+    const first = parsed.errors[0];
+    throw new Error(`CSV parse failed for ${path.basename(filePath)}: ${first.message}`);
+  }
+  return parsed.data;
+}
+
+function readTopologyHeader(folder, topologyFile) {
+  const text = readTextIfExists(dataPath(folder, topologyFile));
+  if (!text) return [];
+  const firstLine = text.split(/\r?\n/, 1)[0];
+  return firstLine.split(',').map((field) => field.trim()).filter(Boolean);
+}
+
+function inferK(value) {
+  const match = String(value || '').match(/(?:^|_)k(\d+)(?:_|$)/);
+  return match ? Number(match[1]) : null;
+}
+
+function inferC(value) {
+  const match = String(value || '').match(/(?:^|_)c(\d+)(?:_|$)/);
+  return match ? Number(match[1]) : null;
+}
+
+function inferSeed(value) {
+  const match = String(value || '').match(/(?:^|_)s(\d+)(?:_|$)/);
+  return match ? Number(match[1]) : null;
+}
+
+function existingFile(folder, fileName) {
+  if (!fileName) return null;
+  return fs.existsSync(dataPath(folder, fileName)) ? fileName : null;
+}
+
+function findCatalogRecord(folder, subjectID) {
+  const indexPath = dataPath(folder, 'index.txt');
+  const records = readCsvRecords(indexPath);
+  return records.find((record) => String(record.subjectID) === String(subjectID)) || null;
+}
+
+function chooseDefaultSubject(viewport) {
+  return viewport === 'right' ? DEFAULT_RIGHT_SUBJECT : DEFAULT_LEFT_SUBJECT;
+}
+
+function chooseClusterColumn({ folder, record, variantMetadata, commonMetadata, k, clusterCount, seed }) {
+  if (record.clusterColumn) return record.clusterColumn;
+  if (variantMetadata && variantMetadata.cluster_column) return variantMetadata.cluster_column;
+
+  const columns = [];
+  if (commonMetadata && Array.isArray(commonMetadata.cluster_columns)) {
+    columns.push(...commonMetadata.cluster_columns);
+  }
+  if (record.topology) {
+    columns.push(...readTopologyHeader(folder, record.topology).filter((field) => field.includes('KMeans')));
+  }
+
+  const normalizedK = k != null ? String(k) : null;
+  const normalizedC = clusterCount != null ? String(clusterCount) : null;
+  const normalizedSeed = seed != null ? String(seed) : null;
+  const exact = columns.find((field) => {
+    return (!normalizedK || field.includes(`k${normalizedK}`)) &&
+      (!normalizedC || field.includes(`c${normalizedC}`)) &&
+      (!normalizedSeed || field.includes(`s${normalizedSeed}`));
+  });
+  if (exact) return exact;
+  if (columns.length) return columns[0];
+  if (k != null && clusterCount != null && seed != null) {
+    return `KMeans_k${k}_c${clusterCount}_s${seed}_Clustering`;
+  }
+  return null;
+}
+
+function normalizeVariant(input = {}, viewport = 'left') {
+  const folder = input.datasetFolder || input.folder || sessionState.dataset.folder || DEFAULT_DATASET_FOLDER;
+  const lookupTableId = input.lookupTableId || input.lut || sessionState.dataset.lookupTableId || DEFAULT_LOOKUP_TABLE;
+  const bodyRecord = input.catalogRecord || input.record || {};
+  const subjectID = input.subjectID || input.subject_id || bodyRecord.subjectID || bodyRecord.subject_id || chooseDefaultSubject(viewport);
+  const indexRecord = findCatalogRecord(folder, subjectID);
+  if (!indexRecord && (!bodyRecord.network || !bodyRecord.topology)) {
+    throw new Error(`No catalog record found for subjectID ${subjectID} in ${folder}`);
+  }
+
+  const record = {
+    ...indexRecord,
+    ...bodyRecord,
+    subjectID
+  };
+  record.network = record.network || record.edges || record.edge_file || record.edgeFile;
+  record.topology = record.topology || record.topology_file || record.topologyFile;
+  record.metadata = record.metadata || record.metadata_file || record.metadataFile;
+  record.cluster_summary = record.cluster_summary || record.clusterSummary || record.cluster_summary_file || record.clusterSummaryFile;
+
+  if (!record.network || !record.topology) {
+    throw new Error(`Catalog record for ${subjectID} must include network and topology`);
+  }
+
+  const variantMetadataFile = existingFile(folder, record.metadata || `${subjectID}_metadata.json`);
+  const clusterSummaryFile = existingFile(folder, record.cluster_summary || record.clusterSummary || `${subjectID}_cluster_summary.csv`);
+  const commonMetadataFile = existingFile(folder, input.commonMetadata || `${subjectID.replace(/_k\d+(?:_c\d+)?$/, '')}_metadata.json`);
+  const variantMetadata = readJsonIfExists(variantMetadataFile ? dataPath(folder, variantMetadataFile) : null);
+  const commonMetadata = readJsonIfExists(commonMetadataFile ? dataPath(folder, commonMetadataFile) : null);
+
+  const k = input.knn_k || record.knn_k || (variantMetadata && variantMetadata.knn_k) || inferK(subjectID) || inferK(record.network);
+  const seed = input.seed ?? record.seed ?? (variantMetadata && variantMetadata.graph_seed) ?? (commonMetadata && commonMetadata.seed) ?? inferSeed(subjectID) ?? inferSeed(record.network) ?? 0;
+  const clusterCount = input.cluster_count || record.cluster_count || (variantMetadata && variantMetadata.cluster_count) || inferC(subjectID) || inferC(record.network) || 16;
+  const clusterColumn = chooseClusterColumn({
+    folder,
+    record: { ...record, clusterColumn: input.clusterColumn || record.clusterColumn },
+    variantMetadata,
+    commonMetadata,
+    k,
+    clusterCount,
+    seed
+  });
+
+  const nodeCount = (variantMetadata && variantMetadata.node_count) ||
+    (commonMetadata && commonMetadata.node_count) ||
+    record.node_count ||
+    null;
+
+  return {
+    viewport,
+    variantId: `${folder}:${subjectID}`,
+    datasetFolder: folder,
+    lookupTableId,
+    subjectID,
+    catalogRecord: {
+      ...record,
+      datasetFolder: folder,
+      lookupTableId,
+      metadata: variantMetadataFile,
+      commonMetadata: commonMetadataFile,
+      clusterSummary: clusterSummaryFile,
+      clusterColumn
+    },
+    files: {
+      edges: fileInfo(folder, record.network),
+      topology: fileInfo(folder, record.topology),
+      metadata: fileInfo(folder, variantMetadataFile),
+      commonMetadata: fileInfo(folder, commonMetadataFile),
+      clusterSummary: fileInfo(folder, clusterSummaryFile)
+    },
+    graph: {
+      nodeCount,
+      knnK: k,
+      seed,
+      clusterCount,
+      clusterMethod: (variantMetadata && variantMetadata.cluster_method) || 'kmeans',
+      clusterColumn,
+      edgeFilterMode: (variantMetadata && variantMetadata.edge_filter_mode) || 'top_per_node',
+      topEdges: (variantMetadata && variantMetadata.top_edges) || sessionState.renderPolicy.topEdges
+    },
+    metadata: {
+      variant: variantMetadata,
+      common: commonMetadata
+    }
+  };
+}
+
+function setViewportVariant(viewport, input) {
+  if (viewport !== 'left' && viewport !== 'right') {
+    throw new Error('viewport must be left or right');
+  }
+  const variant = normalizeVariant(input, viewport);
+  sessionState.dataset = {
+    folder: variant.datasetFolder,
+    lookupTableId: variant.lookupTableId
+  };
+  sessionState.viewports[viewport] = variant;
+  if (variant.graph.clusterColumn) {
+    sessionState.view.colorBy[viewport] = variant.graph.clusterColumn;
+  }
+  return variant;
+}
+
+function compareVariants(body = {}) {
+  const leftInput = {
+    datasetFolder: body.datasetFolder || body.folder || DEFAULT_DATASET_FOLDER,
+    lookupTableId: body.lookupTableId || body.lut || DEFAULT_LOOKUP_TABLE,
+    subjectID: DEFAULT_LEFT_SUBJECT,
+    ...(body.left || {})
+  };
+  const rightInput = {
+    datasetFolder: body.datasetFolder || body.folder || DEFAULT_DATASET_FOLDER,
+    lookupTableId: body.lookupTableId || body.lut || DEFAULT_LOOKUP_TABLE,
+    subjectID: DEFAULT_RIGHT_SUBJECT,
+    ...(body.right || {})
+  };
+  const left = setViewportVariant('left', leftInput);
+  const right = setViewportVariant('right', rightInput);
+  sessionState.view.layout = body.layout || 'side-by-side';
+  sessionState.view.orientation = {
+    synchronized: body.syncOrientation !== false,
+    source: body.orientationSource || 'left'
+  };
+  sessionState.view.colorBy = {
+    mode: 'kmeans_cluster',
+    left: left.graph.clusterColumn,
+    right: right.graph.clusterColumn
+  };
+  return { left, right };
+}
+
+function handleRoute(fn, res) {
+  try {
+    const result = fn();
+    res.json({ ok: true, revision: revisionFor(sessionState), ...result });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+}
+
+compareVariants();
 
 app.post('/api/annotate', (req, res) => {
   const { node, note } = req.body;
   annotations[node] = note;
   res.sendStatus(200);
-  console.log(`CytoCave backend received POST request.`);
+  console.log('CytoCave backend received POST request.');
 });
 
 app.get('/api/annotations', (req, res) => {
   res.json(annotations);
-  console.log(`CytoCave backend received GET request:${req},${res}.`);
-  
+  console.log('CytoCave backend received GET request for annotations.');
+});
+
+app.get('/session/state', (req, res) => {
+  res.json(stateWithRevision());
+});
+
+app.post('/variants/load', (req, res) => {
+  handleRoute(() => {
+    const viewport = req.body.viewport || req.body.side || 'left';
+    const variant = setViewportVariant(String(viewport).toLowerCase(), req.body);
+    return { state: stateWithRevision(), variant };
+  }, res);
+});
+
+app.post('/variants/compare', (req, res) => {
+  handleRoute(() => {
+    const variants = compareVariants(req.body || {});
+    return { state: stateWithRevision(), variants };
+  }, res);
+});
+
+app.post('/view/layout', (req, res) => {
+  handleRoute(() => {
+    const layout = req.body.layout || 'side-by-side';
+    sessionState.view.layout = layout;
+    sessionState.view.orientation = {
+      synchronized: req.body.syncOrientation !== false,
+      source: req.body.orientationSource || req.body.source || sessionState.view.orientation.source || 'left'
+    };
+    return { state: stateWithRevision() };
+  }, res);
+});
+
+app.post('/view/color-by', (req, res) => {
+  handleRoute(() => {
+    const mode = req.body.mode || 'kmeans_cluster';
+    const field = req.body.field || req.body.clusterColumn || null;
+    sessionState.view.colorBy = {
+      mode,
+      left: req.body.left || req.body.leftField || field || (sessionState.viewports.left && sessionState.viewports.left.graph.clusterColumn),
+      right: req.body.right || req.body.rightField || field || (sessionState.viewports.right && sessionState.viewports.right.graph.clusterColumn)
+    };
+    return { state: stateWithRevision() };
+  }, res);
+});
+
+app.post('/view/highlight-cluster', (req, res) => {
+  handleRoute(() => {
+    if (req.body.clusterId === undefined && req.body.cluster_id === undefined) {
+      throw new Error('clusterId is required');
+    }
+    const viewport = req.body.viewport || req.body.side || 'both';
+    const clusterId = req.body.clusterId ?? req.body.cluster_id;
+    sessionState.view.highlightedCluster = {
+      mode: 'kmeans_cluster',
+      clusterId,
+      viewport,
+      leftField: req.body.leftField || sessionState.view.colorBy.left,
+      rightField: req.body.rightField || sessionState.view.colorBy.right
+    };
+    return { state: stateWithRevision() };
+  }, res);
+});
+
+app.post('/export/session', (req, res) => {
+  handleRoute(() => {
+    ensureExportRoot();
+    const state = stateWithRevision();
+    const fileName = `session-${state.revision}.json`;
+    const target = path.join(EXPORT_ROOT, fileName);
+    fs.writeFileSync(target, JSON.stringify(state, null, 2));
+    return {
+      export: {
+        type: 'session',
+        fileName,
+        path: target,
+        url: `/exports/${encodeURIComponent(fileName)}`
+      }
+    };
+  }, res);
+});
+
+function parseDataUrl(dataUrl) {
+  const match = String(dataUrl || '').match(/^data:image\/png;base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) {
+    throw new Error('imageData must be a PNG data URL');
+  }
+  return Buffer.from(match[1], 'base64');
+}
+
+app.post('/export/screenshot', (req, res) => {
+  handleRoute(() => {
+    ensureExportRoot();
+    const imageData = req.body.imageData || req.body.combined || (req.body.screenshots && req.body.screenshots.combined);
+    if (!imageData) {
+      throw new Error('imageData is required; call this endpoint from the browser bridge or provide a PNG data URL');
+    }
+    const imageBuffer = parseDataUrl(imageData);
+    const hash = crypto.createHash('sha256').update(imageBuffer).digest('hex').slice(0, 16);
+    const fileName = `screenshot-${hash}.png`;
+    const target = path.join(EXPORT_ROOT, fileName);
+    fs.writeFileSync(target, imageBuffer);
+    return {
+      export: {
+        type: 'screenshot',
+        fileName,
+        path: target,
+        url: `/exports/${encodeURIComponent(fileName)}`,
+        bytes: imageBuffer.length
+      }
+    };
+  }, res);
 });
 
 app.get('/visualization', (req, res) => {
-  res.sendFile(path.join(__dirname,'visualization.html'));
-  console.log(`CytoCave backend received GET request for visualization:${req},${res}.`);
-  
+  res.sendFile(path.join(__dirname, 'visualization.html'));
+  console.log('CytoCave backend received GET request for visualization.');
 });
 
-app.use(express.static('.'));  // <-- serves your built frontend from Webpack
-app.listen(port, () => {
-  console.log(`CytoCave backend running on http://localhost:${port}`);
-});
+app.use('/exports', express.static(EXPORT_ROOT));
+app.use(express.static('.'));
 
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`CytoCave backend running on http://localhost:${port}`);
+  });
+}
+
+module.exports = {
+  app,
+  compareVariants,
+  normalizeVariant,
+  revisionFor,
+  stateWithRevision
+};

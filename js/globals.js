@@ -35,12 +35,12 @@ function getAtlas() {
     return atlas
 }
 
-var folder = url.searchParams.get("dataset"); //"Demo6"; //
+var folder = url.searchParams.get("dataset") || "UPENN_GBM_00013_C16_KCOMPARE"; //"Demo6"; //
 var dataFiles = {}
 
 
-var labelLUT = url.searchParams.get("lut"); //"baltimore"; //
-var isLoaded = parseInt(url.searchParams.get("load")); // 0
+var labelLUT = url.searchParams.get("lut") || "upenn_gbm_00013_c16_kcompare"; //"baltimore"; //
+var isLoaded = parseInt(url.searchParams.get("load") || "0"); // 0
 var metric = stringToBoolean(url.searchParams.get("metric"));
 if( metric == undefined){
     metric = false;
@@ -61,8 +61,18 @@ function getDataFile() {
     return dataFiles;
 }
 
+function getInitialSubjectId(side) {
+    if (side === "Left") {
+        return url.searchParams.get("leftSubject");
+    }
+    if (side === "Right") {
+        return url.searchParams.get("rightSubject");
+    }
+    return null;
+}
+
 console.log('This is ' + ((mobile)?'Mobile':'Desktop') + ' version');
 
 
 
-export {labelLUT,atlas,folder,dataFiles,metric,mobile,neuro,isLoaded,setDataFile,getAtlas,setAtlas,getDataFile}
+export {labelLUT,atlas,folder,dataFiles,metric,mobile,neuro,isLoaded,setDataFile,getAtlas,setAtlas,getDataFile,getInitialSubjectId}
