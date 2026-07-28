@@ -10,6 +10,7 @@ const {
   isPickableNodeIntersection,
   markAnnotationObjectNonPickable,
   normalizeSelectionMode,
+  selectionTransition,
   shouldReplaceSelection
 } = require('../js/selectionSemantics');
 
@@ -87,8 +88,44 @@ test('selection implementation does not shadow the nodeIndex parameter', () => {
 
   const selectionBody = drawing.slice(selectionStart, selectionEnd);
   assert.doesNotMatch(selectionBody, /\b(?:let|const|var)\s+nodeIndex\s*=/);
-  assert.match(selectionBody, /\blet\s+selectedNodeIndex\s*=\s*-1/);
-  assert.match(selectionBody, /updateNodeGeometry\(objectIntersected,\s*'selected',\s*selectedNodeIndex\)/);
+  assert.doesNotMatch(selectionBody, /\bselectedNodeIndex\b/);
+  assert.match(selectionBody, /\bdatasetNodeIndex\b/);
+});
+
+test('selection transition keeps additive mouse selection and toggles one target', () => {
+  const addB = selectionTransition([1], 2, {
+    replaceSelection: false,
+    toggleSelected: true
+  });
+
+  assert.equal(addB.action, 'select');
+  assert.deepEqual(addB.selectedAfter, [1, 2]);
+
+  const removeA = selectionTransition([1, 2], 1, {
+    replaceSelection: false,
+    toggleSelected: true
+  });
+
+  assert.equal(removeA.action, 'deselect');
+  assert.deepEqual(removeA.selectedAfter, [2]);
+});
+
+test('selection transition replacement clears previous nodes and keeps node zero valid', () => {
+  const replaceWithZero = selectionTransition([2, 3], 0, {
+    replaceSelection: true,
+    toggleSelected: true
+  });
+
+  assert.equal(replaceWithZero.action, 'select');
+  assert.deepEqual(replaceWithZero.selectedAfter, [0]);
+
+  const keepSelectedWithoutToggle = selectionTransition([0, 2], '0', {
+    replaceSelection: false,
+    toggleSelected: false
+  });
+
+  assert.equal(keepSelectedWithoutToggle.action, 'select');
+  assert.deepEqual(keepSelectedWithoutToggle.selectedAfter, [0, 2]);
 });
 
 test('selection replacement defaults follow mode and honor per-call overrides', () => {
@@ -121,7 +158,55 @@ test('mouse selection keeps additive toggle branch for selected nodes', () => {
   const selectionBody = drawing.slice(selectionStart, selectionEnd);
 
   assert.match(selectionBody, /const toggleSelected = options\.toggleSelected !== false/);
-  assert.match(selectionBody, /objectIntersected\.object\.unSelect\(objectIntersected\)/);
-  assert.match(selectionBody, /removeEdgesGivenNodeFromScenes\(nodeIndex\)/);
-  assert.match(selectionBody, /emitLocalNodeSelection\(nodeIndex,\s*isLeft,\s*false\)/);
+  assert.match(selectionBody, /transition\.action === 'deselect'/);
+  assert.match(selectionBody, /removeEdgesGivenNodeFromScenes\(datasetNodeIndex\)/);
+  assert.match(selectionBody, /emitLocalNodeSelection\(datasetNodeIndex,\s*isLeft,\s*false\)/);
+});
+
+test('selection resolves each viewport from canonical dataset node id', () => {
+  const drawing = fs.readFileSync(path.join(__dirname, '..', 'js', 'drawing.js'), 'utf8');
+  const selectionStart = drawing.indexOf('const updateNodeSelection =');
+  const selectionEnd = drawing.indexOf('const selectNodeByIndex =');
+  const selectionBody = drawing.slice(selectionStart, selectionEnd);
+
+  assert.match(selectionBody, /const leftIntersection = localNodeIntersection\(previewAreaLeft,\s*datasetNodeIndex\)/);
+  assert.match(selectionBody, /const rightIntersection = localNodeIntersection\(previewAreaRight,\s*datasetNodeIndex\)/);
+  assert.match(selectionBody, /setNodeSelectedInPreview\(previewAreaLeft,\s*leftIntersection\)/);
+  assert.match(selectionBody, /setNodeSelectedInPreview\(previewAreaRight,\s*rightIntersection\)/);
+  assert.doesNotMatch(selectionBody, /previewAreaRight\.updateNodeGeometry\(sourceIntersection/);
+  assert.doesNotMatch(selectionBody, /previewAreaLeft\.updateNodeGeometry\(sourceIntersection/);
+  assert.doesNotMatch(selectionBody, /=\s*previewArea(?:Left|Right)\.updateNodeGeometry/);
+});
+
+test('canonical dataset node id drives info panel, edge lookup, and event emission', () => {
+  const drawing = fs.readFileSync(path.join(__dirname, '..', 'js', 'drawing.js'), 'utf8');
+  const selectionStart = drawing.indexOf('const updateNodeSelection =');
+  const selectionEnd = drawing.indexOf('const selectNodeByIndex =');
+  const selectionBody = drawing.slice(selectionStart, selectionEnd);
+
+  assert.match(selectionBody, /setNodeInfoPanel\(model\.getRegionByIndex\(datasetNodeIndex\),\s*datasetNodeIndex\)/);
+  assert.match(selectionBody, /drawIncidentEdgesForNode\(model,\s*datasetNodeIndex,\s*isLeft\)/);
+  assert.match(selectionBody, /emitLocalNodeSelection\(datasetNodeIndex,\s*isLeft,\s*true\)/);
+  assert.doesNotMatch(selectionBody, /drawIncidentEdgesForNode\(model,\s*(?:sourceInstanceId|instanceId)/);
+});
+
+test('preview area dataset lookup searches left and right instance ids independently', () => {
+  const previewArea = fs.readFileSync(path.join(__dirname, '..', 'js', 'previewArea.js'), 'utf8');
+  const lookupStart = previewArea.indexOf('this.getNodeInstanceByIndex = function');
+  const lookupEnd = previewArea.indexOf('this.getActiveEdges = function');
+  const lookupBody = previewArea.slice(lookupStart, lookupEnd);
+
+  assert.match(lookupBody, /const hemispheres = \['left', 'right'\]/);
+  assert.match(lookupBody, /getNodesInstanceFromDatasetIndex\(index\)/);
+  assert.doesNotMatch(lookupBody, /else if \(rightHemisphere\.getNodesInstanceFromDatasetIndex\)/);
+});
+
+test('annotation creation is kept separate from native selection mutation', () => {
+  const restSession = fs.readFileSync(path.join(__dirname, '..', 'js', 'restSession.js'), 'utf8');
+  const annotateStart = restSession.indexOf('function applyAnnotations');
+  const annotateEnd = restSession.indexOf('function applyFocus');
+  const annotationBody = restSession.slice(annotateStart, annotateEnd);
+
+  assert.doesNotMatch(annotationBody, /selectNodeByIndex/);
+  assert.doesNotMatch(annotationBody, /clearNodeSelection/);
 });

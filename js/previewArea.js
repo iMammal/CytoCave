@@ -2075,7 +2075,7 @@ function PreviewArea(canvas_, model_, name_) {
             /*Get dataset index of given node. */
             instance.getDatasetIndex = function(nodeObject) {
                 // get object parent
-                let object = nodeObject.object;
+                let object = this && this.userData ? this : nodeObject.object;
                 // correlate the dataset[].label to the instanceId
                 // return parent.userData.indexList[nodeObject.instanceId];
                 // add some error checking
@@ -2180,7 +2180,7 @@ function PreviewArea(canvas_, model_, name_) {
             instance.unSelect = function(nodeObject) {
                 // check if index is in selectedNodes array and remove it if it is
                 let index = instance.getDatasetIndex(nodeObject);
-                if (!instance.userData.selectedNodes === undefined) {
+                if (instance.userData.selectedNodes !== undefined) {
                     let i = instance.userData.selectedNodes.indexOf(index);
                     if (i > -1) {
                         instance.userData.selectedNodes.splice(i, 1);
@@ -2711,31 +2711,18 @@ function PreviewArea(canvas_, model_, name_) {
             if (groupOf['right'] === undefined) {
                 console.log("groupOf right undefined: " + groups[j]);
             }
-            const leftHemisphere = groupOf['left'];
-            const rightHemisphere = groupOf['right'];
-            if (!leftHemisphere || !rightHemisphere) continue;
-            // check which hemisphere is valid
-            let node = null;
-            let leftorright = "";
-            if (leftHemisphere.getNodesInstanceFromDatasetIndex) {
-                node = leftHemisphere.getNodesInstanceFromDatasetIndex(index);
-                leftorright = "left";
-            } else if (rightHemisphere.getNodesInstanceFromDatasetIndex) {
-                node = rightHemisphere.getNodesInstanceFromDatasetIndex(index);
-                leftorright = "right";
-            } else {
-                console.log("No hemisphere found");
-                continue;
+            const hemispheres = ['left', 'right'];
+            for (let i = 0; i < hemispheres.length; i++) {
+                const hemisphere = hemispheres[i];
+                const instance = groupOf[hemisphere];
+                if (!instance || !instance.getNodesInstanceFromDatasetIndex) continue;
+                const node = instance.getNodesInstanceFromDatasetIndex(index);
+                if (node !== null) {
+                    return node;
+                }
             }
-            if (node === null) {
-                //console.log("Node not found in " + leftorright + " hemisphere");
-                continue;
-            }
-            console.log("Node: ");
-            console.log(node);
-
-            return node;
         }
+        return null;
     }
 
     this.getActiveEdges = function (topN = null) {

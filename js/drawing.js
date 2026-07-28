@@ -63,7 +63,13 @@ import {PreviewArea} from "./previewArea";
 import {setUpdateNeeded} from './utils/Dijkstra';
 import { setNodeInfoPanel, enableThresholdControls, addSearchPanel } from './GUI'
 import {setColorGroupScale} from './utils/scale'
-import {hasNodeIndex, isPickableNodeIntersection, normalizeSelectionMode, shouldReplaceSelection} from './selectionSemantics'
+import {
+    hasNodeIndex,
+    isPickableNodeIntersection,
+    normalizeSelectionMode,
+    selectionTransition,
+    shouldReplaceSelection
+} from './selectionSemantics'
 
 // callback on mouse moving, expected action: node beneath pointer are drawn bigger
 function onDocumentMouseMove(model, event) {
@@ -275,142 +281,98 @@ const getSelectionMode = function () {
     return selectionMode;
 }
 
-const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null, options = {}) => {
-    // console.log("model: ", model);
-    // console.log("objectIntersected: ", objectIntersected);
-    // console.log(`isLeft: ${isLeft}`);
+const logSelectionDebug = function (details) {
+    if (typeof window === 'undefined' || window.CYTOCAVE_SELECTION_DEBUG !== true) return;
+    console.log('cytocave-selection', details);
+}
 
-    if (!objectIntersected && !hasNodeIndex(nodeIndex)) {
-            return false;
+const localNodeIntersection = function (previewArea, datasetNodeIndex) {
+    if (!previewArea || !previewArea.index2node || !hasNodeIndex(datasetNodeIndex)) return null;
+    return previewArea.index2node(Number(datasetNodeIndex));
+}
+
+const setNodeSelectedInPreview = function (previewArea, intersection) {
+    if (!previewArea || !intersection || !intersection.object) return false;
+    if (!intersection.object.isSelected(intersection)) {
+        intersection.object.select(intersection);
+    }
+    previewArea.updateNodeGeometry(intersection, 'selected');
+    return true;
+}
+
+const setNodeNormalInPreview = function (previewArea, intersection) {
+    if (!previewArea || !intersection || !intersection.object) return false;
+    previewArea.updateNodeGeometry(intersection, 'normal');
+    intersection.object.unSelect(intersection);
+    return true;
+}
+
+const updateNodeSelection = (model, sourceIntersection, isLeft, nodeIndex = null, options = {}) => {
+    if (!sourceIntersection && !hasNodeIndex(nodeIndex)) {
+        return false;
     }
 
-    const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
+    const sourcePreviewArea = isLeft ? previewAreaLeft : previewAreaRight;
     const replaceSelection = shouldReplaceSelection(options, selectionMode);
     const toggleSelected = options.toggleSelected !== false;
+    let datasetNodeIndex = hasNodeIndex(nodeIndex) ? Number(nodeIndex) : null;
+    const sourceInstanceId = sourceIntersection ? sourceIntersection.instanceId : null;
 
-    if (hasNodeIndex(nodeIndex) && !objectIntersected) {
-        objectIntersected = previewArea.index2node(Number(nodeIndex));
-        if (!objectIntersected ) {
+    if (sourceIntersection) {
+        if (!isPickableNodeIntersection(sourceIntersection)) {
             return false;
         }
+        datasetNodeIndex = Number(sourceIntersection.object.getDatasetIndex(sourceIntersection));
     }
 
-    if (
-        !objectIntersected ||
-        !objectIntersected.object ||
-        typeof objectIntersected.object.getDatasetIndex !== 'function'
-    ) {
-        return false;
-    }
-    
-    if (
-        objectIntersected.object.userData &&
-        objectIntersected.object.userData.annotationPresentation === true
-    ) {
+    if (!hasNodeIndex(datasetNodeIndex) || !Number.isFinite(datasetNodeIndex) || datasetNodeIndex < 0) {
         return false;
     }
 
-    const instanceId = objectIntersected.instanceId;
-    const group = objectIntersected.object.name.group;
-    const hemisphere = objectIntersected.object.name.hemisphere;
-    // check if name is blank empty or undefined
-    if (group === "" || group === undefined || group === null) return false;
-    if (hemisphere === "" || hemisphere === undefined || hemisphere === null) return false;
-    if (!hasNodeIndex(instanceId)) return false;
+    const leftIntersection = localNodeIntersection(previewAreaLeft, datasetNodeIndex);
+    const rightIntersection = localNodeIntersection(previewAreaRight, datasetNodeIndex);
+    const sourceResolvedIntersection = localNodeIntersection(sourcePreviewArea, datasetNodeIndex) || sourceIntersection;
+    const selectedBefore = getNodesSelected();
+    const transition = selectionTransition(selectedBefore, datasetNodeIndex, {
+        replaceSelection: replaceSelection,
+        toggleSelected: toggleSelected
+    });
 
-    //const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
-    //console.log("previewArea instances: ");
-    //console.log(previewArea.instances);
-    // if
-    //const instanceList = previewArea.instances[group][hemisphere];
-    //or could be
-    //const instanceList = objectIntersected.
-    // log instance
-
-    if (group === "" || group === undefined || group === null || hemisphere === "" || hemisphere === undefined || hemisphere === null || !hasNodeIndex(instanceId)) {
-        console.log("group: ", group);
-        console.log("hemisphere: ", hemisphere);
-        console.log("instanceId: ", instanceId);
-
+    if (transition.action === 'none' || (!leftIntersection && !rightIntersection && !sourceResolvedIntersection)) {
         return false;
     }
 
-    //if selected make unselected, if unselected make selected
-    //objectIntersected.object.userData.selected = !objectIntersected.object.userData.selected;
-
-
-    // check if object is selected or not
-    let isSelected = objectIntersected.object.isSelected(objectIntersected);
-    nodeIndex = objectIntersected.object.getDatasetIndex(objectIntersected);
-
-    if (!isSelected) {
+    if (transition.action === 'deselect') {
+        setNodeNormalInPreview(previewAreaLeft, leftIntersection);
+        setNodeNormalInPreview(previewAreaRight, rightIntersection);
+        removeEdgesGivenNodeFromScenes(datasetNodeIndex);
+        emitLocalNodeSelection(datasetNodeIndex, isLeft, false);
+    } else {
         if (replaceSelection) {
             clearNativeNodeSelection();
-            objectIntersected = previewArea.index2node(Number(nodeIndex)) || objectIntersected;
         }
-        //mark object selected
-        objectIntersected.object.select(objectIntersected);
-        //previewArea.updateNodeGeometry(objectIntersected, 'selected');
-        //set the object geometry to selected in both scenes
-        // this if statement is to handle different active groups in the left and right preview areas
-
-        let selectedNodeIndex = -1;
-        if (isLeft) {
-            selectedNodeIndex = previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected');
-            previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', selectedNodeIndex);
-            //previewAreaLeft.getNodesInstanceFromDatasetIndex(nodeIndex);
-        } else {
-            //previewAreaRight.getNodesInstanceFromDatasetIndex(nodeIndex);
-            selectedNodeIndex = previewAreaRight.updateNodeGeometry(objectIntersected, 'selected');
-            previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', selectedNodeIndex);
-        }
-        //previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
-        //previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
-        console.log("switched to selected");
-        //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
-        //previewArea.drawSelectedNode(objectIntersected);
-
-        setNodeInfoPanel(model.getRegionByIndex(nodeIndex), nodeIndex);
-        drawIncidentEdgesForNode(model, nodeIndex, isLeft);
-        emitLocalNodeSelection(nodeIndex, isLeft, true);
-
-    } else {
-        if (!toggleSelected) {
-            if (replaceSelection) {
-                clearNativeNodeSelection();
-                objectIntersected = previewArea.index2node(Number(nodeIndex)) || objectIntersected;
-                objectIntersected.object.select(objectIntersected);
-                let selectedNodeIndex = -1;
-                if (isLeft) {
-                    selectedNodeIndex = previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected');
-                    previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', selectedNodeIndex);
-                } else {
-                    selectedNodeIndex = previewAreaRight.updateNodeGeometry(objectIntersected, 'selected');
-                    previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', selectedNodeIndex);
-                }
-            }
-            setNodeInfoPanel(model.getRegionByIndex(nodeIndex), nodeIndex);
-            drawIncidentEdgesForNode(model, nodeIndex, isLeft);
-            emitLocalNodeSelection(nodeIndex, isLeft, true);
-            return true;
-        }
-        //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
-        //objectIntersected.object.userData.selected = false;
-        //unselect the object
-        console.log("switching to unselected");
-        //previewArea.updateNodeGeometry(objectIntersected, 'normal');
-        //set the object geometry to normal in both scenes
-        previewAreaLeft.updateNodeGeometry(objectIntersected, 'normal');
-        previewAreaRight.updateNodeGeometry(objectIntersected, 'normal');
-        objectIntersected.object.unSelect(objectIntersected);
-        //probably want to remove the edges from the scene here.
-        console.log("end switch");
-        removeEdgesGivenNodeFromScenes(nodeIndex);
-        emitLocalNodeSelection(nodeIndex, isLeft, false);
+        setNodeSelectedInPreview(previewAreaLeft, leftIntersection);
+        setNodeSelectedInPreview(previewAreaRight, rightIntersection);
+        setNodeInfoPanel(model.getRegionByIndex(datasetNodeIndex), datasetNodeIndex);
+        drawIncidentEdgesForNode(model, datasetNodeIndex, isLeft);
+        emitLocalNodeSelection(datasetNodeIndex, isLeft, true);
     }
-    //log the currently selected nodes
-    let selectedNodes = getNodesSelected(); // local to drawing, returns a list from both preview areas
-    console.log("selectedNodes: ", selectedNodes);
+
+    logSelectionDebug({
+        viewport: isLeft ? 'left' : 'right',
+        selectionMode: selectionMode,
+        replaceSelection: replaceSelection,
+        sourceInstanceId: sourceInstanceId,
+        objectName: sourceIntersection && sourceIntersection.object ? sourceIntersection.object.name : null,
+        datasetNodeIndex: datasetNodeIndex,
+        sourcePreviewArea: isLeft ? 'previewAreaLeft' : 'previewAreaRight',
+        sourceResolvedIntersection: sourceResolvedIntersection,
+        index2node: sourceResolvedIntersection,
+        selectedBefore: selectedBefore,
+        selectedAfter: getNodesSelected(),
+        incidentEdgesNodeId: transition.action === 'deselect' ? null : datasetNodeIndex
+    });
+
     return true;
 };
 

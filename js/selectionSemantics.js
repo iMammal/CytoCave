@@ -15,6 +15,57 @@ function shouldReplaceSelection(options = {}, currentMode = 'additive') {
   return normalizeSelectionMode(currentMode) === 'replace';
 }
 
+function normalizeNodeIndex(value) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : value;
+}
+
+function sameNodeIndex(left, right) {
+  return String(left) === String(right);
+}
+
+function selectionTransition(selectedBefore = [], targetNodeId, options = {}) {
+  const selected = Array.from(new Set((selectedBefore || []).map(normalizeNodeIndex)));
+
+  if (!hasNodeIndex(targetNodeId)) {
+    return {
+      action: 'none',
+      selectedAfter: selected
+    };
+  }
+
+  const target = normalizeNodeIndex(targetNodeId);
+  const replaceSelection = options.replaceSelection === true;
+  const toggleSelected = options.toggleSelected !== false;
+  const alreadySelected = selected.some(nodeId => sameNodeIndex(nodeId, target));
+
+  if (replaceSelection) {
+    return {
+      action: 'select',
+      selectedAfter: [target]
+    };
+  }
+
+  if (alreadySelected && toggleSelected) {
+    return {
+      action: 'deselect',
+      selectedAfter: selected.filter(nodeId => !sameNodeIndex(nodeId, target))
+    };
+  }
+
+  if (alreadySelected) {
+    return {
+      action: 'select',
+      selectedAfter: selected
+    };
+  }
+
+  return {
+    action: 'select',
+    selectedAfter: selected.concat([target])
+  };
+}
+
 function isAnnotationPresentationObject(object) {
   return !!(
     object &&
@@ -71,5 +122,6 @@ module.exports = {
   isPickableNodeIntersection: isNodeIntersection,
   markAnnotationObjectNonPickable,
   normalizeSelectionMode,
+  selectionTransition,
   shouldReplaceSelection
 };
