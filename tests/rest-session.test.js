@@ -64,6 +64,7 @@ test('REST session state exposes the primary k20/k40 comparison', async (t) => {
   assert.equal(response.body.viewports.right.subjectID, 'UPENN-GBM-00013_11__n21760_s0_k40');
   assert.equal(response.body.view.colorBy.left, 'KMeans_k20_c16_s0_Clustering');
   assert.equal(response.body.view.colorBy.right, 'KMeans_k40_c16_s0_Clustering');
+  assert.equal(response.body.view.selectionMode, 'additive');
 });
 
 test('POST /variants/compare is idempotent for the default demo', async (t) => {
@@ -205,6 +206,60 @@ test('node selection and focus requests update session state', async (t) => {
   assert.notEqual(focusOne.body.revision, focusTwo.body.revision);
 });
 
+test('selection mode can be read and changed without GET mutation', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const stateBefore = await request(server, 'GET', '/session/state');
+  const modeBefore = await request(server, 'GET', '/view/selection-mode');
+  const stateAfterRead = await request(server, 'GET', '/session/state');
+
+  assert.equal(modeBefore.statusCode, 200);
+  assert.equal(modeBefore.body.selectionMode, 'additive');
+  assert.equal(stateBefore.body.revision, stateAfterRead.body.revision);
+
+  const replace = await request(server, 'POST', '/view/selection-mode', {
+    selectionMode: 'replace'
+  });
+  assert.equal(replace.statusCode, 200);
+  assert.equal(replace.body.selectionMode, 'replace');
+  assert.equal(replace.body.state.view.selectionMode, 'replace');
+  assert.notEqual(replace.body.revision, stateBefore.body.revision);
+
+  const invalid = await request(server, 'POST', '/view/selection-mode', {
+    selectionMode: 'exclusive'
+  });
+  assert.equal(invalid.statusCode, 400);
+  assert.match(invalid.body.error, /selectionMode must be additive or replace/);
+});
+
+test('select-node supports explicit replacement override while default remains replace', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const additive = await request(server, 'POST', '/view/select-node', {
+    nodeId: '0',
+    viewport: 'left',
+    replaceSelection: false
+  });
+  assert.equal(additive.statusCode, 200);
+  assert.deepEqual(additive.body.state.view.selectedNode, {
+    nodeId: '0',
+    viewport: 'left',
+    replaceSelection: false
+  });
+
+  const defaultReplace = await request(server, 'POST', '/view/select-node', {
+    nodeId: '1',
+    viewport: 'left'
+  });
+  assert.equal(defaultReplace.statusCode, 200);
+  assert.deepEqual(defaultReplace.body.state.view.selectedNode, {
+    nodeId: '1',
+    viewport: 'left'
+  });
+});
+
 test('selection replacement preserves annotations and supports node zero', async (t) => {
   const server = await startServer();
   t.after(() => server.close());
@@ -235,6 +290,32 @@ test('selection replacement preserves annotations and supports node zero', async
   assert.equal(selectedOne.statusCode, 200);
   assert.deepEqual(selectedOne.body.state.view.selectedNode, { nodeId: '1', viewport: 'left' });
   assert.equal(selectedOne.body.state.annotations.byNode['0'].text, 'Annotation preserved while native selection changes');
+});
+
+test('annotation creation does not alter selection mode or selected node', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const mode = await request(server, 'POST', '/view/selection-mode', {
+    selectionMode: 'replace'
+  });
+  assert.equal(mode.statusCode, 200);
+
+  const selected = await request(server, 'POST', '/view/select-node', {
+    nodeId: '0',
+    viewport: 'left'
+  });
+  assert.equal(selected.statusCode, 200);
+
+  const annotated = await request(server, 'POST', '/api/annotate', {
+    nodeId: '1',
+    text: 'Annotation does not select this node',
+    viewport: 'left'
+  });
+  assert.equal(annotated.statusCode, 200);
+  assert.deepEqual(annotated.body.state.view.selectedNode, { nodeId: '0', viewport: 'left' });
+  assert.equal(annotated.body.state.view.selectionMode, 'replace');
+  assert.equal(annotated.body.state.annotations.byNode['1'].text, 'Annotation does not select this node');
 });
 
 test('node view commands return useful validation errors', async (t) => {

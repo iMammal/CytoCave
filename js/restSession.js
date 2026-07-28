@@ -7,7 +7,9 @@ import {
     previewAreaRight,
     updateNodesVisiblity,
     selectNodeByIndex,
-    clearNodeSelection
+    clearNodeSelection,
+    setSelectionMode,
+    getSelectionMode
 } from "./drawing";
 import {buildAnnotationDetailModel} from "./annotationPresentation";
 
@@ -19,6 +21,7 @@ var lastSelectedKey = null;
 var lastAnnotationsKey = null;
 var lastFocusRequestId = null;
 var lastSessionState = null;
+var lastSelectionMode = null;
 
 function sideName(side) {
     return side === "left" ? "Left" : "Right";
@@ -282,14 +285,35 @@ function applySelection(state) {
     if (selectedKey === lastSelectedKey) return;
 
     if (selected) {
+        var replaceSelection = selected.replaceSelection !== false;
         selectNodeByIndex(selected.viewport, selected.nodeId, {
-            replaceSelection: true,
+            replaceSelection: replaceSelection,
             toggleSelected: false
         });
     } else {
         clearNodeSelection();
     }
     lastSelectedKey = selectedKey;
+}
+
+function selectionModeFromState(state) {
+    return state && state.view && state.view.selectionMode === "replace" ? "replace" : "additive";
+}
+
+function updateSelectionModeButton(mode) {
+    var button = document.getElementById("selectionModeToggle");
+    if (!button) return;
+    button.dataset.mode = mode;
+    button.textContent = mode === "replace" ? "Selection: Replace" : "Selection: Additive";
+}
+
+function applySelectionMode(state) {
+    var mode = selectionModeFromState(state);
+    if (mode !== lastSelectionMode || mode !== getSelectionMode()) {
+        setSelectionMode(mode);
+        lastSelectionMode = mode;
+    }
+    updateSelectionModeButton(mode);
 }
 
 function applyAnnotations(state) {
@@ -373,6 +397,7 @@ async function applySessionState() {
 
     applyColorBy(state);
     applyHighlight(state);
+    applySelectionMode(state);
     applySelection(state);
     applyAnnotations(state);
     applyFocusRequest(state);
@@ -403,6 +428,12 @@ async function exportSession() {
 async function exportScreenshot() {
     return postJson("/export/screenshot", {
         imageData: captureCombinedCanvas()
+    });
+}
+
+async function setSessionSelectionMode(mode) {
+    return postJson("/view/selection-mode", {
+        selectionMode: mode
     });
 }
 
@@ -449,8 +480,40 @@ function addExportControls() {
     panel.appendChild(screenshotButton);
 }
 
+function addSelectionModeControl() {
+    if (document.getElementById("selectionModeToggle")) return;
+    var panel = document.getElementById("viewLeft") || document.getElementById("viewRight");
+    if (!panel) return;
+
+    var modeButton = document.createElement("button");
+    modeButton.type = "button";
+    modeButton.id = "selectionModeToggle";
+    modeButton.textContent = "Selection: Additive";
+    modeButton.dataset.mode = "additive";
+    modeButton.onclick = function () {
+        var nextMode = modeButton.dataset.mode === "replace" ? "additive" : "replace";
+        setSessionSelectionMode(nextMode)
+            .then(function (payload) {
+                if (payload && payload.state) {
+                    applySelectionMode(payload.state);
+                    lastSessionState = payload.state;
+                } else {
+                    setSelectionMode(nextMode);
+                    updateSelectionModeButton(nextMode);
+                }
+            })
+            .catch(function (error) {
+                console.error(error);
+                setButtonStatus(modeButton, "Mode failed");
+            });
+    };
+
+    panel.appendChild(modeButton);
+}
+
 function startRestSessionBridge() {
     addExportControls();
+    addSelectionModeControl();
     if (!window.__cytocaveLocalSelectionBridge) {
         window.__cytocaveLocalSelectionBridge = true;
         window.addEventListener('cytocave-node-selected', function (event) {
@@ -461,7 +524,8 @@ function startRestSessionBridge() {
         applySessionState,
         exportSession,
         exportScreenshot,
-        postJson
+        postJson,
+        setSessionSelectionMode
     };
     applySessionState().catch(function (error) {
         console.error(error);

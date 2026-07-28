@@ -22,6 +22,7 @@ var thresholdModality = true;
 var enableEB = false;
 var enableIpsi = true;
 var enableContra = true;
+var selectionMode = 'additive';
 
 var vr = false;                     // enable VR
 var spt = false;                    // enabling shortest path
@@ -62,7 +63,7 @@ import {PreviewArea} from "./previewArea";
 import {setUpdateNeeded} from './utils/Dijkstra';
 import { setNodeInfoPanel, enableThresholdControls, addSearchPanel } from './GUI'
 import {setColorGroupScale} from './utils/scale'
-import {hasNodeIndex, isPickableNodeIntersection} from './selectionSemantics'
+import {hasNodeIndex, isPickableNodeIntersection, normalizeSelectionMode, shouldReplaceSelection} from './selectionSemantics'
 
 // callback on mouse moving, expected action: node beneath pointer are drawn bigger
 function onDocumentMouseMove(model, event) {
@@ -265,6 +266,15 @@ const emitLocalNodeSelection = function (nodeIndex, isLeft, selected) {
     }));
 }
 
+const setSelectionMode = function (mode) {
+    selectionMode = normalizeSelectionMode(mode);
+    return selectionMode;
+}
+
+const getSelectionMode = function () {
+    return selectionMode;
+}
+
 const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null, options = {}) => {
     // console.log("model: ", model);
     // console.log("objectIntersected: ", objectIntersected);
@@ -275,7 +285,7 @@ const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null,
     }
 
     const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
-    const replaceSelection = options.replaceSelection !== false;
+    const replaceSelection = shouldReplaceSelection(options, selectionMode);
     const toggleSelected = options.toggleSelected !== false;
 
     if (hasNodeIndex(nodeIndex) && !objectIntersected) {
@@ -366,6 +376,19 @@ const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null,
 
     } else {
         if (!toggleSelected) {
+            if (replaceSelection) {
+                clearNativeNodeSelection();
+                objectIntersected = previewArea.index2node(Number(nodeIndex)) || objectIntersected;
+                objectIntersected.object.select(objectIntersected);
+                let selectedNodeIndex = -1;
+                if (isLeft) {
+                    selectedNodeIndex = previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected');
+                    previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', selectedNodeIndex);
+                } else {
+                    selectedNodeIndex = previewAreaRight.updateNodeGeometry(objectIntersected, 'selected');
+                    previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', selectedNodeIndex);
+                }
+            }
             setNodeInfoPanel(model.getRegionByIndex(nodeIndex), nodeIndex);
             drawIncidentEdgesForNode(model, nodeIndex, isLeft);
             emitLocalNodeSelection(nodeIndex, isLeft, true);
@@ -1029,6 +1052,8 @@ export {
     updateNodeSelection,
     selectNodeByIndex,
     clearNodeSelection,
+    setSelectionMode,
+    getSelectionMode,
     redrawEdges,
     updateOpacity,
     glyphNodeDictionary,

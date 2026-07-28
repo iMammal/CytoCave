@@ -37,6 +37,7 @@ const baseSessionState = {
       right: 'KMeans_k40_c16_s0_Clustering'
     },
     nodeSizeBy: null,
+    selectionMode: 'additive',
     highlightedCluster: null,
     selectedNode: null,
     focusRequest: null
@@ -87,6 +88,14 @@ function normalizeViewport(value, { allowBoth = false } = {}) {
     return viewport;
   }
   throw new Error(allowBoth ? 'viewport must be left, right, or both' : 'viewport must be left or right');
+}
+
+function normalizeSelectionMode(value) {
+  const mode = String(value || 'additive').toLowerCase();
+  if (mode === 'additive' || mode === 'replace') {
+    return mode;
+  }
+  throw new Error('selectionMode must be additive or replace');
 }
 
 function normalizeNodeId(value) {
@@ -557,9 +566,30 @@ app.post('/view/highlight-cluster', (req, res) => {
   }, res);
 });
 
+app.get('/view/selection-mode', (req, res) => {
+  res.json({
+    ok: true,
+    revision: revisionFor(sessionState),
+    selectionMode: sessionState.view.selectionMode || 'additive',
+    state: stateWithRevision()
+  });
+});
+
+app.post('/view/selection-mode', (req, res) => {
+  handleRoute(() => {
+    const body = req.body || {};
+    const selectionMode = normalizeSelectionMode(body.selectionMode || body.mode);
+    sessionState.view.selectionMode = selectionMode;
+    return { state: stateWithRevision(), selectionMode };
+  }, res);
+});
+
 app.post('/view/select-node', (req, res) => {
   handleRoute(() => {
     const target = normalizeNodeTarget(req.body || {});
+    if (Object.prototype.hasOwnProperty.call(req.body || {}, 'replaceSelection')) {
+      target.replaceSelection = req.body.replaceSelection !== false;
+    }
     sessionState.view.selectedNode = target;
     return { state: stateWithRevision(), selectedNode: clone(target) };
   }, res);

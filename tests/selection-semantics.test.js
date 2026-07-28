@@ -8,7 +8,9 @@ const {
   hasNodeIndex,
   isAnnotationPresentationObject,
   isPickableNodeIntersection,
-  markAnnotationObjectNonPickable
+  markAnnotationObjectNonPickable,
+  normalizeSelectionMode,
+  shouldReplaceSelection
 } = require('../js/selectionSemantics');
 
 function nodeIntersection(instanceId = 0) {
@@ -87,4 +89,39 @@ test('selection implementation does not shadow the nodeIndex parameter', () => {
   assert.doesNotMatch(selectionBody, /\b(?:let|const|var)\s+nodeIndex\s*=/);
   assert.match(selectionBody, /\blet\s+selectedNodeIndex\s*=\s*-1/);
   assert.match(selectionBody, /updateNodeGeometry\(objectIntersected,\s*'selected',\s*selectedNodeIndex\)/);
+});
+
+test('selection replacement defaults follow mode and honor per-call overrides', () => {
+  assert.equal(normalizeSelectionMode(undefined), 'additive');
+  assert.equal(normalizeSelectionMode('replace'), 'replace');
+  assert.equal(normalizeSelectionMode('unknown'), 'additive');
+
+  assert.equal(shouldReplaceSelection({}, 'additive'), false);
+  assert.equal(shouldReplaceSelection({}, 'replace'), true);
+  assert.equal(shouldReplaceSelection({ replaceSelection: true }, 'additive'), true);
+  assert.equal(shouldReplaceSelection({ replaceSelection: false }, 'replace'), false);
+});
+
+test('mouse selection uses session-controlled mode while programmatic selection remains replace by default', () => {
+  const drawing = fs.readFileSync(path.join(__dirname, '..', 'js', 'drawing.js'), 'utf8');
+  const restSession = fs.readFileSync(path.join(__dirname, '..', 'js', 'restSession.js'), 'utf8');
+
+  assert.match(drawing, /var selectionMode = 'additive'/);
+  assert.match(drawing, /shouldReplaceSelection\(options,\s*selectionMode\)/);
+  assert.match(drawing, /const setSelectionMode = function/);
+  assert.match(restSession, /selectionModeToggle/);
+  assert.match(restSession, /\/view\/selection-mode/);
+  assert.match(restSession, /selected\.replaceSelection !== false/);
+});
+
+test('mouse selection keeps additive toggle branch for selected nodes', () => {
+  const drawing = fs.readFileSync(path.join(__dirname, '..', 'js', 'drawing.js'), 'utf8');
+  const selectionStart = drawing.indexOf('const updateNodeSelection =');
+  const selectionEnd = drawing.indexOf('const selectNodeByIndex =');
+  const selectionBody = drawing.slice(selectionStart, selectionEnd);
+
+  assert.match(selectionBody, /const toggleSelected = options\.toggleSelected !== false/);
+  assert.match(selectionBody, /objectIntersected\.object\.unSelect\(objectIntersected\)/);
+  assert.match(selectionBody, /removeEdgesGivenNodeFromScenes\(nodeIndex\)/);
+  assert.match(selectionBody, /emitLocalNodeSelection\(nodeIndex,\s*isLeft,\s*false\)/);
 });

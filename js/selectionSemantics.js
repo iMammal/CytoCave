@@ -2,6 +2,19 @@ function hasNodeIndex(value) {
   return value !== undefined && value !== null && value !== '';
 }
 
+function normalizeSelectionMode(value) {
+  const mode = String(value || 'additive').toLowerCase();
+  if (mode === 'replace') return 'replace';
+  return 'additive';
+}
+
+function shouldReplaceSelection(options = {}, currentMode = 'additive') {
+  if (Object.prototype.hasOwnProperty.call(options, 'replaceSelection')) {
+    return options.replaceSelection !== false;
+  }
+  return normalizeSelectionMode(currentMode) === 'replace';
+}
+
 function isAnnotationPresentationObject(object) {
   return !!(
     object &&
@@ -56,5 +69,7 @@ module.exports = {
   hasNodeIndex,
   isAnnotationPresentationObject,
   isPickableNodeIntersection: isNodeIntersection,
-  markAnnotationObjectNonPickable
+  markAnnotationObjectNonPickable,
+  normalizeSelectionMode,
+  shouldReplaceSelection
 };
