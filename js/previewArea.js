@@ -116,6 +116,7 @@ function PreviewArea(canvas_, model_, name_) {
     this.edgeFlaresVisible = true;
     this.labelsVisible = false;
     this.particlesVisible = false;
+    this.annotatedNodes = [];
 
     this.initXR = function () {
         //init VR //todo: this is stub now
@@ -1411,6 +1412,15 @@ function PreviewArea(canvas_, model_, name_) {
         }
     }
 
+    this.ensureLabelsVisible = function () {
+        this.labelsVisible = true;
+        if (!nodeLabelSprite) {
+            addNodeLabel();
+        } else if (brain.children.indexOf(nodeLabelSprite) === -1) {
+            brain.add(nodeLabelSprite);
+        }
+    }
+
     // toggle between showing and hiding edge flares
     this.toggleFlare = function () {
         if (this.edgeFlareVisible) {
@@ -1453,7 +1463,7 @@ function PreviewArea(canvas_, model_, name_) {
         // console.log(nodeObject);
         //let objectParent = nodeObject.object;
 
-        if(nodeIndex) {
+        if(nodeIndex !== undefined && nodeIndex !== null) {
             nodeObject = this.getNodeInstanceByIndex(nodeIndex);
         }
         if(!nodeObject || !nodeObject.object || !nodeObject.object.name) { //todo why is this happening?
@@ -1550,6 +1560,21 @@ function PreviewArea(canvas_, model_, name_) {
 
                 break;
 
+            case 'annotated':
+                console.log("annotated state");
+                if (objectParent.isSelected(nodeObject)) {
+                    break;
+                }
+                scale = 2.0;
+                matrix.identity();
+                matrix.makeTranslation(position.x, position.y, position.z);
+                matrix.scale(new THREE.Vector3(scale, scale, scale));
+                objectParent.setMatrixAt(nodeObject.instanceId, matrix);
+                objectParent.instanceMatrix.needsUpdate = true;
+                objectParent.setColorAt(nodeObject.instanceId, new THREE.Color(0xffc247));
+                objectParent.instanceColor.needsUpdate = true;
+                break;
+
             case 'root':
                 console.log("root");
 
@@ -1644,7 +1669,7 @@ function PreviewArea(canvas_, model_, name_) {
 
                 let previewArea = name === 'Left' ? previewAreaLeft : previewAreaRight;
 
-                if(nodeIdx) {
+                if(nodeIdx !== undefined && nodeIdx !== null) {
                     nodeObject = previewArea.getNodeInstanceByIndex(nodeIdx);
                 }
                 if(!nodeObject || !nodeObject.object || !nodeObject.object.name) { //todo: why is this happening?
@@ -2480,8 +2505,32 @@ function PreviewArea(canvas_, model_, name_) {
             if (rightSelectedNodes) selectedNodes = selectedNodes.concat(rightSelectedNodes);
         }
 
-        selectedNodes = selectedNodes.filter(Boolean);
-        return selectedNodes;
+        selectedNodes = selectedNodes.filter(node => node !== undefined && node !== null);
+        return [...new Set(selectedNodes)];
+    }
+
+    this.clearSelectedNodesVisual = function () {
+        const selectedNodes = this.getSelectedNodes();
+        for (let i = 0; i < selectedNodes.length; i++) {
+            const node = this.index2node(selectedNodes[i]);
+            if (node && node.object && node.object.isSelected(node)) {
+                this.updateNodeGeometry(node, 'normal');
+                node.object.unSelect(node);
+            }
+        }
+        this.clrNodesSelected();
+    }
+
+    this.applySelectedNode = function (nodeIndex) {
+        this.clearSelectedNodesVisual();
+        const normalizedIndex = Number(nodeIndex);
+        const node = this.index2node(normalizedIndex);
+        if (!node || !node.object) return false;
+        if (!node.object.isSelected(node)) {
+            node.object.select(node);
+        }
+        this.updateNodeGeometry(node, 'selected');
+        return true;
     }
 
     this.setSelectedNodes = function (nodes) {
@@ -2981,6 +3030,7 @@ function PreviewArea(canvas_, model_, name_) {
         //setEdgesColor();
     };
     this.index2node = function (index) {
+        index = Number(index);
         let instanceObj = null;
         for(let group in this.instances) {
             for(let side in this.instances[group]) {
@@ -2999,6 +3049,61 @@ function PreviewArea(canvas_, model_, name_) {
             }
         }
         return null;
+    }
+
+    this.getNodePositionByIndex = function (index) {
+        const node = this.index2node(index);
+        if (!node || !node.object) return null;
+        let matrix = new THREE.Matrix4();
+        let position = new THREE.Vector3();
+        node.object.getMatrixAt(node.instanceId, matrix);
+        position.setFromMatrixPosition(matrix);
+        return position;
+    }
+
+    this.focusNodeByIndex = function (index) {
+        const position = this.getNodePositionByIndex(index);
+        if (!position || !camera) return false;
+
+        let direction = new THREE.Vector3().subVectors(camera.position, position);
+        if (!Number.isFinite(direction.length()) || direction.length() < 1) {
+            direction = new THREE.Vector3(0, 0, 1);
+        }
+        direction.setLength(Math.min(Math.max(direction.length(), 80), 220));
+        camera.position.copy(position).add(direction);
+        camera.lookAt(position);
+        if (controls && controls.target) {
+            controls.target.copy(position);
+            controls.update();
+        }
+        camera.updateProjectionMatrix();
+        return true;
+    }
+
+    this.applyAnnotations = function (annotations, selectedNodeId) {
+        annotations = annotations || {};
+        const selectedKey = selectedNodeId === undefined || selectedNodeId === null ? null : String(selectedNodeId);
+        const nextKeys = Object.keys(annotations);
+        const nextSet = new Set(nextKeys);
+
+        for (let i = 0; i < this.annotatedNodes.length; i++) {
+            const oldKey = String(this.annotatedNodes[i]);
+            if (nextSet.has(oldKey) || oldKey === selectedKey) continue;
+            const oldNode = this.index2node(Number(oldKey));
+            if (oldNode && oldNode.object && !oldNode.object.isSelected(oldNode)) {
+                this.updateNodeGeometry(oldNode, 'normal');
+            }
+        }
+
+        this.annotatedNodes = nextKeys;
+        for (let i = 0; i < nextKeys.length; i++) {
+            const nodeKey = String(nextKeys[i]);
+            if (nodeKey === selectedKey) continue;
+            const node = this.index2node(Number(nodeKey));
+            if (node && node.object && !node.object.isSelected(node)) {
+                this.updateNodeGeometry(node, 'annotated');
+            }
+        }
     }
     // draw edges given a node following edge threshold
     this.drawEdgesGivenNode = function (indexNode, topN = null) {
@@ -3415,6 +3520,7 @@ function PreviewArea(canvas_, model_, name_) {
     // TODO needs more experimentation
     this.updateNodeLabel = function (text, nodeObject) {    ///Index) {
         if(this.labelsVisible == false) return;
+        if (!nodeLabelSprite) this.ensureLabelsVisible();
 
         var context = nspCanvas.getContext('2d');
         context.textAlign = 'left';
@@ -3431,11 +3537,26 @@ function PreviewArea(canvas_, model_, name_) {
         nodeNameMap.needsUpdate = true;
         //var pos = glyphs[nodeIndex].position;
         var pos = nodeObject.point;
+        if (!pos && nodeObject.object && nodeObject.instanceId !== undefined) {
+            let matrix = new THREE.Matrix4();
+            pos = new THREE.Vector3();
+            nodeObject.object.getMatrixAt(nodeObject.instanceId, matrix);
+            pos.setFromMatrixPosition(matrix);
+        }
+        if (!pos) return;
         nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
         if(previewAreaLeft.labelsVisible || previewAreaRight.labelsVisible) {
             nodeLabelSprite.needsUpdate = true;
         }
     };
+
+    this.updateNodeLabelByIndex = function (nodeIndex, text) {
+        this.ensureLabelsVisible();
+        const node = this.index2node(Number(nodeIndex));
+        if (!node) return false;
+        this.updateNodeLabel(text, node);
+        return true;
+    }
 
     // Adding Node label Sprite
     var addNodeLabel = function () {
@@ -3463,7 +3584,7 @@ function PreviewArea(canvas_, model_, name_) {
         nodeLabelSprite = new THREE.Sprite(mat);
         nodeLabelSprite.scale.set(100, 50, 1);
         nodeLabelSprite.position.set(0, 0, 0);
-        if(previewAreaLeft.labelsVisible) {
+        if(brain.children.indexOf(nodeLabelSprite) === -1) {
             brain.add(nodeLabelSprite);
         }
     };

@@ -12,6 +12,9 @@ var lastAppliedRevision = null;
 var pendingVariantApplyUntil = 0;
 var lastHighlightKey = null;
 var lastColorBy = {left: null, right: null};
+var lastSelectedKey = null;
+var lastAnnotationsKey = null;
+var lastFocusRequestId = null;
 
 function sideName(side) {
     return side === "left" ? "Left" : "Right";
@@ -156,6 +159,91 @@ function applyOrientation(state) {
     }
 }
 
+function filterAnnotationsForSide(state, side) {
+    var annotations = state.annotations && state.annotations.byNode ? state.annotations.byNode : {};
+    var result = {};
+    Object.keys(annotations).forEach(function (nodeId) {
+        var annotation = annotations[nodeId];
+        var viewport = annotation.viewport || "left";
+        if (viewport === side) {
+            result[nodeId] = annotation;
+        }
+    });
+    return result;
+}
+
+function annotationLabel(annotation) {
+    var source = annotation.source || "annotation";
+    var kind = annotation.kind || "analysis";
+    return "Annotation (" + source + ", " + kind + "): " + annotation.text;
+}
+
+function selectedNodeForSide(state, side) {
+    var selected = state.view && state.view.selectedNode;
+    if (!selected || selected.viewport !== side) return null;
+    return selected.nodeId;
+}
+
+function applySelection(state) {
+    var selected = state.view && state.view.selectedNode;
+    var selectedKey = selected ? JSON.stringify(selected) : null;
+    if (selectedKey === lastSelectedKey) return;
+
+    if (previewAreaLeft && previewAreaLeft.clearSelectedNodesVisual) {
+        previewAreaLeft.clearSelectedNodesVisual();
+    }
+    if (previewAreaRight && previewAreaRight.clearSelectedNodesVisual) {
+        previewAreaRight.clearSelectedNodesVisual();
+    }
+
+    if (selected && previewFor(selected.viewport) && previewFor(selected.viewport).applySelectedNode) {
+        previewFor(selected.viewport).applySelectedNode(selected.nodeId);
+    }
+    lastSelectedKey = selectedKey;
+}
+
+function applyAnnotations(state) {
+    var annotations = state.annotations && state.annotations.byNode ? state.annotations.byNode : {};
+    var selected = state.view && state.view.selectedNode;
+    var annotationKey = JSON.stringify({
+        annotations: annotations,
+        selectedNode: selected || null
+    });
+    if (annotationKey === lastAnnotationsKey) return;
+
+    ["left", "right"].forEach(function (side) {
+        var preview = previewFor(side);
+        if (!preview || !preview.applyAnnotations) return;
+        var sideAnnotations = filterAnnotationsForSide(state, side);
+        var selectedNodeId = selectedNodeForSide(state, side);
+        preview.applyAnnotations(sideAnnotations, selectedNodeId);
+
+        var labelNodeId = selectedNodeId && sideAnnotations[selectedNodeId] ? selectedNodeId : Object.keys(sideAnnotations)[0];
+        if (labelNodeId && preview.updateNodeLabelByIndex) {
+            preview.updateNodeLabelByIndex(labelNodeId, annotationLabel(sideAnnotations[labelNodeId]));
+        }
+    });
+    lastAnnotationsKey = annotationKey;
+}
+
+function applyFocusRequest(state) {
+    var focusRequest = state.view && state.view.focusRequest;
+    if (!focusRequest || !focusRequest.requestId || focusRequest.requestId === lastFocusRequestId) return;
+
+    var preview = previewFor(focusRequest.viewport);
+    if (preview && preview.focusNodeByIndex) {
+        preview.focusNodeByIndex(focusRequest.nodeId);
+    }
+
+    var annotations = filterAnnotationsForSide(state, focusRequest.viewport);
+    var annotation = annotations[focusRequest.nodeId];
+    if (annotation && preview && preview.updateNodeLabelByIndex) {
+        preview.updateNodeLabelByIndex(focusRequest.nodeId, annotationLabel(annotation));
+    }
+
+    lastFocusRequestId = focusRequest.requestId;
+}
+
 async function getSessionState() {
     var response = await fetch("/session/state");
     if (!response.ok) throw new Error("Unable to fetch session state");
@@ -183,12 +271,17 @@ async function applySessionState() {
     var changedRight = applyVariant("right", state);
     if (changedLeft || changedRight) {
         pendingVariantApplyUntil = Date.now() + 1500;
+        lastSelectedKey = null;
+        lastAnnotationsKey = null;
         return;
     }
     if (Date.now() < pendingVariantApplyUntil) return;
 
     applyColorBy(state);
     applyHighlight(state);
+    applySelection(state);
+    applyAnnotations(state);
+    applyFocusRequest(state);
     applyOrientation(state);
     lastAppliedRevision = state.revision;
 }

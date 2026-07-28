@@ -1,38 +1,54 @@
-# REST_SMOKE_TESTS.md
-
 # CytoCave REST Smoke Tests
 
-This document captures the manual REST validation performed for the
-CytoCave REST/session layer.
+Manual checks for the REST/session layer and the notebook-to-CytoCave
+annotation path.
 
-## Purpose
+Use placeholders instead of hard-coded demo values:
 
-These tests verify:
+- `<NODE_ID>`: zero-based node index from the loaded topology.
+- `<VARIANT_ID>`: variant identifier returned by `/variants/load` or `/variants/compare`.
+- `<DATASET_FOLDER>`: dataset folder under `data/`.
+- `<LOOKUP_TABLE_ID>`: lookup table suffix without `LookupTable_`.
+- `<LEFT_SUBJECT_ID>` and `<RIGHT_SUBJECT_ID>`: catalog subject IDs.
+- `<ANNOTATION_TEXT>`: notebook-generated annotation text.
 
--   REST endpoints are reachable.
--   The authoritative server-side session state updates correctly.
--   Browser synchronization works.
--   State transitions are deterministic.
--   Idempotent requests do **not** create unnecessary revisions.
--   Session export works.
+In Windows PowerShell, `curl` is an alias for `Invoke-WebRequest`; these
+examples use `Invoke-RestMethod`.
 
-## PowerShell note
+## 1. Start Server
 
-In Windows PowerShell, `curl` is an alias for `Invoke-WebRequest`.
+```powershell
+node server.js
+```
 
-Use either:
+Expected:
 
--   `Invoke-RestMethod`
--   `curl.exe`
+- Server listens on `http://localhost:3273`.
+- `/visualization` is available.
 
-The Linux-style examples using `curl -X -H -d` will not work with the
-PowerShell alias.
+## 2. Open One Persistent Notebook Iframe
 
-------------------------------------------------------------------------
+```python
+from IPython.display import IFrame, display
 
-# 1. Get current session state
+cytocave_frame = IFrame(
+    "http://localhost:3273/visualization",
+    width="100%",
+    height=800,
+)
 
-``` powershell
+display(cytocave_frame)
+```
+
+Expected:
+
+- Exactly one CytoCave iframe is displayed.
+- Later annotation, selection, highlight, and focus operations use REST; do
+  not create or reload another iframe for routine notebook operations.
+
+## 3. Get Current Session State
+
+```powershell
 Invoke-RestMethod `
   -Uri "http://localhost:3273/session/state" `
   -Method Get |
@@ -41,25 +57,20 @@ ConvertTo-Json -Depth 12
 
 Expected:
 
--   HTTP 200
--   JSON session object
--   Current revision
--   Dataset metadata
--   View configuration
+- HTTP 200.
+- Session includes `revision`, `view`, `viewports`, and `annotations.byNode`.
 
-------------------------------------------------------------------------
+## 4. Compare Two Variants
 
-# 2. Compare two variants
-
-``` powershell
+```powershell
 $body = @{
-  datasetFolder = "UPENN_GBM_00013_C16_KCOMPARE"
-  lookupTableId = "upenn_gbm_00013_c16_kcompare"
+  datasetFolder = "<DATASET_FOLDER>"
+  lookupTableId = "<LOOKUP_TABLE_ID>"
   left = @{
-    subjectID = "UPENN-GBM-00013_11__n21760_s0_k20"
+    subjectID = "<LEFT_SUBJECT_ID>"
   }
   right = @{
-    subjectID = "UPENN-GBM-00013_11__n21760_s0_k40"
+    subjectID = "<RIGHT_SUBJECT_ID>"
   }
   layout = "side-by-side"
   syncOrientation = $true
@@ -74,23 +85,18 @@ Invoke-RestMethod `
 
 Expected:
 
--   Variants load into left/right viewports.
--   Browser updates.
--   Revision changes only if the comparison differs from the current
-    state.
+- Left and right viewports update in the existing iframe through session
+  synchronization.
+- Repeating the same request preserves the same session revision.
 
-------------------------------------------------------------------------
+## 5. Load One Variant
 
-# 3. Load a single variant
-
-Left viewport:
-
-``` powershell
+```powershell
 $body = @{
   viewport = "left"
-  datasetFolder = "UPENN_GBM_00013_C16_KCOMPARE"
-  lookupTableId = "upenn_gbm_00013_c16_kcompare"
-  subjectID = "UPENN-GBM-00013_11__n21760_s0_k20"
+  datasetFolder = "<DATASET_FOLDER>"
+  lookupTableId = "<LOOKUP_TABLE_ID>"
+  subjectID = "<LEFT_SUBJECT_ID>"
 } | ConvertTo-Json
 
 Invoke-RestMethod `
@@ -100,16 +106,107 @@ Invoke-RestMethod `
   -Body $body
 ```
 
-Repeat for the right viewport with the k40 subject.
+Expected:
 
-------------------------------------------------------------------------
+- The target viewport changes without reloading the iframe.
+- `GET /session/state` shows the loaded viewport and revision.
 
-# 4. Highlight cluster
+## 6. Annotate A Node
 
-``` powershell
+Legacy-compatible request:
+
+```powershell
+$body = @{
+  node = "<NODE_ID>"
+  note = "<ANNOTATION_TEXT>"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+  -Uri "http://localhost:3273/api/annotate" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+```
+
+Structured request:
+
+```powershell
+$body = @{
+  nodeId = "<NODE_ID>"
+  text = "<ANNOTATION_TEXT>"
+  kind = "analysis"
+  source = "jupyter"
+  variantId = "<VARIANT_ID>"
+  viewport = "left"
+  metrics = @{}
+} | ConvertTo-Json -Depth 5
+
+Invoke-RestMethod `
+  -Uri "http://localhost:3273/api/annotate" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+```
+
+Expected:
+
+- `annotations.byNode.<NODE_ID>` appears in `/session/state`.
+- The session revision changes when annotation content changes.
+- Repeating an identical annotation request preserves the same revision.
+- The existing iframe marks the annotated node and shows annotation text via
+  the existing label overlay.
+
+To remove an annotation without adding a new route, send `text = ""` or
+`note = ""` for the same node and viewport.
+
+## 7. Select Node
+
+```powershell
+$body = @{
+  nodeId = "<NODE_ID>"
+  viewport = "left"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+  -Uri "http://localhost:3273/view/select-node" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+```
+
+Expected:
+
+- `view.selectedNode` is updated in `/session/state`.
+- The existing iframe changes the node selection without reloading.
+
+## 8. Focus Node Once
+
+```powershell
+$body = @{
+  nodeId = "<NODE_ID>"
+  viewport = "left"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+  -Uri "http://localhost:3273/view/focus-node" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+```
+
+Expected:
+
+- `view.focusRequest` includes `nodeId`, `viewport`, and a new `requestId`.
+- Each focus request gets a distinct `requestId`.
+- The browser processes each `requestId` once; polling must not repeatedly
+  reset the camera.
+
+## 9. Highlight K-Means Assignment
+
+```powershell
 $body = @{
   viewport = "both"
-  clusterId = 7
+  clusterId = "<KMEANS_ASSIGNMENT_ID>"
 } | ConvertTo-Json
 
 Invoke-RestMethod `
@@ -121,20 +218,17 @@ Invoke-RestMethod `
 
 Expected:
 
--   Highlight changes immediately.
--   Session revision changes.
+- The session stores `view.highlightedCluster`.
+- The iframe highlights the requested k-means assignment. Do not describe
+  these assignments as graph communities.
 
-------------------------------------------------------------------------
+## 10. Change Color Mapping
 
-# 5. Change color mapping
-
-Example:
-
-``` powershell
+```powershell
 $body = @{
   mode = "kmeans_cluster"
-  left = "KMeans_k40_c16_s0_Clustering"
-  right = "KMeans_k20_c16_s0_Clustering"
+  left = "<LEFT_KMEANS_FIELD>"
+  right = "<RIGHT_KMEANS_FIELD>"
 } | ConvertTo-Json
 
 Invoke-RestMethod `
@@ -144,16 +238,14 @@ Invoke-RestMethod `
   -Body $body
 ```
 
-Important:
+Expected:
 
-Sending the **same** values already present in the session is expected
-to be a no-op and should not change the session revision.
+- Color mapping changes through session synchronization.
+- Sending the same values again preserves the revision.
 
-------------------------------------------------------------------------
+## 11. Change Layout
 
-# 6. Change layout
-
-``` powershell
+```powershell
 $body = @{
   layout = "side-by-side"
   syncOrientation = $false
@@ -167,17 +259,14 @@ Invoke-RestMethod `
   -Body $body
 ```
 
-Verify:
+Expected:
 
--   Session state changes.
--   Browser updates.
--   Revision changes.
+- Session view state changes.
+- Browser updates through the same polling path.
 
-------------------------------------------------------------------------
+## 12. Export Session
 
-# 7. Export session
-
-``` powershell
+```powershell
 Invoke-RestMethod `
   -Uri "http://localhost:3273/export/session" `
   -Method Post `
@@ -187,50 +276,98 @@ Invoke-RestMethod `
 
 Expected:
 
--   Session JSON written to the exports directory.
--   Export reflects current authoritative session.
+- Session JSON is written under `exports/`.
+- Export includes annotations, selected node, focus request, and revision.
 
-------------------------------------------------------------------------
+## 13. Screenshot Export
 
-# 8. Screenshot export
+From the browser, click `Screenshot`, or post a PNG data URL:
 
-Use the browser Screenshot button.
+```powershell
+$body = @{
+  imageData = "<PNG_DATA_URL>"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+  -Uri "http://localhost:3273/export/screenshot" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+```
 
 Expected:
 
--   PNG written to the exports directory.
--   Screenshot matches current visualization.
+- PNG is written under `exports/`.
+- A visual screenshot match requires a real browser check.
 
-------------------------------------------------------------------------
+## Notebook Helper Example
 
-# Idempotence
+```python
+import requests
 
-A key property of the REST session model is idempotence.
+CYTOCAVE = "http://localhost:3273"
 
-Repeated requests that do not change the session state should:
+def cytocave_annotate(node_id, text, **metadata):
+    payload = {
+        "nodeId": str(node_id),
+        "text": text,
+        "kind": metadata.pop("kind", "analysis"),
+        "source": metadata.pop("source", "jupyter"),
+        **metadata,
+    }
+    response = requests.post(f"{CYTOCAVE}/api/annotate", json=payload)
+    response.raise_for_status()
+    return response.json()
 
--   return success,
--   preserve the current revision,
--   avoid unnecessary updates.
+def cytocave_select_node(node_id, viewport="left"):
+    response = requests.post(
+        f"{CYTOCAVE}/view/select-node",
+        json={"nodeId": str(node_id), "viewport": viewport},
+    )
+    response.raise_for_status()
+    return response.json()
 
-Only genuine state changes should generate a new revision identifier.
+def cytocave_focus_node(node_id, viewport="left"):
+    response = requests.post(
+        f"{CYTOCAVE}/view/focus-node",
+        json={"nodeId": str(node_id), "viewport": viewport},
+    )
+    response.raise_for_status()
+    return response.json()
 
-------------------------------------------------------------------------
+def cytocave_state():
+    response = requests.get(f"{CYTOCAVE}/session/state")
+    response.raise_for_status()
+    return response.json()
+```
 
-# Outcome
+Intended sequence:
 
-The manual smoke tests confirmed successful operation of:
+```python
+cytocave_annotate(
+    node_id,
+    computed_note,
+    variantId=variant["variant_id"],
+    kind="analysis",
+    source="jupyter",
+    metrics=computed_metrics,
+    viewport="left",
+)
 
--   GET /session/state
--   POST /variants/load
--   POST /variants/compare
--   POST /view/highlight-cluster
--   POST /view/color-by
--   POST /view/layout
--   POST /export/session
--   Browser screenshot export
+cytocave_select_node(node_id, viewport="left")
+cytocave_focus_node(node_id, viewport="left")
+state = cytocave_state()
+```
 
-These tests validate the end-to-end path:
+## Validation Checklist
 
-Client → REST API → Authoritative Session → Browser Synchronization →
-Export
+- One `/visualization` iframe is sufficient.
+- Annotation, selection, and focus operations use REST and do not reload the
+  iframe.
+- Annotation changes participate in session revisions.
+- Identical annotation and selection requests preserve revisions where
+  practical.
+- Focus requests are distinguishable by `requestId`.
+- Invalid node IDs and invalid viewports return HTTP 400 with useful errors.
+- Existing variant, layout, color, k-means highlight, session export, and
+  screenshot export routes remain functional.

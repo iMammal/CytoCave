@@ -17,7 +17,7 @@ const DEFAULT_RIGHT_SUBJECT = 'UPENN-GBM-00013_11__n21760_s0_k40';
 
 app.use(bodyParser.json({ limit: '50mb' }));
 
-let annotations = {};
+let focusRequestCounter = 0;
 
 const baseSessionState = {
   version: 1,
@@ -37,7 +37,12 @@ const baseSessionState = {
       right: 'KMeans_k40_c16_s0_Clustering'
     },
     nodeSizeBy: null,
-    highlightedCluster: null
+    highlightedCluster: null,
+    selectedNode: null,
+    focusRequest: null
+  },
+  annotations: {
+    byNode: {}
   },
   renderPolicy: {
     edgeMode: 'top_per_node',
@@ -74,6 +79,131 @@ function stateWithRevision() {
   const state = clone(sessionState);
   state.revision = revisionFor(sessionState);
   return state;
+}
+
+function normalizeViewport(value, { allowBoth = false } = {}) {
+  const viewport = String(value || 'left').toLowerCase();
+  if (viewport === 'left' || viewport === 'right' || (allowBoth && viewport === 'both')) {
+    return viewport;
+  }
+  throw new Error(allowBoth ? 'viewport must be left, right, or both' : 'viewport must be left or right');
+}
+
+function normalizeNodeId(value) {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    throw new Error('nodeId is required');
+  }
+  const nodeId = String(value).trim();
+  if (!/^\d+$/.test(nodeId)) {
+    throw new Error('nodeId must be a non-negative integer dataset index');
+  }
+  return nodeId;
+}
+
+function validateNodeTarget(nodeId, viewport) {
+  const variant = sessionState.viewports && sessionState.viewports[viewport];
+  let nodeCount = variant && variant.graph && variant.graph.nodeCount;
+  if ((nodeCount === null || nodeCount === undefined) && variant && variant.files && variant.files.topology) {
+    const topologyPath = dataPath(variant.datasetFolder, variant.files.topology.name);
+    const text = readTextIfExists(topologyPath);
+    if (text) {
+      nodeCount = text.split(/\r?\n/).filter((line) => line.trim()).length - 1;
+    }
+  }
+  if (nodeCount !== null && nodeCount !== undefined && Number.isFinite(Number(nodeCount))) {
+    const index = Number(nodeId);
+    const maxIndex = Number(nodeCount) - 1;
+    if (index < 0 || index > maxIndex) {
+      throw new Error(`nodeId ${nodeId} is outside viewport ${viewport}; expected 0 through ${maxIndex}`);
+    }
+  }
+}
+
+function normalizeNodeTarget(body = {}) {
+  const viewport = normalizeViewport(body.viewport || body.side || 'left');
+  const nodeId = normalizeNodeId(body.nodeId ?? body.node ?? body.id);
+  validateNodeTarget(nodeId, viewport);
+  return { nodeId, viewport };
+}
+
+function structuredAnnotations() {
+  if (!sessionState.annotations) {
+    sessionState.annotations = { byNode: {} };
+  }
+  if (!sessionState.annotations.byNode) {
+    sessionState.annotations.byNode = {};
+  }
+  return sessionState.annotations.byNode;
+}
+
+function annotationPayloadEqual(existing, next) {
+  if (!existing) return false;
+  const keys = ['nodeId', 'text', 'kind', 'source', 'variantId', 'viewport'];
+  return keys.every((key) => existing[key] === next[key]) &&
+    stableStringify(existing.metrics || {}) === stableStringify(next.metrics || {});
+}
+
+function normalizeAnnotation(body = {}) {
+  const viewport = normalizeViewport(body.viewport || body.side || 'left');
+  const nodeId = normalizeNodeId(body.nodeId ?? body.node ?? body.id);
+  validateNodeTarget(nodeId, viewport);
+
+  const hasText = Object.prototype.hasOwnProperty.call(body, 'text');
+  const hasNote = Object.prototype.hasOwnProperty.call(body, 'note');
+  const rawText = hasText ? body.text : (hasNote ? body.note : undefined);
+  if (rawText === undefined) {
+    throw new Error('annotation text is required as text or note');
+  }
+
+  const text = rawText === null ? null : String(rawText);
+  const variant = sessionState.viewports && sessionState.viewports[viewport];
+  const variantId = body.variantId || body.variant_id || (variant && variant.variantId) || null;
+  const metrics = body.metrics && typeof body.metrics === 'object' && !Array.isArray(body.metrics)
+    ? clone(body.metrics)
+    : {};
+
+  return {
+    nodeId,
+    text,
+    kind: body.kind || 'analysis',
+    source: body.source || 'jupyter',
+    variantId,
+    viewport,
+    metrics
+  };
+}
+
+function upsertAnnotation(body = {}) {
+  const incoming = normalizeAnnotation(body);
+  const byNode = structuredAnnotations();
+
+  if (incoming.text === null || incoming.text.trim() === '') {
+    const existed = Boolean(byNode[incoming.nodeId]);
+    delete byNode[incoming.nodeId];
+    return { annotation: null, changed: existed, removed: existed };
+  }
+
+  const existing = byNode[incoming.nodeId] || null;
+  if (annotationPayloadEqual(existing, incoming)) {
+    return { annotation: clone(existing), changed: false, removed: false };
+  }
+
+  const now = new Date().toISOString();
+  const annotation = {
+    ...incoming,
+    createdAt: existing ? existing.createdAt : now,
+    updatedAt: now
+  };
+  byNode[incoming.nodeId] = annotation;
+  return { annotation: clone(annotation), changed: true, removed: false };
+}
+
+function legacyAnnotationMap() {
+  const byNode = structuredAnnotations();
+  return Object.keys(byNode).sort().reduce((result, nodeId) => {
+    result[nodeId] = byNode[nodeId].text;
+    return result;
+  }, {});
 }
 
 function ensureExportRoot() {
@@ -347,15 +477,22 @@ function handleRoute(fn, res) {
 compareVariants();
 
 app.post('/api/annotate', (req, res) => {
-  const { node, note } = req.body;
-  annotations[node] = note;
-  res.sendStatus(200);
-  console.log('CytoCave backend received POST request.');
+  handleRoute(() => {
+    const result = upsertAnnotation(req.body || {});
+    return {
+      state: stateWithRevision(),
+      annotation: result.annotation,
+      changed: result.changed,
+      removed: result.removed
+    };
+  }, res);
 });
 
 app.get('/api/annotations', (req, res) => {
-  res.json(annotations);
-  console.log('CytoCave backend received GET request for annotations.');
+  res.json({
+    ...legacyAnnotationMap(),
+    byNode: clone(structuredAnnotations())
+  });
 });
 
 app.get('/session/state', (req, res) => {
@@ -407,7 +544,7 @@ app.post('/view/highlight-cluster', (req, res) => {
     if (req.body.clusterId === undefined && req.body.cluster_id === undefined) {
       throw new Error('clusterId is required');
     }
-    const viewport = req.body.viewport || req.body.side || 'both';
+    const viewport = normalizeViewport(req.body.viewport || req.body.side || 'both', { allowBoth: true });
     const clusterId = req.body.clusterId ?? req.body.cluster_id;
     sessionState.view.highlightedCluster = {
       mode: 'kmeans_cluster',
@@ -417,6 +554,26 @@ app.post('/view/highlight-cluster', (req, res) => {
       rightField: req.body.rightField || sessionState.view.colorBy.right
     };
     return { state: stateWithRevision() };
+  }, res);
+});
+
+app.post('/view/select-node', (req, res) => {
+  handleRoute(() => {
+    const target = normalizeNodeTarget(req.body || {});
+    sessionState.view.selectedNode = target;
+    return { state: stateWithRevision(), selectedNode: clone(target) };
+  }, res);
+});
+
+app.post('/view/focus-node', (req, res) => {
+  handleRoute(() => {
+    const target = normalizeNodeTarget(req.body || {});
+    const focusRequest = {
+      ...target,
+      requestId: `${Date.now()}-${++focusRequestCounter}`
+    };
+    sessionState.view.focusRequest = focusRequest;
+    return { state: stateWithRevision(), focusRequest: clone(focusRequest) };
   }, res);
 });
 
@@ -489,5 +646,11 @@ module.exports = {
   compareVariants,
   normalizeVariant,
   revisionFor,
-  stateWithRevision
+  stateWithRevision,
+  resetSessionForTests: () => {
+    sessionState = clone(baseSessionState);
+    focusRequestCounter = 0;
+    compareVariants();
+    return stateWithRevision();
+  }
 };
