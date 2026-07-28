@@ -6,7 +6,20 @@ const bodyParser = require('body-parser');
 const Papa = require('papaparse');
 
 const app = express();
+const isDevelopment = process.env.NODE_ENV !== 'production';
 const port = process.env.PORT || 3273;
+
+if (isDevelopment) {
+  app.use((req, res, next) => {
+    res.setHeader(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, proxy-revalidate'
+    );
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  });
+}
 
 const DATA_ROOT = path.resolve(__dirname, 'data');
 const EXPORT_ROOT = path.resolve(__dirname, 'exports');

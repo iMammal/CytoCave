@@ -1,6 +1,8 @@
 const assert = require('assert');
+const childProcess = require('child_process');
 const fs = require('fs');
 const http = require('http');
+const path = require('path');
 const test = require('node:test');
 const { app, resetSessionForTests } = require('../server');
 
@@ -20,6 +22,13 @@ function demoNodeId(state) {
 }
 
 function request(server, method, urlPath, body) {
+  return requestRaw(server, method, urlPath, body).then((response) => ({
+    ...response,
+    body: response.body ? JSON.parse(response.body) : null
+  }));
+}
+
+function requestRaw(server, method, urlPath, body) {
   const payload = body ? JSON.stringify(body) : null;
   const options = {
     method,
@@ -41,7 +50,8 @@ function request(server, method, urlPath, body) {
         try {
           resolve({
             statusCode: res.statusCode,
-            body: data ? JSON.parse(data) : null
+            headers: res.headers,
+            body: data
           });
         } catch (error) {
           reject(error);
@@ -53,6 +63,79 @@ function request(server, method, urlPath, body) {
     req.end();
   });
 }
+
+function assertNoCacheHeaders(headers) {
+  assert.equal(headers['cache-control'], 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  assert.equal(headers.pragma, 'no-cache');
+  assert.equal(headers.expires, '0');
+}
+
+test('development responses include no-cache headers before routes and static assets', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const api = await requestRaw(server, 'GET', '/session/state');
+  const html = await requestRaw(server, 'GET', '/visualization');
+  const javascript = await requestRaw(server, 'HEAD', '/public/main.js');
+  const css = await requestRaw(server, 'HEAD', '/style/style.css');
+
+  assert.equal(api.statusCode, 200);
+  assert.equal(html.statusCode, 200);
+  assert.equal(javascript.statusCode, 200);
+  assert.equal(css.statusCode, 200);
+  assertNoCacheHeaders(api.headers);
+  assertNoCacheHeaders(html.headers);
+  assertNoCacheHeaders(javascript.headers);
+  assertNoCacheHeaders(css.headers);
+});
+
+test('production mode does not apply development no-cache middleware', () => {
+  const script = `
+    const http = require('http');
+    const { app, resetSessionForTests } = require('./server');
+    resetSessionForTests();
+    const server = app.listen(0, () => {
+      const req = http.request({
+        method: 'GET',
+        host: '127.0.0.1',
+        port: server.address().port,
+        path: '/session/state'
+      }, (res) => {
+        const headers = {
+          cacheControl: res.headers['cache-control'] || null,
+          pragma: res.headers.pragma || null,
+          expires: res.headers.expires || null
+        };
+        res.resume();
+        res.on('end', () => {
+          console.log(JSON.stringify(headers));
+          server.close(() => process.exit(0));
+        });
+      });
+      req.on('error', (error) => {
+        console.error(error.stack || error.message);
+        server.close(() => process.exit(1));
+      });
+      req.end();
+    });
+  `;
+  const result = childProcess.spawnSync(process.execPath, ['-e', script], {
+    cwd: path.join(__dirname, '..'),
+    env: {
+      ...process.env,
+      NODE_ENV: 'production'
+    },
+    encoding: 'utf8',
+    timeout: 15000
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const output = result.stdout.trim().split(/\r?\n/).pop();
+  const headers = JSON.parse(output);
+  assert.equal(headers.cacheControl, null);
+  assert.equal(headers.pragma, null);
+  assert.equal(headers.expires, null);
+});
 
 test('REST session state exposes the primary k20/k40 comparison', async (t) => {
   const server = await startServer();
