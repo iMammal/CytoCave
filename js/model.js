@@ -14,7 +14,6 @@ import {Platonics} from "./polyhedron";
 import * as math from 'mathjs'
 import {sunflower} from "./graphicsUtils";
 import {setNodeInfoPanel} from "./GUI";
-import {isDirectedMatrix} from "./incidentEdges";
 
 function Model(side) {
     var groups = {};                    // contain nodes group affiliation according to Anatomy, place, rich club, id
@@ -346,10 +345,6 @@ function Model(side) {
     // get connection matrix according to activeMatrix
     this.getConnectionMatrix = function () {
         return connectionMatrix;
-    };
-
-    this.isDirected = function () {
-        return isDirectedMatrix(connectionMatrix);
     };
 
     // get a row (one node) from connection matrix
