@@ -52,6 +52,7 @@ import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS} from './GUI'
 import {scaleColorGroup} from './utils/scale'
 import {buildAnnotationCalloutLines, wrapAndTruncateLines} from './annotationPresentation'
 import {firstPickableNodeIntersection, markAnnotationObjectNonPickable} from './selectionSemantics'
+import {collectIncidentEdges, filterIncidentEdgesForDisplay} from './incidentEdges'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
 import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
@@ -2210,37 +2211,15 @@ function PreviewArea(canvas_, model_, name_) {
                 console.log(nodeObject);
                 let object = nodeObject.object;
                 let index = object.getDatasetIndex(nodeObject);
-                //console.log("Index: " + index);
-                let row = model.getConnectionMatrixRow(index);
-                //console.log("Row: ");
-                //console.log(row);
-                let edges = [];
-
-                row.forEach(function(weight, targetIndex) {
-                    if (weight > 0) {
-                        let edge = {
-                            weight: weight,
-                            targetNodeId: targetIndex[0] //1] // subset was 1 but multiply is 0
-                        };
-                        edges.push(edge);
-                    }
-                }, true); // true: skip zeros
-                return edges;
+                return collectIncidentEdges(model.getConnectionMatrix(), index, {
+                    directed: model.isDirected()
+                });
             };
             // overload the getEdges to also take a standard index
             instance.getEdgesFromIndex = function(index) {
-                let row = model.getConnectionMatrixRow(index);
-                let edges = [];
-                row.forEach(function(weight, targetIndex) {
-                    if (weight > 0) {
-                        let edge = {
-                            weight: weight,
-                            targetNodeId: targetIndex[0]  //1]  // subset was 1 but multiply is 0
-                        };
-                        edges.push(edge);
-                    }
-                }, true); // true: skip zeros
-                return edges;
+                return collectIncidentEdges(model.getConnectionMatrix(), index, {
+                    directed: model.isDirected()
+                });
             }
 
         }
@@ -3201,7 +3180,6 @@ function PreviewArea(canvas_, model_, name_) {
     this.drawEdgesGivenNode = function (indexNode, topN = null) {
         console.log("Attempting to draw edges given node: " + indexNode);
         var dataset = model.getDataset();
-        var row = model.getConnectionMatrixRow(indexNode);
 
         //let instanceObj = this.instances[dataset[indexNode].group]["left"].getNodesInstanceFromDatasetIndex(indexNode);
         //instanceObj may be in any group (left or right) so we need to find it. getnodesinstancefromdatasetindex returns null if not found in that group.
@@ -3230,11 +3208,10 @@ function PreviewArea(canvas_, model_, name_) {
         console.log("drawEdgesGivenNode: Active edges: ");
         console.log(edges);
 
-        if(!topN) {
-            edges = edges.filter(edge => edge.weight >= model.getThreshold());
-        } else {
-            edges = edges.sort((a, b) => b.weight - a.weight).slice(0, topN);
-        }
+        edges = filterIncidentEdgesForDisplay(edges, {
+            threshold: model.getThreshold(),
+            topN: topN
+        });
 
         for(let i = 0; i < edges.length; i++) {
             console.log("edge: ");
@@ -3242,7 +3219,7 @@ function PreviewArea(canvas_, model_, name_) {
 
             let edge  = [];
             edge.push(instancePosition);
-            let targetNodeId = edges[i].targetNodeId;
+            let targetNodeId = edges[i].adjacentNodeId;
             let targetNode = this.index2node(targetNodeId);
             if(targetNode == null) {
                 console.log("targetNode is null");
@@ -3252,12 +3229,13 @@ function PreviewArea(canvas_, model_, name_) {
             targetNode.object.getMatrixAt(targetNode.instanceId, matrix);
             targetPosition.setFromMatrixPosition(matrix);
             edge.push(targetPosition);
-            this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode, targetNodeId]);
+            this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edge, indexNode, [edges[i].sourceNodeId, edges[i].targetNodeId]);
         }
 
         return;
 
         // unreachable code beyond this point
+        var row = model.getConnectionMatrixRow(indexNode);
         var edgeIdx = model.getEdgesIndeces();
         if (getEnableEB()) {
             model.performEBOnNode(indexNode);
