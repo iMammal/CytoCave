@@ -14,6 +14,10 @@ import {Platonics} from "./polyhedron";
 import * as math from 'mathjs'
 import {sunflower} from "./graphicsUtils";
 import {setNodeInfoPanel} from "./GUI";
+import {
+    buildSparseAdjacencyRows,
+    collectIncidentEdges
+} from "./incidentEdges";
 
 function Model(side) {
     var groups = {};                    // contain nodes group affiliation according to Anatomy, place, rich club, id
@@ -33,6 +37,10 @@ function Model(side) {
     let previousMap = {};               // previous map of nodesDistances
 
     var connectionMatrix = [];          // adjacency matrix
+    var outgoingAdjacency = [];         // sparse A[i, :] rows for incident-edge lookup
+    var incomingAdjacency = [];         // sparse A^T[i, :] rows for incident-edge lookup
+    var adjacencyBuildCount = 0;
+    var directedGraph = true;
     var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
     var nodesStrength = [];
 
@@ -83,6 +91,10 @@ function Model(side) {
         nodesDistances = {};
 
         connectionMatrix = [];
+        outgoingAdjacency = [];
+        incomingAdjacency = [];
+        adjacencyBuildCount = 0;
+        directedGraph = true;
         distanceMatrix = [];
 
         edges = [];
@@ -272,10 +284,76 @@ function Model(side) {
         return conthreshold;
     };
 
+    function explicitDirectedFlag(source) {
+        if (!source || typeof source !== 'object') return null;
+        const candidates = [
+            source.directed,
+            source.isDirected,
+            source.metadata && source.metadata.directed,
+            source.metadata && source.metadata.isDirected,
+            source.meta && source.meta.directed,
+            source.meta && source.meta.isDirected
+        ];
+        for (let i = 0; i < candidates.length; i++) {
+            if (candidates[i] === true || candidates[i] === 'true') return true;
+            if (candidates[i] === false || candidates[i] === 'false') return false;
+        }
+        return null;
+    }
+
+    function sparseEdgeRowsFromConnectionMatrix() {
+        const edgeRows = [];
+        if (!connectionMatrix || typeof connectionMatrix.forEach !== 'function') return edgeRows;
+        connectionMatrix.forEach(function (value, index) {
+            edgeRows.push([index[0], index[1], value]);
+        }, true);
+        return edgeRows;
+    }
+
+    this.setDirected = function (directed) {
+        directedGraph = directed !== false;
+    };
+
+    this.isDirected = function () {
+        // No fallback symmetry scan: datasets without explicit metadata are treated as directed.
+        return directedGraph;
+    };
+
+    this.rebuildAdjacencyIndex = function (edgeRows) {
+        const result = buildSparseAdjacencyRows(edgeRows || sparseEdgeRowsFromConnectionMatrix(), {
+            nodeCount: this.getConnectionMatrixDimension(),
+            directed: directedGraph
+        });
+        outgoingAdjacency = result.outgoingAdjacency;
+        incomingAdjacency = result.incomingAdjacency;
+        directedGraph = result.directed;
+        adjacencyBuildCount += 1;
+        return result;
+    };
+
+    this.getOutgoingAdjacency = function () {
+        return outgoingAdjacency;
+    };
+
+    this.getIncomingAdjacency = function () {
+        return incomingAdjacency;
+    };
+
+    this.getAdjacencyBuildCount = function () {
+        return adjacencyBuildCount;
+    };
+
+    this.getIncidentEdgesByNode = function (indexNode) {
+        return collectIncidentEdges(outgoingAdjacency, incomingAdjacency, indexNode);
+    };
+
     // set connection matrix from JSON file
     this.setConnectionMatrixFromJSON = function (jsonData) {
         //const connectionMatrix = math.sparse(jsonData);
         connectionMatrix = math.SparseMatrix.fromJSON(jsonData);
+        const directed = explicitDirectedFlag(jsonData);
+        if (directed !== null) directedGraph = directed;
+        this.rebuildAdjacencyIndex();
 
         console.log(`Successfully created the sparse matrix from JSON data.`);
         this.computeDistanceMatrix();
@@ -287,16 +365,25 @@ function Model(side) {
     this.setConnectionMatrix = function (d) {
         //console.log("set connection matrix:",Papa);
         connectionMatrix = math.sparse();
-        if (d.data[0].length == 3) {
+        const directed = explicitDirectedFlag(d);
+        if (directed !== null) directedGraph = directed;
+        let sparseEdgeRows = null;
+        if (d.data[0].length >= 3) {
+            sparseEdgeRows = [];
             // Process each data row
             for (let i = 0; i < d.data.length; i++) {
                 const row = d.data[i];
                 const from = row[0];
                 const to = row[1];
                 const weight = row[2];
+                const source = Number(from);
+                const target = Number(to);
+                const edgeWeight = Number(weight);
+                if (!Number.isInteger(source) || !Number.isInteger(target) || !Number.isFinite(edgeWeight)) continue;
 
                 // Assign the weight to the corresponding position in the sparse matrix
-                connectionMatrix.set([from, to], weight);
+                connectionMatrix.set([source, target], edgeWeight);
+                sparseEdgeRows.push(row);
                 // let text = "from: " + from + " to: " + to + " weight: " + weight;
                 // setNodeInfoPanel(1,1,text);
                 //if(i % 1000 == 0) {
@@ -306,6 +393,7 @@ function Model(side) {
         } else {
             connectionMatrix = math.sparse(d.data); // d.data;
         }
+        this.rebuildAdjacencyIndex(sparseEdgeRows);
         this.computeDistanceMatrix();
         this.computeNodalStrength();
     };

@@ -52,6 +52,7 @@ import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS} from './GUI'
 import {scaleColorGroup} from './utils/scale'
 import {buildAnnotationCalloutLines, wrapAndTruncateLines} from './annotationPresentation'
 import {firstPickableNodeIntersection, markAnnotationObjectNonPickable} from './selectionSemantics'
+import {filterIncidentEdges} from './incidentEdges'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
 import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
@@ -2210,37 +2211,11 @@ function PreviewArea(canvas_, model_, name_) {
                 console.log(nodeObject);
                 let object = nodeObject.object;
                 let index = object.getDatasetIndex(nodeObject);
-                //console.log("Index: " + index);
-                let row = model.getConnectionMatrixRow(index);
-                //console.log("Row: ");
-                //console.log(row);
-                let edges = [];
-
-                row.forEach(function(weight, targetIndex) {
-                    if (weight > 0) {
-                        let edge = {
-                            weight: weight,
-                            targetNodeId: targetIndex[0] //1] // subset was 1 but multiply is 0
-                        };
-                        edges.push(edge);
-                    }
-                }, true); // true: skip zeros
-                return edges;
+                return model.getIncidentEdgesByNode(index);
             };
             // overload the getEdges to also take a standard index
             instance.getEdgesFromIndex = function(index) {
-                let row = model.getConnectionMatrixRow(index);
-                let edges = [];
-                row.forEach(function(weight, targetIndex) {
-                    if (weight > 0) {
-                        let edge = {
-                            weight: weight,
-                            targetNodeId: targetIndex[0]  //1]  // subset was 1 but multiply is 0
-                        };
-                        edges.push(edge);
-                    }
-                }, true); // true: skip zeros
-                return edges;
+                return model.getIncidentEdgesByNode(index);
             }
 
         }
@@ -3201,7 +3176,6 @@ function PreviewArea(canvas_, model_, name_) {
     this.drawEdgesGivenNode = function (indexNode, topN = null) {
         console.log("Attempting to draw edges given node: " + indexNode);
         var dataset = model.getDataset();
-        var row = model.getConnectionMatrixRow(indexNode);
 
         //let instanceObj = this.instances[dataset[indexNode].group]["left"].getNodesInstanceFromDatasetIndex(indexNode);
         //instanceObj may be in any group (left or right) so we need to find it. getnodesinstancefromdatasetindex returns null if not found in that group.
@@ -3225,16 +3199,28 @@ function PreviewArea(canvas_, model_, name_) {
         //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
         instancePosition.setFromMatrixPosition(matrix);
 
-        var edges = instanceObj.object.getEdges(instanceObj);
+        var edges = model.getIncidentEdgesByNode(indexNode);
         //var edges = this.getActiveEdges(); //this gets all active edges.
         console.log("drawEdgesGivenNode: Active edges: ");
         console.log(edges);
 
-        if(!topN) {
-            edges = edges.filter(edge => edge.weight >= model.getThreshold());
-        } else {
-            edges = edges.sort((a, b) => b.weight - a.weight).slice(0, topN);
-        }
+        edges = filterIncidentEdges(edges, {
+            selectedNodeId: indexNode,
+            dataset: dataset,
+            threshold: model.getThreshold(),
+            topN: topN,
+            enableIpsi: getEnableIpsi(),
+            enableContra: getEnableContra(),
+            getGroupNameByNodeIndex: function (nodeId) {
+                return model.getGroupNameByNodeIndex(nodeId);
+            },
+            isRegionActive: function (regionName) {
+                return model.isRegionActive(regionName);
+            },
+            isNodeVisible: function (nodeId) {
+                return getVisibleNodes(nodeId);
+            }
+        });
 
         for(let i = 0; i < edges.length; i++) {
             console.log("edge: ");
@@ -3255,82 +3241,6 @@ function PreviewArea(canvas_, model_, name_) {
             this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edge, indexNode, [indexNode, targetNodeId]);
         }
 
-        return;
-
-        // unreachable code beyond this point
-        var edgeIdx = model.getEdgesIndeces();
-        if (getEnableEB()) {
-            model.performEBOnNode(indexNode);
-        }
-
-        // todo: get back to this after edge thresholding is re-implemented
-
-        //console.log("contra: "+getEnableContra()+"...ipsi: "+getEnableIpsi());
-
-        // todo: evaluate this: For now, If neither ipsi nor contra are selected, then don't draw any edges
-        if (!getEnableIpsi() && !getEnableContra()) { return; }
-
-            // It can get too cluttered if both ipsi-
-        if (getEnableIpsi() && getEnableContra()) {
-            console.log("edges: ipsi or contra enabled")
-            for (var i = 0; i < row.length; i++) {
-                //console.log("Row length: ");
-                //console.log(row.length);
-                var myThreshold = model.getThreshold();
-                //console.log("myThreshold: ");
-                //console.log(myThreshold);
-                if (dataset[indexNode].hemisphere !== dataset[i].hemisphere) {
-                    myThreshold = model.getConThreshold();
-                    //console.log("myThreshold overwritten by ConThreshold: ");
-                    //console.log(myThreshold);
-                }
-                if (myThreshold <= 0 || isNaN(myThreshold)) {
-                    myThreshold = 2;
-                }
-                if ((i != indexNode) &&
-                    (Math.abs(row[i]) >= myThreshold) &&
-                    model.isRegionActive(model.getGroupNameByNodeIndex(i)) &&
-                    getVisibleNodes(i) ) {
-                    //displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
-                    // //display debug info for each variable above.
-                    // console.log("Displayed Edges Length: ");
-                    // console.log(displayedEdges.length);
-                    // console.log("Edges: ");
-                    // console.log(edges);
-                    // console.log("edgeIdx: ");
-                    // console.log(edgeIdx);
-                    //
-                    // console.log("indexNode: ");
-                    // console.log(indexNode);
-                    // console.log("row: ");
-                    // console.log(row);
-                    // console.log("i: ");
-                    // console.log(i);
-                    //let edix = edgeIdx[nodeIndex][row[i]];
-                    let edix = model.getEdgesIndeces().get([indexNode, i]);
-                    if(edix < 0) continue;
-                    if(edix > edges.length) continue;
-                    console.log("Edix");
-                    console.log(edix);
-                    console.log("this.displayedEdges before: ");
-                    console.log(this.displayedEdges);
-                    this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edges[ edix ], indexNode, [indexNode, i]);
-                    console.log("this.displayedEdges after: ");
-                    console.log(this.displayedEdges);
-                }
-            }
-        } else {
-            console.log("edges: ipsi or contra not enabled")
-            for (var i = 0; i < row.length; i++) {
-                if ((i != indexNode) && Math.abs(row[i]) > model.getThreshold() && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && getVisibleNodes(i) &&
-                    ((getEnableIpsi() && (dataset[indexNode].hemisphere === dataset[i].hemisphere)) ||
-                        (getEnableContra() && (dataset[indexNode].hemisphere !== dataset[i].hemisphere)) ||
-                        (!getEnableIpsi() && !getEnableContra()) ) ) {
-                    let edix = model.getEdgesIndeces().get([indexNode, i]);
-                    this.displayedEdges[this.displayedEdges.length] = drawEdgeWithName(edges[edix], indexNode, [indexNode, i]);
-                }
-            }
-        }
     };
 
     // give a specific node index, remove all edges from a specific node in a specific scene
