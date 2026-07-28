@@ -50,6 +50,7 @@ import {
 } from './drawing'
 import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS} from './GUI'
 import {scaleColorGroup} from './utils/scale'
+import {buildAnnotationCalloutLines, wrapAndTruncateLines} from './annotationPresentation'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
 import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
@@ -70,11 +71,14 @@ function PreviewArea(canvas_, model_, name_) {
     var canvas = canvas_;
     var camera = null, renderer = null, controls = null, scene = null, raycaster = null, gl = null;
     var nodeLabelSprite = null, nodeNameMap = null, nspCanvas = null;
+    var nodeLabelLeaderLine = null, activeNodeLabelNode = null;
+    var annotationHaloTexture = null, annotationHaloSprites = {};
     var clock = new THREE.Clock();
     //var instances = {}; //for tracking instanced meshes
     // make instances public so we can access them from another class
     //this.instances = instances;
     this.instances = {};
+    var previewObject = this;
     // VR stuff
     var vrControl = null, effect = null;
     var controllerLeft = null, controllerRight = null, xrInputLeft = null, xrInputRight = null,
@@ -1824,6 +1828,7 @@ function PreviewArea(canvas_, model_, name_) {
 
         //update camera position
         camera.updateProjectionMatrix();
+        updateAnnotationVisualPositions();
 
         //console.log("controls.update() called");
 
@@ -3061,6 +3066,111 @@ function PreviewArea(canvas_, model_, name_) {
         return position;
     }
 
+    var getNodePosition = function (nodeObject) {
+        if (!nodeObject) return null;
+        if (nodeObject.point) return nodeObject.point.clone ? nodeObject.point.clone() : nodeObject.point;
+        if (!nodeObject.object || nodeObject.instanceId === undefined) return null;
+        let matrix = new THREE.Matrix4();
+        let position = new THREE.Vector3();
+        nodeObject.object.getMatrixAt(nodeObject.instanceId, matrix);
+        position.setFromMatrixPosition(matrix);
+        return position;
+    }
+
+    var createAnnotationHaloTexture = function () {
+        if (annotationHaloTexture) return annotationHaloTexture;
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 128;
+        const context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.strokeStyle = 'rgba(255,255,255,0.95)';
+        context.lineWidth = 12;
+        context.beginPath();
+        context.arc(64, 64, 43, 0, Math.PI * 2);
+        context.stroke();
+        context.strokeStyle = 'rgba(255,255,255,0.45)';
+        context.lineWidth = 4;
+        context.beginPath();
+        context.arc(64, 64, 55, 0, Math.PI * 2);
+        context.stroke();
+        annotationHaloTexture = new THREE.Texture(canvas);
+        annotationHaloTexture.needsUpdate = true;
+        return annotationHaloTexture;
+    }
+
+    var createAnnotationHalo = function (nodeKey, selected) {
+        const material = new THREE.SpriteMaterial({
+            map: createAnnotationHaloTexture(),
+            color: selected ? 0x7dd3fc : 0xffc247,
+            transparent: true,
+            opacity: selected ? 0.98 : 0.9,
+            depthTest: false,
+            depthWrite: false
+        });
+        const sprite = new THREE.Sprite(material);
+        sprite.name = "annotation-halo-" + nodeKey;
+        sprite.userData.nodeKey = String(nodeKey);
+        sprite.userData.selected = !!selected;
+        sprite.scale.set(selected ? 13 : 10, selected ? 13 : 10, 1);
+        if (brain && brain.children.indexOf(sprite) === -1) {
+            brain.add(sprite);
+        }
+        return sprite;
+    }
+
+    var updateAnnotationHaloPosition = function (nodeKey, sprite) {
+        if (brain && brain.children.indexOf(sprite) === -1) {
+            brain.add(sprite);
+        }
+        const node = previewObject.index2node(Number(nodeKey));
+        const position = getNodePosition(node);
+        if (!position) {
+            sprite.visible = false;
+            return;
+        }
+        sprite.position.copy(position);
+        sprite.visible = true;
+    }
+
+    var removeAnnotationHalo = function (nodeKey) {
+        const sprite = annotationHaloSprites[nodeKey];
+        if (!sprite) return;
+        if (brain) brain.remove(sprite);
+        if (sprite.material) sprite.material.dispose();
+        delete annotationHaloSprites[nodeKey];
+    }
+
+    var syncAnnotationHalos = function (annotations, selectedKey) {
+        const keys = Object.keys(annotations || {});
+        const nextSet = new Set(keys);
+        Object.keys(annotationHaloSprites).forEach(function (nodeKey) {
+            if (!nextSet.has(nodeKey)) removeAnnotationHalo(nodeKey);
+        });
+        keys.forEach(function (nodeKey) {
+            const isSelected = selectedKey !== null && String(nodeKey) === String(selectedKey);
+            let sprite = annotationHaloSprites[nodeKey];
+            if (!sprite) {
+                sprite = createAnnotationHalo(nodeKey, isSelected);
+                annotationHaloSprites[nodeKey] = sprite;
+            }
+            if (sprite.userData.selected !== isSelected) {
+                sprite.userData.selected = isSelected;
+                sprite.material.color.set(isSelected ? 0x7dd3fc : 0xffc247);
+                sprite.material.opacity = isSelected ? 0.98 : 0.9;
+                sprite.scale.set(isSelected ? 13 : 10, isSelected ? 13 : 10, 1);
+            }
+            updateAnnotationHaloPosition(nodeKey, sprite);
+        });
+    }
+
+    var updateAnnotationVisualPositions = function () {
+        Object.keys(annotationHaloSprites).forEach(function (nodeKey) {
+            updateAnnotationHaloPosition(nodeKey, annotationHaloSprites[nodeKey]);
+        });
+        updateNodeLabelPosition();
+    }
+
     this.focusNodeByIndex = function (index) {
         const position = this.getNodePositionByIndex(index);
         if (!position || !camera) return false;
@@ -3096,14 +3206,7 @@ function PreviewArea(canvas_, model_, name_) {
         }
 
         this.annotatedNodes = nextKeys;
-        for (let i = 0; i < nextKeys.length; i++) {
-            const nodeKey = String(nextKeys[i]);
-            if (nodeKey === selectedKey) continue;
-            const node = this.index2node(Number(nodeKey));
-            if (node && node.object && !node.object.isSelected(node)) {
-                this.updateNodeGeometry(node, 'annotated');
-            }
-        }
+        syncAnnotationHalos(annotations, selectedKey);
     }
     // draw edges given a node following edge threshold
     this.drawEdgesGivenNode = function (indexNode, topN = null) {
@@ -3515,46 +3618,158 @@ function PreviewArea(canvas_, model_, name_) {
     // }
 
 
-    // Update the text and position according to selected node
-    // The alignment, size and offset parameters are set by experimentation
-    // TODO needs more experimentation
-    this.updateNodeLabel = function (text, nodeObject) {    ///Index) {
+    var calloutCanvasWidth = 512;
+    var calloutCanvasHeight = 256;
+    var calloutPadding = 18;
+    var calloutMaxTextWidth = 390;
+    var calloutFontSize = 26;
+    var calloutLineHeight = 34;
+
+    var drawRoundedRect = function (context, x, y, width, height, radius) {
+        context.beginPath();
+        context.moveTo(x + radius, y);
+        context.lineTo(x + width - radius, y);
+        context.quadraticCurveTo(x + width, y, x + width, y + radius);
+        context.lineTo(x + width, y + height - radius);
+        context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        context.lineTo(x + radius, y + height);
+        context.quadraticCurveTo(x, y + height, x, y + height - radius);
+        context.lineTo(x, y + radius);
+        context.quadraticCurveTo(x, y, x + radius, y);
+        context.closePath();
+    }
+
+    var labelLinesFor = function (label) {
+        if (Array.isArray(label)) {
+            return wrapAndTruncateLines(label, {maxChars: 28, maxLines: 5});
+        }
+        if (label && typeof label === 'object') {
+            return buildAnnotationCalloutLines(label, {maxChars: 28, maxLines: 5, maxMetrics: 3});
+        }
+        return wrapAndTruncateLines([String(label || '')], {maxChars: 30, maxLines: 4});
+    }
+
+    var drawCallout = function (label) {
+        if (!nspCanvas) return;
+        const context = nspCanvas.getContext('2d');
+        const lines = labelLinesFor(label).filter(function (line) {
+            return line !== undefined && line !== null && String(line).trim() !== "";
+        });
+        context.clearRect(0, 0, calloutCanvasWidth, calloutCanvasHeight);
+        if (!lines.length) {
+            if (nodeNameMap) nodeNameMap.needsUpdate = true;
+            return {width: 0, height: 0};
+        }
+
+        context.textAlign = 'left';
+        context.textBaseline = 'top';
+        context.font = "600 " + calloutFontSize + "px Arial";
+        let measuredWidth = 0;
+        for (let i = 0; i < lines.length; i++) {
+            context.font = (i === 0 ? "700 " : "500 ") + calloutFontSize + "px Arial";
+            measuredWidth = Math.max(measuredWidth, context.measureText(lines[i]).width);
+        }
+        const panelWidth = Math.min(calloutMaxTextWidth + calloutPadding * 2, Math.ceil(measuredWidth + calloutPadding * 2));
+        const panelHeight = Math.min(calloutCanvasHeight - 12, calloutPadding * 2 + lines.length * calloutLineHeight);
+
+        context.shadowColor = 'rgba(0,0,0,0.45)';
+        context.shadowBlur = 8;
+        context.shadowOffsetX = 0;
+        context.shadowOffsetY = 3;
+        drawRoundedRect(context, 6, 6, panelWidth, panelHeight, 12);
+        context.fillStyle = 'rgba(18, 23, 28, 0.82)';
+        context.fill();
+        context.shadowColor = 'rgba(0,0,0,0)';
+        context.lineWidth = 4;
+        context.strokeStyle = 'rgba(255, 194, 71, 0.95)';
+        context.stroke();
+
+        context.fillStyle = 'rgba(255, 194, 71, 0.95)';
+        context.beginPath();
+        context.arc(20, panelHeight - 10, 5, 0, Math.PI * 2);
+        context.fill();
+
+        for (let i = 0; i < lines.length; i++) {
+            context.font = (i === 0 ? "700 " : "500 ") + calloutFontSize + "px Arial";
+            context.fillStyle = i === 0 ? '#ffffff' : '#dbeafe';
+            context.fillText(lines[i], calloutPadding + 8, calloutPadding + 4 + i * calloutLineHeight);
+        }
+
+        if (nodeNameMap) nodeNameMap.needsUpdate = true;
+        return {width: panelWidth + 12, height: panelHeight + 12};
+    }
+
+    var ensureNodeLabelLeaderLine = function () {
+        if (nodeLabelLeaderLine || !brain) return;
+        const geometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(0, 0, 0)
+        ]);
+        const material = new THREE.LineBasicMaterial({
+            color: 0xffc247,
+            transparent: true,
+            opacity: 0.78,
+            depthTest: false,
+            depthWrite: false
+        });
+        nodeLabelLeaderLine = new THREE.Line(geometry, material);
+        nodeLabelLeaderLine.visible = false;
+        brain.add(nodeLabelLeaderLine);
+    }
+
+    var updateLeaderLine = function (nodePosition, labelPosition) {
+        ensureNodeLabelLeaderLine();
+        if (!nodeLabelLeaderLine) return;
+        nodeLabelLeaderLine.geometry.setFromPoints([nodePosition, labelPosition]);
+        nodeLabelLeaderLine.visible = true;
+    }
+
+    var updateNodeLabelPosition = function () {
+        if (!nodeLabelSprite || !activeNodeLabelNode || !camera) return;
+        const nodePosition = getNodePosition(activeNodeLabelNode);
+        if (!nodePosition) {
+            nodeLabelSprite.visible = false;
+            if (nodeLabelLeaderLine) nodeLabelLeaderLine.visible = false;
+            return;
+        }
+        const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
+        const labelPosition = nodePosition.clone()
+            .add(up.multiplyScalar(11))
+            .add(right.multiplyScalar(7));
+        nodeLabelSprite.position.copy(labelPosition);
+        nodeLabelSprite.visible = true;
+        updateLeaderLine(nodePosition, labelPosition);
+    }
+
+    this.clearNodeLabel = function () {
+        activeNodeLabelNode = null;
+        if (nodeLabelSprite) nodeLabelSprite.visible = false;
+        if (nodeLabelLeaderLine) nodeLabelLeaderLine.visible = false;
+    }
+
+    // Update the compact callout text and anchor it to the selected or annotated node.
+    this.updateNodeLabel = function (label, nodeObject) {
         if(this.labelsVisible == false) return;
         if (!nodeLabelSprite) this.ensureLabelsVisible();
-
-        var context = nspCanvas.getContext('2d');
-        context.textAlign = 'left';
-        // Find the length of the text and add enough _s to fill half of the canvas
-        var textLength = context.measureText(text).width;
-        var numUnderscores = Math.ceil((nspCanvas.width/2 - textLength) / context.measureText("_").width);
-        for (var i = 0; i < numUnderscores; i++) {
-            text = text + "_";
+        const size = drawCallout(label);
+        if (!size || size.width <= 0 || size.height <= 0) {
+            this.clearNodeLabel();
+            return;
         }
-        //text = text + "___________________________";
-        context.clearRect(0, 0, 256 * 4, 256);
-        context.fillText(text, 5, 120);
-
-        nodeNameMap.needsUpdate = true;
-        //var pos = glyphs[nodeIndex].position;
-        var pos = nodeObject.point;
-        if (!pos && nodeObject.object && nodeObject.instanceId !== undefined) {
-            let matrix = new THREE.Matrix4();
-            pos = new THREE.Vector3();
-            nodeObject.object.getMatrixAt(nodeObject.instanceId, matrix);
-            pos.setFromMatrixPosition(matrix);
-        }
-        if (!pos) return;
-        nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
+        activeNodeLabelNode = nodeObject;
+        nodeLabelSprite.scale.set(size.width * 0.115, size.height * 0.115, 1);
+        updateNodeLabelPosition();
         if(previewAreaLeft.labelsVisible || previewAreaRight.labelsVisible) {
             nodeLabelSprite.needsUpdate = true;
         }
     };
 
-    this.updateNodeLabelByIndex = function (nodeIndex, text) {
+    this.updateNodeLabelByIndex = function (nodeIndex, label) {
         this.ensureLabelsVisible();
         const node = this.index2node(Number(nodeIndex));
         if (!node) return false;
-        this.updateNodeLabel(text, node);
+        this.updateNodeLabel(label, node);
         return true;
     }
 
@@ -3562,14 +3777,10 @@ function PreviewArea(canvas_, model_, name_) {
     var addNodeLabel = function () {
 
         nspCanvas = document.createElement('canvas');
-        var size = 256;
-        nspCanvas.width = size * 4;
-        nspCanvas.height = size;
+        nspCanvas.width = calloutCanvasWidth;
+        nspCanvas.height = calloutCanvasHeight;
         var context = nspCanvas.getContext('2d');
-        context.fillStyle = '#ffffff';
-        context.textAlign = 'left';
-        context.font = '24px Arial';
-        context.fillText("", 0, 0);
+        context.clearRect(0, 0, nspCanvas.width, nspCanvas.height);
 
         nodeNameMap = new THREE.Texture(nspCanvas);
         nodeNameMap.needsUpdate = true;
@@ -3578,15 +3789,22 @@ function PreviewArea(canvas_, model_, name_) {
             map: nodeNameMap,
             transparent: true,
             useScreenCoordinates: false,
-            color: 0xffffff
+            color: 0xffffff,
+            depthTest: false,
+            depthWrite: false
         });
 
         nodeLabelSprite = new THREE.Sprite(mat);
-        nodeLabelSprite.scale.set(100, 50, 1);
+        if (nodeLabelSprite.center) {
+            nodeLabelSprite.center.set(0.05, 0.08);
+        }
+        nodeLabelSprite.scale.set(44, 22, 1);
         nodeLabelSprite.position.set(0, 0, 0);
+        nodeLabelSprite.visible = false;
         if(brain.children.indexOf(nodeLabelSprite) === -1) {
             brain.add(nodeLabelSprite);
         }
+        ensureNodeLabelLeaderLine();
     };
 
     this.getCamera = function () {

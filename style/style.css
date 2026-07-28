@@ -332,6 +332,64 @@ button > input[type="checkbox"] {
     vertical-align: middle;
 }
 
+.annotation-detail {
+    position: absolute;
+    bottom: 0;
+    width: 360px;
+    max-height: 260px;
+    overflow: auto;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    background: rgba(18, 23, 28, 0.86);
+    border: 1px solid rgba(255, 194, 71, 0.9);
+    border-left: 4px solid rgba(255, 194, 71, 0.95);
+    color: #f8fafc;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 12px;
+    line-height: 1.35;
+    text-align: left;
+    z-index: 4;
+}
+
+.annotation-detail-left {
+    left: 0;
+}
+
+.annotation-detail-right {
+    right: 0;
+}
+
+.annotation-detail-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.annotation-detail-row {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    column-gap: 8px;
+    margin-bottom: 5px;
+}
+
+.annotation-detail-key {
+    color: #facc15;
+    font-weight: 600;
+}
+
+.annotation-detail-value {
+    color: #e5e7eb;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.annotation-detail-section {
+    margin-top: 8px;
+    margin-bottom: 5px;
+    color: #f8fafc;
+    font-weight: 700;
+}
+
 #edgeInfoPanel {
     position: absolute;
     width: 200px;

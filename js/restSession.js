@@ -7,6 +7,7 @@ import {
     previewAreaRight,
     updateNodesVisiblity
 } from "./drawing";
+import {buildAnnotationDetailModel} from "./annotationPresentation";
 
 var lastAppliedRevision = null;
 var pendingVariantApplyUntil = 0;
@@ -172,16 +173,88 @@ function filterAnnotationsForSide(state, side) {
     return result;
 }
 
-function annotationLabel(annotation) {
-    var source = annotation.source || "annotation";
-    var kind = annotation.kind || "analysis";
-    return "Annotation (" + source + ", " + kind + "): " + annotation.text;
-}
-
 function selectedNodeForSide(state, side) {
     var selected = state.view && state.view.selectedNode;
     if (!selected || selected.viewport !== side) return null;
     return selected.nodeId;
+}
+
+function detailPanelFor(side) {
+    var host = document.getElementById("nodeInfoPanel" + sideName(side));
+    if (!host) return null;
+    var panelId = "annotationDetail" + sideName(side);
+    var panel = document.getElementById(panelId);
+    if (!panel) {
+        panel = document.createElement("div");
+        panel.id = panelId;
+        panel.className = "annotation-detail annotation-detail-" + side;
+        host.appendChild(panel);
+    }
+    return panel;
+}
+
+function appendDetailRow(parent, label, value) {
+    if (value === undefined || value === null || value === "") return;
+    var row = document.createElement("div");
+    row.className = "annotation-detail-row";
+
+    var key = document.createElement("span");
+    key.className = "annotation-detail-key";
+    key.textContent = label;
+
+    var val = document.createElement("span");
+    val.className = "annotation-detail-value";
+    val.textContent = String(value);
+
+    row.appendChild(key);
+    row.appendChild(val);
+    parent.appendChild(row);
+}
+
+function renderAnnotationDetail(side, detailModel, selectedNodeId) {
+    var panel = detailPanelFor(side);
+    if (!panel) return;
+    panel.innerHTML = "";
+    if (detailModel.empty && (selectedNodeId === undefined || selectedNodeId === null)) {
+        panel.hidden = true;
+        return;
+    }
+    panel.hidden = false;
+
+    var title = document.createElement("div");
+    title.className = "annotation-detail-title";
+    title.textContent = detailModel.title;
+    panel.appendChild(title);
+
+    var rows = document.createElement("div");
+    rows.className = "annotation-detail-rows";
+    detailModel.rows.forEach(function (row) {
+        appendDetailRow(rows, row.label, row.value);
+    });
+    panel.appendChild(rows);
+
+    if (detailModel.metrics && detailModel.metrics.length) {
+        var metricsTitle = document.createElement("div");
+        metricsTitle.className = "annotation-detail-section";
+        metricsTitle.textContent = "Metrics";
+        panel.appendChild(metricsTitle);
+
+        var metrics = document.createElement("div");
+        metrics.className = "annotation-detail-rows annotation-detail-metrics";
+        detailModel.metrics.forEach(function (metric) {
+            appendDetailRow(metrics, metric.label, metric.value);
+        });
+        panel.appendChild(metrics);
+    }
+}
+
+function updateAnnotationDetailForSide(state, side, sideAnnotations, selectedNodeId) {
+    var annotation = selectedNodeId ? sideAnnotations[selectedNodeId] : null;
+    var detailModel = buildAnnotationDetailModel(annotation, {
+        selectedNodeId: selectedNodeId,
+        viewport: selectedNodeId ? side : null
+    });
+    renderAnnotationDetail(side, detailModel, selectedNodeId);
 }
 
 function applySelection(state) {
@@ -217,10 +290,13 @@ function applyAnnotations(state) {
         var sideAnnotations = filterAnnotationsForSide(state, side);
         var selectedNodeId = selectedNodeForSide(state, side);
         preview.applyAnnotations(sideAnnotations, selectedNodeId);
+        updateAnnotationDetailForSide(state, side, sideAnnotations, selectedNodeId);
 
         var labelNodeId = selectedNodeId && sideAnnotations[selectedNodeId] ? selectedNodeId : Object.keys(sideAnnotations)[0];
         if (labelNodeId && preview.updateNodeLabelByIndex) {
-            preview.updateNodeLabelByIndex(labelNodeId, annotationLabel(sideAnnotations[labelNodeId]));
+            preview.updateNodeLabelByIndex(labelNodeId, sideAnnotations[labelNodeId]);
+        } else if (preview.clearNodeLabel) {
+            preview.clearNodeLabel();
         }
     });
     lastAnnotationsKey = annotationKey;
@@ -238,7 +314,7 @@ function applyFocusRequest(state) {
     var annotations = filterAnnotationsForSide(state, focusRequest.viewport);
     var annotation = annotations[focusRequest.nodeId];
     if (annotation && preview && preview.updateNodeLabelByIndex) {
-        preview.updateNodeLabelByIndex(focusRequest.nodeId, annotationLabel(annotation));
+        preview.updateNodeLabelByIndex(focusRequest.nodeId, annotation);
     }
 
     lastFocusRequestId = focusRequest.requestId;
