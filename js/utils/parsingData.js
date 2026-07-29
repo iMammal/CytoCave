@@ -77,6 +77,9 @@ var loadLookUpTable = function (callback) {
 };
 
 var loadSubjectNetwork = function (fileNames, model, callback) {
+    if (model && model.setEdgeValueMode) {
+        model.setEdgeValueMode(fileNames.edgeValueMode || fileNames.edge_value_mode || 'similarity');
+    }
     if (fileNames.network.toString().endsWith(".csv")) {
         Papa.parse("data/" + folder + "/" + fileNames.network, {
             download: true,

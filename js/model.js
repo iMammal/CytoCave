@@ -16,7 +16,9 @@ import {sunflower} from "./graphicsUtils";
 import {setNodeInfoPanel} from "./GUI";
 import {
     buildSparseAdjacencyRows,
-    collectIncidentEdges
+    compareEdgeStrength,
+    collectIncidentEdges,
+    normalizeEdgeValueMode
 } from "./incidentEdges";
 
 function Model(side) {
@@ -41,6 +43,7 @@ function Model(side) {
     var incomingAdjacency = [];         // sparse A^T[i, :] rows for incident-edge lookup
     var adjacencyBuildCount = 0;
     var directedGraph = true;
+    var edgeValueMode = 'similarity';
     var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
     var nodesStrength = [];
 
@@ -95,6 +98,7 @@ function Model(side) {
         incomingAdjacency = [];
         adjacencyBuildCount = 0;
         directedGraph = true;
+        edgeValueMode = 'similarity';
         distanceMatrix = [];
 
         edges = [];
@@ -301,6 +305,24 @@ function Model(side) {
         return null;
     }
 
+    function explicitEdgeValueMode(source) {
+        if (!source || typeof source !== 'object') return null;
+        const candidates = [
+            source.edgeValueMode,
+            source.edge_value_mode,
+            source.metadata && source.metadata.edgeValueMode,
+            source.metadata && source.metadata.edge_value_mode,
+            source.meta && source.meta.edgeValueMode,
+            source.meta && source.meta.edge_value_mode
+        ];
+        for (let i = 0; i < candidates.length; i++) {
+            if (candidates[i] !== undefined && candidates[i] !== null && candidates[i] !== '') {
+                return normalizeEdgeValueMode(candidates[i]);
+            }
+        }
+        return null;
+    }
+
     function sparseEdgeRowsFromConnectionMatrix() {
         const edgeRows = [];
         if (!connectionMatrix || typeof connectionMatrix.forEach !== 'function') return edgeRows;
@@ -317,6 +339,15 @@ function Model(side) {
     this.isDirected = function () {
         // No fallback symmetry scan: datasets without explicit metadata are treated as directed.
         return directedGraph;
+    };
+
+    this.setEdgeValueMode = function (mode) {
+        edgeValueMode = normalizeEdgeValueMode(mode);
+        return edgeValueMode;
+    };
+
+    this.getEdgeValueMode = function () {
+        return edgeValueMode;
     };
 
     this.rebuildAdjacencyIndex = function (edgeRows) {
@@ -344,7 +375,7 @@ function Model(side) {
     };
 
     this.getIncidentEdgesByNode = function (indexNode) {
-        return collectIncidentEdges(outgoingAdjacency, incomingAdjacency, indexNode);
+        return collectIncidentEdges(outgoingAdjacency, incomingAdjacency, indexNode, edgeValueMode);
     };
 
     // set connection matrix from JSON file
@@ -353,6 +384,8 @@ function Model(side) {
         connectionMatrix = math.SparseMatrix.fromJSON(jsonData);
         const directed = explicitDirectedFlag(jsonData);
         if (directed !== null) directedGraph = directed;
+        const mode = explicitEdgeValueMode(jsonData);
+        if (mode !== null) edgeValueMode = mode;
         this.rebuildAdjacencyIndex();
 
         console.log(`Successfully created the sparse matrix from JSON data.`);
@@ -367,9 +400,14 @@ function Model(side) {
         connectionMatrix = math.sparse();
         const directed = explicitDirectedFlag(d);
         if (directed !== null) directedGraph = directed;
+        const mode = explicitEdgeValueMode(d);
+        if (mode !== null) edgeValueMode = mode;
         let sparseEdgeRows = null;
+        let sawEdgeValue = false;
         if (d.data[0].length >= 3) {
             sparseEdgeRows = [];
+            this.minConnectionMatrix = Infinity;
+            this.maxConnectionMatrix = -Infinity;
             // Process each data row
             for (let i = 0; i < d.data.length; i++) {
                 const row = d.data[i];
@@ -384,6 +422,9 @@ function Model(side) {
                 // Assign the weight to the corresponding position in the sparse matrix
                 connectionMatrix.set([source, target], edgeWeight);
                 sparseEdgeRows.push(row);
+                sawEdgeValue = true;
+                if (edgeWeight < this.minConnectionMatrix) this.minConnectionMatrix = edgeWeight;
+                if (edgeWeight > this.maxConnectionMatrix) this.maxConnectionMatrix = edgeWeight;
                 // let text = "from: " + from + " to: " + to + " weight: " + weight;
                 // setNodeInfoPanel(1,1,text);
                 //if(i % 1000 == 0) {
@@ -392,6 +433,10 @@ function Model(side) {
             }
         } else {
             connectionMatrix = math.sparse(d.data); // d.data;
+        }
+        if (sawEdgeValue === true) {
+            if (!Number.isFinite(this.minConnectionMatrix)) this.minConnectionMatrix = 0;
+            if (!Number.isFinite(this.maxConnectionMatrix)) this.maxConnectionMatrix = 0;
         }
         this.rebuildAdjacencyIndex(sparseEdgeRows);
         this.computeDistanceMatrix();
@@ -558,65 +603,34 @@ function Model(side) {
 
     // get top n edges connected to a specific node
     this.getTopIpsiLateralConnectionsByNode = function (indexNode, n) {
-        var row = this.getConnectionMatrixRow(indexNode);
-	var tmprow = row.slice();
-	var hemisphere = dataset[indexNode].hemisphere;
-	if (hemisphere) {
-		console.log("Hemi:", hemisphere);
-		for (var i = 0; i < row.length; i++){
-			if(dataset[i].hemisphere !== hemisphere) {
-				tmprow[i] = 0;
-			}
-		}
-	}
-	console.log(row,tmprow);
-        //var sortedRow = this.getConnectionMatrixRow(indexNode).sort(function (a, b) {
-        var sortedRow = tmprow.sort(function (a, b) {
-            return b - a
-        }); //sort in a descending flavor
-        var indexes = new Array(n);
-        for (var i = 0; i < n; i++) {
-            indexes[i] = row.indexOf(sortedRow[i]);
-        }
-        return indexes;
+        var hemisphere = dataset[indexNode].hemisphere;
+        return this.getIncidentEdgesByNode(indexNode)
+            .filter(function (edge) {
+                return dataset[edge.targetNodeId] && dataset[edge.targetNodeId].hemisphere === hemisphere;
+            })
+            .sort((a, b) => compareEdgeStrength(a, b, edgeValueMode))
+            .slice(0, n)
+            .map(function (edge) { return edge.targetNodeId; });
     };
 
     // get top n edges connected to a specific node
     this.getTopContraLateralConnectionsByNode = function (indexNode, n) {
-        var row = this.getConnectionMatrixRow(indexNode);
-	var tmprow = row.slice();
-	var hemisphere = dataset[indexNode].hemisphere;
-	if (hemisphere) {
-		console.log("Hemi:", hemisphere);
-		for (var i = 0; i < row.length; i++){
-			if(dataset[i].hemisphere === hemisphere) {
-				tmprow[i] = 0;
-			}
-		}
-	}
-	console.log(row,tmprow);
-        //var sortedRow = this.getConnectionMatrixRow(indexNode).sort(function (a, b) {
-        var sortedRow = tmprow.sort(function (a, b) {
-            return b - a
-        }); //sort in a descending flavor
-        var indexes = new Array(n);
-        for (var i = 0; i < n; i++) {
-            indexes[i] = row.indexOf(sortedRow[i]);
-        }
-        return indexes;
+        var hemisphere = dataset[indexNode].hemisphere;
+        return this.getIncidentEdgesByNode(indexNode)
+            .filter(function (edge) {
+                return dataset[edge.targetNodeId] && dataset[edge.targetNodeId].hemisphere !== hemisphere;
+            })
+            .sort((a, b) => compareEdgeStrength(a, b, edgeValueMode))
+            .slice(0, n)
+            .map(function (edge) { return edge.targetNodeId; });
     };
 
 	// get top n edges connected to a specific node
     this.getTopConnectionsByNode = function (indexNode, n) {
-        var row = this.getConnectionMatrixRow(indexNode);
-        var sortedRow = this.getConnectionMatrixRow(indexNode).sort(function (a, b) {
-            return b - a
-        }); //sort in a descending flavor
-        var indexes = new Array(n);
-        for (var i = 0; i < n; i++) {
-            indexes[i] = row.indexOf(sortedRow[i]);
-        }
-        return indexes;
+        return this.getIncidentEdgesByNode(indexNode)
+            .sort((a, b) => compareEdgeStrength(a, b, edgeValueMode))
+            .slice(0, n)
+            .map(function (edge) { return edge.targetNodeId; });
     };
 
 

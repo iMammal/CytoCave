@@ -12,6 +12,8 @@ import {
     getSelectionMode
 } from "./drawing";
 import {buildAnnotationDetailModel} from "./annotationPresentation";
+import {refreshEdgeValueModeControls} from "./GUI";
+import {normalizeEdgeValueMode} from "./incidentEdges";
 
 var lastAppliedRevision = null;
 var pendingVariantApplyUntil = 0;
@@ -22,6 +24,7 @@ var lastAnnotationsKey = null;
 var lastFocusRequestId = null;
 var lastSessionState = null;
 var lastSelectionMode = null;
+var lastEdgeValueMode = null;
 
 function sideName(side) {
     return side === "left" ? "Left" : "Right";
@@ -316,6 +319,26 @@ function applySelectionMode(state) {
     updateSelectionModeButton(mode);
 }
 
+function edgeValueModeFromState(state) {
+    return normalizeEdgeValueMode(state && state.view && state.view.edgeValueMode);
+}
+
+function applyEdgeValueMode(state) {
+    var mode = edgeValueModeFromState(state);
+    if (mode === lastEdgeValueMode &&
+        modelLeft.getEdgeValueMode &&
+        modelLeft.getEdgeValueMode() === mode &&
+        modelRight.getEdgeValueMode &&
+        modelRight.getEdgeValueMode() === mode) {
+        return;
+    }
+
+    if (modelLeft.setEdgeValueMode) modelLeft.setEdgeValueMode(mode);
+    if (modelRight.setEdgeValueMode) modelRight.setEdgeValueMode(mode);
+    refreshEdgeValueModeControls();
+    lastEdgeValueMode = mode;
+}
+
 function applyAnnotations(state) {
     var annotations = state.annotations && state.annotations.byNode ? state.annotations.byNode : {};
     var selected = state.view && state.view.selectedNode;
@@ -398,6 +421,7 @@ async function applySessionState() {
     applyColorBy(state);
     applyHighlight(state);
     applySelectionMode(state);
+    applyEdgeValueMode(state);
     applySelection(state);
     applyAnnotations(state);
     applyFocusRequest(state);
@@ -434,6 +458,12 @@ async function exportScreenshot() {
 async function setSessionSelectionMode(mode) {
     return postJson("/view/selection-mode", {
         selectionMode: mode
+    });
+}
+
+async function setSessionEdgeValueMode(mode) {
+    return postJson("/view/edge-value-mode", {
+        edgeValueMode: mode
     });
 }
 
@@ -525,7 +555,8 @@ function startRestSessionBridge() {
         exportSession,
         exportScreenshot,
         postJson,
-        setSessionSelectionMode
+        setSessionSelectionMode,
+        setSessionEdgeValueMode
     };
     applySessionState().catch(function (error) {
         console.error(error);

@@ -45,6 +45,7 @@ import {setDimensionFactorLeftSphere,setDimensionFactorRightSphere,setDimensionF
 import { scaleColorGroup } from "./utils/scale";
 import { PreviewArea }  from './previewArea.js';
 import { forEach } from "./external-libraries/gl-matrix/vec3.js";
+import {edgeModeIndicator, edgeModeLabel} from "./incidentEdges";
 //import * as math from 'mathjs'
 
 var initSubjectMenu = function (side) {
@@ -334,18 +335,43 @@ var setNodeInfoPanel = function (region, index, text = null) {
 };
 
 /* Edges stuff at edgeInfoPanel */
+var updateEdgeValueModeIndicator = function () {
+    var menu = d3.select("#edgeInfoPanel");
+    var mode = modelLeft.getEdgeValueMode ? modelLeft.getEdgeValueMode() : "similarity";
+    var indicator = document.getElementById("edgeValueModeIndicator");
+    if (!indicator) {
+        menu.append("div")
+            .attr("id", "edgeValueModeIndicator")
+            .text(edgeModeIndicator(mode));
+    } else {
+        indicator.innerHTML = edgeModeIndicator(mode);
+    }
+};
+
 // add a slider to threshold edges at specific values
 var addThresholdSlider = function () {
+    updateEdgeValueModeIndicator();
+    if (modelLeft.getEdgeValueMode && modelLeft.getEdgeValueMode() === "binary") {
+        modelLeft.setThreshold(0);
+        modelRight.setThreshold(0);
+        return;
+    }
 
     var max = Math.max(modelLeft.getMaximumWeight(), modelRight.getMaximumWeight());
     var min = Math.min(modelLeft.getMinimumWeight(), modelRight.getMinimumWeight());
     max = Math.max(Math.abs(max), Math.abs(min));
     thresholdMultiplier = (max < 1.0) ? 100.0 : 1.0;
     max *= thresholdMultiplier;
+    if (max <= 0 || !Number.isFinite(max)) {
+        max = thresholdMultiplier;
+    }
+    var mode = modelLeft.getEdgeValueMode ? modelLeft.getEdgeValueMode() : "similarity";
+    var label = edgeModeLabel(mode);
+    var initialValue = mode === "distance" ? 0 : max/2;
     var menu = d3.select("#edgeInfoPanel");
     menu.append("input")
         .attr("type", "range")
-        .attr("value", max/2)
+        .attr("value", initialValue)
         .attr("id", "thresholdSlider")
         .attr("min", 0.)
         .attr("max", max)
@@ -354,29 +380,40 @@ var addThresholdSlider = function () {
             modelLeft.setThreshold(this.value/thresholdMultiplier);
             modelRight.setThreshold(this.value/thresholdMultiplier);
             redrawEdges();
-            document.getElementById("thresholdSliderLabel").innerHTML = neuro?"Ipsi-Threshold @ ":"Intra-Threshold @ " + this.value/thresholdMultiplier;
+            document.getElementById("thresholdSliderLabel").innerHTML = label + " @ " + this.value/thresholdMultiplier;
         });
     menu.append("label")
         .attr("for", "thresholdSlider")
         .attr("id", "thresholdSliderLabel")
-        .text("Threshold @ " + max/2/thresholdMultiplier);
-    modelLeft.setThreshold(max/2/thresholdMultiplier);
-    modelRight.setThreshold(max/2/thresholdMultiplier);
+        .text(label + " @ " + initialValue/thresholdMultiplier);
+    modelLeft.setThreshold(initialValue/thresholdMultiplier);
+    modelRight.setThreshold(initialValue/thresholdMultiplier);
 };
 
 /* Edges stuff at edgeInfoPanel */
 // add a slider to threshold Contralateral edges at specific values
 var addConThresholdSlider = function () {
+    if (modelLeft.getEdgeValueMode && modelLeft.getEdgeValueMode() === "binary") {
+        modelLeft.setConThreshold(0);
+        modelRight.setConThreshold(0);
+        return;
+    }
 
     var max = Math.max(modelLeft.getMaximumWeight(), modelRight.getMaximumWeight());
     var min = Math.min(modelLeft.getMinimumWeight(), modelRight.getMinimumWeight());
     max = Math.max(Math.abs(max), Math.abs(min));
     thresholdMultiplier = (max < 1.0) ? 100.0 : 1.0;
     max *= thresholdMultiplier;
+    if (max <= 0 || !Number.isFinite(max)) {
+        max = thresholdMultiplier;
+    }
+    var mode = modelLeft.getEdgeValueMode ? modelLeft.getEdgeValueMode() : "similarity";
+    var label = mode === "distance" ? "Maximum contralateral distance" : "Minimum contralateral similarity";
+    var initialValue = mode === "distance" ? 0 : max / 2;
     var menu = d3.select("#edgeInfoPanel");
     menu.append("input")
         .attr("type", "range")
-        .attr("value", max / 2)
+        .attr("value", initialValue)
         .attr("id", "conThresholdSlider")
         .attr("min", 0.)
         .attr("max", max)
@@ -385,14 +422,14 @@ var addConThresholdSlider = function () {
             modelLeft.setConThreshold(this.value / thresholdMultiplier);
             modelRight.setConThreshold(this.value / thresholdMultiplier);
             redrawEdges();
-            document.getElementById("conThresholdSliderLabel").innerHTML = neuro?"Contra-Threshold @ ":"Inter-Threshold @ " + this.value / thresholdMultiplier;
+            document.getElementById("conThresholdSliderLabel").innerHTML = label + " @ " + this.value / thresholdMultiplier;
         });
     menu.append("label")
         .attr("for", "conThresholdSlider")
         .attr("id", "conThresholdSliderLabel")
-        .text(neuro?"Contra-Threshold @ ":"Inter-Threshold @ "  + max / 2 / thresholdMultiplier);
-    modelLeft.setConThreshold(max / 2 / thresholdMultiplier);
-    modelRight.setConThreshold(max / 2 / thresholdMultiplier);
+        .text(label + " @ "  + initialValue / thresholdMultiplier);
+    modelLeft.setConThreshold(initialValue / thresholdMultiplier);
+    modelRight.setConThreshold(initialValue / thresholdMultiplier);
 };
 
 // add opacity slider 0 to 1
@@ -539,6 +576,10 @@ var removeThresholdSlider = function () {
     if (elem) {
         elem.parentNode.removeChild(elem);
     }
+    elem = document.getElementById('edgeValueModeIndicator');
+    if (elem) {
+        elem.parentNode.removeChild(elem);
+    }
     removeConThresholdSlider();
 }
 
@@ -637,12 +678,29 @@ var changeModality = function (modality) {
         addThresholdSlider();
         var elem = document.getElementById('conThresholdSlider');
 
-        if (getEnableIpsi() && getEnableContra() && !elem) {
+        if (getEnableIpsi() && getEnableContra() && !elem && (!modelLeft.getEdgeValueMode || modelLeft.getEdgeValueMode() !== "binary")) {
             addConThresholdSlider();
         }
     } else{
         //top N modality
         removeThresholdSlider();
+        updateEdgeValueModeIndicator();
+        addTopNSlider();
+    }
+};
+
+var refreshEdgeValueModeControls = function () {
+    var input = $('#changeModalityBtn');
+    var thresholdMode = !input.length || input.data("checked") !== false;
+    removeElementsFromEdgePanel();
+    if (thresholdMode) {
+        addThresholdSlider();
+        var elem = document.getElementById('conThresholdSlider');
+        if (getEnableIpsi() && getEnableContra() && !elem && (!modelLeft.getEdgeValueMode || modelLeft.getEdgeValueMode() !== "binary")) {
+            addConThresholdSlider();
+        }
+    } else {
+        updateEdgeValueModeIndicator();
         addTopNSlider();
     }
 };
@@ -1507,4 +1565,4 @@ var toggleMenus = function (e) {
 
 var getShortestPathVisMethod = function () { return shortestPathVisMethod }
 
-export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls,createLegend} //hideVRMaximizeButtons
+export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls, createLegend, refreshEdgeValueModeControls} //hideVRMaximizeButtons

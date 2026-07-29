@@ -316,6 +316,52 @@ test('selection mode can be read and changed without GET mutation', async (t) =>
   assert.match(invalid.body.error, /selectionMode must be additive or replace/);
 });
 
+test('edge value mode defaults to similarity and can be changed', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const before = await request(server, 'GET', '/view/edge-value-mode');
+  assert.equal(before.statusCode, 200);
+  assert.equal(before.body.edgeValueMode, 'similarity');
+  assert.equal(before.body.state.view.edgeValueMode, 'similarity');
+
+  const changed = await request(server, 'POST', '/view/edge-value-mode', {
+    edgeValueMode: 'distance'
+  });
+  assert.equal(changed.statusCode, 200);
+  assert.equal(changed.body.edgeValueMode, 'distance');
+  assert.equal(changed.body.state.view.edgeValueMode, 'distance');
+
+  const after = await request(server, 'GET', '/view/edge-value-mode');
+  assert.equal(after.body.edgeValueMode, 'distance');
+});
+
+test('edge value mode rejects unsupported values clearly', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const invalid = await request(server, 'POST', '/view/edge-value-mode', {
+    edgeValueMode: 'magnitude'
+  });
+
+  assert.equal(invalid.statusCode, 400);
+  assert.match(invalid.body.error, /edgeValueMode must be one of: similarity, distance, binary/);
+});
+
+test('variant edge value mode can be loaded from request configuration', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const response = await request(server, 'POST', '/variants/compare', {
+    edgeValueMode: 'binary'
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.state.view.edgeValueMode, 'binary');
+  assert.equal(response.body.variants.left.graph.edgeValueMode, 'binary');
+  assert.equal(response.body.variants.right.graph.edgeValueMode, 'binary');
+});
+
 test('select-node supports explicit replacement override while default remains replace', async (t) => {
   const server = await startServer();
   t.after(() => server.close());

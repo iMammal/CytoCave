@@ -868,6 +868,7 @@ var changeSceneToSubject = function (subjectId, model, previewArea, side) {
     }
     let tempNodesSelected = getNodesSelected();
     model.clearModel();
+    model.setEdgeValueMode(fileNames.edgeValueMode || fileNames.edge_value_mode || 'similarity');
 
     queue()
         .defer(loadSubjectNetwork, fileNames, model)

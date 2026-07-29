@@ -52,7 +52,7 @@ import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS} from './GUI'
 import {scaleColorGroup} from './utils/scale'
 import {buildAnnotationCalloutLines, wrapAndTruncateLines} from './annotationPresentation'
 import {firstPickableNodeIntersection, markAnnotationObjectNonPickable} from './selectionSemantics'
-import {filterIncidentEdges} from './incidentEdges'
+import {edgeValue, filterIncidentEdges} from './incidentEdges'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
 import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
@@ -2708,6 +2708,7 @@ function PreviewArea(canvas_, model_, name_) {
         let activeEdges = [];
         let groups = this.listGroups();
         let threshold = model.getThreshold();
+        let edgeValueMode = model.getEdgeValueMode ? model.getEdgeValueMode() : 'similarity';
         if (threshold === undefined) {
             console.log("Threshold undefined");
             // consider all selected nodes active
@@ -2763,12 +2764,24 @@ function PreviewArea(canvas_, model_, name_) {
                 console.log("Edges: ");
                 console.log(edges);
                 // get the edges that are above the threshold
-                let edgesAboveThreshold = [];
-                if (!topN) {
-                    edgesAboveThreshold = edges.filter(edge => edge.weight >= threshold);
-                } else {
-                    edgesAboveThreshold = edges.sort((a, b) => b.weight - a.weight).slice(0, topN);
-                }
+                let edgesAboveThreshold = filterIncidentEdges(edges, {
+                    selectedNodeId: nodesSelected[i],
+                    dataset: model.getDataset(),
+                    threshold: threshold,
+                    topN: topN,
+                    edgeValueMode: edgeValueMode,
+                    enableIpsi: getEnableIpsi(),
+                    enableContra: getEnableContra(),
+                    getGroupNameByNodeIndex: function (nodeId) {
+                        return model.getGroupNameByNodeIndex(nodeId);
+                    },
+                    isRegionActive: function (regionName) {
+                        return model.isRegionActive(regionName);
+                    },
+                    isNodeVisible: function (nodeId) {
+                        return getVisibleNodes(nodeId);
+                    }
+                });
                 if (edgesAboveThreshold.length === 0) {
                     console.log("Edges above threshold not found");
                     continue;
@@ -3200,6 +3213,10 @@ function PreviewArea(canvas_, model_, name_) {
         instancePosition.setFromMatrixPosition(matrix);
 
         var edges = model.getIncidentEdgesByNode(indexNode);
+        var outgoingRecords = model.getOutgoingAdjacency()[indexNode] || [];
+        var incomingRecords = model.getIncomingAdjacency()[indexNode] || [];
+        var edgeValueMode = model.getEdgeValueMode ? model.getEdgeValueMode() : 'similarity';
+        var selectedThreshold = model.getThreshold();
         //var edges = this.getActiveEdges(); //this gets all active edges.
         console.log("drawEdgesGivenNode: Active edges: ");
         console.log(edges);
@@ -3207,8 +3224,9 @@ function PreviewArea(canvas_, model_, name_) {
         edges = filterIncidentEdges(edges, {
             selectedNodeId: indexNode,
             dataset: dataset,
-            threshold: model.getThreshold(),
+            threshold: selectedThreshold,
             topN: topN,
+            edgeValueMode: edgeValueMode,
             enableIpsi: getEnableIpsi(),
             enableContra: getEnableContra(),
             getGroupNameByNodeIndex: function (nodeId) {
@@ -3221,6 +3239,20 @@ function PreviewArea(canvas_, model_, name_) {
                 return getVisibleNodes(nodeId);
             }
         });
+
+        if (typeof window !== 'undefined' && window.CYTOCAVE_SELECTION_DEBUG === true) {
+            console.log('cytocave-incident-edges', {
+                nodeId: indexNode,
+                edgeValueMode: edgeValueMode,
+                threshold: selectedThreshold,
+                rawOutgoingCount: outgoingRecords.length,
+                rawIncomingCount: incomingRecords.length,
+                zeroValuedOutgoingCount: outgoingRecords.filter(function (edge) { return edgeValue(edge) === 0; }).length,
+                zeroValuedIncomingCount: incomingRecords.filter(function (edge) { return edgeValue(edge) === 0; }).length,
+                countAfterThresholding: edges.length,
+                submittedRenderCount: edges.length
+            });
+        }
 
         for(let i = 0; i < edges.length; i++) {
             console.log("edge: ");

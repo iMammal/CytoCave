@@ -27,6 +27,7 @@ const DEFAULT_DATASET_FOLDER = 'UPENN_GBM_00013_C16_KCOMPARE';
 const DEFAULT_LOOKUP_TABLE = 'upenn_gbm_00013_c16_kcompare';
 const DEFAULT_LEFT_SUBJECT = 'UPENN-GBM-00013_11__n21760_s0_k20';
 const DEFAULT_RIGHT_SUBJECT = 'UPENN-GBM-00013_11__n21760_s0_k40';
+const EDGE_VALUE_MODES = ['similarity', 'distance', 'binary'];
 
 app.use(bodyParser.json({ limit: '50mb' }));
 
@@ -50,6 +51,7 @@ const baseSessionState = {
       right: 'KMeans_k40_c16_s0_Clustering'
     },
     nodeSizeBy: null,
+    edgeValueMode: 'similarity',
     selectionMode: 'additive',
     highlightedCluster: null,
     selectedNode: null,
@@ -109,6 +111,25 @@ function normalizeSelectionMode(value) {
     return mode;
   }
   throw new Error('selectionMode must be additive or replace');
+}
+
+function normalizeEdgeValueMode(value) {
+  const mode = String(value || 'similarity').toLowerCase();
+  if (EDGE_VALUE_MODES.includes(mode)) {
+    return mode;
+  }
+  throw new Error(`edgeValueMode must be one of: ${EDGE_VALUE_MODES.join(', ')}`);
+}
+
+function configuredEdgeValueMode(...sources) {
+  for (const source of sources) {
+    if (!source || typeof source !== 'object') continue;
+    const value = source.edgeValueMode ?? source.edge_value_mode;
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      return normalizeEdgeValueMode(value);
+    }
+  }
+  return normalizeEdgeValueMode(sessionState.view.edgeValueMode);
 }
 
 function normalizeNodeId(value) {
@@ -403,6 +424,7 @@ function normalizeVariant(input = {}, viewport = 'left') {
     (commonMetadata && commonMetadata.node_count) ||
     record.node_count ||
     null;
+  const edgeValueMode = configuredEdgeValueMode(input, record, variantMetadata, commonMetadata);
 
   return {
     viewport,
@@ -434,6 +456,7 @@ function normalizeVariant(input = {}, viewport = 'left') {
       clusterMethod: (variantMetadata && variantMetadata.cluster_method) || 'kmeans',
       clusterColumn,
       edgeFilterMode: (variantMetadata && variantMetadata.edge_filter_mode) || 'top_per_node',
+      edgeValueMode,
       topEdges: (variantMetadata && variantMetadata.top_edges) || sessionState.renderPolicy.topEdges
     },
     metadata: {
@@ -453,6 +476,7 @@ function setViewportVariant(viewport, input) {
     lookupTableId: variant.lookupTableId
   };
   sessionState.viewports[viewport] = variant;
+  sessionState.view.edgeValueMode = variant.graph.edgeValueMode || 'similarity';
   if (variant.graph.clusterColumn) {
     sessionState.view.colorBy[viewport] = variant.graph.clusterColumn;
   }
@@ -463,17 +487,25 @@ function compareVariants(body = {}) {
   const leftInput = {
     datasetFolder: body.datasetFolder || body.folder || DEFAULT_DATASET_FOLDER,
     lookupTableId: body.lookupTableId || body.lut || DEFAULT_LOOKUP_TABLE,
+    edgeValueMode: body.edgeValueMode || body.edge_value_mode,
     subjectID: DEFAULT_LEFT_SUBJECT,
     ...(body.left || {})
   };
   const rightInput = {
     datasetFolder: body.datasetFolder || body.folder || DEFAULT_DATASET_FOLDER,
     lookupTableId: body.lookupTableId || body.lut || DEFAULT_LOOKUP_TABLE,
+    edgeValueMode: body.edgeValueMode || body.edge_value_mode,
     subjectID: DEFAULT_RIGHT_SUBJECT,
     ...(body.right || {})
   };
   const left = setViewportVariant('left', leftInput);
   const right = setViewportVariant('right', rightInput);
+  sessionState.view.edgeValueMode = normalizeEdgeValueMode(
+    body.edgeValueMode ||
+    body.edge_value_mode ||
+    left.graph.edgeValueMode ||
+    right.graph.edgeValueMode
+  );
   sessionState.view.layout = body.layout || 'side-by-side';
   sessionState.view.orientation = {
     synchronized: body.syncOrientation !== false,
@@ -594,6 +626,24 @@ app.post('/view/selection-mode', (req, res) => {
     const selectionMode = normalizeSelectionMode(body.selectionMode || body.mode);
     sessionState.view.selectionMode = selectionMode;
     return { state: stateWithRevision(), selectionMode };
+  }, res);
+});
+
+app.get('/view/edge-value-mode', (req, res) => {
+  res.json({
+    ok: true,
+    revision: revisionFor(sessionState),
+    edgeValueMode: normalizeEdgeValueMode(sessionState.view.edgeValueMode),
+    state: stateWithRevision()
+  });
+});
+
+app.post('/view/edge-value-mode', (req, res) => {
+  handleRoute(() => {
+    const body = req.body || {};
+    const edgeValueMode = normalizeEdgeValueMode(body.edgeValueMode || body.edge_value_mode || body.mode);
+    sessionState.view.edgeValueMode = edgeValueMode;
+    return { state: stateWithRevision(), edgeValueMode };
   }, res);
 });
 

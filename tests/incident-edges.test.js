@@ -5,8 +5,11 @@ const test = require('node:test');
 
 const {
   buildSparseAdjacencyRows,
+  compareEdgeStrength,
   collectIncidentEdges,
-  filterIncidentEdges
+  edgePassesThreshold,
+  filterIncidentEdges,
+  normalizeEdgeValueMode
 } = require('../js/incidentEdges');
 
 function build(edgeRows, options = {}) {
@@ -18,8 +21,47 @@ function build(edgeRows, options = {}) {
 
 function incident(index, edgeRows, options = {}) {
   const adjacency = build(edgeRows, options);
-  return collectIncidentEdges(adjacency.outgoingAdjacency, adjacency.incomingAdjacency, index);
+  return collectIncidentEdges(adjacency.outgoingAdjacency, adjacency.incomingAdjacency, index, options.edgeValueMode);
 }
+
+test('similarity mode thresholds high values and sorts descending', () => {
+  assert.equal(edgePassesThreshold({ value: 0.8 }, 0.5, 'similarity'), true);
+  assert.equal(edgePassesThreshold({ value: 0.2 }, 0.5, 'similarity'), false);
+
+  const ordered = [{ value: 0.2 }, { value: 0.9 }, { value: 0.5 }]
+    .sort((a, b) => compareEdgeStrength(a, b, 'similarity'))
+    .map((edge) => edge.value);
+  assert.deepEqual(ordered, [0.9, 0.5, 0.2]);
+});
+
+test('distance mode thresholds low values, preserves zero, and sorts ascending', () => {
+  assert.equal(edgePassesThreshold({ value: 0.2 }, 0.5, 'distance'), true);
+  assert.equal(edgePassesThreshold({ value: 0.8 }, 0.5, 'distance'), false);
+  assert.equal(edgePassesThreshold({ value: 0 }, 0, 'distance'), true);
+
+  const ordered = [{ value: 0.2 }, { value: 0 }, { value: 0.5 }]
+    .sort((a, b) => compareEdgeStrength(a, b, 'distance'))
+    .map((edge) => edge.value);
+  assert.deepEqual(ordered, [0, 0.2, 0.5]);
+});
+
+test('binary mode uses edge record presence and ignores numeric thresholds', () => {
+  assert.equal(edgePassesThreshold({ value: 0 }, 100, 'binary'), true);
+  const edges = incident(1, [[1, 2, 0]], { edgeValueMode: 'binary' });
+
+  assert.equal(edges.length, 1);
+  const filtered = filterIncidentEdges(edges, {
+    selectedNodeId: 1,
+    threshold: 100,
+    edgeValueMode: 'binary'
+  });
+  assert.equal(filtered.length, 1);
+});
+
+test('absent edge value mode defaults to similarity', () => {
+  assert.equal(normalizeEdgeValueMode(), 'similarity');
+  assert.equal(edgePassesThreshold({ value: 0.2 }, 0.5), false);
+});
 
 test('outgoing-only node returns outgoing incident edge', () => {
   const edges = incident(1, [[1, 2, 4]]);
@@ -84,7 +126,8 @@ test('threshold filtering keeps only incident edges meeting the threshold', () =
   ]);
   const filtered = filterIncidentEdges(edges, {
     selectedNodeId: 1,
-    threshold: 2
+    threshold: 2,
+    edgeValueMode: 'similarity'
   });
 
   assert.deepEqual(filtered.map((edge) => edge.targetNodeId).sort(), [3, 4]);
@@ -98,7 +141,8 @@ test('top-N filtering ranks merged incident edges by visual weight', () => {
   ]);
   const filtered = filterIncidentEdges(edges, {
     selectedNodeId: 1,
-    topN: 2
+    topN: 2,
+    edgeValueMode: 'similarity'
   });
 
   assert.deepEqual(filtered.map((edge) => edge.targetNodeId), [4, 2]);
@@ -140,11 +184,55 @@ test('self-loop is retained as a single visual edge', () => {
   assert.deepEqual(edges[0].nodePair, [0, 0]);
 });
 
+test('explicit zero-valued outgoing edge remains present', () => {
+  const edges = incident(36, [[36, 105, 0]], { edgeValueMode: 'distance' });
+
+  assert.equal(edges.length, 1);
+  assert.equal(edges[0].targetNodeId, 105);
+  assert.equal(edges[0].outgoingValue, 0);
+});
+
+test('object edge records use presence rather than value truthiness', () => {
+  const edges = incident(36, [
+    { source: 36, target: 105, value: 0 }
+  ], { edgeValueMode: 'distance' });
+
+  assert.equal(edges.length, 1);
+  assert.equal(edges[0].targetNodeId, 105);
+  assert.equal(edges[0].value, 0);
+});
+
+test('explicit zero-valued incoming edge remains present', () => {
+  const edges = incident(36, [[105, 36, 0]], { edgeValueMode: 'distance' });
+
+  assert.equal(edges.length, 1);
+  assert.equal(edges[0].targetNodeId, 105);
+  assert.equal(edges[0].incomingValue, 0);
+});
+
+test('missing edge remains absent when zero-valued records exist elsewhere', () => {
+  const adjacency = build([[36, 105, 0]], { edgeValueMode: 'distance' });
+
+  assert.equal(collectIncidentEdges(adjacency.outgoingAdjacency, adjacency.incomingAdjacency, 7, 'distance').length, 0);
+});
+
+test('reciprocal zero-valued edges deduplicate and retain both directions', () => {
+  const edges = incident(36, [
+    [36, 105, 0],
+    [105, 36, 0]
+  ], { edgeValueMode: 'distance' });
+
+  assert.equal(edges.length, 1);
+  assert.equal(edges[0].outgoingValue, 0);
+  assert.equal(edges[0].incomingValue, 0);
+  assert.deepEqual(edges[0].directions.sort(), ['incoming', 'outgoing']);
+});
+
 test('node index 0 is a valid incident-edge source and target', () => {
   const edges = incident(0, [
-    [0, 2, 3],
-    [4, 0, 6]
-  ]);
+    [0, 2, 0],
+    [4, 0, 0]
+  ], { edgeValueMode: 'distance' });
 
   assert.deepEqual(edges.map((edge) => edge.targetNodeId).sort(), [2, 4]);
 });
