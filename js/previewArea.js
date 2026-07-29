@@ -3476,23 +3476,6 @@ function PreviewArea(canvas_, model_, name_) {
         raycaster.setFromCamera(vector, camera);
         // get the list of objects the ray intersected
         var objectsIntersected = raycaster.intersectObjects(scene.children, true);
-        // var objectsIntersected = raycaster.intersectObjects(scene.children, true);
-
-console.log(
-    "raw intersections",
-    objectsIntersected.slice(0, 10).map(function (hit) {
-        return {
-            objectName: hit.object && hit.object.name,
-            instanceId: hit.instanceId,
-            hasGetDatasetIndex:
-                !!hit.object &&
-                typeof hit.object.getDatasetIndex === 'function',
-            userData: hit.object && hit.object.userData
-        };
-    })
-);
-
-        //return firstPickableNodeIntersection(objectsIntersected);
         // return the closest real node, skipping annotation presentation objects.
         return firstPickableNodeIntersection(objectsIntersected);
     };

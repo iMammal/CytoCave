@@ -344,15 +344,15 @@ const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null,
         //set the object geometry to selected in both scenes
         // this if statement is to handle different active groups in the left and right preview areas
 
-        let nodeIndex = -1;
+        let selectedNodeIndex = -1;
         if (isLeft) {
-            nodeIndex = previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected');
-            previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
+            selectedNodeIndex = previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected');
+            previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', selectedNodeIndex);
             //previewAreaLeft.getNodesInstanceFromDatasetIndex(nodeIndex);
         } else {
             //previewAreaRight.getNodesInstanceFromDatasetIndex(nodeIndex);
-            nodeIndex = previewAreaRight.updateNodeGeometry(objectIntersected, 'selected');
-            previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
+            selectedNodeIndex = previewAreaRight.updateNodeGeometry(objectIntersected, 'selected');
+            previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', selectedNodeIndex);
         }
         //previewAreaLeft.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);
         //previewAreaRight.updateNodeGeometry(objectIntersected, 'selected', nodeIndex);

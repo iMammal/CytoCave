@@ -75,3 +75,16 @@ test('mouse selection presentation update is local and not bidirectional REST em
   assert.match(restSession, /applyLocalSelectionPresentation/);
   assert.doesNotMatch(restSession, /\/interaction\/select-node/);
 });
+
+test('selection implementation does not shadow the nodeIndex parameter', () => {
+  const drawing = fs.readFileSync(path.join(__dirname, '..', 'js', 'drawing.js'), 'utf8');
+  const selectionStart = drawing.indexOf('const updateNodeSelection =');
+  const selectionEnd = drawing.indexOf('const selectNodeByIndex =');
+  assert.ok(selectionStart >= 0, 'updateNodeSelection should exist');
+  assert.ok(selectionEnd > selectionStart, 'selectNodeByIndex should follow updateNodeSelection');
+
+  const selectionBody = drawing.slice(selectionStart, selectionEnd);
+  assert.doesNotMatch(selectionBody, /\b(?:let|const|var)\s+nodeIndex\s*=/);
+  assert.match(selectionBody, /\blet\s+selectedNodeIndex\s*=\s*-1/);
+  assert.match(selectionBody, /updateNodeGeometry\(objectIntersected,\s*'selected',\s*selectedNodeIndex\)/);
+});
