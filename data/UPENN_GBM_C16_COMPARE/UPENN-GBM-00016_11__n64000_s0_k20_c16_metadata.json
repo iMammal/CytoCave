@@ -1,0 +1,19 @@
+{
+  "append_dataset": true,
+  "case_id": "UPENN-GBM-00016_11",
+  "cluster_count": 16,
+  "cluster_file": "modules_kmeans_c16_s0.csv",
+  "cluster_method": "kmeans",
+  "edge_file": "edges_k20.csv",
+  "edge_filter_mode": "top_per_node",
+  "generated_at": "2026-07-07T12:55:13.896975+00:00",
+  "graph_seed": 0,
+  "knn_k": 20,
+  "label_base": 213760,
+  "label_mode": "global",
+  "node_count": 39645,
+  "run_id": "n64000_s0_k20_c16",
+  "source_run": "outputs\\UPENN-GBM-00016_11_n64000_s0_k20_cuda\\UPENN-GBM-00016_11",
+  "subject_id": "UPENN-GBM-00016_11__n64000_s0_k20_c16",
+  "top_edges": 5
+}
