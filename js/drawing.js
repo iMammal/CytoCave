@@ -285,7 +285,18 @@ const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null,
         }
     }
 
-    if (!isPickableNodeIntersection(objectIntersected)) {
+    if (
+        !objectIntersected ||
+        !objectIntersected.object ||
+        typeof objectIntersected.object.getDatasetIndex !== 'function'
+    ) {
+        return false;
+    }
+    
+    if (
+        objectIntersected.object.userData &&
+        objectIntersected.object.userData.annotationPresentation === true
+    ) {
         return false;
     }
 
