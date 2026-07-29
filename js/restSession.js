@@ -5,7 +5,9 @@ import {
     changeColorGroup,
     previewAreaLeft,
     previewAreaRight,
-    updateNodesVisiblity
+    updateNodesVisiblity,
+    selectNodeByIndex,
+    clearNodeSelection
 } from "./drawing";
 import {buildAnnotationDetailModel} from "./annotationPresentation";
 
@@ -16,6 +18,7 @@ var lastColorBy = {left: null, right: null};
 var lastSelectedKey = null;
 var lastAnnotationsKey = null;
 var lastFocusRequestId = null;
+var lastSessionState = null;
 
 function sideName(side) {
     return side === "left" ? "Left" : "Right";
@@ -257,20 +260,34 @@ function updateAnnotationDetailForSide(state, side, sideAnnotations, selectedNod
     renderAnnotationDetail(side, detailModel, selectedNodeId);
 }
 
+function applyLocalSelectionPresentation(detail) {
+    if (!lastSessionState || !detail || !detail.viewport) return;
+    var side = detail.viewport === "right" ? "right" : "left";
+    var preview = previewFor(side);
+    var sideAnnotations = filterAnnotationsForSide(lastSessionState, side);
+    var selectedNodeId = detail.selected === false ? null : String(detail.nodeId);
+    var annotation = selectedNodeId ? sideAnnotations[selectedNodeId] : null;
+
+    updateAnnotationDetailForSide(lastSessionState, side, sideAnnotations, selectedNodeId);
+    if (annotation && preview && preview.updateNodeLabelByIndex) {
+        preview.updateNodeLabelByIndex(selectedNodeId, annotation);
+    } else if (preview && preview.clearNodeLabel) {
+        preview.clearNodeLabel();
+    }
+}
+
 function applySelection(state) {
     var selected = state.view && state.view.selectedNode;
     var selectedKey = selected ? JSON.stringify(selected) : null;
     if (selectedKey === lastSelectedKey) return;
 
-    if (previewAreaLeft && previewAreaLeft.clearSelectedNodesVisual) {
-        previewAreaLeft.clearSelectedNodesVisual();
-    }
-    if (previewAreaRight && previewAreaRight.clearSelectedNodesVisual) {
-        previewAreaRight.clearSelectedNodesVisual();
-    }
-
-    if (selected && previewFor(selected.viewport) && previewFor(selected.viewport).applySelectedNode) {
-        previewFor(selected.viewport).applySelectedNode(selected.nodeId);
+    if (selected) {
+        selectNodeByIndex(selected.viewport, selected.nodeId, {
+            replaceSelection: true,
+            toggleSelected: false
+        });
+    } else {
+        clearNodeSelection();
     }
     lastSelectedKey = selectedKey;
 }
@@ -341,6 +358,7 @@ async function postJson(url, body) {
 
 async function applySessionState() {
     var state = await getSessionState();
+    lastSessionState = state;
     if (state.revision === lastAppliedRevision) return;
 
     var changedLeft = applyVariant("left", state);
@@ -433,6 +451,12 @@ function addExportControls() {
 
 function startRestSessionBridge() {
     addExportControls();
+    if (!window.__cytocaveLocalSelectionBridge) {
+        window.__cytocaveLocalSelectionBridge = true;
+        window.addEventListener('cytocave-node-selected', function (event) {
+            applyLocalSelectionPresentation(event.detail);
+        });
+    }
     window.DeepCytoCave = {
         applySessionState,
         exportSession,

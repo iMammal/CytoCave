@@ -205,6 +205,38 @@ test('node selection and focus requests update session state', async (t) => {
   assert.notEqual(focusOne.body.revision, focusTwo.body.revision);
 });
 
+test('selection replacement preserves annotations and supports node zero', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const state = await request(server, 'GET', '/session/state');
+  assert.ok(state.body.viewports.left.graph.nodeCount === null || state.body.viewports.left.graph.nodeCount > 1);
+
+  const annotated = await request(server, 'POST', '/api/annotate', {
+    nodeId: '0',
+    text: 'Annotation preserved while native selection changes',
+    viewport: 'left',
+    metrics: { score: 2 }
+  });
+  assert.equal(annotated.statusCode, 200);
+
+  const selectedZero = await request(server, 'POST', '/view/select-node', {
+    nodeId: '0',
+    viewport: 'left'
+  });
+  assert.equal(selectedZero.statusCode, 200);
+  assert.deepEqual(selectedZero.body.state.view.selectedNode, { nodeId: '0', viewport: 'left' });
+  assert.equal(selectedZero.body.state.annotations.byNode['0'].text, 'Annotation preserved while native selection changes');
+
+  const selectedOne = await request(server, 'POST', '/view/select-node', {
+    nodeId: '1',
+    viewport: 'left'
+  });
+  assert.equal(selectedOne.statusCode, 200);
+  assert.deepEqual(selectedOne.body.state.view.selectedNode, { nodeId: '1', viewport: 'left' });
+  assert.equal(selectedOne.body.state.annotations.byNode['0'].text, 'Annotation preserved while native selection changes');
+});
+
 test('node view commands return useful validation errors', async (t) => {
   const server = await startServer();
   t.after(() => server.close());

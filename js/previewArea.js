@@ -51,6 +51,7 @@ import {
 import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS} from './GUI'
 import {scaleColorGroup} from './utils/scale'
 import {buildAnnotationCalloutLines, wrapAndTruncateLines} from './annotationPresentation'
+import {firstPickableNodeIntersection, markAnnotationObjectNonPickable} from './selectionSemantics'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
 import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
@@ -3110,6 +3111,7 @@ function PreviewArea(canvas_, model_, name_) {
         });
         const sprite = new THREE.Sprite(material);
         sprite.name = "annotation-halo-" + nodeKey;
+        markAnnotationObjectNonPickable(sprite, 'annotation-halo');
         sprite.userData.nodeKey = String(nodeKey);
         sprite.userData.selected = !!selected;
         sprite.scale.set(selected ? 13 : 10, selected ? 13 : 10, 1);
@@ -3474,9 +3476,8 @@ function PreviewArea(canvas_, model_, name_) {
         raycaster.setFromCamera(vector, camera);
         // get the list of objects the ray intersected
         var objectsIntersected = raycaster.intersectObjects(scene.children, true);
-        // return the first object. It's the closest one
-
-        return (objectsIntersected[0]) ? objectsIntersected[0] : undefined;
+        // return the closest real node, skipping annotation presentation objects.
+        return firstPickableNodeIntersection(objectsIntersected);
     };
 
     // callback when window is resized
@@ -3713,6 +3714,7 @@ function PreviewArea(canvas_, model_, name_) {
             depthWrite: false
         });
         nodeLabelLeaderLine = new THREE.Line(geometry, material);
+        markAnnotationObjectNonPickable(nodeLabelLeaderLine, 'annotation-leader');
         nodeLabelLeaderLine.visible = false;
         brain.add(nodeLabelLeaderLine);
     }
@@ -3795,6 +3797,7 @@ function PreviewArea(canvas_, model_, name_) {
         });
 
         nodeLabelSprite = new THREE.Sprite(mat);
+        markAnnotationObjectNonPickable(nodeLabelSprite, 'annotation-callout');
         if (nodeLabelSprite.center) {
             nodeLabelSprite.center.set(0.05, 0.08);
         }

@@ -62,6 +62,7 @@ import {PreviewArea} from "./previewArea";
 import {setUpdateNeeded} from './utils/Dijkstra';
 import { setNodeInfoPanel, enableThresholdControls, addSearchPanel } from './GUI'
 import {setColorGroupScale} from './utils/scale'
+import {hasNodeIndex, isPickableNodeIntersection} from './selectionSemantics'
 
 // callback on mouse moving, expected action: node beneath pointer are drawn bigger
 function onDocumentMouseMove(model, event) {
@@ -209,32 +210,92 @@ function onLeftClick(model, event) {
     updateNodeSelection(model, objectIntersected, isLeft);
 }
 
-const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null) => {
+const modelForViewportSide = function (isLeft) {
+    return isLeft ? modelLeft : modelRight;
+}
+
+const clearNativeNodeSelection = function () {
+    const selectedNodes = getNodesSelected();
+    for (let i = 0; i < selectedNodes.length; i++) {
+        removeEdgesGivenNodeFromScenes(selectedNodes[i]);
+    }
+    if (previewAreaLeft && previewAreaLeft.clearSelectedNodesVisual) {
+        previewAreaLeft.clearSelectedNodesVisual();
+    }
+    if (previewAreaRight && previewAreaRight.clearSelectedNodesVisual) {
+        previewAreaRight.clearSelectedNodesVisual();
+    }
+    return selectedNodes;
+}
+
+const drawIncidentEdgesForNode = function (model, nodeIndex, isLeft) {
+    const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
+    if(spt) {
+        let pathArray = isLeft ? modelLeft.getPathArray(getRoot(), nodeIndex) : modelRight.getPathArray(getRoot(), nodeIndex);
+        for (let i = 0; i < pathArray.length; i++) {
+            if (thresholdModality) {
+                previewAreaLeft.drawEdgesGivenNode(pathArray[i]);
+                previewAreaRight.drawEdgesGivenNode(pathArray[i]);
+            } else {
+                previewAreaLeft.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
+                previewAreaRight.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
+            }
+        }
+    }
+
+    previewArea.drawConnections();
+
+    if (thresholdModality) {
+        previewAreaLeft.drawEdgesGivenNode(nodeIndex);
+        previewAreaRight.drawEdgesGivenNode(nodeIndex);
+    } else {
+        previewAreaLeft.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
+        previewAreaRight.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
+    }
+}
+
+const emitLocalNodeSelection = function (nodeIndex, isLeft, selected) {
+    if (typeof window === 'undefined' || !window.dispatchEvent || typeof CustomEvent === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('cytocave-node-selected', {
+        detail: {
+            nodeId: String(nodeIndex),
+            viewport: isLeft ? 'left' : 'right',
+            selected: selected !== false
+        }
+    }));
+}
+
+const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null, options = {}) => {
     // console.log("model: ", model);
     // console.log("objectIntersected: ", objectIntersected);
     // console.log(`isLeft: ${isLeft}`);
 
-    if (!objectIntersected && !nodeIndex) {
+    if (!objectIntersected && !hasNodeIndex(nodeIndex)) {
             return false;
     }
 
     const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
+    const replaceSelection = options.replaceSelection !== false;
+    const toggleSelected = options.toggleSelected !== false;
 
-    if (nodeIndex && !objectIntersected) {
-        objectIntersected = previewArea.getNodeInstanceByIndex(nodeIndex);
+    if (hasNodeIndex(nodeIndex) && !objectIntersected) {
+        objectIntersected = previewArea.index2node(Number(nodeIndex));
         if (!objectIntersected ) {
             return false;
         }
     }
 
+    if (!isPickableNodeIntersection(objectIntersected)) {
+        return false;
+    }
 
     const instanceId = objectIntersected.instanceId;
     const group = objectIntersected.object.name.group;
     const hemisphere = objectIntersected.object.name.hemisphere;
     // check if name is blank empty or undefined
-    if (group === "" || group === undefined) return false;
-    if (hemisphere === "" || hemisphere === undefined) return false;
-    if (instanceId === "" || instanceId === undefined) return false;
+    if (group === "" || group === undefined || group === null) return false;
+    if (hemisphere === "" || hemisphere === undefined || hemisphere === null) return false;
+    if (!hasNodeIndex(instanceId)) return false;
 
     //const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
     //console.log("previewArea instances: ");
@@ -245,7 +306,7 @@ const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null)
     //const instanceList = objectIntersected.
     // log instance
 
-    if (!group || !hemisphere || !instanceId) {
+    if (group === "" || group === undefined || group === null || hemisphere === "" || hemisphere === undefined || hemisphere === null || !hasNodeIndex(instanceId)) {
         console.log("group: ", group);
         console.log("hemisphere: ", hemisphere);
         console.log("instanceId: ", instanceId);
@@ -262,6 +323,10 @@ const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null)
     nodeIndex = objectIntersected.object.getDatasetIndex(objectIntersected);
 
     if (!isSelected) {
+        if (replaceSelection) {
+            clearNativeNodeSelection();
+            objectIntersected = previewArea.index2node(Number(nodeIndex)) || objectIntersected;
+        }
         //mark object selected
         objectIntersected.object.select(objectIntersected);
         //previewArea.updateNodeGeometry(objectIntersected, 'selected');
@@ -284,44 +349,17 @@ const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null)
         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         //previewArea.drawSelectedNode(objectIntersected);
 
-        if(spt) {
-            //previewArea.getShortestPathFromRootToNode(nodeIndex);
-            //return;
-            let pathArray = isLeft? modelLeft.getPathArray(getRoot(), nodeIndex) : modelRight.getPathArray(getRoot(), nodeIndex);
-            //console.log("pathArray: ", pathArray);
-            //console.log("pathArray.length: ", pathArray.length);
-            //console.log("pathArray[0]: ", pathArray[0]);
-            for (let i = 0; i < pathArray.length; i++) {
-                if (thresholdModality) {
-                    previewAreaLeft.drawEdgesGivenNode(pathArray[i]);//,activeEdges);
-                    previewAreaRight.drawEdgesGivenNode(pathArray[i]);//,activeEdges);
-
-                } else {
-                    //const n = model.getNumberOfEdges();
-                    //previewArea.drawTopNEdgesByNode(nodeIndex, n);
-                    previewAreaLeft.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
-                    previewAreaRight.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
-                }
-
-            }
-        }
-
-        let activeEdges = previewArea.drawConnections(); //do we want to draw the connections there or here in drawing? My vote is here.
-        // draw connections does not draw connections, but it does returNs the lists of the connections to be drawn, filtered by the threshold.
-
-        //todo: work out the below.
-        if (thresholdModality) {
-            previewAreaLeft.drawEdgesGivenNode(nodeIndex);//,activeEdges);
-            previewAreaRight.drawEdgesGivenNode(nodeIndex);//,activeEdges);
-
-        } else {
-            //const n = model.getNumberOfEdges();
-            //previewArea.drawTopNEdgesByNode(nodeIndex, n);
-            previewAreaLeft.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
-            previewAreaRight.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
-        }
+        setNodeInfoPanel(model.getRegionByIndex(nodeIndex), nodeIndex);
+        drawIncidentEdgesForNode(model, nodeIndex, isLeft);
+        emitLocalNodeSelection(nodeIndex, isLeft, true);
 
     } else {
+        if (!toggleSelected) {
+            setNodeInfoPanel(model.getRegionByIndex(nodeIndex), nodeIndex);
+            drawIncidentEdgesForNode(model, nodeIndex, isLeft);
+            emitLocalNodeSelection(nodeIndex, isLeft, true);
+            return true;
+        }
         //console.log(`objectIntersected.object.userData.selected: ${objectIntersected.object.userData.selected}`);
         //objectIntersected.object.userData.selected = false;
         //unselect the object
@@ -334,11 +372,27 @@ const updateNodeSelection = (model, objectIntersected, isLeft, nodeIndex = null)
         //probably want to remove the edges from the scene here.
         console.log("end switch");
         removeEdgesGivenNodeFromScenes(nodeIndex);
+        emitLocalNodeSelection(nodeIndex, isLeft, false);
     }
     //log the currently selected nodes
     let selectedNodes = getNodesSelected(); // local to drawing, returns a list from both preview areas
     console.log("selectedNodes: ", selectedNodes);
+    return true;
 };
+
+const selectNodeByIndex = function (viewport, nodeIndex, options = {}) {
+    const side = String(viewport || 'left').toLowerCase();
+    const isLeft = side !== 'right';
+    return updateNodeSelection(modelForViewportSide(isLeft), null, isLeft, nodeIndex, {
+        replaceSelection: options.replaceSelection !== false,
+        toggleSelected: options.toggleSelected === true
+    });
+}
+
+const clearNodeSelection = function () {
+    clearNativeNodeSelection();
+    return true;
+}
 
 // callback on mouse press
 function onMouseDown(event) {
@@ -962,6 +1016,8 @@ export {
     updateNodesVisiblity,
     updateNodeMoveOver,
     updateNodeSelection,
+    selectNodeByIndex,
+    clearNodeSelection,
     redrawEdges,
     updateOpacity,
     glyphNodeDictionary,
