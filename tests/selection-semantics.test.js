@@ -185,7 +185,7 @@ test('canonical dataset node id drives info panel, edge lookup, and event emissi
   const selectionBody = drawing.slice(selectionStart, selectionEnd);
 
   assert.match(selectionBody, /setNodeInfoPanel\(model\.getRegionByIndex\(datasetNodeIndex\),\s*datasetNodeIndex\)/);
-  assert.match(selectionBody, /drawIncidentEdgesForNode\(model,\s*datasetNodeIndex,\s*isLeft\)/);
+  assert.match(selectionBody, /drawIncidentEdgesForNode\(model,\s*datasetNodeIndex,\s*isLeft,\s*\{/);
   assert.match(selectionBody, /emitLocalNodeSelection\(datasetNodeIndex,\s*isLeft,\s*true\)/);
   assert.doesNotMatch(selectionBody, /drawIncidentEdgesForNode\(model,\s*(?:sourceInstanceId|instanceId)/);
 });

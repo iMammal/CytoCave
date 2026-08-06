@@ -235,17 +235,28 @@ const clearNativeNodeSelection = function () {
     return selectedNodes;
 }
 
-const drawIncidentEdgesForNode = function (model, nodeIndex, isLeft) {
+const drawIncidentEdgesForNode = function (model, nodeIndex, isLeft, debugContext = {}) {
     const previewArea = isLeft ? previewAreaLeft : previewAreaRight;
+    const sourceViewportSide = isLeft ? 'left' : 'right';
+    const leftDebugContext = {
+        ...debugContext,
+        sourceViewportSide,
+        renderViewportSide: 'left'
+    };
+    const rightDebugContext = {
+        ...debugContext,
+        sourceViewportSide,
+        renderViewportSide: 'right'
+    };
     if(spt) {
         let pathArray = isLeft ? modelLeft.getPathArray(getRoot(), nodeIndex) : modelRight.getPathArray(getRoot(), nodeIndex);
         for (let i = 0; i < pathArray.length; i++) {
             if (thresholdModality) {
-                previewAreaLeft.drawEdgesGivenNode(pathArray[i]);
-                previewAreaRight.drawEdgesGivenNode(pathArray[i]);
+                previewAreaLeft.drawEdgesGivenNode(pathArray[i], null, leftDebugContext);
+                previewAreaRight.drawEdgesGivenNode(pathArray[i], null, rightDebugContext);
             } else {
-                previewAreaLeft.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
-                previewAreaRight.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges());
+                previewAreaLeft.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges(), leftDebugContext);
+                previewAreaRight.drawEdgesGivenNode(pathArray[i], model.getNumberOfEdges(), rightDebugContext);
             }
         }
     }
@@ -253,11 +264,11 @@ const drawIncidentEdgesForNode = function (model, nodeIndex, isLeft) {
     previewArea.drawConnections();
 
     if (thresholdModality) {
-        previewAreaLeft.drawEdgesGivenNode(nodeIndex);
-        previewAreaRight.drawEdgesGivenNode(nodeIndex);
+        previewAreaLeft.drawEdgesGivenNode(nodeIndex, null, leftDebugContext);
+        previewAreaRight.drawEdgesGivenNode(nodeIndex, null, rightDebugContext);
     } else {
-        previewAreaLeft.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
-        previewAreaRight.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges());
+        previewAreaLeft.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges(), leftDebugContext);
+        previewAreaRight.drawEdgesGivenNode(nodeIndex, model.getNumberOfEdges(), rightDebugContext);
     }
 }
 
@@ -354,7 +365,9 @@ const updateNodeSelection = (model, sourceIntersection, isLeft, nodeIndex = null
         setNodeSelectedInPreview(previewAreaLeft, leftIntersection);
         setNodeSelectedInPreview(previewAreaRight, rightIntersection);
         setNodeInfoPanel(model.getRegionByIndex(datasetNodeIndex), datasetNodeIndex);
-        drawIncidentEdgesForNode(model, datasetNodeIndex, isLeft);
+        drawIncidentEdgesForNode(model, datasetNodeIndex, isLeft, {
+            sourceInstanceId: sourceInstanceId
+        });
         emitLocalNodeSelection(datasetNodeIndex, isLeft, true);
     }
 

@@ -4,6 +4,8 @@ const path = require('path');
 const test = require('node:test');
 
 const {
+  buildIncidentEdgeDebugReport,
+  buildIncidentEdgeLookupDebugReport,
   buildSparseAdjacencyRows,
   compareEdgeStrength,
   collectIncidentEdges,
@@ -274,4 +276,245 @@ test('selected incident-edge rendering does not scan connection matrix rows', ()
   const drawBody = previewArea.slice(drawStart, drawEnd);
   assert.match(drawBody, /getIncidentEdgesByNode/);
   assert.doesNotMatch(drawBody, /getConnectionMatrixRow/);
+});
+
+test('incident-edge debug report includes staged counts and neighbor samples', () => {
+  const adjacency = build([
+    [0, 1, 5],
+    [1, 0, 7],
+    [0, 2, 1],
+    [3, 0, 9]
+  ]);
+  const incidentEdges = collectIncidentEdges(
+    adjacency.outgoingAdjacency,
+    adjacency.incomingAdjacency,
+    0
+  );
+  const filterOptions = {
+    selectedNodeId: 0,
+    threshold: 6,
+    edgeValueMode: 'similarity',
+    enableIpsi: true,
+    enableContra: true
+  };
+  const submittedEdges = filterIncidentEdges(incidentEdges, filterOptions);
+  const report = buildIncidentEdgeDebugReport({
+    selectedNodeId: 0,
+    outgoingRecords: adjacency.outgoingAdjacency[0],
+    incomingRecords: adjacency.incomingAdjacency[0],
+    mergedEdges: incidentEdges,
+    submittedEdges,
+    filterOptions
+  });
+
+  assert.deepEqual(Object.keys(report.stages), [
+    'rawOutgoingEdgeRecords',
+    'rawIncomingEdgeRecords',
+    'union',
+    'afterReciprocalMerge',
+    'afterHemisphereFilter',
+    'afterThreshold',
+    'afterTopNOrEdgeCountLimit',
+    'submittedRenderList'
+  ]);
+  assert.equal(report.stages.rawOutgoingEdgeRecords.count, 2);
+  assert.deepEqual(report.stages.rawOutgoingEdgeRecords.first20NeighborIds, [1, 2]);
+  assert.equal(report.stages.rawIncomingEdgeRecords.count, 2);
+  assert.deepEqual(report.stages.rawIncomingEdgeRecords.first20NeighborIds, [1, 3]);
+  assert.equal(report.stages.union.count, 4);
+  assert.deepEqual(report.stages.union.first20NeighborIds, [1, 2, 1, 3]);
+  assert.equal(report.stages.afterReciprocalMerge.count, 3);
+  assert.deepEqual(report.stages.afterReciprocalMerge.first20NeighborIds, [1, 2, 3]);
+  assert.equal(report.stages.afterThreshold.count, 2);
+  assert.deepEqual(report.stages.afterThreshold.first20NeighborIds, [1, 3]);
+  assert.equal(report.stages.submittedRenderList.count, submittedEdges.length);
+  assert.deepEqual(report.firstCountCollapse, {
+    from: 'union',
+    to: 'afterReciprocalMerge',
+    fromCount: 4,
+    toCount: 3,
+    droppedCount: 1,
+    missingNeighborIdsFirst20: []
+  });
+});
+
+test('sparse adjacency diagnostics report construction key space and sample nodes', () => {
+  const adjacency = build([
+    [36, 3657, 0],
+    [3657, 6452, 1],
+    [6452, 36, 2],
+    ['source', 'target', 'value']
+  ], { nodeCount: 10000 });
+  const diagnostics = adjacency.diagnostics;
+
+  assert.equal(diagnostics.totalEdgeRecordsRead, 4);
+  assert.equal(diagnostics.validEdgeRecords, 3);
+  assert.equal(diagnostics.skippedEdgeRecords, 1);
+  assert.equal(diagnostics.outgoingAdjacencyKeyCount, 3);
+  assert.equal(diagnostics.incomingAdjacencyKeyCount, 3);
+  assert.equal(diagnostics.minSourceId, 36);
+  assert.equal(diagnostics.maxSourceId, 6452);
+  assert.equal(diagnostics.minTargetId, 36);
+  assert.equal(diagnostics.maxTargetId, 6452);
+  assert.equal(diagnostics.keySpace, 'dataset-row-index/canonical-node-id');
+  assert.equal(diagnostics.keysAreViewportInstanceIds, false);
+  assert.deepEqual(diagnostics.samples.map((sample) => sample.nodeId), [36, 3657, 6452]);
+});
+
+test('lookup diagnostics compare canonical node id with source instance id', () => {
+  const adjacency = build([
+    [3657, 105, 0],
+    [220, 3657, 0],
+    [69, 70, 1]
+  ], { nodeCount: 10000 });
+  const diagnostics = buildIncidentEdgeLookupDebugReport({
+    canonicalNodeId: 3657,
+    sourceInstanceId: 69,
+    resolvedInstanceId: 69,
+    resolvedDatasetNodeId: 3657,
+    outgoingAdjacency: adjacency.outgoingAdjacency,
+    incomingAdjacency: adjacency.incomingAdjacency,
+    modelSide: 'Left',
+    sourceViewportSide: 'left',
+    renderViewportSide: 'left'
+  });
+
+  assert.deepEqual(diagnostics.mappingChain, {
+    renderedInstanceId: 69,
+    datasetCanonicalNodeId: 3657,
+    adjacencyKey: 3657
+  });
+  assert.deepEqual(diagnostics.canonicalLookup, {
+    outgoingCount: 1,
+    incomingCount: 1
+  });
+  assert.deepEqual(diagnostics.sourceInstanceLookup, {
+    outgoingCount: 1,
+    incomingCount: 0
+  });
+  assert.equal(diagnostics.adjacencyKeyUsedForRenderLookup, 3657);
+});
+
+test('headerless triple edge rows preserve node 3657 outgoing-only runtime lookup', () => {
+  const edgeRows = [];
+  for (let i = 0; i < 20; i++) {
+    edgeRows.push([3657, 5000 + i, 0]);
+  }
+  edgeRows.push([69, 70, 1]);
+  edgeRows.push([70, 69, 1]);
+
+  const adjacency = build(edgeRows, { nodeCount: 21760 });
+  const incidentEdges = collectIncidentEdges(
+    adjacency.outgoingAdjacency,
+    adjacency.incomingAdjacency,
+    3657,
+    'distance'
+  );
+  const diagnostics = buildIncidentEdgeLookupDebugReport({
+    canonicalNodeId: 3657,
+    sourceInstanceId: 69,
+    resolvedInstanceId: 69,
+    resolvedDatasetNodeId: 3657,
+    outgoingAdjacency: adjacency.outgoingAdjacency,
+    incomingAdjacency: adjacency.incomingAdjacency,
+    sparseAdjacencyDiagnostics: adjacency.diagnostics
+  });
+
+  assert.equal(adjacency.diagnostics.totalEdgeRecordsRead, 22);
+  assert.equal(adjacency.diagnostics.minSourceId, 69);
+  assert.equal(adjacency.diagnostics.maxSourceId, 3657);
+  assert.equal(adjacency.diagnostics.minTargetId, 69);
+  assert.equal(adjacency.diagnostics.maxTargetId, 5019);
+  assert.equal(adjacency.outgoingAdjacency[3657].length, 20);
+  assert.equal(adjacency.incomingAdjacency[3657], undefined);
+  assert.equal(incidentEdges.length, 20);
+  assert.deepEqual(diagnostics.canonicalLookup, {
+    outgoingCount: 20,
+    incomingCount: 0
+  });
+  assert.deepEqual(diagnostics.sourceInstanceLookup, {
+    outgoingCount: 1,
+    incomingCount: 1
+  });
+});
+
+test('lookup diagnostics keep node zero valid', () => {
+  const adjacency = build([
+    [0, 105, 0],
+    [220, 0, 0]
+  ], { nodeCount: 10000 });
+  const diagnostics = buildIncidentEdgeLookupDebugReport({
+    canonicalNodeId: 0,
+    sourceInstanceId: 0,
+    resolvedInstanceId: 0,
+    resolvedDatasetNodeId: 0,
+    outgoingAdjacency: adjacency.outgoingAdjacency,
+    incomingAdjacency: adjacency.incomingAdjacency
+  });
+
+  assert.deepEqual(diagnostics.canonicalLookup, {
+    outgoingCount: 1,
+    incomingCount: 1
+  });
+  assert.deepEqual(diagnostics.mappingChain, {
+    renderedInstanceId: 0,
+    datasetCanonicalNodeId: 0,
+    adjacencyKey: 0
+  });
+});
+
+test('independent sparse adjacency indexes do not share left and right rows', () => {
+  const left = build([[3657, 1, 5]], { nodeCount: 10000 });
+  const right = build([[2, 3657, 7]], { nodeCount: 10000 });
+
+  assert.notEqual(left.outgoingAdjacency, right.outgoingAdjacency);
+  assert.notEqual(left.incomingAdjacency, right.incomingAdjacency);
+  assert.equal(left.outgoingAdjacency[3657].length, 1);
+  assert.equal(left.incomingAdjacency[3657], undefined);
+  assert.equal(right.outgoingAdjacency[3657], undefined);
+  assert.equal(right.incomingAdjacency[3657].length, 1);
+});
+
+test('incident-edge debug report mirrors top-N mode without applying threshold first', () => {
+  const adjacency = build([
+    [0, 1, 1],
+    [0, 2, 9],
+    [0, 3, 8]
+  ]);
+  const incidentEdges = collectIncidentEdges(
+    adjacency.outgoingAdjacency,
+    adjacency.incomingAdjacency,
+    0
+  );
+  const filterOptions = {
+    selectedNodeId: 0,
+    threshold: 10,
+    topN: 2,
+    edgeValueMode: 'similarity'
+  };
+  const submittedEdges = filterIncidentEdges(incidentEdges, filterOptions);
+  const report = buildIncidentEdgeDebugReport({
+    selectedNodeId: 0,
+    outgoingRecords: adjacency.outgoingAdjacency[0],
+    incomingRecords: adjacency.incomingAdjacency[0],
+    mergedEdges: incidentEdges,
+    submittedEdges,
+    filterOptions
+  });
+
+  assert.equal(report.thresholdApplied, false);
+  assert.equal(report.stages.afterThreshold.count, 3);
+  assert.deepEqual(report.stages.afterTopNOrEdgeCountLimit.first20NeighborIds, [2, 3]);
+  assert.deepEqual(report.stages.submittedRenderList.first20NeighborIds, [2, 3]);
+});
+
+test('selected incident-edge rendering emits pipeline debug report under selection debug', () => {
+  const previewArea = fs.readFileSync(path.join(__dirname, '..', 'js', 'previewArea.js'), 'utf8');
+  const drawStart = previewArea.indexOf('this.drawEdgesGivenNode = function');
+  const drawEnd = previewArea.indexOf('this.removeEdgesGivenNode = function');
+  const drawBody = previewArea.slice(drawStart, drawEnd);
+
+  assert.match(drawBody, /CYTOCAVE_SELECTION_DEBUG/);
+  assert.match(drawBody, /cytocave-incident-edge-pipeline/);
+  assert.match(drawBody, /buildIncidentEdgeDebugReport/);
 });

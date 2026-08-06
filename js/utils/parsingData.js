@@ -77,17 +77,35 @@ var loadLookUpTable = function (callback) {
 };
 
 var loadSubjectNetwork = function (fileNames, model, callback) {
+    const networkUrl = "data/" + folder + "/" + fileNames.network;
+    const topologyUrl = "data/" + folder + "/" + fileNames.topology;
+    if (model && model.setDataSourceInfo) {
+        model.setDataSourceInfo({
+            ...fileNames,
+            edgeFileUrl: networkUrl,
+            topologyFileUrl: topologyUrl,
+            networkHeaderMode: false,
+            topologyHeaderMode: false,
+            adjacencyBuiltFrom: "not built yet"
+        });
+    }
     if (model && model.setEdgeValueMode) {
         model.setEdgeValueMode(fileNames.edgeValueMode || fileNames.edge_value_mode || 'similarity');
     }
     if (fileNames.network.toString().endsWith(".csv")) {
-        Papa.parse("data/" + folder + "/" + fileNames.network, {
+        Papa.parse(networkUrl, {
             download: true,
             dynamicTyping: true,
             delimiter: ',',
             header: false,
             skipEmptyLines: true,
             complete: function (results) {
+                if (model && model.setDataSourceInfo) {
+                    model.setDataSourceInfo({
+                        parsedEdgeRowCount: results && results.data ? results.data.length : 0,
+                        networkHeaderMode: false
+                    });
+                }
                 model.setConnectionMatrix(results);
                 console.log("NW loaded ... ");
                 callback(null, null);
@@ -114,7 +132,7 @@ var loadSubjectNetwork = function (fileNames, model, callback) {
         //     }
 
         // Fetch a JSON file from the server
-        fetch("data/" + folder + "/" + fileNames.network)
+        fetch(networkUrl)
             .then(response => response.json())  // parse the JSON from the response
             .then(jsonData => {
                 console.log(`Successfully read file: ${fileNames.network}`);
@@ -135,14 +153,30 @@ var loadSubjectNetwork = function (fileNames, model, callback) {
 };
 
 var loadSubjectTopology = function (fileNames, model, callback) {
-    Papa.parse("data/" + folder + "/" + fileNames.topology, {
+    const topologyUrl = "data/" + folder + "/" + fileNames.topology;
+    if (model && model.setDataSourceInfo) {
+        model.setDataSourceInfo({
+            topologyFileUrl: topologyUrl,
+            topologyHeaderMode: false
+        });
+    }
+    Papa.parse(topologyUrl, {
         download: true,
         dynamicTyping: true,
         delimiter: ',',
         header: false,
         skipEmptyLines: true,
         complete: function (results) {
+            if (model && model.setDataSourceInfo) {
+                model.setDataSourceInfo({
+                    parsedNodeRowCount: results && results.data ? Math.max(results.data.length - 1, 0) : 0,
+                    topologyHeaderMode: false
+                });
+            }
             model.setTopology(results.data);
+            if (model && model.logModelLoadDiagnostics) {
+                model.logModelLoadDiagnostics("topology-loaded");
+            }
             console.log("Topology loaded ... ");
             callback(null, null);
         }

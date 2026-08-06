@@ -52,7 +52,7 @@ import {getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS} from './GUI'
 import {scaleColorGroup} from './utils/scale'
 import {buildAnnotationCalloutLines, wrapAndTruncateLines} from './annotationPresentation'
 import {firstPickableNodeIntersection, markAnnotationObjectNonPickable} from './selectionSemantics'
-import {edgeValue, filterIncidentEdges} from './incidentEdges'
+import {buildIncidentEdgeDebugReport, filterIncidentEdges} from './incidentEdges'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
 import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
@@ -3186,7 +3186,7 @@ function PreviewArea(canvas_, model_, name_) {
         syncAnnotationHalos(annotations, selectedKey);
     }
     // draw edges given a node following edge threshold
-    this.drawEdgesGivenNode = function (indexNode, topN = null) {
+    this.drawEdgesGivenNode = function (indexNode, topN = null, debugContext = {}) {
         console.log("Attempting to draw edges given node: " + indexNode);
         var dataset = model.getDataset();
 
@@ -3198,6 +3198,9 @@ function PreviewArea(canvas_, model_, name_) {
             console.log("instanceObj is null");
             return;
         }
+        var renderedDatasetNodeId = instanceObj.object && instanceObj.object.getDatasetIndex
+            ? instanceObj.object.getDatasetIndex(instanceObj)
+            : null;
 
         let matrix = new THREE.Matrix4();
         //console.log("NodeObject: ");
@@ -3212,16 +3215,16 @@ function PreviewArea(canvas_, model_, name_) {
         //objectParent.getMatrixAt(nodeObject.instanceId, matrix);
         instancePosition.setFromMatrixPosition(matrix);
 
-        var edges = model.getIncidentEdgesByNode(indexNode);
+        var incidentEdges = model.getIncidentEdgesByNode(indexNode);
         var outgoingRecords = model.getOutgoingAdjacency()[indexNode] || [];
         var incomingRecords = model.getIncomingAdjacency()[indexNode] || [];
         var edgeValueMode = model.getEdgeValueMode ? model.getEdgeValueMode() : 'similarity';
         var selectedThreshold = model.getThreshold();
         //var edges = this.getActiveEdges(); //this gets all active edges.
         console.log("drawEdgesGivenNode: Active edges: ");
-        console.log(edges);
+        console.log(incidentEdges);
 
-        edges = filterIncidentEdges(edges, {
+        var incidentEdgeFilterOptions = {
             selectedNodeId: indexNode,
             dataset: dataset,
             threshold: selectedThreshold,
@@ -3238,20 +3241,27 @@ function PreviewArea(canvas_, model_, name_) {
             isNodeVisible: function (nodeId) {
                 return getVisibleNodes(nodeId);
             }
-        });
+        };
+
+        var edges = filterIncidentEdges(incidentEdges, incidentEdgeFilterOptions);
 
         if (typeof window !== 'undefined' && window.CYTOCAVE_SELECTION_DEBUG === true) {
-            console.log('cytocave-incident-edges', {
-                nodeId: indexNode,
-                edgeValueMode: edgeValueMode,
-                threshold: selectedThreshold,
-                rawOutgoingCount: outgoingRecords.length,
-                rawIncomingCount: incomingRecords.length,
-                zeroValuedOutgoingCount: outgoingRecords.filter(function (edge) { return edgeValue(edge) === 0; }).length,
-                zeroValuedIncomingCount: incomingRecords.filter(function (edge) { return edgeValue(edge) === 0; }).length,
-                countAfterThresholding: edges.length,
-                submittedRenderCount: edges.length
-            });
+            console.log('cytocave-incident-edge-pipeline', buildIncidentEdgeDebugReport({
+                selectedNodeId: indexNode,
+                outgoingRecords: outgoingRecords,
+                incomingRecords: incomingRecords,
+                mergedEdges: incidentEdges,
+                submittedEdges: edges,
+                filterOptions: incidentEdgeFilterOptions,
+                lookupDiagnostics: model.getIncidentLookupDiagnostics
+                    ? model.getIncidentLookupDiagnostics(indexNode, debugContext.sourceInstanceId, {
+                        sourceViewportSide: debugContext.sourceViewportSide || null,
+                        renderViewportSide: name,
+                        resolvedInstanceId: instanceObj.instanceId,
+                        resolvedDatasetNodeId: renderedDatasetNodeId
+                    })
+                    : null
+            }));
         }
 
         for(let i = 0; i < edges.length; i++) {

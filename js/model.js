@@ -18,6 +18,7 @@ import {
     buildSparseAdjacencyRows,
     compareEdgeStrength,
     collectIncidentEdges,
+    buildIncidentEdgeLookupDebugReport,
     normalizeEdgeValueMode
 } from "./incidentEdges";
 
@@ -42,6 +43,8 @@ function Model(side) {
     var outgoingAdjacency = [];         // sparse A[i, :] rows for incident-edge lookup
     var incomingAdjacency = [];         // sparse A^T[i, :] rows for incident-edge lookup
     var adjacencyBuildCount = 0;
+    var sparseAdjacencyDiagnostics = null;
+    var dataSourceInfo = null;
     var directedGraph = true;
     var edgeValueMode = 'similarity';
     var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
@@ -97,6 +100,8 @@ function Model(side) {
         outgoingAdjacency = [];
         incomingAdjacency = [];
         adjacencyBuildCount = 0;
+        sparseAdjacencyDiagnostics = null;
+        dataSourceInfo = null;
         directedGraph = true;
         edgeValueMode = 'similarity';
         distanceMatrix = [];
@@ -350,15 +355,86 @@ function Model(side) {
         return edgeValueMode;
     };
 
-    this.rebuildAdjacencyIndex = function (edgeRows) {
+    this.setDataSourceInfo = function (info) {
+        dataSourceInfo = info ? {
+            ...(dataSourceInfo || {}),
+            ...info,
+            subjectID: info.subjectID !== undefined ? info.subjectID : (dataSourceInfo && dataSourceInfo.subjectID) || null,
+            network: info.network !== undefined ? info.network : (dataSourceInfo && dataSourceInfo.network) || null,
+            topology: info.topology !== undefined ? info.topology : (dataSourceInfo && dataSourceInfo.topology) || null
+        } : null;
+    };
+
+    this.getDataSourceInfo = function () {
+        return dataSourceInfo;
+    };
+
+    function selectionDebugEnabled() {
+        return typeof window !== 'undefined' && window.CYTOCAVE_SELECTION_DEBUG === true;
+    }
+
+    this.getModelLoadDiagnostics = function (stage) {
+        const sample3657 = sparseAdjacencyDiagnostics && sparseAdjacencyDiagnostics.samples
+            ? sparseAdjacencyDiagnostics.samples.find(function (sample) { return sample.nodeId === 3657; })
+            : null;
+        return {
+            stage: stage || null,
+            viewportSide: name,
+            subjectID: dataSourceInfo && dataSourceInfo.subjectID,
+            network: dataSourceInfo && dataSourceInfo.network,
+            topology: dataSourceInfo && dataSourceInfo.topology,
+            edgeFileUrl: dataSourceInfo && dataSourceInfo.edgeFileUrl,
+            topologyFileUrl: dataSourceInfo && dataSourceInfo.topologyFileUrl,
+            parsedEdgeRowCount: dataSourceInfo && dataSourceInfo.parsedEdgeRowCount,
+            parsedNodeRowCount: dataSourceInfo && dataSourceInfo.parsedNodeRowCount,
+            networkHeaderMode: dataSourceInfo && dataSourceInfo.networkHeaderMode,
+            topologyHeaderMode: dataSourceInfo && dataSourceInfo.topologyHeaderMode,
+            adjacencyBuiltFrom: dataSourceInfo && dataSourceInfo.adjacencyBuiltFrom,
+            adjacencyBuildCount: adjacencyBuildCount,
+            outgoingAdjacencyKeyCount: sparseAdjacencyDiagnostics && sparseAdjacencyDiagnostics.outgoingAdjacencyKeyCount,
+            incomingAdjacencyKeyCount: sparseAdjacencyDiagnostics && sparseAdjacencyDiagnostics.incomingAdjacencyKeyCount,
+            sourceMin: sparseAdjacencyDiagnostics && sparseAdjacencyDiagnostics.minSourceId,
+            sourceMax: sparseAdjacencyDiagnostics && sparseAdjacencyDiagnostics.maxSourceId,
+            targetMin: sparseAdjacencyDiagnostics && sparseAdjacencyDiagnostics.minTargetId,
+            targetMax: sparseAdjacencyDiagnostics && sparseAdjacencyDiagnostics.maxTargetId,
+            node3657OutgoingCount: sample3657 ? sample3657.outgoingCount : 0,
+            node3657IncomingCount: sample3657 ? sample3657.incomingCount : 0,
+            sparseAdjacencyDiagnostics: sparseAdjacencyDiagnostics
+        };
+    };
+
+    this.logModelLoadDiagnostics = function (stage) {
+        if (!selectionDebugEnabled()) return;
+        console.log('cytocave-model-load', this.getModelLoadDiagnostics(stage));
+    };
+
+    this.rebuildAdjacencyIndex = function (edgeRows, options = {}) {
+        const adjacencyBuiltFrom = options.adjacencyBuiltFrom ||
+            (edgeRows ? 'direct CSV edge rows' : 'dense connection matrix fallback');
+        if (dataSourceInfo) {
+            this.setDataSourceInfo({
+                adjacencyBuiltFrom: adjacencyBuiltFrom
+            });
+        }
         const result = buildSparseAdjacencyRows(edgeRows || sparseEdgeRowsFromConnectionMatrix(), {
             nodeCount: this.getConnectionMatrixDimension(),
-            directed: directedGraph
+            directed: directedGraph,
+            modelSide: name,
+            dataSource: dataSourceInfo,
+            adjacencyBuildCount: adjacencyBuildCount + 1,
+            adjacencyBuiltFrom: adjacencyBuiltFrom
         });
         outgoingAdjacency = result.outgoingAdjacency;
         incomingAdjacency = result.incomingAdjacency;
         directedGraph = result.directed;
         adjacencyBuildCount += 1;
+        sparseAdjacencyDiagnostics = {
+            ...result.diagnostics,
+            adjacencyBuildCount: adjacencyBuildCount
+        };
+        if (selectionDebugEnabled()) {
+            console.log('cytocave-sparse-adjacency', sparseAdjacencyDiagnostics);
+        }
         return result;
     };
 
@@ -374,6 +450,24 @@ function Model(side) {
         return adjacencyBuildCount;
     };
 
+    this.getSparseAdjacencyDiagnostics = function () {
+        return sparseAdjacencyDiagnostics;
+    };
+
+    this.getIncidentLookupDiagnostics = function (canonicalNodeId, sourceInstanceId, options = {}) {
+        return buildIncidentEdgeLookupDebugReport({
+            canonicalNodeId,
+            sourceInstanceId,
+            outgoingAdjacency,
+            incomingAdjacency,
+            modelSide: name,
+            modelDataSource: dataSourceInfo,
+            adjacencyBuildCount,
+            sparseAdjacencyDiagnostics,
+            ...options
+        });
+    };
+
     this.getIncidentEdgesByNode = function (indexNode) {
         return collectIncidentEdges(outgoingAdjacency, incomingAdjacency, indexNode, edgeValueMode);
     };
@@ -386,9 +480,12 @@ function Model(side) {
         if (directed !== null) directedGraph = directed;
         const mode = explicitEdgeValueMode(jsonData);
         if (mode !== null) edgeValueMode = mode;
-        this.rebuildAdjacencyIndex();
+        this.rebuildAdjacencyIndex(null, {
+            adjacencyBuiltFrom: 'dense connection matrix'
+        });
 
         console.log(`Successfully created the sparse matrix from JSON data.`);
+        this.logModelLoadDiagnostics('network-loaded-json');
         this.computeDistanceMatrix();
         this.computeNodalStrength();
         //console.log(connectionMatrix);  // This will print the sparse matrix. You can do further processing if needed.
@@ -438,7 +535,10 @@ function Model(side) {
             if (!Number.isFinite(this.minConnectionMatrix)) this.minConnectionMatrix = 0;
             if (!Number.isFinite(this.maxConnectionMatrix)) this.maxConnectionMatrix = 0;
         }
-        this.rebuildAdjacencyIndex(sparseEdgeRows);
+        this.rebuildAdjacencyIndex(sparseEdgeRows, {
+            adjacencyBuiltFrom: sparseEdgeRows ? 'direct CSV edge rows' : 'dense connection matrix'
+        });
+        this.logModelLoadDiagnostics('network-loaded-csv');
         this.computeDistanceMatrix();
         this.computeNodalStrength();
     };
