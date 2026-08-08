@@ -362,6 +362,72 @@ test('variant edge value mode can be loaded from request configuration', async (
   assert.equal(response.body.variants.right.graph.edgeValueMode, 'binary');
 });
 
+test('UPENN module clustering columns load through REST view state', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const moduleVariant = {
+    datasetFolder: 'UPENN_GBM_C16_COMPARE',
+    lookupTableId: 'upenn_gbm_c16_compare',
+    subjectID: 'UPENN-GBM-00002_11__n64000_s0_k20_c16'
+  };
+
+  const loaded = await request(server, 'POST', '/variants/load', {
+    viewport: 'left',
+    ...moduleVariant
+  });
+  assert.equal(loaded.statusCode, 200);
+  assert.equal(loaded.body.variant.graph.clusterColumn, 'UPENNModuleClustering');
+  assert.equal(loaded.body.variant.graph.nodeCount, 64000);
+  assert.equal(loaded.body.state.view.colorBy.left, 'UPENNModuleClustering');
+  assert.equal(loaded.body.state.view.colorBy.mode, 'module_cluster');
+
+  const compared = await request(server, 'POST', '/variants/compare', {
+    datasetFolder: 'UPENN_GBM_C16_COMPARE',
+    lookupTableId: 'upenn_gbm_c16_compare',
+    left: {
+      subjectID: 'UPENN-GBM-00002_11__n64000_s0_k20_c16'
+    },
+    right: {
+      subjectID: 'UPENN-GBM-00006_11__n64000_s0_k20_c16'
+    }
+  });
+  assert.equal(compared.statusCode, 200);
+  assert.equal(compared.body.variants.left.graph.clusterColumn, 'UPENNModuleClustering');
+  assert.equal(compared.body.variants.right.graph.clusterColumn, 'UPENNModuleClustering');
+  assert.equal(compared.body.state.view.colorBy.mode, 'module_cluster');
+
+  const color = await request(server, 'POST', '/view/color-by', {
+    field: 'UPENNModule'
+  });
+  assert.equal(color.statusCode, 200);
+  assert.equal(color.body.state.view.colorBy.mode, 'module_cluster');
+  assert.equal(color.body.state.view.colorBy.left, 'UPENNModule');
+  assert.equal(color.body.state.view.colorBy.right, 'UPENNModule');
+
+  const highlight = await request(server, 'POST', '/view/highlight-cluster', {
+    clusterId: 7,
+    viewport: 'both'
+  });
+  assert.equal(highlight.statusCode, 200);
+  assert.equal(highlight.body.state.view.highlightedCluster.mode, 'module_cluster');
+  assert.equal(highlight.body.state.view.highlightedCluster.leftField, 'UPENNModule');
+  assert.equal(highlight.body.state.view.highlightedCluster.rightField, 'UPENNModule');
+});
+
+test('schema clustering columns are discovered without hard-coded UPENN names', () => {
+  const serverSource = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+
+  assert.match(serverSource, /function isSchemaClusteringColumn\(field\)/);
+  assert.match(serverSource, /name\.endsWith\('Clustering'\)/);
+  assert.match(serverSource, /name\.length > 'Clustering'\.length/);
+  assert.match(serverSource, /function clusteringColumnBase\(field\)/);
+  assert.match(serverSource, /function isKMeansClusterColumn\(field\)/);
+  assert.match(serverSource, /isKMeansClusterColumn\(field\) \|\| isSchemaClusteringColumn\(field\)/);
+  assert.match(serverSource, /knownNonKMeansColumns\.some/);
+  assert.doesNotMatch(serverSource, /isUpennModuleClusterColumn/);
+});
+
 test('select-node supports explicit replacement override while default remains replace', async (t) => {
   const server = await startServer();
   t.after(() => server.close());

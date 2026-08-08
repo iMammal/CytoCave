@@ -349,6 +349,39 @@ function chooseDefaultSubject(viewport) {
   return viewport === 'right' ? DEFAULT_RIGHT_SUBJECT : DEFAULT_LEFT_SUBJECT;
 }
 
+function isKMeansClusterColumn(field) {
+  return String(field || '').includes('KMeans');
+}
+
+function isSchemaClusteringColumn(field) {
+  const name = String(field || '').trim();
+  return name.length > 'Clustering'.length && name.endsWith('Clustering');
+}
+
+function clusteringColumnBase(field) {
+  const name = String(field || '').trim();
+  return isSchemaClusteringColumn(name) ? name.slice(0, -'Clustering'.length) : name;
+}
+
+function isClusterColumn(field) {
+  if (!field) return false;
+  return isKMeansClusterColumn(field) || isSchemaClusteringColumn(field);
+}
+
+function colorModeForClusterColumns(fields, knownClusterColumns = fields) {
+  const selectedFields = fields.filter(Boolean).map(String);
+  const knownNonKMeansColumns = knownClusterColumns
+    .filter((field) => isSchemaClusteringColumn(field) && !isKMeansClusterColumn(field))
+    .map(String);
+
+  return selectedFields.some((field) => {
+    return (isSchemaClusteringColumn(field) && !isKMeansClusterColumn(field)) ||
+      knownNonKMeansColumns.some((knownField) => field === clusteringColumnBase(knownField));
+  })
+    ? 'module_cluster'
+    : 'kmeans_cluster';
+}
+
 function chooseClusterColumn({ folder, record, variantMetadata, commonMetadata, k, clusterCount, seed }) {
   if (record.clusterColumn) return record.clusterColumn;
   if (variantMetadata && variantMetadata.cluster_column) return variantMetadata.cluster_column;
@@ -358,7 +391,7 @@ function chooseClusterColumn({ folder, record, variantMetadata, commonMetadata, 
     columns.push(...commonMetadata.cluster_columns);
   }
   if (record.topology) {
-    columns.push(...readTopologyHeader(folder, record.topology).filter((field) => field.includes('KMeans')));
+    columns.push(...readTopologyHeader(folder, record.topology).filter(isClusterColumn));
   }
 
   const normalizedK = k != null ? String(k) : null;
@@ -479,6 +512,10 @@ function setViewportVariant(viewport, input) {
   sessionState.view.edgeValueMode = variant.graph.edgeValueMode || 'similarity';
   if (variant.graph.clusterColumn) {
     sessionState.view.colorBy[viewport] = variant.graph.clusterColumn;
+    sessionState.view.colorBy.mode = colorModeForClusterColumns([
+      sessionState.view.colorBy.left,
+      sessionState.view.colorBy.right
+    ]);
   }
   return variant;
 }
@@ -512,7 +549,7 @@ function compareVariants(body = {}) {
     source: body.orientationSource || 'left'
   };
   sessionState.view.colorBy = {
-    mode: 'kmeans_cluster',
+    mode: colorModeForClusterColumns([left.graph.clusterColumn, right.graph.clusterColumn]),
     left: left.graph.clusterColumn,
     right: right.graph.clusterColumn
   };
@@ -582,12 +619,18 @@ app.post('/view/layout', (req, res) => {
 
 app.post('/view/color-by', (req, res) => {
   handleRoute(() => {
-    const mode = req.body.mode || 'kmeans_cluster';
     const field = req.body.field || req.body.clusterColumn || null;
+    const left = req.body.left || req.body.leftField || field || (sessionState.viewports.left && sessionState.viewports.left.graph.clusterColumn);
+    const right = req.body.right || req.body.rightField || field || (sessionState.viewports.right && sessionState.viewports.right.graph.clusterColumn);
+    const knownClusterColumns = [
+      sessionState.viewports.left && sessionState.viewports.left.graph.clusterColumn,
+      sessionState.viewports.right && sessionState.viewports.right.graph.clusterColumn
+    ];
+    const mode = req.body.mode || colorModeForClusterColumns([left, right], knownClusterColumns);
     sessionState.view.colorBy = {
       mode,
-      left: req.body.left || req.body.leftField || field || (sessionState.viewports.left && sessionState.viewports.left.graph.clusterColumn),
-      right: req.body.right || req.body.rightField || field || (sessionState.viewports.right && sessionState.viewports.right.graph.clusterColumn)
+      left,
+      right
     };
     return { state: stateWithRevision() };
   }, res);
@@ -600,12 +643,18 @@ app.post('/view/highlight-cluster', (req, res) => {
     }
     const viewport = normalizeViewport(req.body.viewport || req.body.side || 'both', { allowBoth: true });
     const clusterId = req.body.clusterId ?? req.body.cluster_id;
+    const leftField = req.body.leftField || sessionState.view.colorBy.left;
+    const rightField = req.body.rightField || sessionState.view.colorBy.right;
+    const knownClusterColumns = [
+      sessionState.viewports.left && sessionState.viewports.left.graph.clusterColumn,
+      sessionState.viewports.right && sessionState.viewports.right.graph.clusterColumn
+    ];
     sessionState.view.highlightedCluster = {
-      mode: 'kmeans_cluster',
+      mode: req.body.mode || colorModeForClusterColumns([leftField, rightField], knownClusterColumns),
       clusterId,
       viewport,
-      leftField: req.body.leftField || sessionState.view.colorBy.left,
-      rightField: req.body.rightField || sessionState.view.colorBy.right
+      leftField,
+      rightField
     };
     return { state: stateWithRevision() };
   }, res);

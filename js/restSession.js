@@ -49,13 +49,22 @@ function findSubjectIndex(subjectID) {
 }
 
 function fieldAvailable(side, field) {
+    return Boolean(resolveColorField(side, field));
+}
+
+function normalizeClusterFieldName(field) {
+    return String(field || "").replace("Clustering", "");
+}
+
+function resolveColorField(side, field) {
     if (!field) return false;
     var selectId = side === "left" ? "colorCodingMenuLeft" : "colorCodingMenu";
     var select = document.getElementById(selectId);
     if (!select) return false;
+    var normalizedField = normalizeClusterFieldName(field);
     for (var i = 0; i < select.options.length; i++) {
-        if (select.options[i].value === field) {
-            return true;
+        if (select.options[i].value === field || select.options[i].value === normalizedField) {
+            return select.options[i].value;
         }
     }
     return false;
@@ -63,13 +72,15 @@ function fieldAvailable(side, field) {
 
 function setSelectValue(selectId, value) {
     var select = document.getElementById(selectId);
-    if (!select || !value) return;
+    if (!select || !value) return null;
+    var normalizedValue = normalizeClusterFieldName(value);
     for (var i = 0; i < select.options.length; i++) {
-        if (select.options[i].value === value) {
+        if (select.options[i].value === value || select.options[i].value === normalizedValue) {
             select.selectedIndex = i;
-            return;
+            return select.options[i].value;
         }
     }
+    return null;
 }
 
 function applyVariant(side, state) {
@@ -98,24 +109,25 @@ function applyColorBy(state) {
     var rightField = colorBy.right || colorBy.field;
 
     if (leftField && lastColorBy.left !== leftField && fieldAvailable("left", leftField)) {
-        setSelectValue("colorCodingMenuLeft", leftField);
-        changeColorGroup(leftField, "Left");
+        var resolvedLeftField = setSelectValue("colorCodingMenuLeft", leftField);
+        changeColorGroup(resolvedLeftField, "Left");
         lastColorBy.left = leftField;
     }
 
     if (rightField && lastColorBy.right !== rightField && fieldAvailable("right", rightField)) {
-        setSelectValue("colorCodingMenu", rightField);
-        changeColorGroup(rightField, "Right");
+        var resolvedRightField = setSelectValue("colorCodingMenu", rightField);
+        changeColorGroup(resolvedRightField, "Right");
         lastColorBy.right = rightField;
     }
 }
 
 function setClusterHighlightForSide(side, field, clusterId) {
     var model = modelFor(side);
-    if (!model || !fieldAvailable(side, field)) return;
+    var resolvedField = resolveColorField(side, field);
+    if (!model || !resolvedField) return;
 
-    if (model.getActiveGroupName() !== field) {
-        changeColorGroup(field, sideName(side));
+    if (model.getActiveGroupName() !== resolvedField) {
+        changeColorGroup(resolvedField, sideName(side));
     }
 
     var target = String(clusterId);
