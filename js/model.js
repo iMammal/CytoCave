@@ -167,7 +167,6 @@ function Model(side) {
 
         for (var i = 0; i < len; ++i) {
             var label = labelKeys[i];
-            console.log(label)
             var region = atlas.getRegion(label);
             for (var j = 0; j < names.length; ++j)
                 groups[names[j]][i] = region[names[j]];

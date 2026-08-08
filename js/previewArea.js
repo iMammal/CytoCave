@@ -1987,8 +1987,6 @@ function PreviewArea(canvas_, model_, name_) {
     // assumes all nodes are visible, nothing is selected
     this.drawRegions = function() {
         var dataset = model.getDataset();
-        console.log("Dataset: ");
-        console.log(dataset);
 
         // for each group and hemisphere in the dataset, create an instance mesh
         var groups = this.listGroups();
@@ -2051,8 +2049,6 @@ function PreviewArea(canvas_, model_, name_) {
 
             // get the position of the region
             let position = dataset[i].position;
-            // set the position of the instance
-            console.log("position: " + i + ","+dataset[i].group+"," + index + "," + position.x + ", " + position.y + ", " + position.z);
 
             instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
             instance.setColorAt(index, instance.material.color);
