@@ -765,6 +765,7 @@ var changeColorGroup = function (name, side) {
         previewAreaLeft.removeAllInstances();
         modelLeft.setActiveGroup(name);
         modelLeft.setAllRegionsActivated();
+        setColorGroupScale(modelLeft);
         modelLeft.getDataset(true);
         previewAreaLeft.drawRegions();
         previewAreaLeft.updateNodesVisibility();
@@ -778,6 +779,7 @@ var changeColorGroup = function (name, side) {
         previewAreaRight.removeAllInstances();
         modelRight.setActiveGroup(name);
         modelRight.setAllRegionsActivated();
+        setColorGroupScale(modelRight);
         modelRight.getDataset(true);
         previewAreaRight.drawRegions();
         previewAreaRight.updateNodesVisibility();
@@ -787,7 +789,6 @@ var changeColorGroup = function (name, side) {
         previewAreaRight.setSelectedNodes(tempNodesSelected);
     }
 
-    setColorGroupScale(side);
     redrawEdges();
 };
 

@@ -5,7 +5,7 @@
 import * as THREE from 'three'
 // import * as math from 'mathjs'
 import * as math from './external-libraries/math.min.js'
-import {scaleColorGroup} from './utils/scale'
+import {getColorGroupScaleVersion, scaleColorGroup} from './utils/scale'
 
 var shpereRadius = 3.0;             // normal sphere radius
 var sphereResolution = 12;
@@ -114,22 +114,32 @@ var setDimensionFactorRightBox = function(value){
 // return the material for a node (vertex) according to its state: active or transparent
 //todo: change to static reusable materials
 let materialGroups = {};
+
+var materialGroupKey = function(model, group) {
+    var modelName = model && model.getName ? model.getName() : "global";
+    var activeGroup = model && model.getActiveGroupName ? model.getActiveGroupName() : "default";
+    return modelName + "|" + activeGroup + "|" + getColorGroupScaleVersion() + "|" + group;
+};
+
 var getNormalMaterial = function(model, group) {
     var material, opacity = 1.0;
+    var color = scaleColorGroup(model, group);
+    var cacheKey = materialGroupKey(model, group);
 
-    if (materialGroups[group] === undefined) {
+    if (materialGroups[cacheKey] === undefined) {
         material = new THREE.MeshPhongMaterial({
-            color: scaleColorGroup(model, group),
+            color: color,
             shininess: 50,
             transparent: true,
             specular: 0x222222,
             reflectivity:1.3,
             opacity: opacity
         });
-        materialGroups[group] = material;
+        materialGroups[cacheKey] = material;
     } else {
-        material = materialGroups[group];
+        material = materialGroups[cacheKey];
     }
+    material.color.set(color);
     switch (model.getRegionState(group)){
         case 'active':
             opacity = 1.0;

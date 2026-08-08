@@ -734,11 +734,7 @@ var createLegend = function(model,side) {
 
     if(model.getActiveGroupName() != 4) {
         var activeGroup = model.getActiveGroup();
-        if(typeof(activeGroup[0].name) == "number"){ // group is numerical
-            activeGroup.sort(function(a, b){return a-b});
-        } else { // group is string
-            activeGroup.sort();
-        }
+        activeGroup.sort(compareLegendGroups);
 
         var l = activeGroup.length;
         //document.getElementById("legend").style.height = 25*l+"px";
@@ -884,6 +880,22 @@ var createLegend = function(model,side) {
                 .attr("fill","rgb(191,191,191)");
         }
     }
+};
+
+var numericLegendValue = function(value) {
+    var numberValue = Number(value);
+    return Number.isFinite(numberValue) ? numberValue : null;
+};
+
+var compareLegendGroups = function(a, b) {
+    var numberA = numericLegendValue(a);
+    var numberB = numericLegendValue(b);
+
+    if (numberA !== null && numberB !== null) {
+        return numberA - numberB;
+    }
+
+    return String(a).localeCompare(String(b));
 };
 
 

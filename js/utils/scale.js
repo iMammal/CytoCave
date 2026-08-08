@@ -7,6 +7,7 @@ import {modelLeft,modelRight} from '../model';
 
 // var connectionMatrixScale;
 var groupColor = d3.scale.category10();
+var colorGroupScaleVersion = 0;
 var metric = false;
 var metricQuantileScale;            // scaling function
 var colorMap = {
@@ -50,7 +51,7 @@ var scaleColorGroup = function(model, group) {
         color = colorMap[filteredGroup];
     }
 
-    if(model.getActiveGroupName().indexOf("Heatmap") != -1){
+    if(String(model.getActiveGroupName()).indexOf("Heatmap") != -1){
 
         color = groupColor(filteredGroup);
 
@@ -71,13 +72,15 @@ var scaleColorGroup = function(model, group) {
 // set group color according to the activeGroup number of elements
 var setColorGroupScale = function (side) { //model) {
     var model;
-    if (side !== "Left") {
+    if (side && side.getActiveGroupName) {
+        model = side;
+    } else if (side !== "Left") {
         model = modelRight
     } else {
         model = modelLeft;
     }
     //groupColor = (modelLeft.getActiveGroup().length <= 10) ? d3.scale.category10() : d3.scale.category20();
-    if(model.getActiveGroupName().indexOf("Heatmap") != -1){
+    if(String(model.getActiveGroupName()).indexOf("Heatmap") != -1){
         groupColor  = d3.scale.linear()
             .domain([1, model.getActiveGroup().length])
             .range(["red", "blue"]);
@@ -85,6 +88,11 @@ var setColorGroupScale = function (side) { //model) {
     } else {
         groupColor = (model.getActiveGroup().length <= 10) ? d3.scale.category10() : d3.scale.category20();
     }
+    colorGroupScaleVersion += 1;
+};
+
+var getColorGroupScaleVersion = function () {
+    return colorGroupScaleVersion;
 };
 
 // return a power scale function for the adjacency matrix
@@ -116,4 +124,4 @@ var round = function(number, digits){
     return Math.round(number*digits)/digits;
 };
 
-export {scaleColorGroup,setColorGroupScale}
+export {scaleColorGroup,setColorGroupScale,getColorGroupScaleVersion}
