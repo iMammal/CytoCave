@@ -6,14 +6,26 @@ import * as THREE from 'three'
 // import * as math from 'mathjs'
 import * as math from './external-libraries/math.min.js'
 import {getColorGroupScaleVersion, scaleColorGroup} from './utils/scale'
+import {
+    CANONICAL_GLYPH_SHAPES,
+    createGlyphGeometry,
+    glyphShapeSizeClass,
+    normalizeGlyphShape
+} from './glyphGeometryRegistry'
 
 var shpereRadius = 3.0;             // normal sphere radius
 var sphereResolution = 12;
 var dimensionFactor = 1;
-var dimensionFactorLeftSphere = 1;
-var dimensionFactorRightSphere = 1;
-var dimensionFactorLeftBox = 1;
-var dimensionFactorRightBox = 1;
+var dimensionFactors = {
+    Left: {
+        sphere: 1,
+        cube: 1
+    },
+    Right: {
+        sphere: 1,
+        cube: 1
+    }
+};
 
 function getSphereResolution(){
     return sphereResolution;
@@ -23,92 +35,85 @@ function setSphereResolution(value) {
     sphereResolution = value
 }
 
-var sphereNormal = new THREE.SphereGeometry( shpereRadius, sphereResolution, sphereResolution);
-var boxNormal = new THREE.BoxGeometry( 1.5*shpereRadius, 1.5*shpereRadius, 1.5*shpereRadius);
-var leftSphereNormal = new THREE.SphereGeometry( shpereRadius, sphereResolution, sphereResolution);
-var leftBoxNormal = new THREE.BoxGeometry( 1.5*shpereRadius, 1.5*shpereRadius, 1.5*shpereRadius);
-var rightSphereNormal = new THREE.SphereGeometry( shpereRadius, sphereResolution, sphereResolution);
-var rightBoxNormal = new THREE.BoxGeometry( 1.5*shpereRadius, 1.5*shpereRadius, 1.5*shpereRadius);
-
-// create normal edge geometry: sphere or cube
-var getNormalGeometry = function(hemisphere) {
-    if(hemisphere == "left"){
-        return sphereNormal;
-        //return leftSphereNormal;
-    } else if(hemisphere == "right"){
-        return boxNormal;
-        //return rightSphereNormal;
+var createGlyphGeometrySet = function () {
+    var geometries = {};
+    for (var i = 0; i < CANONICAL_GLYPH_SHAPES.length; i++) {
+        var shape = CANONICAL_GLYPH_SHAPES[i];
+        geometries[shape] = createGlyphGeometry(shape, {
+            radius: shpereRadius,
+            sphereResolution: sphereResolution
+        });
     }
+    return geometries;
 };
 
-// create normal edge geometry: sphere or cube
-//commented out since it already exists?
-// UNcommented back in because it's overloaded for the independent scaling of the left and right spheres
-var getNormalGeometry = function(hemisphere,side) {
-    if(hemisphere == "left"){
-	    if(side == "Left"){
-		    return leftSphereNormal;
-	    } else {
-        return rightSphereNormal;
-	    }
-    } else if(hemisphere == "right"){
-	    if(side == "Left"){
-		    return leftBoxNormal;
-	    } else {
-        return rightBoxNormal;
-	    }
+var glyphGeometriesBySide = {
+    Left: createGlyphGeometrySet(),
+    Right: createGlyphGeometrySet()
+};
+
+var normalizeSide = function (side) {
+    return side === "Left" ? "Left" : "Right";
+};
+
+// create normal node geometry from the canonical glyph shape registry
+var getNormalGeometry = function(glyphShape, side) {
+    var normalizedSide = normalizeSide(side);
+    var shape = normalizeGlyphShape(glyphShape);
+    return glyphGeometriesBySide[normalizedSide][shape] || glyphGeometriesBySide[normalizedSide].sphere;
+};
+
+var setDimensionFactorForClass = function(side, sizeClass, value) {
+    var normalizedSide = normalizeSide(side);
+    var normalizedClass = sizeClass === "cube" ? "cube" : "sphere";
+    var numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+        return;
     }
+
+    var val = 1 / dimensionFactors[normalizedSide][normalizedClass] * numericValue;
+    for (var i = 0; i < CANONICAL_GLYPH_SHAPES.length; i++) {
+        var shape = CANONICAL_GLYPH_SHAPES[i];
+        if (glyphShapeSizeClass(shape) !== normalizedClass) continue;
+        glyphGeometriesBySide[normalizedSide][shape].scale(val, val, val);
+    }
+    dimensionFactors[normalizedSide][normalizedClass] = numericValue;
 };
 
 // scaling the glyphs
 var setDimensionFactor = function(value){
 
-    var val = 1/dimensionFactor*value;
-    sphereNormal.scale(val, val, val);
-    boxNormal.scale(val, val, val);
+    var numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+        return;
+    }
 
-    dimensionFactor = value;
+    setDimensionFactorForClass("Left", "sphere", numericValue);
+    setDimensionFactorForClass("Left", "cube", numericValue);
+    setDimensionFactorForClass("Right", "sphere", numericValue);
+    setDimensionFactorForClass("Right", "cube", numericValue);
+    dimensionFactor = numericValue;
 };
 
 // scaling the glyphs
 var setDimensionFactorLeftSphere = function(value){
-
-    var val = 1/dimensionFactorLeftSphere*value;
-    leftSphereNormal.scale(val, val, val);
-    //boxNormal.scale(val, val, val);
-
-    dimensionFactorLeftSphere = value;
+    setDimensionFactorForClass("Left", "sphere", value);
 };
 
 // scaling the glyphs
 var setDimensionFactorRightSphere = function(value){
-
-    var val = 1/dimensionFactorRightSphere*value;
-    rightSphereNormal.scale(val, val, val);
-    //boxNormal.scale(val, val, val);
-
-    dimensionFactorRightSphere = value;
+    setDimensionFactorForClass("Right", "sphere", value);
 };
 
 
 // scaling the glyphs
 var setDimensionFactorLeftBox = function(value){
-
-    var val = 1/dimensionFactorLeftBox*value;
-    //sphereNormal.scale(val, val, val);
-    leftBoxNormal.scale(val, val, val);
-
-    dimensionFactorLeftBox = value;
+    setDimensionFactorForClass("Left", "cube", value);
 };
 
 // scaling the glyphs
 var setDimensionFactorRightBox = function(value){
-
-    var val = 1/dimensionFactorRightBox*value;
-    //sphereNormal.scale(val, val, val);
-    rightBoxNormal.scale(val, val, val);
-
-    dimensionFactorRightBox = value;
+    setDimensionFactorForClass("Right", "cube", value);
 };
 
 // return the material for a node (vertex) according to its state: active or transparent

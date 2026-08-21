@@ -10,7 +10,8 @@
      label#: label number in the Atlas (mandatory)
      group: anatomical grouping : lobe name (mandatory)
      region_name: region name (mandatory)
-     hemisphere: left or right (mandatory)
+     glyph_shape: visual node shape (optional, preferred)
+     hemisphere: legacy glyph-shape selector or anatomical laterality when present (optional)
      place: embeddness (optional)
      rich_club: rich club affiliation: region name vs non-RichClub (optional)
  */
@@ -23,7 +24,7 @@ function Atlas(data) {
 
     var setLut = function (d) {
         // make sure the mandatory fields exist
-        var temp = ["label", "Anatomy", "region_name", "hemisphere"];
+        var temp = ["label", "Anatomy", "region_name"];
         var fields = [];
         for (var key in d.data[0])
             fields.push(key);
@@ -32,7 +33,7 @@ function Atlas(data) {
                 console.log("Missing mandatory field in Atlas data: " + temp[i]);
         }
         colorCodingGroups = fields;
-        // take out label, region_name and hemisphere
+        // take out identity and rendering metadata fields
         // for (var i = colorCodingGroups.length-1; i > -1; --i) {
         //     if (colorCodingGroups[i] == "label" || colorCodingGroups[i] == "region_name" || colorCodingGroups[i] ==  "hemisphere")
         //         colorCodingGroups.remove(i);
@@ -41,6 +42,7 @@ function Atlas(data) {
         colorCodingGroups = colorCodingGroups.filter(val => val !== "label");
         colorCodingGroups = colorCodingGroups.filter(val => val !== "region_name");
         colorCodingGroups = colorCodingGroups.filter(val => val !== "hemisphere");
+        colorCodingGroups = colorCodingGroups.filter(val => val !== "glyph_shape");
 
         // store data
         var el;

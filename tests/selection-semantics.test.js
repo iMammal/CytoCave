@@ -190,13 +190,13 @@ test('canonical dataset node id drives info panel, edge lookup, and event emissi
   assert.doesNotMatch(selectionBody, /drawIncidentEdgesForNode\(model,\s*(?:sourceInstanceId|instanceId)/);
 });
 
-test('preview area dataset lookup searches left and right instance ids independently', () => {
+test('preview area dataset lookup searches glyph shape instance ids independently', () => {
   const previewArea = fs.readFileSync(path.join(__dirname, '..', 'js', 'previewArea.js'), 'utf8');
   const lookupStart = previewArea.indexOf('this.getNodeInstanceByIndex = function');
   const lookupEnd = previewArea.indexOf('this.getActiveEdges = function');
   const lookupBody = previewArea.slice(lookupStart, lookupEnd);
 
-  assert.match(lookupBody, /const hemispheres = \['left', 'right'\]/);
+  assert.match(lookupBody, /const glyphShapes = shapeKeysForGroup\(groupOf\)/);
   assert.match(lookupBody, /getNodesInstanceFromDatasetIndex\(index\)/);
   assert.doesNotMatch(lookupBody, /else if \(rightHemisphere\.getNodesInstanceFromDatasetIndex\)/);
 });

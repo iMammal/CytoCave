@@ -53,6 +53,12 @@ import {scaleColorGroup} from './utils/scale'
 import {buildAnnotationCalloutLines, wrapAndTruncateLines} from './annotationPresentation'
 import {firstPickableNodeIntersection, markAnnotationObjectNonPickable} from './selectionSemantics'
 import {buildIncidentEdgeDebugReport, filterIncidentEdges} from './incidentEdges'
+import {
+    CANONICAL_GLYPH_SHAPES,
+    buildGlyphInstanceBuckets,
+    resolveGlyphShape,
+    warnInvalidGlyphShapesOnce
+} from './glyphGeometryRegistry'
 //import {WebXRButton} from './external-libraries/vr/webxr-button.js'; //Prettier button but not working so well
 //import { VRButton } from './external-libraries/vr/VRButton.js';
 import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
@@ -81,6 +87,33 @@ function PreviewArea(canvas_, model_, name_) {
     //this.instances = instances;
     this.instances = {};
     var previewObject = this;
+
+    var shapeKeysForGroup = function (groupInstances) {
+        if (!groupInstances) return [];
+        return CANONICAL_GLYPH_SHAPES.filter(function (shape) {
+            return !!groupInstances[shape];
+        });
+    }
+
+    var forEachGroupShapeInstance = function (groupInstances, callback) {
+        var shapes = shapeKeysForGroup(groupInstances);
+        for (var i = 0; i < shapes.length; i++) {
+            callback(groupInstances[shapes[i]], shapes[i]);
+        }
+    }
+
+    var forEachInstance = function (instances, callback) {
+        for (var group in instances) {
+            if (!Object.prototype.hasOwnProperty.call(instances, group)) continue;
+            forEachGroupShapeInstance(instances[group], function (instance, shape) {
+                callback(instance, group, shape);
+            });
+        }
+    }
+
+    var glyphShapeForRegion = function (region) {
+        return resolveGlyphShape(region).shape;
+    }
     // VR stuff
     var vrControl = null, effect = null;
     var controllerLeft = null, controllerRight = null, xrInputLeft = null, xrInputRight = null,
@@ -1475,11 +1508,11 @@ function PreviewArea(canvas_, model_, name_) {
         if(!nodeObject || !nodeObject.object || !nodeObject.object.name) { //todo why is this happening?
             return;
         }
-        let objectParent = this.instances[nodeObject.object.name.group][nodeObject.object.name.hemisphere];
+        let objectParent = this.instances[nodeObject.object.name.group][nodeObject.object.name.glyph_shape];
 
         //do the above two lines reference the same object?
         //log them both, while they are the same if a nodeobject from another preview window is passed in they will be different in some ways.
-        // using this.instances[objectParent.name.group][objectParent.name.hemisphere] is the correct way to get the objectParent
+        // using this.instances[objectParent.name.group][objectParent.name.glyph_shape] is the correct way to get the objectParent
         console.log("objectParent: ");
         console.log(objectParent);
 
@@ -1912,31 +1945,14 @@ function PreviewArea(canvas_, model_, name_) {
     };
 
     this.removeAllInstances = function () {
-        // Loop through all group names in this.instances
-        for (let group in this.instances) {
-            // Check if the group has hemispheres
-            if (this.instances.hasOwnProperty(group)) {
-                // Get the left and right hemisphere objects
-                let left = this.instances[group].left;
-                let right = this.instances[group].right;
-
-                // Clear memory associated with the left hemisphere if it exists
-                if (left && left.geometry && left.material) {
-                    left.geometry.dispose();
-                    left.material.dispose();
-                    brain.remove(left);
-                    this.instances[group].left = null;
-                }
-
-                // Clear memory associated with the right hemisphere if it exists
-                if (right && right.geometry && right.material) {
-                    right.geometry.dispose();
-                    right.material.dispose();
-                    brain.remove(right);
-                    this.instances[group].right = null;
-                }
+        forEachInstance(this.instances, function (instance) {
+            if (instance.geometry && instance.material) {
+                instance.geometry.dispose();
+                instance.material.dispose();
+                brain.remove(instance);
             }
-        }
+        });
+        this.instances = {};
     };
 
     // this.removeAllInstances = function () {
@@ -1972,12 +1988,13 @@ function PreviewArea(canvas_, model_, name_) {
         return Object.keys(groups);
     }
 
-    this.countGroupMembers = function (group, hemisphere) {
-        // count the number of members in given group and hemisphere
+    this.countGroupMembers = function (group, glyphShape) {
+        // count the number of members in given group and glyph shape
         var dataset = model.getDataset();
         var count = 0;
+        var shape = glyphShapeForRegion({glyph_shape: glyphShape});
         for (var i = 0; i < dataset.length; i++) {
-            if ( dataset[i].group && (dataset[i].group === group  || dataset[i].group.toString() === group) && dataset[i].hemisphere === hemisphere) {
+            if ( dataset[i].group && (dataset[i].group === group  || dataset[i].group.toString() === group) && glyphShapeForRegion(dataset[i]) === shape) {
                 count++;
             }
         }
@@ -1987,42 +2004,32 @@ function PreviewArea(canvas_, model_, name_) {
     // assumes all nodes are visible, nothing is selected
     this.drawRegions = function() {
         var dataset = model.getDataset();
+        warnInvalidGlyphShapesOnce(dataset, console);
+        var glyphBuckets = buildGlyphInstanceBuckets(dataset);
 
-        // for each group and hemisphere in the dataset, create an instance mesh
+        // for each group and glyph shape in the dataset, create an instance mesh
         var groups = this.listGroups();
 
         for (let i = 0; i < groups.length; i++) {
-            let leftCount = this.countGroupMembers(groups[i], 'left');
-            let rightCount = this.countGroupMembers(groups[i], 'right');
-            this.instances[groups[i]] = {
-                left: null,
-                right: null
-            };
+            this.instances[groups[i]] = {};
+            for (let shapeIndex = 0; shapeIndex < CANONICAL_GLYPH_SHAPES.length; shapeIndex++) {
+                let glyphShape = CANONICAL_GLYPH_SHAPES[shapeIndex];
+                let shapeCount = glyphBuckets[groups[i]] && glyphBuckets[groups[i]][glyphShape]
+                    ? glyphBuckets[groups[i]][glyphShape].length
+                    : 0;
+                if (shapeCount <= 0) continue;
 
-            // create instance mesh for each group and hemisphere
-            let geometry = getNormalGeometry('left',name);
-            let material = getNormalMaterial(model, groups[i]);
-            // create the instance mesh with the number of nodes in the group
-            this.instances[groups[i]].left = new THREE.InstancedMesh(geometry, material, leftCount);
-            // set the color of the first instance to the group color
-            this.instances[groups[i]].left.setColorAt(0, material.color);
-
-            geometry = getNormalGeometry('right',name);
-            material = getNormalMaterial(model, groups[i]);
-            this.instances[groups[i]].right = new THREE.InstancedMesh(geometry, material, rightCount);
-            this.instances[groups[i]].right.setColorAt(0, material.color);
-
-            // name the instance with group_hemisphere
-            this.instances[groups[i]].left.name = {
-                group: groups[i],
-                hemisphere: 'left',
-                type: 'region'
-            };
-            this.instances[groups[i]].right.name = {
-                group: groups[i],
-                hemisphere: 'right',
-                type: 'region'
-            };
+                let geometry = getNormalGeometry(glyphShape, name);
+                let material = getNormalMaterial(model, groups[i]);
+                let instance = new THREE.InstancedMesh(geometry, material, shapeCount);
+                instance.setColorAt(0, material.color);
+                instance.name = {
+                    group: groups[i],
+                    glyph_shape: glyphShape,
+                    type: 'region'
+                };
+                this.instances[groups[i]][glyphShape] = instance;
+            }
         }
 
         // populate the instance meshes
@@ -2030,16 +2037,17 @@ function PreviewArea(canvas_, model_, name_) {
         for (let i = 0; i < dataset.length; i++) {
             // check if region is already in the topIndexes object
             if (topIndexes[dataset[i].group] === undefined) {
-                topIndexes[dataset[i].group] = {
-                    left: 0,
-                    right: 0
-                };
+                topIndexes[dataset[i].group] = {};
+            }
+            let glyphShape = glyphShapeForRegion(dataset[i]);
+            if (topIndexes[dataset[i].group][glyphShape] === undefined) {
+                topIndexes[dataset[i].group][glyphShape] = 0;
             }
 
             // get the index of the instance mesh to add to
-            let index = topIndexes[dataset[i].group][dataset[i].hemisphere];
+            let index = topIndexes[dataset[i].group][glyphShape];
             // get the instance mesh to add to
-            let instance = this.instances[dataset[i].group][dataset[i].hemisphere];
+            let instance = this.instances[dataset[i].group][glyphShape];
             // instance.userData = {
             //     nodeIndex: i
             // }
@@ -2053,7 +2061,7 @@ function PreviewArea(canvas_, model_, name_) {
             instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
             instance.setColorAt(index, instance.material.color);
             // increment the index
-            topIndexes[dataset[i].group][dataset[i].hemisphere]++;
+            topIndexes[dataset[i].group][glyphShape]++;
 
             /////////////////////////////////
             // IMPORTANT: Any variable in userData must be prototypes here before being used
@@ -2099,7 +2107,7 @@ function PreviewArea(canvas_, model_, name_) {
                         /////console.log("Found index: " + index + " at instanceId: " + i);
                         return {
                             instanceId: i,
-                            hemisphere: this.name.hemisphere,
+                            glyph_shape: this.name.glyph_shape,
                             group: this.name.group,
                             object: this
                         };
@@ -2217,21 +2225,13 @@ function PreviewArea(canvas_, model_, name_) {
         }
 
         // mark instances as dirty
-        for (let i = 0; i < groups.length; i++) {
-            this.instances[groups[i]].left.instanceMatrix.needsUpdate = true;
-            this.instances[groups[i]].right.instanceMatrix.needsUpdate = true;
-        }
-        // display count for each hemisphere
-        // for (let i = 0; i < groups.length; i++) {
-        //     let leftCount = this.countGroupMembers(groups[i], 'left');
-        //     let rightCount = this.countGroupMembers(groups[i], 'right');
-        //     console.log("Group: " + groups[i] + " Left: " + leftCount + " Right: " + rightCount);
-        // }
+        forEachInstance(this.instances, function (instance) {
+            instance.instanceMatrix.needsUpdate = true;
+        });
         // add the instance meshes to the scene
-        for (let i = 0; i < groups.length; i++) {
-            brain.add(this.instances[groups[i]].left);
-            brain.add(this.instances[groups[i]].right);
-        }
+        forEachInstance(this.instances, function (instance) {
+            brain.add(instance);
+        });
     };
 
 
@@ -2423,7 +2423,7 @@ function PreviewArea(canvas_, model_, name_) {
 
 
         for (var i = 0; i < dataset.length; i++) {
-            instance = this.instances[dataset[i].group][dataset[i].hemisphere];
+            instance = this.instances[dataset[i].group][glyphShapeForRegion(dataset[i])];
             index = instance.userData.nodeIndex;
             instance.setMatrixAt(index, new THREE.Matrix4().makeTranslation(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z));
             // set matrix needs update to true
@@ -2459,7 +2459,7 @@ function PreviewArea(canvas_, model_, name_) {
             }
 
             //todo: this.instances["area_43"]["left"]  <--- would work
-            this.instances[dataset[i].group][dataset[i].hemisphere].material.opacity = opacity;
+            this.instances[dataset[i].group][glyphShapeForRegion(dataset[i])].material.opacity = opacity;
             //glyphs[i].material.opacity = opacity;
         }
     };
@@ -2472,14 +2472,10 @@ function PreviewArea(canvas_, model_, name_) {
             const instance = this.instances[groups[i]];
             if (!instance) continue;
 
-            const leftHemisphere = instance['left'];
-            const rightHemisphere = instance['right'];
-            if (!leftHemisphere || !rightHemisphere) continue;
-
-            const leftSelectedNodes = leftHemisphere.getSelectedNodes && leftHemisphere.getSelectedNodes();
-            const rightSelectedNodes = rightHemisphere.getSelectedNodes && rightHemisphere.getSelectedNodes();
-            if (leftSelectedNodes) selectedNodes = selectedNodes.concat(leftSelectedNodes);
-            if (rightSelectedNodes) selectedNodes = selectedNodes.concat(rightSelectedNodes);
+            forEachGroupShapeInstance(instance, function (shapeInstance) {
+                const shapeSelectedNodes = shapeInstance.getSelectedNodes && shapeInstance.getSelectedNodes();
+                if (shapeSelectedNodes) selectedNodes = selectedNodes.concat(shapeSelectedNodes);
+            });
         }
 
         selectedNodes = selectedNodes.filter(node => node !== undefined && node !== null);
@@ -2549,25 +2545,13 @@ function PreviewArea(canvas_, model_, name_) {
                 console.log("instance group undefined: " + groups[i]);
                 continue;
             }
-            if (this.instances[groups[i]]['left'] === undefined) {
-                console.log("instance left undefined: " + groups[i]);
-            }
-            if (this.instances[groups[i]]['right'] === undefined) {
-                console.log("instance right undefined: " + groups[i]);
-            }
-            if (this.instances[groups[i]]['left'].clearSelection === undefined) {
-                console.log("instance clearSelection left undefined: " + groups[i]);
-            } else {
-                this.instances[groups[i]]['left'].clearSelection();
-            }
-            if (this.instances[groups[i]]['right'].clearSelection === undefined) {
-                console.log("instance clearSelection right undefined: " + groups[i]);
-            } else {
-                this.instances[groups[i]]['right'].clearSelection();
-            }
-
-
-
+            forEachGroupShapeInstance(this.instances[groups[i]], function (instance, glyphShape) {
+                if (instance.clearSelection === undefined) {
+                    console.log("instance clearSelection " + glyphShape + " undefined: " + groups[i]);
+                } else {
+                    instance.clearSelection();
+                }
+            });
         }
     };
 
@@ -2669,23 +2653,13 @@ function PreviewArea(canvas_, model_, name_) {
     this.getNodeInstanceByIndex = function (index) {
         let groups = this.listGroups();
         for (let j = 0; j < groups.length; j++) {
-            // each group may have a left and right hemisphere
+            // each group may have multiple glyph shapes
             const groupOf = this.instances[groups[j]];
             if (!groupOf) continue;
-            if (groupOf['left'] === undefined && groupOf['right'] === undefined) {
-                console.log("groupOf left and right undefined: " + groups[j]);
-                continue;
-            }
-            if (groupOf['left'] === undefined) {
-                console.log("groupOf left undefined: " + groups[j]);
-            }
-            if (groupOf['right'] === undefined) {
-                console.log("groupOf right undefined: " + groups[j]);
-            }
-            const hemispheres = ['left', 'right'];
-            for (let i = 0; i < hemispheres.length; i++) {
-                const hemisphere = hemispheres[i];
-                const instance = groupOf[hemisphere];
+            const glyphShapes = shapeKeysForGroup(groupOf);
+            for (let i = 0; i < glyphShapes.length; i++) {
+                const glyphShape = glyphShapes[i];
+                const instance = groupOf[glyphShape];
                 if (!instance || !instance.getNodesInstanceFromDatasetIndex) continue;
                 const node = instance.getNodesInstanceFromDatasetIndex(index);
                 if (node !== null) {
@@ -2716,39 +2690,18 @@ function PreviewArea(canvas_, model_, name_) {
         for (var i = 0; i < numNodesSelected; i++) {
             // check through the instances for the index and then return the node
             for (let j = 0; j < groups.length; j++) {
-                // each group may have a left and right hemisphere
+                // each group may have multiple glyph shapes
                 const groupOf = this.instances[groups[j]];
                 if (!groupOf) continue;
-                if (groupOf['left'] === undefined && groupOf['right'] === undefined) {
-                    console.log("groupOf left and right undefined: " + groups[j]);
-                    continue;
-                }
-                if (groupOf['left'] === undefined) {
-                    console.log("groupOf left undefined: " + groups[j]);
-                }
-                if (groupOf['right'] === undefined) {
-                    console.log("groupOf right undefined: " + groups[j]);
-                }
-                const leftHemisphere = groupOf['left'];
-                const rightHemisphere = groupOf['right'];
-                if (!leftHemisphere || !rightHemisphere) continue;
-                // check which hemisphere is valid
                 let node = null;
-                let leftorright = "";
-                if (leftHemisphere.getNodesInstanceFromDatasetIndex) {
-                    node = leftHemisphere.getNodesInstanceFromDatasetIndex(nodesSelected[i]);
-                    leftorright = "left";
-                } else if (rightHemisphere.getNodesInstanceFromDatasetIndex) {
-                    node = rightHemisphere.getNodesInstanceFromDatasetIndex(nodesSelected[i]);
-                    leftorright = "right";
-                } else {
-                    console.log("No hemisphere found");
-                    continue;
+                const glyphShapes = shapeKeysForGroup(groupOf);
+                for (let shapeIndex = 0; shapeIndex < glyphShapes.length; shapeIndex++) {
+                    const shapeInstance = groupOf[glyphShapes[shapeIndex]];
+                    if (!shapeInstance || !shapeInstance.getNodesInstanceFromDatasetIndex) continue;
+                    node = shapeInstance.getNodesInstanceFromDatasetIndex(nodesSelected[i]);
+                    if (node !== null) break;
                 }
-                if (node === null) {
-                    //console.log("Node not found in " + leftorright + " hemisphere");
-                    continue;
-                }
+                if (node === null) continue;
                 console.log("Node: ");
                 console.log(node);
                 // get the edges

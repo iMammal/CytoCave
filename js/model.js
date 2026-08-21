@@ -14,6 +14,7 @@ import {Platonics} from "./polyhedron";
 import * as math from 'mathjs'
 import {sunflower} from "./graphicsUtils";
 import {setNodeInfoPanel} from "./GUI";
+import {resolveGlyphShape} from "./glyphGeometryRegistry";
 import {
     buildSparseAdjacencyRows,
     compareEdgeStrength,
@@ -552,6 +553,7 @@ function Model(side) {
                 position: centroids[activeTopology][i],
                 name: region.region_name,
                 group: groups[activeGroup][i],
+                glyph_shape: resolveGlyphShape(region).shape,
                 hemisphere: region.hemisphere,
                 label: label
             };
