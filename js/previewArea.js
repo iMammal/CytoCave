@@ -23,7 +23,7 @@ import {TransformControls} from "three/examples/jsm/controls/TransformControls";
 
 // import {isLoaded, dataFiles  , mobile} from "./globals";
 import {mobile, atlas} from './globals';
-import {getNormalGeometry, getNormalMaterial} from './graphicsUtils.js'
+import {getNormalGeometry, getNormalMaterial, setGlyphSizeFactor, setGlyphSizeFactors, getGlyphSizeFactor} from './graphicsUtils.js'
 import {
     getRoot,
     setRoot,
@@ -1504,6 +1504,18 @@ function PreviewArea(canvas_, model_, name_) {
         canvas.addEventListener('mousemove', function (e) {
             onDocumentMouseMove(model, e);
         }, true);
+    };
+
+    this.setGlyphSize = function (glyphShape, value) {
+        setGlyphSizeFactor(name, glyphShape, value);
+    };
+
+    this.setGlyphSizes = function (sizes) {
+        setGlyphSizeFactors(name, sizes);
+    };
+
+    this.getGlyphSize = function (glyphShape) {
+        return getGlyphSizeFactor(name, glyphShape);
     };
 
     // update node scale according to selection status

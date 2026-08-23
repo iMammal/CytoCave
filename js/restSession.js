@@ -12,8 +12,9 @@ import {
     getSelectionMode
 } from "./drawing";
 import {buildAnnotationDetailModel} from "./annotationPresentation";
-import {refreshEdgeValueModeControls} from "./GUI";
+import {refreshEdgeValueModeControls, syncGlyphSizeSliders} from "./GUI";
 import {normalizeEdgeValueMode} from "./incidentEdges";
+import {CANONICAL_GLYPH_SHAPES, normalizeGlyphSizes} from "./glyphSizeState";
 
 var lastAppliedRevision = null;
 var pendingVariantApplyUntil = 0;
@@ -25,6 +26,8 @@ var lastFocusRequestId = null;
 var lastSessionState = null;
 var lastSelectionMode = null;
 var lastEdgeValueMode = null;
+var lastGlyphSizesKey = null;
+var lastOrientationKey = null;
 
 function sideName(side) {
     return side === "left" ? "Left" : "Right";
@@ -171,7 +174,22 @@ function applyHighlight(state) {
     lastHighlightKey = highlightKey;
 }
 
+function orientationKeyForState(state) {
+    var view = state && state.view ? state.view : {};
+    var orientation = view.orientation || {};
+    return JSON.stringify({
+        layout: view.layout || null,
+        synchronized: orientation.synchronized === true,
+        source: orientation.source || "left",
+        requestId: orientation.requestId || orientation.revision || null
+    });
+}
+
 function applyOrientation(state) {
+    var orientationKey = orientationKeyForState(state);
+    if (orientationKey === lastOrientationKey) return;
+    lastOrientationKey = orientationKey;
+
     var orientation = state.view && state.view.orientation;
     if (!orientation || !orientation.synchronized || !previewAreaLeft || !previewAreaRight) return;
     if (orientation.source === "right") {
@@ -365,6 +383,23 @@ function applyEdgeValueMode(state) {
     lastEdgeValueMode = mode;
 }
 
+function applyGlyphSizes(state) {
+    var glyphSizes = normalizeGlyphSizes(state && state.view && state.view.glyphSizes);
+    var glyphSizesKey = JSON.stringify(glyphSizes);
+    if (glyphSizesKey === lastGlyphSizesKey) return;
+
+    ["left", "right"].forEach(function (side) {
+        var preview = previewFor(side);
+        CANONICAL_GLYPH_SHAPES.forEach(function (shape) {
+            if (preview && preview.setGlyphSize) {
+                preview.setGlyphSize(shape, glyphSizes[side][shape]);
+            }
+        });
+    });
+    syncGlyphSizeSliders(glyphSizes);
+    lastGlyphSizesKey = glyphSizesKey;
+}
+
 function applyAnnotations(state) {
     var annotations = state.annotations && state.annotations.byNode ? state.annotations.byNode : {};
     var selected = state.view && state.view.selectedNode;
@@ -424,6 +459,8 @@ async function applySessionState() {
         pendingVariantApplyUntil = Date.now() + 1500;
         lastSelectedKey = null;
         lastAnnotationsKey = null;
+        lastGlyphSizesKey = null;
+        lastOrientationKey = null;
         return;
     }
     if (Date.now() < pendingVariantApplyUntil) return;
@@ -432,6 +469,7 @@ async function applySessionState() {
     applyHighlight(state);
     applySelectionMode(state);
     applyEdgeValueMode(state);
+    applyGlyphSizes(state);
     applySelection(state);
     applyAnnotations(state);
     applyFocusRequest(state);
@@ -474,6 +512,14 @@ async function setSessionSelectionMode(mode) {
 async function setSessionEdgeValueMode(mode) {
     return postJson("/view/edge-value-mode", {
         edgeValueMode: mode
+    });
+}
+
+async function setSessionGlyphSize(viewport, shape, value) {
+    return postJson("/view/glyph-size", {
+        viewport: viewport,
+        shape: shape,
+        value: value
     });
 }
 
@@ -566,7 +612,10 @@ function startRestSessionBridge() {
         exportScreenshot,
         postJson,
         setSessionSelectionMode,
-        setSessionEdgeValueMode
+        setSessionEdgeValueMode,
+        setSessionGlyphSize,
+        applyGlyphSizes,
+        applyOrientation
     };
     applySessionState().catch(function (error) {
         console.error(error);

@@ -9,23 +9,26 @@ import {getColorGroupScaleVersion, scaleColorGroup} from './utils/scale'
 import {
     CANONICAL_GLYPH_SHAPES,
     createGlyphGeometry,
-    glyphShapeSizeClass,
     normalizeGlyphShape
 } from './glyphGeometryRegistry'
+import {
+    GLYPH_SIZE_DEFAULT_VALUE,
+    normalizeGlyphSizeShape,
+    normalizeGlyphSizeValue
+} from './glyphSizeState'
 
 var shpereRadius = 3.0;             // normal sphere radius
 var sphereResolution = 12;
 var dimensionFactor = 1;
 var dimensionFactors = {
-    Left: {
-        sphere: 1,
-        cube: 1
-    },
-    Right: {
-        sphere: 1,
-        cube: 1
-    }
+    Left: {},
+    Right: {}
 };
+
+CANONICAL_GLYPH_SHAPES.forEach(function (shape) {
+    dimensionFactors.Left[shape] = GLYPH_SIZE_DEFAULT_VALUE;
+    dimensionFactors.Right[shape] = GLYPH_SIZE_DEFAULT_VALUE;
+});
 
 function getSphereResolution(){
     return sphereResolution;
@@ -63,21 +66,35 @@ var getNormalGeometry = function(glyphShape, side) {
     return glyphGeometriesBySide[normalizedSide][shape] || glyphGeometriesBySide[normalizedSide].sphere;
 };
 
-var setDimensionFactorForClass = function(side, sizeClass, value) {
+var setGlyphSizeFactor = function(side, glyphShape, value) {
     var normalizedSide = normalizeSide(side);
-    var normalizedClass = sizeClass === "cube" ? "cube" : "sphere";
-    var numericValue = Number(value);
-    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    var shape, numericValue;
+    try {
+        shape = normalizeGlyphSizeShape(glyphShape);
+        numericValue = normalizeGlyphSizeValue(value);
+    } catch (error) {
         return;
     }
 
-    var val = 1 / dimensionFactors[normalizedSide][normalizedClass] * numericValue;
+    var val = 1 / dimensionFactors[normalizedSide][shape] * numericValue;
+    glyphGeometriesBySide[normalizedSide][shape].scale(val, val, val);
+    dimensionFactors[normalizedSide][shape] = numericValue;
+};
+
+var setGlyphSizeFactors = function(side, sizes) {
+    if (!sizes) return;
     for (var i = 0; i < CANONICAL_GLYPH_SHAPES.length; i++) {
         var shape = CANONICAL_GLYPH_SHAPES[i];
-        if (glyphShapeSizeClass(shape) !== normalizedClass) continue;
-        glyphGeometriesBySide[normalizedSide][shape].scale(val, val, val);
+        if (sizes[shape] !== undefined && sizes[shape] !== null) {
+            setGlyphSizeFactor(side, shape, sizes[shape]);
+        }
     }
-    dimensionFactors[normalizedSide][normalizedClass] = numericValue;
+};
+
+var getGlyphSizeFactor = function(side, glyphShape) {
+    var normalizedSide = normalizeSide(side);
+    var shape = normalizeGlyphShape(glyphShape);
+    return dimensionFactors[normalizedSide][shape] || GLYPH_SIZE_DEFAULT_VALUE;
 };
 
 // scaling the glyphs
@@ -88,32 +105,32 @@ var setDimensionFactor = function(value){
         return;
     }
 
-    setDimensionFactorForClass("Left", "sphere", numericValue);
-    setDimensionFactorForClass("Left", "cube", numericValue);
-    setDimensionFactorForClass("Right", "sphere", numericValue);
-    setDimensionFactorForClass("Right", "cube", numericValue);
+    for (var i = 0; i < CANONICAL_GLYPH_SHAPES.length; i++) {
+        setGlyphSizeFactor("Left", CANONICAL_GLYPH_SHAPES[i], numericValue);
+        setGlyphSizeFactor("Right", CANONICAL_GLYPH_SHAPES[i], numericValue);
+    }
     dimensionFactor = numericValue;
 };
 
 // scaling the glyphs
 var setDimensionFactorLeftSphere = function(value){
-    setDimensionFactorForClass("Left", "sphere", value);
+    setGlyphSizeFactor("Left", "sphere", value);
 };
 
 // scaling the glyphs
 var setDimensionFactorRightSphere = function(value){
-    setDimensionFactorForClass("Right", "sphere", value);
+    setGlyphSizeFactor("Right", "sphere", value);
 };
 
 
 // scaling the glyphs
 var setDimensionFactorLeftBox = function(value){
-    setDimensionFactorForClass("Left", "cube", value);
+    setGlyphSizeFactor("Left", "cube", value);
 };
 
 // scaling the glyphs
 var setDimensionFactorRightBox = function(value){
-    setDimensionFactorForClass("Right", "cube", value);
+    setGlyphSizeFactor("Right", "cube", value);
 };
 
 // return the material for a node (vertex) according to its state: active or transparent
@@ -187,4 +204,4 @@ var sunflower = function(n, R, c, v1, v2) {
     return math.transpose(points);
 };
 
-export {sphereResolution,getSphereResolution,setSphereResolution,sunflower, setDimensionFactorLeftSphere, setDimensionFactorRightSphere, setDimensionFactorLeftBox,setDimensionFactorRightBox, setDimensionFactor,getNormalGeometry,getNormalMaterial}
+export {sphereResolution,getSphereResolution,setSphereResolution,sunflower, setDimensionFactorLeftSphere, setDimensionFactorRightSphere, setDimensionFactorLeftBox,setDimensionFactorRightBox, setDimensionFactor, setGlyphSizeFactor, setGlyphSizeFactors, getGlyphSizeFactor, getNormalGeometry,getNormalMaterial}

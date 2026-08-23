@@ -75,7 +75,7 @@ function resolveGlyphShape(record = {}) {
 }
 
 function glyphShapeSizeClass(shape) {
-  return GLYPH_SHAPE_SIZE_CLASS[normalizeGlyphShape(shape)] || 'sphere';
+  return normalizeGlyphShape(shape);
 }
 
 function glyphShapeDiagnostics(records = []) {

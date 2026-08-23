@@ -348,6 +348,126 @@ test('edge value mode rejects unsupported values clearly', async (t) => {
   assert.match(invalid.body.error, /edgeValueMode must be one of: similarity, distance, binary/);
 });
 
+test('glyph size state defaults to five canonical shapes per viewport', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const state = await request(server, 'GET', '/session/state');
+  assert.equal(state.statusCode, 200);
+  assert.deepEqual(Object.keys(state.body.view.glyphSizes).sort(), ['left', 'right']);
+  assert.deepEqual(state.body.view.glyphSizes.left, {
+    sphere: 1,
+    cube: 1,
+    tetrahedron: 1,
+    icosahedron: 1,
+    star: 1
+  });
+  assert.deepEqual(state.body.view.glyphSizes.right, state.body.view.glyphSizes.left);
+});
+
+test('glyph size endpoint updates one shape in one viewport and is idempotent', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const before = await request(server, 'GET', '/session/state');
+  const changed = await request(server, 'POST', '/view/glyph-size', {
+    viewport: 'left',
+    shape: 'tetrahedron',
+    value: 1.25
+  });
+  assert.equal(changed.statusCode, 200);
+  assert.equal(changed.body.changed, true);
+  assert.equal(changed.body.state.view.glyphSizes.left.tetrahedron, 1.25);
+  assert.equal(changed.body.state.view.glyphSizes.right.tetrahedron, 1);
+  assert.notEqual(changed.body.revision, before.body.revision);
+
+  const repeated = await request(server, 'POST', '/view/glyph-size', {
+    viewport: 'left',
+    shape: 'tetrahedron',
+    value: 1.25
+  });
+  assert.equal(repeated.statusCode, 200);
+  assert.equal(repeated.body.changed, false);
+  assert.equal(repeated.body.revision, changed.body.revision);
+});
+
+test('glyph size endpoint supports viewport both, aliases, and multi-shape updates', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const both = await request(server, 'POST', '/view/glyph-size', {
+    viewport: 'both',
+    shape: 'box',
+    value: 0.8
+  });
+  assert.equal(both.statusCode, 200);
+  assert.equal(both.body.state.view.glyphSizes.left.cube, 0.8);
+  assert.equal(both.body.state.view.glyphSizes.right.cube, 0.8);
+  assert.equal(both.body.sizes.cube, 0.8);
+  assert.equal(both.body.state.view.glyphSizes.left.box, undefined);
+
+  const multi = await request(server, 'POST', '/view/glyph-size', {
+    viewport: 'right',
+    sizes: {
+      tetra: 1.2,
+      icosa: 1.1,
+      star: 0.9
+    }
+  });
+  assert.equal(multi.statusCode, 200);
+  assert.equal(multi.body.state.view.glyphSizes.right.tetrahedron, 1.2);
+  assert.equal(multi.body.state.view.glyphSizes.right.icosahedron, 1.1);
+  assert.equal(multi.body.state.view.glyphSizes.right.star, 0.9);
+  assert.equal(multi.body.state.view.glyphSizes.left.tetrahedron, 1);
+});
+
+test('glyph size endpoint validates shape viewport and values', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const lower = await request(server, 'POST', '/view/glyph-size', {
+    viewport: 'left',
+    shape: 'sphere',
+    value: 0.2
+  });
+  assert.equal(lower.statusCode, 200);
+  assert.equal(lower.body.state.view.glyphSizes.left.sphere, 0.2);
+
+  const upper = await request(server, 'POST', '/view/glyph-size', {
+    viewport: 'right',
+    shape: 'star',
+    value: 4
+  });
+  assert.equal(upper.statusCode, 200);
+  assert.equal(upper.body.state.view.glyphSizes.right.star, 4);
+
+  const badShape = await request(server, 'POST', '/view/glyph-size', {
+    viewport: 'left',
+    shape: 'pyramid',
+    value: 1
+  });
+  assert.equal(badShape.statusCode, 400);
+  assert.match(badShape.body.error, /glyph size shape must be one of/);
+
+  const badViewport = await request(server, 'POST', '/view/glyph-size', {
+    viewport: 'center',
+    shape: 'sphere',
+    value: 1
+  });
+  assert.equal(badViewport.statusCode, 400);
+  assert.match(badViewport.body.error, /viewport must be left, right, or both/);
+
+  for (const value of [null, true, 'abc', 0.1, 4.1]) {
+    const badValue = await request(server, 'POST', '/view/glyph-size', {
+      viewport: 'left',
+      shape: 'sphere',
+      value
+    });
+    assert.equal(badValue.statusCode, 400);
+    assert.match(badValue.body.error, /glyph size value/);
+  }
+});
+
 test('variant edge value mode can be loaded from request configuration', async (t) => {
   const server = await startServer();
   t.after(() => server.close());

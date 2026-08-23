@@ -4,6 +4,12 @@ const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const Papa = require('papaparse');
+const {
+  GLYPH_SIZE_RANGE,
+  applyGlyphSizeUpdate,
+  createDefaultGlyphSizes,
+  normalizeGlyphSizes
+} = require('./js/glyphSizeState');
 
 const app = express();
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -51,6 +57,7 @@ const baseSessionState = {
       right: 'KMeans_k40_c16_s0_Clustering'
     },
     nodeSizeBy: null,
+    glyphSizes: createDefaultGlyphSizes(),
     edgeValueMode: 'similarity',
     selectionMode: 'additive',
     highlightedCluster: null,
@@ -91,7 +98,15 @@ function revisionFor(state) {
   return crypto.createHash('sha256').update(stableStringify(state)).digest('hex').slice(0, 16);
 }
 
+function normalizeSessionState() {
+  if (!sessionState.view) {
+    sessionState.view = clone(baseSessionState.view);
+  }
+  sessionState.view.glyphSizes = normalizeGlyphSizes(sessionState.view.glyphSizes);
+}
+
 function stateWithRevision() {
+  normalizeSessionState();
   const state = clone(sessionState);
   state.revision = revisionFor(sessionState);
   return state;
@@ -693,6 +708,21 @@ app.post('/view/edge-value-mode', (req, res) => {
     const edgeValueMode = normalizeEdgeValueMode(body.edgeValueMode || body.edge_value_mode || body.mode);
     sessionState.view.edgeValueMode = edgeValueMode;
     return { state: stateWithRevision(), edgeValueMode };
+  }, res);
+});
+
+app.post('/view/glyph-size', (req, res) => {
+  handleRoute(() => {
+    const result = applyGlyphSizeUpdate(sessionState.view && sessionState.view.glyphSizes, req.body || {});
+    sessionState.view.glyphSizes = result.glyphSizes;
+    return {
+      state: stateWithRevision(),
+      glyphSizes: clone(sessionState.view.glyphSizes),
+      changed: result.changed,
+      viewport: result.viewport,
+      sizes: result.sizes,
+      range: GLYPH_SIZE_RANGE
+    };
   }, res);
 });
 

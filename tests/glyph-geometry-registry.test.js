@@ -136,10 +136,10 @@ test('renderer source uses glyph_shape buckets and keeps laterality edge compari
   assert.match(edgeBody, /model\.getDataset\(\)\[edgeNodes\[0\]\]\.hemisphere/);
 });
 
-test('existing sphere and box controls scale new shapes by size class', () => {
+test('glyph shape size helper returns canonical independent shape keys', () => {
   assert.equal(glyphShapeSizeClass('sphere'), 'sphere');
-  assert.equal(glyphShapeSizeClass('tetrahedron'), 'sphere');
-  assert.equal(glyphShapeSizeClass('icosahedron'), 'sphere');
-  assert.equal(glyphShapeSizeClass('star'), 'sphere');
+  assert.equal(glyphShapeSizeClass('tetrahedron'), 'tetrahedron');
+  assert.equal(glyphShapeSizeClass('icosahedron'), 'icosahedron');
+  assert.equal(glyphShapeSizeClass('star'), 'star');
   assert.equal(glyphShapeSizeClass('cube'), 'cube');
 });

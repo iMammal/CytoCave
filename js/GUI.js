@@ -11,8 +11,6 @@ var thresholdMultiplier = 1.0; // 100.0 for fMRI data of values (-1.0->1.0) and 
 var lockLegend = true;
 var enableLeftDimLock = true;
 var enableRightDimLock = true;
-var enableSphereDimLock = true;
-var enableBoxDimLock = true;
 var rightSearching = false;
 var leftSearching = false;
 
@@ -41,7 +39,8 @@ import {
     getNodesFocused
 } from './drawing'
 import {modelLeft,modelRight} from './model'
-import {setDimensionFactorLeftSphere,setDimensionFactorRightSphere,setDimensionFactorLeftBox,setDimensionFactorRightBox} from './graphicsUtils.js'
+import {setGlyphSizeFactor} from './graphicsUtils.js'
+import {CANONICAL_GLYPH_SHAPES, GLYPH_SIZE_DEFAULT_VALUE, GLYPH_SIZE_RANGE, normalizeGlyphSizeShape} from './glyphSizeState'
 import { scaleColorGroup } from "./utils/scale";
 import { PreviewArea }  from './previewArea.js';
 import { forEach } from "./external-libraries/gl-matrix/vec3.js";
@@ -73,172 +72,131 @@ var initSubjectMenu = function (side) {
     }
 };
 
-/* Node stuff at nodeInfoPanel */
-// adds a slider to control Left of Right Sphere glyphs size
-var addDimensionFactorSliderLeft = function (side) {
-    var panel = d3.select("#nodeInfoPanel"+side);
+var GLYPH_SIZE_LABELS = {
+    sphere: "Sphere Size",
+    cube: "Cube Size",
+    tetrahedron: "Tetra Size",
+    icosahedron: "Icosa Size",
+    star: "Star Size"
+};
 
-	console.log("#nodeInfoPanel"+side);
-	//console.log(side);
+var GLYPH_SIZE_SLIDER_PREFIX = {
+    sphere: "dimensionSliderLeft",
+    cube: "dimensionSliderRight",
+    tetrahedron: "glyphSizeSliderTetrahedron",
+    icosahedron: "glyphSizeSliderIcosahedron",
+    star: "glyphSizeSliderStar"
+};
 
-    if(side == 'Left') {
-      panel.append("input")
-        .attr("type", "range")
-        .attr("value", "1")
-        .attr("id", "dimensionSliderLeft"+side)
-        .attr("min","0.2")
-        .attr("max", "4")
-        .attr("step","0.1")
-        .on("change", function () {
-            setDimensionFactorLeftSphere(this.value);
-            if (enableLeftDimLock) {
-                setDimensionFactorLeftBox(this.value);
-                document.getElementById("dimensionSliderRightLeft").value = this.value;
-            }
-            if (enableSphereDimLock) {
-                setDimensionFactorRightSphere(this.value);
-                document.getElementById("dimensionSliderLeftRight").value = this.value;
-            }
-            if ((enableBoxDimLock && enableLeftDimLock) ||
-                (enableSphereDimLock && enableRightDimLock)) {
-                setDimensionFactorRightBox(this.value);
-                document.getElementById("dimensionSliderRightRight").value = this.value;
-            }
-        });
-    } else {
-        panel.append("label")
-            .attr("for", "enableSphereDimLock")
-            .attr("id", "enableSphereDimLockLabel")
-            .text('\u0020\uD83D\uDD12');
+function viewportForSide(side) {
+    return side === "Right" ? "right" : "left";
+}
 
-        panel.append("input")
-            .attr("type", "checkbox")
-            .attr("checked", false)
-            .attr("id", "enableSphereDimLock")
-            .on("change", function () { enableSphereDimLock = this.checked });
+function sideForViewport(viewport) {
+    return viewport === "right" ? "Right" : "Left";
+}
 
-        panel.append("input")
-        .attr("type", "range")
-        .attr("value", "1")
-        .attr("id", "dimensionSliderLeft"+side)
-        .attr("min","0.2")
-        .attr("max", "4")
-        .attr("step","0.1")
-        .on("change", function () {
-            setDimensionFactorRightSphere(this.value);
-            if (enableRightDimLock) {
-                setDimensionFactorRightBox(this.value);
-                document.getElementById("dimensionSliderRightRight").value = this.value;
-            }
-            if (enableSphereDimLock) {
-                setDimensionFactorLeftSphere(this.value);
-                document.getElementById("dimensionSliderLeftLeft").value = this.value;
-            }
-            if ((enableBoxDimLock && enableRightDimLock) ||
-                (enableSphereDimLock && enableLeftDimLock)) {
-                setDimensionFactorLeftBox(this.value);
-                document.getElementById("dimensionSliderRightLeft").value = this.value;
-            }
-        });
-    }
+function glyphSizeSliderId(side, shape) {
+    return GLYPH_SIZE_SLIDER_PREFIX[normalizeGlyphSizeShape(shape)] + side;
+}
+
+function ensureGlyphSizePanel(side) {
+    var panelId = "glyphSizeControls" + side;
+    var panel = d3.select("#" + panelId);
+    if (!panel.empty()) return panel;
+
+    var host = d3.select("#nodeInfoPanel" + side);
+    host.append("div")
+        .attr("id", panelId)
+        .attr("class", "glyph-size-controls");
+    panel = d3.select("#" + panelId);
+    panel.append("div")
+        .attr("class", "glyph-size-title")
+        .text(side + " Glyph Sizes");
+    return panel;
+}
+
+function postGlyphSize(side, shape, value) {
+    if (typeof fetch !== "function") return;
+    fetch("/view/glyph-size", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            viewport: viewportForSide(side),
+            shape: shape,
+            value: Number(value)
+        })
+    }).catch(function (error) {
+        console.error(error);
+    });
+}
+
+function handleGlyphSizeSliderChange(side, shape, value) {
+    var canonicalShape = normalizeGlyphSizeShape(shape);
+    setGlyphSizeFactor(side, canonicalShape, value);
+    postGlyphSize(side, canonicalShape, value);
+}
+
+function addGlyphSizeSlider(side, shape) {
+    var canonicalShape = normalizeGlyphSizeShape(shape);
+    var panel = ensureGlyphSizePanel(side);
+    var sliderId = glyphSizeSliderId(side, canonicalShape);
+    if (document.getElementById(sliderId)) return;
 
     panel.append("label")
-        .attr("for", "dimensionSlider")
-        .attr("id", "dimensionSliderLabel"+side)
-        .text(side+" Sphere Size");
-    // panel.append("label")
-    //     .attr("for", "dimensionSlider")
-    //     .attr("id", "dimensionSliderLabel"+side)
-    //     .text(side+" Box Size");
+        .attr("for", sliderId)
+        .attr("id", sliderId + "Label")
+        .text(GLYPH_SIZE_LABELS[canonicalShape]);
+
+    panel.append("input")
+        .attr("type", "range")
+        .attr("value", GLYPH_SIZE_DEFAULT_VALUE)
+        .attr("id", sliderId)
+        .attr("min", GLYPH_SIZE_RANGE.min)
+        .attr("max", GLYPH_SIZE_RANGE.max)
+        .attr("step", GLYPH_SIZE_RANGE.step)
+        .on("change", function () {
+            handleGlyphSizeSliderChange(side, canonicalShape, this.value);
+        });
 
     panel.append("br");
+}
+
+function addRemainingGlyphSizeSliders(side) {
+    ["tetrahedron", "icosahedron", "star"].forEach(function (shape) {
+        addGlyphSizeSlider(side, shape);
+    });
+}
+
+function syncGlyphSizeSlider(side, shape, value) {
+    var slider = document.getElementById(glyphSizeSliderId(side, shape));
+    if (slider) slider.value = String(value);
+}
+
+function syncGlyphSizeSliders(glyphSizes) {
+    if (!glyphSizes) return;
+    ["left", "right"].forEach(function (viewport) {
+        var side = sideForViewport(viewport);
+        var sizes = glyphSizes[viewport] || {};
+        CANONICAL_GLYPH_SHAPES.forEach(function (shape) {
+            if (sizes[shape] !== undefined && sizes[shape] !== null) {
+                syncGlyphSizeSlider(side, shape, sizes[shape]);
+            }
+        });
+    });
+}
+
+/* Node stuff at nodeInfoPanel */
+// adds a slider to control Left or Right sphere glyph size
+var addDimensionFactorSliderLeft = function (side) {
+    addGlyphSizeSlider(side, "sphere");
 };
 
 /* Node stuff at nodeInfoPanel */
-// adds a slider to control Left or Right Box glyphs size
+// adds sliders to control Left or Right cube and additional canonical glyph sizes
 var addDimensionFactorSliderRight = function (side) {
-    var panel = d3.select("#nodeInfoPanel"+side);
-
-	console.log("#nodeInfoPanel"+side);
-
-    if(side == 'Left') {
-      panel.append("input")
-        .attr("type", "range")
-        .attr("value", "1")
-        .attr("id", "dimensionSliderRight"+side)
-        .attr("min","0.2")
-        .attr("max", "4")
-        .attr("step","0.1")
-        .on("change", function () {
-            setDimensionFactorLeftBox(this.value);
-            if (enableLeftDimLock) {
-                setDimensionFactorLeftSphere(this.value);
-                document.getElementById("dimensionSliderLeftLeft").value = this.value;
-            }
-            if (enableBoxDimLock) {
-                setDimensionFactorRightBox(this.value);
-                document.getElementById("dimensionSliderRightRight").value = this.value;
-            }
-            if ((enableBoxDimLock && enableRightDimLock) ||
-                (enableSphereDimLock && enableLeftDimLock)) {
-                setDimensionFactorRightSphere(this.value);
-                document.getElementById("dimensionSliderLeftRight").value = this.value;
-            }
-        });
-    } else {
-        panel.append("label")
-            .attr("for", "enableBoxDimLock")
-            .attr("id", "enableBoxDimLockLabel")
-            .text('\u0020\uD83D\uDD12');
-
-        panel.append("input")
-            .attr("type", "checkbox")
-            .attr("checked", false)
-            .attr("id", "enableBoxDimLock")
-            .on("change", function () { enableBoxDimLock = this.checked });
-
-        panel.append("input")
-        .attr("type", "range")
-        .attr("value", "1")
-        .attr("id", "dimensionSliderRight"+side)
-        .attr("min","0.2")
-        .attr("max", "4")
-        .attr("step","0.1")
-        .on("change", function () {
-            setDimensionFactorRightBox(this.value);
-            if (enableRightDimLock) {
-                setDimensionFactorRightSphere(this.value);
-                document.getElementById("dimensionSliderLeftRight").value = this.value;
-            }
-            if (enableBoxDimLock) {
-                setDimensionFactorLeftBox(this.value);
-                document.getElementById("dimensionSliderRightLeft").value = this.value;
-            }
-            if ((enableBoxDimLock && enableLeftDimLock) ||
-                (enableSphereDimLock && enableRightDimLock)) {
-                setDimensionFactorLeftSphere(this.value);
-                document.getElementById("dimensionSliderLeftLeft").value = this.value;
-            }
-
-        });
-    }
-
-    panel.append("label")
-        .attr("for", "dimensionSlider")
-        .attr("id", "dimensionSliderLabel"+side)
-        .text(side + " Box Size ");
-
-    panel.append("label")
-        .attr("for", "enable"+side+"DimLock")
-        .attr("id", "enable"+side+"DimLockLabel")
-        .text('\u0020\uD83D\uDD12');
-
-    panel.append("input")
-        .attr("type", "checkbox")
-        .attr("checked", false)
-        .attr("id", "enable"+side+"DimLock")
-        .on("change", (side == 'Left') ? function () { enableLeftDimLock = this.checked } : function () { enableRightDimLock = this.checked });
-    panel.append("br");
+    addGlyphSizeSlider(side, "cube");
+    addRemainingGlyphSizeSliders(side);
 };
 
 
@@ -1586,4 +1544,4 @@ var toggleMenus = function (e) {
 
 var getShortestPathVisMethod = function () { return shortestPathVisMethod }
 
-export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, updateHoverNodeInfo, clearHoverNodeInfo, enableThresholdControls, createLegend, refreshEdgeValueModeControls} //hideVRMaximizeButtons
+export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, updateHoverNodeInfo, clearHoverNodeInfo, enableThresholdControls, createLegend, refreshEdgeValueModeControls, syncGlyphSizeSliders, glyphSizeSliderId} //hideVRMaximizeButtons
