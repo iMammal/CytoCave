@@ -61,7 +61,7 @@ import {scanFolder, loadLookUpTable, loadSubjectNetwork, loadSubjectTopology} fr
 import {modelLeft, modelRight} from './model';
 import {PreviewArea} from "./previewArea";
 import {setUpdateNeeded} from './utils/Dijkstra';
-import { setNodeInfoPanel, enableThresholdControls, addSearchPanel } from './GUI'
+import { setNodeInfoPanel, updateHoverNodeInfo, clearHoverNodeInfo, enableThresholdControls, addSearchPanel } from './GUI'
 import {setColorGroupScale} from './utils/scale'
 import {
     hasNodeIndex,
@@ -70,6 +70,16 @@ import {
     selectionTransition,
     shouldReplaceSelection
 } from './selectionSemantics'
+
+function clearHoverPresentation() {
+    clearHoverNodeInfo();
+    if (previewAreaLeft && previewAreaLeft.clearHoverNodeLabel) {
+        previewAreaLeft.clearHoverNodeLabel();
+    }
+    if (previewAreaRight && previewAreaRight.clearHoverNodeLabel) {
+        previewAreaRight.clearHoverNodeLabel();
+    }
+}
 
 // callback on mouse moving, expected action: node beneath pointer are drawn bigger
 function onDocumentMouseMove(model, event) {
@@ -96,14 +106,18 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     var nodeIdx, region, nodeRegion;
     //console.log("updateNodeMoveOver: ");
     //console.log(intersectedObject);
-    if(intersectedObject === undefined)
+    if(!intersectedObject || !intersectedObject.object) {
+        clearHoverPresentation();
         return;
+    }
     //check if name is defined, if not, it is not a node
     if (intersectedObject.object.name === undefined) {
+        clearHoverPresentation();
         return;
     }
     //it's also not a valid node if it has no name
     if (intersectedObject.object.name === '') {
+        clearHoverPresentation();
         return;
     }
     console.log("intersected Object Moveover: ");
@@ -128,12 +142,14 @@ var updateNodeMoveOver = function (model, intersectedObject, mode) {
     var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
     // update node information label
     if (nodeExistAndVisible) {
-        setNodeInfoPanel(region, nodeIdx);
+        updateHoverNodeInfo(region, nodeIdx);
         // if (vr) {  //todo: this can be used outside of VR to help get node label info next to the node itself, not in the screen corner
             let labeltext = region.group+" "+region.name+" "+region.label;
-             previewAreaLeft.updateNodeLabel(labeltext,  intersectedObject);
-             previewAreaRight.updateNodeLabel(labeltext, intersectedObject);
+             if (previewAreaLeft.updateHoverNodeLabelByIndex) previewAreaLeft.updateHoverNodeLabelByIndex(nodeIdx, labeltext);
+             if (previewAreaRight.updateHoverNodeLabelByIndex) previewAreaRight.updateHoverNodeLabelByIndex(nodeIdx, labeltext);
         // }
+    } else {
+        clearHoverPresentation();
     }
 
     if (nodeExistAndVisible && intersectedObject.object.isSelected(intersectedObject)) { // not selected

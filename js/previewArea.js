@@ -79,7 +79,9 @@ function PreviewArea(canvas_, model_, name_) {
     var canvas = canvas_;
     var camera = null, renderer = null, controls = null, scene = null, raycaster = null, gl = null;
     var nodeLabelSprite = null, nodeNameMap = null, nspCanvas = null;
-    var nodeLabelLeaderLine = null, activeNodeLabelNode = null;
+    var hoverNodeLabelSprite = null, hoverNodeNameMap = null, hoverNspCanvas = null;
+    var nodeLabelLeaderLine = null, hoverNodeLabelLeaderLine = null;
+    var activeNodeLabelNode = null, activeHoverNodeLabelNode = null;
     var annotationHaloTexture = null, annotationHaloSprites = {};
     var clock = new THREE.Clock();
     //var instances = {}; //for tracking instanced meshes
@@ -1458,6 +1460,16 @@ function PreviewArea(canvas_, model_, name_) {
         } else if (brain.children.indexOf(nodeLabelSprite) === -1) {
             brain.add(nodeLabelSprite);
         }
+    }
+
+    this.ensureHoverLabelsVisible = function () {
+        if (this.labelsVisible == false) return false;
+        if (!hoverNodeLabelSprite) {
+            addHoverNodeLabel();
+        } else if (brain.children.indexOf(hoverNodeLabelSprite) === -1) {
+            brain.add(hoverNodeLabelSprite);
+        }
+        return true;
     }
 
     // toggle between showing and hiding edge flares
@@ -3095,6 +3107,7 @@ function PreviewArea(canvas_, model_, name_) {
             updateAnnotationHaloPosition(nodeKey, annotationHaloSprites[nodeKey]);
         });
         updateNodeLabelPosition();
+        updateHoverNodeLabelPosition();
     }
 
     this.focusNodeByIndex = function (index) {
@@ -3538,15 +3551,15 @@ function PreviewArea(canvas_, model_, name_) {
         return wrapAndTruncateLines([String(label || '')], {maxChars: 30, maxLines: 4});
     }
 
-    var drawCallout = function (label) {
-        if (!nspCanvas) return;
-        const context = nspCanvas.getContext('2d');
+    var drawCallout = function (label, canvas, texture) {
+        if (!canvas) return;
+        const context = canvas.getContext('2d');
         const lines = labelLinesFor(label).filter(function (line) {
             return line !== undefined && line !== null && String(line).trim() !== "";
         });
         context.clearRect(0, 0, calloutCanvasWidth, calloutCanvasHeight);
         if (!lines.length) {
-            if (nodeNameMap) nodeNameMap.needsUpdate = true;
+            if (texture) texture.needsUpdate = true;
             return {width: 0, height: 0};
         }
 
@@ -3584,7 +3597,7 @@ function PreviewArea(canvas_, model_, name_) {
             context.fillText(lines[i], calloutPadding + 8, calloutPadding + 4 + i * calloutLineHeight);
         }
 
-        if (nodeNameMap) nodeNameMap.needsUpdate = true;
+        if (texture) texture.needsUpdate = true;
         return {width: panelWidth + 12, height: panelHeight + 12};
     }
 
@@ -3607,11 +3620,29 @@ function PreviewArea(canvas_, model_, name_) {
         brain.add(nodeLabelLeaderLine);
     }
 
-    var updateLeaderLine = function (nodePosition, labelPosition) {
-        ensureNodeLabelLeaderLine();
-        if (!nodeLabelLeaderLine) return;
-        nodeLabelLeaderLine.geometry.setFromPoints([nodePosition, labelPosition]);
-        nodeLabelLeaderLine.visible = true;
+    var ensureHoverNodeLabelLeaderLine = function () {
+        if (hoverNodeLabelLeaderLine || !brain) return;
+        const geometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(0, 0, 0)
+        ]);
+        const material = new THREE.LineBasicMaterial({
+            color: 0x94a3b8,
+            transparent: true,
+            opacity: 0.52,
+            depthTest: false,
+            depthWrite: false
+        });
+        hoverNodeLabelLeaderLine = new THREE.Line(geometry, material);
+        markAnnotationObjectNonPickable(hoverNodeLabelLeaderLine, 'hover-leader');
+        hoverNodeLabelLeaderLine.visible = false;
+        brain.add(hoverNodeLabelLeaderLine);
+    }
+
+    var updateLeaderLine = function (leaderLine, nodePosition, labelPosition) {
+        if (!leaderLine) return;
+        leaderLine.geometry.setFromPoints([nodePosition, labelPosition]);
+        leaderLine.visible = true;
     }
 
     var updateNodeLabelPosition = function () {
@@ -3629,7 +3660,25 @@ function PreviewArea(canvas_, model_, name_) {
             .add(right.multiplyScalar(7));
         nodeLabelSprite.position.copy(labelPosition);
         nodeLabelSprite.visible = true;
-        updateLeaderLine(nodePosition, labelPosition);
+        updateLeaderLine(nodeLabelLeaderLine, nodePosition, labelPosition);
+    }
+
+    var updateHoverNodeLabelPosition = function () {
+        if (!hoverNodeLabelSprite || !activeHoverNodeLabelNode || !camera) return;
+        const nodePosition = getNodePosition(activeHoverNodeLabelNode);
+        if (!nodePosition) {
+            hoverNodeLabelSprite.visible = false;
+            if (hoverNodeLabelLeaderLine) hoverNodeLabelLeaderLine.visible = false;
+            return;
+        }
+        const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
+        const labelPosition = nodePosition.clone()
+            .add(up.multiplyScalar(6))
+            .add(right.multiplyScalar(-8));
+        hoverNodeLabelSprite.position.copy(labelPosition);
+        hoverNodeLabelSprite.visible = true;
+        updateLeaderLine(hoverNodeLabelLeaderLine, nodePosition, labelPosition);
     }
 
     this.clearNodeLabel = function () {
@@ -3638,11 +3687,19 @@ function PreviewArea(canvas_, model_, name_) {
         if (nodeLabelLeaderLine) nodeLabelLeaderLine.visible = false;
     }
 
-    // Update the compact callout text and anchor it to the selected or annotated node.
+    this.clearSelectedNodeLabel = this.clearNodeLabel;
+
+    this.clearHoverNodeLabel = function () {
+        activeHoverNodeLabelNode = null;
+        if (hoverNodeLabelSprite) hoverNodeLabelSprite.visible = false;
+        if (hoverNodeLabelLeaderLine) hoverNodeLabelLeaderLine.visible = false;
+    }
+
+    // Update the persistent compact callout anchored to the REST-selected annotated node.
     this.updateNodeLabel = function (label, nodeObject) {
         if(this.labelsVisible == false) return;
         if (!nodeLabelSprite) this.ensureLabelsVisible();
-        const size = drawCallout(label);
+        const size = drawCallout(label, nspCanvas, nodeNameMap);
         if (!size || size.width <= 0 || size.height <= 0) {
             this.clearNodeLabel();
             return;
@@ -3661,6 +3718,31 @@ function PreviewArea(canvas_, model_, name_) {
         if (!node) return false;
         this.updateNodeLabel(label, node);
         return true;
+    }
+
+    this.updateSelectedNodeLabel = this.updateNodeLabel;
+    this.updateSelectedNodeLabelByIndex = this.updateNodeLabelByIndex;
+
+    this.updateHoverNodeLabel = function (label, nodeObject) {
+        if (!this.ensureHoverLabelsVisible()) return false;
+        const size = drawCallout(label, hoverNspCanvas, hoverNodeNameMap);
+        if (!size || size.width <= 0 || size.height <= 0) {
+            this.clearHoverNodeLabel();
+            return false;
+        }
+        activeHoverNodeLabelNode = nodeObject;
+        hoverNodeLabelSprite.scale.set(size.width * 0.095, size.height * 0.095, 1);
+        updateHoverNodeLabelPosition();
+        if(previewAreaLeft.labelsVisible || previewAreaRight.labelsVisible) {
+            hoverNodeLabelSprite.needsUpdate = true;
+        }
+        return true;
+    };
+
+    this.updateHoverNodeLabelByIndex = function (nodeIndex, label) {
+        const node = this.index2node(Number(nodeIndex));
+        if (!node) return false;
+        return this.updateHoverNodeLabel(label, node);
     }
 
     // Adding Node label Sprite
@@ -3696,6 +3778,40 @@ function PreviewArea(canvas_, model_, name_) {
             brain.add(nodeLabelSprite);
         }
         ensureNodeLabelLeaderLine();
+    };
+
+    var addHoverNodeLabel = function () {
+
+        hoverNspCanvas = document.createElement('canvas');
+        hoverNspCanvas.width = calloutCanvasWidth;
+        hoverNspCanvas.height = calloutCanvasHeight;
+        var context = hoverNspCanvas.getContext('2d');
+        context.clearRect(0, 0, hoverNspCanvas.width, hoverNspCanvas.height);
+
+        hoverNodeNameMap = new THREE.Texture(hoverNspCanvas);
+        hoverNodeNameMap.needsUpdate = true;
+
+        var mat = new THREE.SpriteMaterial({
+            map: hoverNodeNameMap,
+            transparent: true,
+            useScreenCoordinates: false,
+            color: 0xffffff,
+            depthTest: false,
+            depthWrite: false
+        });
+
+        hoverNodeLabelSprite = new THREE.Sprite(mat);
+        markAnnotationObjectNonPickable(hoverNodeLabelSprite, 'hover-callout');
+        if (hoverNodeLabelSprite.center) {
+            hoverNodeLabelSprite.center.set(0.05, 0.08);
+        }
+        hoverNodeLabelSprite.scale.set(38, 18, 1);
+        hoverNodeLabelSprite.position.set(0, 0, 0);
+        hoverNodeLabelSprite.visible = false;
+        if(brain.children.indexOf(hoverNodeLabelSprite) === -1) {
+            brain.add(hoverNodeLabelSprite);
+        }
+        ensureHoverNodeLabelLeaderLine();
     };
 
     this.getCamera = function () {

@@ -278,20 +278,34 @@ function updateAnnotationDetailForSide(state, side, sideAnnotations, selectedNod
     renderAnnotationDetail(side, detailModel, selectedNodeId);
 }
 
+function renderSelectedNodeAnnotation(state, side) {
+    var preview = previewFor(side);
+    if (!preview || !preview.applyAnnotations) return;
+
+    var sideAnnotations = filterAnnotationsForSide(state, side);
+    var selectedNodeId = selectedNodeForSide(state, side);
+    var annotation = selectedNodeId ? sideAnnotations[selectedNodeId] : null;
+
+    preview.applyAnnotations(sideAnnotations, selectedNodeId);
+    updateAnnotationDetailForSide(state, side, sideAnnotations, selectedNodeId);
+
+    if (selectedNodeId && annotation && preview.updateSelectedNodeLabelByIndex) {
+        preview.updateSelectedNodeLabelByIndex(selectedNodeId, annotation);
+    } else if (selectedNodeId && annotation && preview.updateNodeLabelByIndex) {
+        preview.updateNodeLabelByIndex(selectedNodeId, annotation);
+    } else if (preview.clearSelectedNodeLabel) {
+        preview.clearSelectedNodeLabel();
+    } else if (preview.clearNodeLabel) {
+        preview.clearNodeLabel();
+    }
+}
+
 function applyLocalSelectionPresentation(detail) {
     if (!lastSessionState || !detail || !detail.viewport) return;
     var side = detail.viewport === "right" ? "right" : "left";
-    var preview = previewFor(side);
-    var sideAnnotations = filterAnnotationsForSide(lastSessionState, side);
-    var selectedNodeId = detail.selected === false ? null : String(detail.nodeId);
-    var annotation = selectedNodeId ? sideAnnotations[selectedNodeId] : null;
-
-    updateAnnotationDetailForSide(lastSessionState, side, sideAnnotations, selectedNodeId);
-    if (annotation && preview && preview.updateNodeLabelByIndex) {
-        preview.updateNodeLabelByIndex(selectedNodeId, annotation);
-    } else if (preview && preview.clearNodeLabel) {
-        preview.clearNodeLabel();
-    }
+    var selectedNodeId = selectedNodeForSide(lastSessionState, side);
+    if (!selectedNodeId || String(selectedNodeId) !== String(detail.nodeId) || detail.selected === false) return;
+    renderSelectedNodeAnnotation(lastSessionState, side);
 }
 
 function applySelection(state) {
@@ -361,19 +375,7 @@ function applyAnnotations(state) {
     if (annotationKey === lastAnnotationsKey) return;
 
     ["left", "right"].forEach(function (side) {
-        var preview = previewFor(side);
-        if (!preview || !preview.applyAnnotations) return;
-        var sideAnnotations = filterAnnotationsForSide(state, side);
-        var selectedNodeId = selectedNodeForSide(state, side);
-        preview.applyAnnotations(sideAnnotations, selectedNodeId);
-        updateAnnotationDetailForSide(state, side, sideAnnotations, selectedNodeId);
-
-        var labelNodeId = selectedNodeId && sideAnnotations[selectedNodeId] ? selectedNodeId : Object.keys(sideAnnotations)[0];
-        if (labelNodeId && preview.updateNodeLabelByIndex) {
-            preview.updateNodeLabelByIndex(labelNodeId, sideAnnotations[labelNodeId]);
-        } else if (preview.clearNodeLabel) {
-            preview.clearNodeLabel();
-        }
+        renderSelectedNodeAnnotation(state, side);
     });
     lastAnnotationsKey = annotationKey;
 }
@@ -387,11 +389,7 @@ function applyFocusRequest(state) {
         preview.focusNodeByIndex(focusRequest.nodeId);
     }
 
-    var annotations = filterAnnotationsForSide(state, focusRequest.viewport);
-    var annotation = annotations[focusRequest.nodeId];
-    if (annotation && preview && preview.updateNodeLabelByIndex) {
-        preview.updateNodeLabelByIndex(focusRequest.nodeId, annotation);
-    }
+    renderSelectedNodeAnnotation(state, focusRequest.viewport);
 
     lastFocusRequestId = focusRequest.requestId;
 }

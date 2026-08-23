@@ -315,24 +315,33 @@ var addSkyboxButton = function (side) {
     menu.append("br");
 };
 
-// adds a text label showing: label - region name - nodal strength
-var setNodeInfoPanel = function (region, index, text = null) {
+var nodeInfoText = function (region, index, text = null) {
+    if (text) return text;
+    var nodalStrengthLeft = Math.floor(modelLeft.getNodalStrength(index) * 100) / 100;
+    var nodalStrengthRight = Math.floor(modelRight.getNodalStrength(index) * 100) / 100;
+    return region.label + " " + region.name + " " + nodalStrengthLeft + " / " + nodalStrengthRight;
+};
 
-    var panel = d3.select('#nodeInfoPanel');
+var renderNodeInfoPanel = function (selector, region, index, text = null) {
+    var panel = d3.select(selector);
     var para = document.createElement("p");
     panel.selectAll("p").remove();
-
-    if(!text) {
-
-        var nodalStrengthLeft = Math.floor(modelLeft.getNodalStrength(index) * 100) / 100;
-        var nodalStrengthRight = Math.floor(modelRight.getNodalStrength(index) * 100) / 100;
-
-        text = region.label + " " + region.name + " " + nodalStrengthLeft + " / " + nodalStrengthRight;
-    }
-    var node = document.createTextNode(text); //region.label + " " + region.name + " " + nodalStrengthLeft + " / " + nodalStrengthRight);
+    var node = document.createTextNode(nodeInfoText(region, index, text));
 
     panel.node().appendChild(para).appendChild(node);
 };
+
+var clearHoverNodeInfo = function () {
+    d3.select('#nodeInfoPanel').selectAll("p").remove();
+};
+
+// Hover-only node summary. Persistent selected-node annotation detail is rendered in restSession.js.
+var updateHoverNodeInfo = function (region, index, text = null) {
+    renderNodeInfoPanel('#nodeInfoPanel', region, index, text);
+};
+
+// Backward-compatible alias for older selection/search callers.
+var setNodeInfoPanel = updateHoverNodeInfo;
 
 /* Edges stuff at edgeInfoPanel */
 var updateEdgeValueModeIndicator = function () {
@@ -1577,4 +1586,4 @@ var toggleMenus = function (e) {
 
 var getShortestPathVisMethod = function () { return shortestPathVisMethod }
 
-export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, enableThresholdControls, createLegend, refreshEdgeValueModeControls} //hideVRMaximizeButtons
+export { toggleMenus, initSubjectMenu, removeGeometryButtons, addAnimationSlider, addFlashRateSlider, addOpacitySlider, addModalityButton, addThresholdSlider, addLateralityCheck, addColorGroupList, addColorGroupListLeft, addTopologyMenu, addShortestPathFilterButton, addDistanceSlider, addShortestPathHopsSlider, enableShortestPathFilterButton, addDimensionFactorSliderLeft, addEdgeBundlingCheck, addDimensionFactorSliderRight, addSearchPanel, addSkyboxButton, getShortestPathVisMethod, SHORTEST_DISTANCE, NUMBER_HOPS, setNodeInfoPanel, updateHoverNodeInfo, clearHoverNodeInfo, enableThresholdControls, createLegend, refreshEdgeValueModeControls} //hideVRMaximizeButtons
