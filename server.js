@@ -38,6 +38,7 @@ const EDGE_VALUE_MODES = ['similarity', 'distance', 'binary'];
 app.use(bodyParser.json({ limit: '50mb' }));
 
 let focusRequestCounter = 0;
+let revealRequestCounter = 0;
 
 const baseSessionState = {
   version: 1,
@@ -62,7 +63,8 @@ const baseSessionState = {
     selectionMode: 'additive',
     highlightedCluster: null,
     selectedNode: null,
-    focusRequest: null
+    focusRequest: null,
+    revealNodeRequest: null
   },
   annotations: {
     byNode: {}
@@ -101,6 +103,12 @@ function revisionFor(state) {
 function normalizeSessionState() {
   if (!sessionState.view) {
     sessionState.view = clone(baseSessionState.view);
+  }
+  if (!Object.prototype.hasOwnProperty.call(sessionState.view, 'focusRequest')) {
+    sessionState.view.focusRequest = null;
+  }
+  if (!Object.prototype.hasOwnProperty.call(sessionState.view, 'revealNodeRequest')) {
+    sessionState.view.revealNodeRequest = null;
   }
   sessionState.view.glyphSizes = normalizeGlyphSizes(sessionState.view.glyphSizes);
 }
@@ -155,7 +163,7 @@ function normalizeNodeId(value) {
   if (!/^\d+$/.test(nodeId)) {
     throw new Error('nodeId must be a non-negative integer dataset index');
   }
-  return nodeId;
+  return String(Number(nodeId));
 }
 
 function validateNodeTarget(nodeId, viewport) {
@@ -182,6 +190,24 @@ function normalizeNodeTarget(body = {}) {
   const nodeId = normalizeNodeId(body.nodeId ?? body.node ?? body.id);
   validateNodeTarget(nodeId, viewport);
   return { nodeId, viewport };
+}
+
+function normalizeOptionalBoolean(body, key, defaultValue) {
+  if (!Object.prototype.hasOwnProperty.call(body || {}, key)) return defaultValue;
+  if (typeof body[key] !== 'boolean') {
+    throw new Error(`${key} must be true or false`);
+  }
+  return body[key];
+}
+
+function normalizeRevealNodeRequest(body = {}) {
+  const target = normalizeNodeTarget(body);
+  return {
+    ...target,
+    select: normalizeOptionalBoolean(body, 'select', true),
+    pinAnnotation: normalizeOptionalBoolean(body, 'pinAnnotation', true),
+    focus: normalizeOptionalBoolean(body, 'focus', true)
+  };
 }
 
 function structuredAnnotations() {
@@ -749,6 +775,39 @@ app.post('/view/focus-node', (req, res) => {
   }, res);
 });
 
+app.post('/view/reveal-node', (req, res) => {
+  handleRoute(() => {
+    const reveal = normalizeRevealNodeRequest(req.body || {});
+    const requestId = `${Date.now()}-${++revealRequestCounter}`;
+    const revealNodeRequest = {
+      ...reveal,
+      requestId
+    };
+    if (reveal.select) {
+      sessionState.view.selectedNode = {
+        nodeId: reveal.nodeId,
+        viewport: reveal.viewport
+      };
+    }
+    sessionState.view.revealNodeRequest = revealNodeRequest;
+    const annotation = structuredAnnotations()[reveal.nodeId] || null;
+    return {
+      changed: true,
+      state: stateWithRevision(),
+      requestId,
+      selectedNode: clone(sessionState.view.selectedNode),
+      revealNodeRequest: clone(revealNodeRequest),
+      resolvedNode: {
+        nodeId: reveal.nodeId,
+        viewport: reveal.viewport,
+        datasetIndex: Number(reveal.nodeId)
+      },
+      annotationPresent: Boolean(annotation && annotation.viewport === reveal.viewport),
+      focusRequested: reveal.focus
+    };
+  }, res);
+});
+
 app.post('/export/session', (req, res) => {
   handleRoute(() => {
     ensureExportRoot();
@@ -822,6 +881,7 @@ module.exports = {
   resetSessionForTests: () => {
     sessionState = clone(baseSessionState);
     focusRequestCounter = 0;
+    revealRequestCounter = 0;
     compareVariants();
     return stateWithRevision();
   }

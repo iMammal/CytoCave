@@ -23,6 +23,7 @@ var lastColorBy = {left: null, right: null};
 var lastSelectedKey = null;
 var lastAnnotationsKey = null;
 var lastFocusRequestId = null;
+var lastRevealNodeRequestId = null;
 var lastSessionState = null;
 var lastSelectionMode = null;
 var lastEdgeValueMode = null;
@@ -429,6 +430,32 @@ function applyFocusRequest(state) {
     lastFocusRequestId = focusRequest.requestId;
 }
 
+function applyRevealNodeRequest(state) {
+    var revealRequest = state.view && state.view.revealNodeRequest;
+    if (!revealRequest || !revealRequest.requestId || revealRequest.requestId === lastRevealNodeRequestId) return;
+
+    var viewport = revealRequest.viewport === "right" ? "right" : "left";
+    var preview = previewFor(viewport);
+
+    if (revealRequest.select !== false) {
+        selectNodeByIndex(viewport, revealRequest.nodeId, {
+            replaceSelection: true,
+            toggleSelected: false
+        });
+        lastSelectedKey = state.view && state.view.selectedNode ? JSON.stringify(state.view.selectedNode) : null;
+    }
+
+    if (revealRequest.pinAnnotation !== false) {
+        renderSelectedNodeAnnotation(state, viewport);
+    }
+
+    if (revealRequest.focus !== false && preview && preview.focusNodeByIndex) {
+        preview.focusNodeByIndex(revealRequest.nodeId);
+    }
+
+    lastRevealNodeRequestId = revealRequest.requestId;
+}
+
 async function getSessionState() {
     var response = await fetch("/session/state");
     if (!response.ok) throw new Error("Unable to fetch session state");
@@ -461,6 +488,7 @@ async function applySessionState() {
         lastAnnotationsKey = null;
         lastGlyphSizesKey = null;
         lastOrientationKey = null;
+        lastRevealNodeRequestId = null;
         return;
     }
     if (Date.now() < pendingVariantApplyUntil) return;
@@ -473,6 +501,7 @@ async function applySessionState() {
     applySelection(state);
     applyAnnotations(state);
     applyFocusRequest(state);
+    applyRevealNodeRequest(state);
     applyOrientation(state);
     lastAppliedRevision = state.revision;
 }
@@ -615,6 +644,7 @@ function startRestSessionBridge() {
         setSessionEdgeValueMode,
         setSessionGlyphSize,
         applyGlyphSizes,
+        applyRevealNodeRequest,
         applyOrientation
     };
     applySessionState().catch(function (error) {

@@ -148,6 +148,7 @@ test('REST session state exposes the primary k20/k40 comparison', async (t) => {
   assert.equal(response.body.view.colorBy.left, 'KMeans_k20_c16_s0_Clustering');
   assert.equal(response.body.view.colorBy.right, 'KMeans_k40_c16_s0_Clustering');
   assert.equal(response.body.view.selectionMode, 'additive');
+  assert.equal(response.body.view.revealNodeRequest, null);
 });
 
 test('POST /variants/compare is idempotent for the default demo', async (t) => {
@@ -287,6 +288,181 @@ test('node selection and focus requests update session state', async (t) => {
   assert.equal(focusOne.body.state.view.focusRequest.nodeId, nodeId);
   assert.notEqual(focusOne.body.state.view.focusRequest.requestId, focusTwo.body.state.view.focusRequest.requestId);
   assert.notEqual(focusOne.body.revision, focusTwo.body.revision);
+});
+
+test('reveal-node selects and focuses canonical node zero without mutating annotations', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const annotationBody = {
+    nodeId: '0',
+    text: 'Existing annotation remains byte-for-byte',
+    kind: 'analysis',
+    source: 'jupyter',
+    viewport: 'left',
+    metrics: { score: 4.2 }
+  };
+  const annotated = await request(server, 'POST', '/api/annotate', annotationBody);
+  assert.equal(annotated.statusCode, 200);
+  const preservedAnnotation = annotated.body.state.annotations.byNode['0'];
+
+  const reveal = await request(server, 'POST', '/view/reveal-node', {
+    viewport: 'left',
+    nodeId: '000'
+  });
+
+  assert.equal(reveal.statusCode, 200);
+  assert.equal(reveal.body.changed, true);
+  assert.equal(reveal.body.requestId, reveal.body.state.view.revealNodeRequest.requestId);
+  assert.deepEqual(reveal.body.selectedNode, { nodeId: '0', viewport: 'left' });
+  assert.deepEqual(reveal.body.state.view.selectedNode, { nodeId: '0', viewport: 'left' });
+  assert.equal(reveal.body.revealNodeRequest.nodeId, '0');
+  assert.equal(reveal.body.revealNodeRequest.viewport, 'left');
+  assert.equal(reveal.body.revealNodeRequest.select, true);
+  assert.equal(reveal.body.revealNodeRequest.pinAnnotation, true);
+  assert.equal(reveal.body.revealNodeRequest.focus, true);
+  assert.deepEqual(reveal.body.resolvedNode, {
+    nodeId: '0',
+    viewport: 'left',
+    datasetIndex: 0
+  });
+  assert.equal(reveal.body.annotationPresent, true);
+  assert.equal(reveal.body.focusRequested, true);
+  assert.deepEqual(reveal.body.state.annotations.byNode['0'], preservedAnnotation);
+});
+
+test('reveal-node preserves absent and unrelated annotations', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const annotationA = await request(server, 'POST', '/api/annotate', {
+    nodeId: '0',
+    text: 'Annotation A',
+    viewport: 'left',
+    metrics: { rank: 1 }
+  });
+  const annotationB = await request(server, 'POST', '/api/annotate', {
+    nodeId: '2',
+    text: 'Annotation B',
+    viewport: 'left',
+    metrics: { rank: 2 }
+  });
+  assert.equal(annotationA.statusCode, 200);
+  assert.equal(annotationB.statusCode, 200);
+  const beforeAnnotations = annotationB.body.state.annotations.byNode;
+
+  const revealAnnotated = await request(server, 'POST', '/view/reveal-node', {
+    nodeId: '0',
+    viewport: 'left'
+  });
+  assert.equal(revealAnnotated.statusCode, 200);
+  assert.deepEqual(revealAnnotated.body.state.annotations.byNode['2'], beforeAnnotations['2']);
+
+  const revealUnannotated = await request(server, 'POST', '/view/reveal-node', {
+    nodeId: '1',
+    viewport: 'left'
+  });
+  assert.equal(revealUnannotated.statusCode, 200);
+  assert.equal(revealUnannotated.body.annotationPresent, false);
+  assert.equal(revealUnannotated.body.state.annotations.byNode['1'], undefined);
+  assert.deepEqual(revealUnannotated.body.state.annotations.byNode['0'], beforeAnnotations['0']);
+  assert.deepEqual(revealUnannotated.body.state.annotations.byNode['2'], beforeAnnotations['2']);
+});
+
+test('reveal-node is intentionally one-shot and does not disturb unrelated view state', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const state = await request(server, 'GET', '/session/state');
+  const viewBefore = state.body.view;
+
+  const first = await request(server, 'POST', '/view/reveal-node', {
+    viewport: 'left',
+    nodeId: '1'
+  });
+  const second = await request(server, 'POST', '/view/reveal-node', {
+    viewport: 'left',
+    nodeId: '1'
+  });
+
+  assert.equal(first.statusCode, 200);
+  assert.equal(second.statusCode, 200);
+  assert.equal(first.body.changed, true);
+  assert.equal(second.body.changed, true);
+  assert.notEqual(first.body.requestId, second.body.requestId);
+  assert.notEqual(first.body.revision, second.body.revision);
+  assert.notEqual(first.body.state.view.revealNodeRequest.requestId, second.body.state.view.revealNodeRequest.requestId);
+
+  assert.deepEqual(second.body.state.view.glyphSizes, viewBefore.glyphSizes);
+  assert.deepEqual(second.body.state.view.colorBy, viewBefore.colorBy);
+  assert.deepEqual(second.body.state.view.orientation, viewBefore.orientation);
+  assert.equal(second.body.state.view.layout, viewBefore.layout);
+  assert.equal(second.body.state.view.edgeValueMode, viewBefore.edgeValueMode);
+  assert.equal(second.body.state.view.selectionMode, viewBefore.selectionMode);
+  assert.equal(second.body.state.view.highlightedCluster, viewBefore.highlightedCluster);
+  assert.equal(second.body.state.view.focusRequest, viewBefore.focusRequest);
+});
+
+test('reveal-node validates viewport node and boolean options', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const badViewport = await request(server, 'POST', '/view/reveal-node', {
+    nodeId: '0',
+    viewport: 'both'
+  });
+  assert.equal(badViewport.statusCode, 400);
+  assert.match(badViewport.body.error, /viewport must be left or right/);
+
+  const missingNode = await request(server, 'POST', '/view/reveal-node', {
+    viewport: 'left'
+  });
+  assert.equal(missingNode.statusCode, 400);
+  assert.match(missingNode.body.error, /nodeId is required/);
+
+  const outsideNode = await request(server, 'POST', '/view/reveal-node', {
+    nodeId: '999999999',
+    viewport: 'left'
+  });
+  assert.equal(outsideNode.statusCode, 400);
+  assert.match(outsideNode.body.error, /outside viewport left|non-negative integer/);
+
+  const badBoolean = await request(server, 'POST', '/view/reveal-node', {
+    nodeId: '0',
+    viewport: 'left',
+    focus: 'yes'
+  });
+  assert.equal(badBoolean.statusCode, 400);
+  assert.match(badBoolean.body.error, /focus must be true or false/);
+});
+
+test('reveal-node honors optional action flags without fabricating annotations', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const selected = await request(server, 'POST', '/view/select-node', {
+    nodeId: '0',
+    viewport: 'left'
+  });
+  assert.equal(selected.statusCode, 200);
+
+  const reveal = await request(server, 'POST', '/view/reveal-node', {
+    viewport: 'left',
+    nodeId: '1',
+    select: false,
+    pinAnnotation: false,
+    focus: false
+  });
+
+  assert.equal(reveal.statusCode, 200);
+  assert.equal(reveal.body.changed, true);
+  assert.deepEqual(reveal.body.state.view.selectedNode, { nodeId: '0', viewport: 'left' });
+  assert.equal(reveal.body.revealNodeRequest.select, false);
+  assert.equal(reveal.body.revealNodeRequest.pinAnnotation, false);
+  assert.equal(reveal.body.revealNodeRequest.focus, false);
+  assert.equal(reveal.body.focusRequested, false);
+  assert.equal(reveal.body.annotationPresent, false);
+  assert.equal(reveal.body.state.annotations.byNode['1'], undefined);
 });
 
 test('selection mode can be read and changed without GET mutation', async (t) => {
