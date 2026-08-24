@@ -3048,6 +3048,28 @@ function PreviewArea(canvas_, model_, name_) {
         return annotationHaloTexture;
     }
 
+    var configureAnnotationOverlayMaterial = function (material) {
+        if (!material) return material;
+        material.side = THREE.DoubleSide;
+        material.transparent = true;
+        material.depthTest = false;
+        material.depthWrite = false;
+        return material;
+    }
+
+    var configureAnnotationOverlayObject = function (object, role, renderOrder) {
+        markAnnotationObjectNonPickable(object, role);
+        if (!object) return object;
+        object.frustumCulled = false;
+        object.renderOrder = renderOrder || 1000;
+        return object;
+    }
+
+    var orientAnnotationOverlayToCamera = function (object) {
+        if (!object || !camera || !camera.quaternion || !object.quaternion) return;
+        object.quaternion.copy(camera.quaternion);
+    }
+
     var createAnnotationHalo = function (nodeKey, selected) {
         const material = new THREE.SpriteMaterial({
             map: createAnnotationHaloTexture(),
@@ -3055,11 +3077,13 @@ function PreviewArea(canvas_, model_, name_) {
             transparent: true,
             opacity: selected ? 0.98 : 0.9,
             depthTest: false,
-            depthWrite: false
+            depthWrite: false,
+            side: THREE.DoubleSide
         });
+        configureAnnotationOverlayMaterial(material);
         const sprite = new THREE.Sprite(material);
         sprite.name = "annotation-halo-" + nodeKey;
-        markAnnotationObjectNonPickable(sprite, 'annotation-halo');
+        configureAnnotationOverlayObject(sprite, 'annotation-halo', selected ? 1002 : 1001);
         sprite.userData.nodeKey = String(nodeKey);
         sprite.userData.selected = !!selected;
         sprite.scale.set(selected ? 13 : 10, selected ? 13 : 10, 1);
@@ -3081,6 +3105,7 @@ function PreviewArea(canvas_, model_, name_) {
         }
         sprite.position.copy(position);
         sprite.visible = true;
+        orientAnnotationOverlayToCamera(sprite);
     }
 
     var removeAnnotationHalo = function (nodeKey) {
@@ -3109,6 +3134,7 @@ function PreviewArea(canvas_, model_, name_) {
                 sprite.material.color.set(isSelected ? 0x7dd3fc : 0xffc247);
                 sprite.material.opacity = isSelected ? 0.98 : 0.9;
                 sprite.scale.set(isSelected ? 13 : 10, isSelected ? 13 : 10, 1);
+                sprite.renderOrder = isSelected ? 1002 : 1001;
             }
             updateAnnotationHaloPosition(nodeKey, sprite);
         });
@@ -3624,10 +3650,12 @@ function PreviewArea(canvas_, model_, name_) {
             transparent: true,
             opacity: 0.78,
             depthTest: false,
-            depthWrite: false
+            depthWrite: false,
+            side: THREE.DoubleSide
         });
+        configureAnnotationOverlayMaterial(material);
         nodeLabelLeaderLine = new THREE.Line(geometry, material);
-        markAnnotationObjectNonPickable(nodeLabelLeaderLine, 'annotation-leader');
+        configureAnnotationOverlayObject(nodeLabelLeaderLine, 'annotation-leader', 1000);
         nodeLabelLeaderLine.visible = false;
         brain.add(nodeLabelLeaderLine);
     }
@@ -3643,10 +3671,12 @@ function PreviewArea(canvas_, model_, name_) {
             transparent: true,
             opacity: 0.52,
             depthTest: false,
-            depthWrite: false
+            depthWrite: false,
+            side: THREE.DoubleSide
         });
+        configureAnnotationOverlayMaterial(material);
         hoverNodeLabelLeaderLine = new THREE.Line(geometry, material);
-        markAnnotationObjectNonPickable(hoverNodeLabelLeaderLine, 'hover-leader');
+        configureAnnotationOverlayObject(hoverNodeLabelLeaderLine, 'hover-leader', 1000);
         hoverNodeLabelLeaderLine.visible = false;
         brain.add(hoverNodeLabelLeaderLine);
     }
@@ -3672,6 +3702,7 @@ function PreviewArea(canvas_, model_, name_) {
             .add(right.multiplyScalar(7));
         nodeLabelSprite.position.copy(labelPosition);
         nodeLabelSprite.visible = true;
+        orientAnnotationOverlayToCamera(nodeLabelSprite);
         updateLeaderLine(nodeLabelLeaderLine, nodePosition, labelPosition);
     }
 
@@ -3690,6 +3721,7 @@ function PreviewArea(canvas_, model_, name_) {
             .add(right.multiplyScalar(-8));
         hoverNodeLabelSprite.position.copy(labelPosition);
         hoverNodeLabelSprite.visible = true;
+        orientAnnotationOverlayToCamera(hoverNodeLabelSprite);
         updateLeaderLine(hoverNodeLabelLeaderLine, nodePosition, labelPosition);
     }
 
@@ -3775,11 +3807,13 @@ function PreviewArea(canvas_, model_, name_) {
             useScreenCoordinates: false,
             color: 0xffffff,
             depthTest: false,
-            depthWrite: false
+            depthWrite: false,
+            side: THREE.DoubleSide
         });
+        configureAnnotationOverlayMaterial(mat);
 
         nodeLabelSprite = new THREE.Sprite(mat);
-        markAnnotationObjectNonPickable(nodeLabelSprite, 'annotation-callout');
+        configureAnnotationOverlayObject(nodeLabelSprite, 'annotation-callout', 1003);
         if (nodeLabelSprite.center) {
             nodeLabelSprite.center.set(0.05, 0.08);
         }
@@ -3809,11 +3843,13 @@ function PreviewArea(canvas_, model_, name_) {
             useScreenCoordinates: false,
             color: 0xffffff,
             depthTest: false,
-            depthWrite: false
+            depthWrite: false,
+            side: THREE.DoubleSide
         });
+        configureAnnotationOverlayMaterial(mat);
 
         hoverNodeLabelSprite = new THREE.Sprite(mat);
-        markAnnotationObjectNonPickable(hoverNodeLabelSprite, 'hover-callout');
+        configureAnnotationOverlayObject(hoverNodeLabelSprite, 'hover-callout', 1003);
         if (hoverNodeLabelSprite.center) {
             hoverNodeLabelSprite.center.set(0.05, 0.08);
         }

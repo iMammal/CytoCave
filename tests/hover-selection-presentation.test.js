@@ -94,6 +94,6 @@ test('hover and selected callout objects have separate anchors and remain non-pi
   assert.match(previewArea, /activeNodeLabelNode = null,\s*activeHoverNodeLabelNode = null/);
   assert.match(previewArea, /this\.clearHoverNodeLabel = function/);
   assert.match(previewArea, /this\.updateHoverNodeLabel = function/);
-  assert.match(previewArea, /markAnnotationObjectNonPickable\(hoverNodeLabelSprite,\s*'hover-callout'\)/);
-  assert.match(previewArea, /markAnnotationObjectNonPickable\(nodeLabelSprite,\s*'annotation-callout'\)/);
+  assert.match(previewArea, /configureAnnotationOverlayObject\(hoverNodeLabelSprite,\s*'hover-callout'/);
+  assert.match(previewArea, /configureAnnotationOverlayObject\(nodeLabelSprite,\s*'annotation-callout'/);
 });
