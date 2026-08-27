@@ -1,0 +1,3583 @@
+{
+  "dataset": {
+    "atlas_suffix": "h2h_foundational_agency",
+    "dataset_folder": "H2H_Foundational_Agency",
+    "graph_metadata": {
+      "curation_note": "Compact semantic-validation sample of methodology foundations and representative life-science systems already staged for analysis.",
+      "ontology_note": "All assignments are provisional and must not be treated as a frozen ontology.",
+      "source_scope": "Local full texts in docs/H2H2/BackgroundPapers and docs/H2H2/SamplePapers"
+    },
+    "subject_id": "foundational_agency"
+  },
+  "exporter_version": "1.0",
+  "files": {
+    "edges": {
+      "path": "foundational_agency_edges.csv",
+      "sha256": "bc5ffcd40e5bd1923263ec5378ff09ff0c4d9ba86f88c51cafee806a823ac511"
+    },
+    "index": {
+      "path": "index.txt",
+      "sha256": "02a4159d470ffe464342d660ee73636c88877320b88d7600e95d47f549e3fcfa"
+    },
+    "lut": {
+      "path": "../LookupTable_h2h_foundational_agency.csv",
+      "sha256": "d1f34cd85d6285a7a104686cef7bc7d2a39a58533a0aa3abe6c8c7821fbd80b2"
+    },
+    "manifest": {
+      "path": "foundational_agency_manifest.json"
+    },
+    "topology": {
+      "path": "foundational_agency_topology.csv",
+      "sha256": "d23ed5cd675db6b9aa6db117b933886da424aba196dd1c6950ce4b587ceb1360"
+    }
+  },
+  "nodes": [
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {},
+        "classification_status": "provisional",
+        "delegation": null,
+        "interaction_modalities": [],
+        "mediation": null,
+        "target": "unknown"
+      },
+      "coordinate_basis": "mechanism_centroid",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.25
+      },
+      "edge_id": 0,
+      "label": "1",
+      "mechanism_id": null,
+      "metadata": {
+        "authors": [],
+        "doi": "10.1101/436741",
+        "source_file": "docs/H2H2/SamplePapers/Exploratory Gene Ontology Analysis with Interactive Visualization.436741v1.full.pdf",
+        "year": 2018
+      },
+      "node_type": "paper",
+      "paper_id": "aegis-2018",
+      "region_name": "Exploratory Gene Ontology Analysis with Interactive Visualization",
+      "stable_id": "aegis-2018",
+      "visual": {
+        "display_type": "paper",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.35
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {},
+        "classification_status": "provisional",
+        "delegation": null,
+        "interaction_modalities": [],
+        "mediation": null,
+        "target": "unknown"
+      },
+      "coordinate_basis": "mechanism_centroid",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.25
+      },
+      "edge_id": 1,
+      "label": "2",
+      "mechanism_id": null,
+      "metadata": {
+        "authors": [
+          "Chenyue W. Hu",
+          "Alex J. Bisberg",
+          "Amina A. Qutub"
+        ],
+        "doi": "10.1101/099739",
+        "source_file": "docs/H2H2/SamplePapers/BioWheel-099739v1.full.pdf",
+        "year": 2017
+      },
+      "node_type": "paper",
+      "paper_id": "biowheel-2017",
+      "region_name": "Biowheel: interactive visualization and exploration of biomedical data",
+      "stable_id": "biowheel-2017",
+      "visual": {
+        "display_type": "paper",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.35
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {},
+        "classification_status": "provisional",
+        "delegation": null,
+        "interaction_modalities": [],
+        "mediation": null,
+        "target": "unknown"
+      },
+      "coordinate_basis": "mechanism_centroid",
+      "coordinates": {
+        "x_delegation": -1.0,
+        "y_epistemic_mediation": -1.0,
+        "z": 0.25
+      },
+      "edge_id": 2,
+      "label": "3",
+      "mechanism_id": null,
+      "metadata": {
+        "authors": [
+          "Veronika Domova",
+          "Katerina Vrotsou"
+        ],
+        "doi": "10.1109/TVCG.2022.3163765",
+        "source_file": "docs/H2H2/BackgroundPapers/domova2023.pdf",
+        "year": 2023
+      },
+      "node_type": "paper",
+      "paper_id": "domova-vrotsou-2023",
+      "region_name": "A Model for Types and Levels of Automation in Visual Analytics: a Survey, a Taxonomy, and Examples",
+      "stable_id": "domova-vrotsou-2023",
+      "visual": {
+        "display_type": "paper",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.35
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {},
+        "classification_status": "provisional",
+        "delegation": null,
+        "interaction_modalities": [],
+        "mediation": null,
+        "target": "unknown"
+      },
+      "coordinate_basis": "mechanism_centroid",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.25
+      },
+      "edge_id": 3,
+      "label": "4",
+      "mechanism_id": null,
+      "metadata": {
+        "authors": [
+          "Jun-Hsiang Yao",
+          "Mingzheng Li",
+          "Jiayi Liu",
+          "Yuxiao Li",
+          "Jielin Feng",
+          "Jun Han",
+          "Qibao Zheng",
+          "Jianfeng Feng",
+          "Siming Chen"
+        ],
+        "source_file": "docs/H2H2/SamplePapers/DTBIA_An_Immersive_Visual_Analytics_System_for_Brain-Inspired_Research.pdf",
+        "year": 2025
+      },
+      "node_type": "paper",
+      "paper_id": "dtbia-2025",
+      "region_name": "DTBIA: An Immersive Visual Analytics System for Brain-Inspired Research",
+      "stable_id": "dtbia-2025",
+      "visual": {
+        "display_type": "paper",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.35
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {},
+        "classification_status": "provisional",
+        "delegation": null,
+        "interaction_modalities": [],
+        "mediation": null,
+        "target": "unknown"
+      },
+      "coordinate_basis": "mechanism_centroid",
+      "coordinates": {
+        "x_delegation": 1.0,
+        "y_epistemic_mediation": 2.0,
+        "z": 0.25
+      },
+      "edge_id": 4,
+      "label": "5",
+      "mechanism_id": null,
+      "metadata": {
+        "authors": [
+          "Kakani Katija",
+          "Eric Orenstein",
+          "Brian Schlining",
+          "Lonny Lundsten",
+          "Kevin Barnard",
+          "Giovanna Sainz",
+          "Oceane Boulais",
+          "Megan Cromwell",
+          "Erin Butler",
+          "Benjamin Woodward",
+          "Katherine L. C. Bell"
+        ],
+        "doi": "10.1038/s41598-022-19939-2",
+        "source_file": "docs/H2H2/SamplePapers/s41598-022-19939-2-FathomNet.pdf",
+        "year": 2022
+      },
+      "node_type": "paper",
+      "paper_id": "fathomnet-2022",
+      "region_name": "FathomNet: A global image database for enabling artificial intelligence in the ocean",
+      "stable_id": "fathomnet-2022",
+      "visual": {
+        "display_type": "paper",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.35
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {},
+        "classification_status": "provisional",
+        "delegation": null,
+        "interaction_modalities": [],
+        "mediation": null,
+        "target": "unknown"
+      },
+      "coordinate_basis": "mechanism_centroid",
+      "coordinates": {
+        "x_delegation": -1.0,
+        "y_epistemic_mediation": -1.0,
+        "z": 0.25
+      },
+      "edge_id": 5,
+      "label": "6",
+      "mechanism_id": null,
+      "metadata": {
+        "authors": [
+          "Steffen Holter",
+          "Mennatallah El-Assady"
+        ],
+        "doi": "10.1111/cgf.15107",
+        "source_file": "docs/H2H2/BackgroundPapers/Computer Graphics Forum - 2024 - Holter - Deconstructing Human-AI Collaboration  Agency  Interaction  and Adaptation.pdf",
+        "year": 2024
+      },
+      "node_type": "paper",
+      "paper_id": "holter-elassady-2024",
+      "region_name": "Deconstructing Human-AI Collaboration: Agency, Interaction, and Adaptation",
+      "stable_id": "holter-elassady-2024",
+      "visual": {
+        "display_type": "paper",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.35
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {},
+        "classification_status": "provisional",
+        "delegation": null,
+        "interaction_modalities": [],
+        "mediation": null,
+        "target": "unknown"
+      },
+      "coordinate_basis": "mechanism_centroid",
+      "coordinates": {
+        "x_delegation": 1.6666666666666667,
+        "y_epistemic_mediation": 1.6666666666666667,
+        "z": 0.25
+      },
+      "edge_id": 6,
+      "label": "7",
+      "mechanism_id": null,
+      "metadata": {
+        "authors": [
+          "Eric Horvitz"
+        ],
+        "source_file": "docs/H2H2/BackgroundPapers/HorViz_302979.303030.pdf",
+        "year": 1999
+      },
+      "node_type": "paper",
+      "paper_id": "horvitz-1999",
+      "region_name": "Principles of Mixed-Initiative User Interfaces",
+      "stable_id": "horvitz-1999",
+      "visual": {
+        "display_type": "paper",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.35
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {},
+        "classification_status": "provisional",
+        "delegation": null,
+        "interaction_modalities": [],
+        "mediation": null,
+        "target": "unknown"
+      },
+      "coordinate_basis": "mechanism_centroid",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.25
+      },
+      "edge_id": 7,
+      "label": "8",
+      "mechanism_id": null,
+      "metadata": {
+        "authors": [
+          "Vaja Liluashvili",
+          "Selim Kalayci",
+          "Eugene Fluder",
+          "Manda Wilson",
+          "Aaron Gabow",
+          "Zeynep H. Gumus"
+        ],
+        "doi": "10.1093/gigascience/gix054",
+        "source_file": "docs/H2H2/SamplePapers/iCAVE-gix054.pdf",
+        "year": 2017
+      },
+      "node_type": "paper",
+      "paper_id": "icave-2017",
+      "region_name": "iCAVE: an open source tool for visualizing biomolecular networks in 3D, stereoscopic 3D and immersive 3D",
+      "stable_id": "icave-2017",
+      "visual": {
+        "display_type": "paper",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.35
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {},
+        "classification_status": "provisional",
+        "delegation": null,
+        "interaction_modalities": [],
+        "mediation": null,
+        "target": "unknown"
+      },
+      "coordinate_basis": "mechanism_centroid",
+      "coordinates": {
+        "x_delegation": -1.0,
+        "y_epistemic_mediation": -1.0,
+        "z": 0.25
+      },
+      "edge_id": 8,
+      "label": "9",
+      "mechanism_id": null,
+      "metadata": {
+        "authors": [
+          "Shayan Monadjemi",
+          "Yuhan Guo",
+          "Kai Xu",
+          "Alex Endert",
+          "Anamaria Crisan"
+        ],
+        "source_file": "docs/H2H2/BackgroundPapers/Computer Graphics Forum - 2026 - Monadjemi - A Scoping Review of Mixed Initiative Visual Analytics in the Automation.pdf",
+        "year": 2026
+      },
+      "node_type": "paper",
+      "paper_id": "monadjemi-et-al-2026",
+      "region_name": "A Scoping Review of Mixed Initiative Visual Analytics in the Automation Renaissance",
+      "stable_id": "monadjemi-et-al-2026",
+      "visual": {
+        "display_type": "paper",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.35
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {},
+        "classification_status": "provisional",
+        "delegation": null,
+        "interaction_modalities": [],
+        "mediation": null,
+        "target": "unknown"
+      },
+      "coordinate_basis": "mechanism_centroid",
+      "coordinates": {
+        "x_delegation": 1.3333333333333333,
+        "y_epistemic_mediation": 1.6666666666666667,
+        "z": 0.25
+      },
+      "edge_id": 9,
+      "label": "10",
+      "mechanism_id": null,
+      "metadata": {
+        "authors": [
+          "Jaeyoung Kim",
+          "Sihyeon Lee",
+          "Hyeon Jeon",
+          "Keon-Joo Lee",
+          "Hee-Joon Bae",
+          "Bohyoung Kim"
+        ],
+        "doi": "10.1109/TVCG.2024.3456215",
+        "source_file": "docs/H2H2/SamplePapers/PhenoFlow_ A Human-LLM Driven Visual Analytics System for Exploring Large and Complex Stroke Datasets _ IEEE Journals & Magazine _ IEEE Xplore.pdf",
+        "year": 2025
+      },
+      "node_type": "paper",
+      "paper_id": "phenoflow-2025",
+      "region_name": "PhenoFlow: A Human-LLM Driven Visual Analytics System for Exploring Large and Complex Stroke Datasets",
+      "stable_id": "phenoflow-2025",
+      "visual": {
+        "display_type": "paper",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.35
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {},
+        "classification_status": "provisional",
+        "delegation": null,
+        "interaction_modalities": [],
+        "mediation": null,
+        "target": "unknown"
+      },
+      "coordinate_basis": "mechanism_centroid",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 3.0,
+        "z": 0.25
+      },
+      "edge_id": 10,
+      "label": "11",
+      "mechanism_id": null,
+      "metadata": {
+        "authors": [
+          "Qianwen Wang",
+          "Xinyi Liu",
+          "Nils Gehlenborg"
+        ],
+        "doi": "10.1109/TVCG.2025.3633869",
+        "source_file": "docs/H2H2/SamplePapers/Can_LLMs_Bridge_Domain_and_Visualization_A_Case_Study_on_High-Dimension_Data_Visualization_in_Single-Cell_Transcriptomics.pdf",
+        "year": 2025
+      },
+      "node_type": "paper",
+      "paper_id": "wang-et-al-2025",
+      "region_name": "Can LLMs Bridge Domain and Visualization? A Case Study on High-Dimension Data Visualization in Single-Cell Transcriptomics",
+      "stable_id": "wang-et-al-2025",
+      "visual": {
+        "display_type": "paper",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.35
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A1",
+        "agency_direction": "human_to_system",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Introduction",
+              "support": "Dynamic displays update in real time with the chosen vantage point and search context."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Introduction",
+              "support": "Users choose a vantage point and interactively explore the GO."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Introduction",
+              "support": "The human selects searches and navigation actions."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Introduction",
+              "support": "AEGIS presents linked local and global graph views in an interactive software interface."
+            }
+          ],
+          "interaction_modalities": [
+            {
+              "location": "Introduction",
+              "support": "The described interface supports conventional search, zoom, filter, and details-on-demand controls."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Introduction",
+              "support": "Search and focus-context routines restructure the ontology evidence shown."
+            }
+          ],
+          "target": [
+            {
+              "location": "Introduction",
+              "support": "The mechanism acts on dynamic graphical display and visual organization."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [
+          "IM-POINTER_KEYBOARD"
+        ],
+        "mediation": "M1",
+        "target": "T-VIEW"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.0
+      },
+      "edge_id": 11,
+      "label": "12",
+      "mechanism_id": "aegis-2018-focus-context",
+      "metadata": {
+        "description": "AEGIS links local and global GO graph structures with search-driven focus-and-context displays."
+      },
+      "node_type": "mechanism",
+      "paper_id": "aegis-2018",
+      "region_name": "Dynamic GO focus-and-context exploration",
+      "stable_id": "aegis-2018-focus-context",
+      "visual": {
+        "display_type": "VM-DESKTOP2D",
+        "glyph": "cube",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "human_to_system",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Abstract",
+              "support": "The built-in simulation and power procedures are user-requested pipelines."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Abstract",
+              "support": "Scientists select gene sets and invoke simulation or power studies."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Abstract",
+              "support": "The user chooses the simulation or study operation."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Introduction",
+              "support": "Outputs are integrated into the AEGIS desktop visualization interface."
+            }
+          ],
+          "interaction_modalities": [
+            {
+              "location": "Introduction",
+              "support": "The pipeline is invoked through an interactive graphical interface."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "The pipeline transforms selected biological information into simulated data or power estimates."
+            }
+          ],
+          "target": [
+            {
+              "location": "Abstract",
+              "support": "The mechanism acts on simulation and statistical study models."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [
+          "IM-POINTER_KEYBOARD"
+        ],
+        "mediation": "M1",
+        "target": "T-MODEL"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.0
+      },
+      "edge_id": 12,
+      "label": "13",
+      "mechanism_id": "aegis-2018-simulation-pipeline",
+      "metadata": {
+        "description": "AEGIS uses selected biological information to simulate single-cell data or run differential-expression power studies."
+      },
+      "node_type": "mechanism",
+      "paper_id": "aegis-2018",
+      "region_name": "Biologically grounded simulation and power pipeline",
+      "stable_id": "aegis-2018-simulation-pipeline",
+      "visual": {
+        "display_type": "VM-DESKTOP2D",
+        "glyph": "cube",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "human_to_system",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Tool description",
+              "support": "The selected encoding is deterministic and not personalized."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Tool description",
+              "support": "Users choose variable representations and the tool renders them."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Tool description",
+              "support": "The user selects how columns are represented."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Tool description",
+              "support": "Circular heatmaps are rendered in a web interface."
+            }
+          ],
+          "interaction_modalities": [
+            {
+              "location": "Tool description",
+              "support": "The web interface is operated through conventional graphical controls."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Tool description",
+              "support": "Circular heatmap encoding structures heterogeneous variables for comparison."
+            }
+          ],
+          "target": [
+            {
+              "location": "Tool description",
+              "support": "The mechanism acts on visual encoding and presentation."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [
+          "IM-POINTER_KEYBOARD"
+        ],
+        "mediation": "M1",
+        "target": "T-VIEW"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.0
+      },
+      "edge_id": 13,
+      "label": "14",
+      "mechanism_id": "biowheel-2017-circular-encoding",
+      "metadata": {
+        "description": "Biowheel maps numeric and categorical columns into interactive circular heatmap rings."
+      },
+      "node_type": "mechanism",
+      "paper_id": "biowheel-2017",
+      "region_name": "Circular heatmap encoding",
+      "stable_id": "biowheel-2017-circular-encoding",
+      "visual": {
+        "display_type": "VM-DESKTOP2D",
+        "glyph": "cube",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "human_to_system",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Abstract",
+              "support": "Sorting and filtering respond to explicit controls without learned adaptation."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Abstract",
+              "support": "Researchers explicitly sort and filter the data."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Abstract",
+              "support": "The user chooses each sorting or filtering action."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Tool description",
+              "support": "Biowheel is a web-based two-dimensional circular visualization."
+            }
+          ],
+          "interaction_modalities": [
+            {
+              "location": "Tool description",
+              "support": "A graphical web interface exposes interactive controls."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "Sorting and filtering reorganize which raw evidence is encountered."
+            }
+          ],
+          "target": [
+            {
+              "location": "Abstract",
+              "support": "The operations act directly on rows and subsets of biomedical data."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [
+          "IM-POINTER_KEYBOARD"
+        ],
+        "mediation": "M1",
+        "target": "T-DATA"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.0
+      },
+      "edge_id": 14,
+      "label": "15",
+      "mechanism_id": "biowheel-2017-sorting-filtering",
+      "metadata": {
+        "description": "Users interactively sort and filter high-dimensional biomedical data to inspect subsets and trends."
+      },
+      "node_type": "mechanism",
+      "paper_id": "biowheel-2017",
+      "region_name": "Interactive sorting and filtering",
+      "stable_id": "biowheel-2017-sorting-filtering",
+      "visual": {
+        "display_type": "VM-DESKTOP2D",
+        "glyph": "cube",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {
+          "display_type": [
+            {
+              "location": "Taxonomy scope",
+              "support": "This is a conceptual automation stage with no single display environment."
+            }
+          ],
+          "target": [
+            {
+              "location": "Contribution statement",
+              "support": "The taxonomy explicitly names data focusing as an automation stage."
+            }
+          ],
+          "uncertainty": [
+            {
+              "location": "Paper scope",
+              "support": "No single implemented behavior supports D, M, direction, or adaptability coding."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "unknown",
+        "interaction_modalities": [],
+        "mediation": "unknown",
+        "target": "T-DATA"
+      },
+      "coordinate_basis": "unknown_classification_coordinate",
+      "coordinates": {
+        "x_delegation": -1.0,
+        "y_epistemic_mediation": -1.0,
+        "z": 0.0
+      },
+      "edge_id": 15,
+      "label": "16",
+      "mechanism_id": "domova-vrotsou-2023-data-focusing",
+      "metadata": {
+        "description": "Conceptual family for automation applied to data focusing; retained pending system-level decomposition."
+      },
+      "node_type": "mechanism",
+      "paper_id": "domova-vrotsou-2023",
+      "region_name": "Data-focusing automation family",
+      "stable_id": "domova-vrotsou-2023-data-focusing",
+      "visual": {
+        "display_type": "VM-NONVISUAL_OR_UNSPECIFIED",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {
+          "display_type": [
+            {
+              "location": "Taxonomy scope",
+              "support": "This is a conceptual automation stage with no single display environment."
+            }
+          ],
+          "target": [
+            {
+              "location": "Contribution statement",
+              "support": "The taxonomy explicitly names data mining as an automation stage."
+            }
+          ],
+          "uncertainty": [
+            {
+              "location": "Paper scope",
+              "support": "No single implemented behavior supports D, M, direction, or adaptability coding."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "unknown",
+        "interaction_modalities": [],
+        "mediation": "unknown",
+        "target": "T-MODEL"
+      },
+      "coordinate_basis": "unknown_classification_coordinate",
+      "coordinates": {
+        "x_delegation": -1.0,
+        "y_epistemic_mediation": -1.0,
+        "z": 0.0
+      },
+      "edge_id": 16,
+      "label": "17",
+      "mechanism_id": "domova-vrotsou-2023-data-mining",
+      "metadata": {
+        "description": "Conceptual family for automation applied to data mining; retained pending system-level decomposition."
+      },
+      "node_type": "mechanism",
+      "paper_id": "domova-vrotsou-2023",
+      "region_name": "Data-mining automation family",
+      "stable_id": "domova-vrotsou-2023-data-mining",
+      "visual": {
+        "display_type": "VM-NONVISUAL_OR_UNSPECIFIED",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {
+          "display_type": [
+            {
+              "location": "Taxonomy scope",
+              "support": "This is a conceptual automation stage rather than one implemented display mechanism."
+            }
+          ],
+          "target": [
+            {
+              "location": "Contribution statement",
+              "support": "The taxonomy explicitly names data preparation as an automation stage."
+            }
+          ],
+          "uncertainty": [
+            {
+              "location": "Paper scope",
+              "support": "No single implemented behavior supports D, M, direction, or adaptability coding."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "unknown",
+        "interaction_modalities": [],
+        "mediation": "unknown",
+        "target": "T-DATA"
+      },
+      "coordinate_basis": "unknown_classification_coordinate",
+      "coordinates": {
+        "x_delegation": -1.0,
+        "y_epistemic_mediation": -1.0,
+        "z": 0.0
+      },
+      "edge_id": 17,
+      "label": "18",
+      "mechanism_id": "domova-vrotsou-2023-data-preparation",
+      "metadata": {
+        "description": "Conceptual family for automation applied to data preparation; retained for framework validation pending system-level decomposition."
+      },
+      "node_type": "mechanism",
+      "paper_id": "domova-vrotsou-2023",
+      "region_name": "Data-preparation automation family",
+      "stable_id": "domova-vrotsou-2023-data-preparation",
+      "visual": {
+        "display_type": "VM-NONVISUAL_OR_UNSPECIFIED",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "unknown",
+        "classification_evidence": {
+          "display_type": [
+            {
+              "location": "Taxonomy scope",
+              "support": "This is a conceptual automation stage with no single display environment."
+            }
+          ],
+          "target": [
+            {
+              "location": "Contribution statement",
+              "support": "The taxonomy explicitly names reasoning as an automation stage."
+            }
+          ],
+          "uncertainty": [
+            {
+              "location": "Paper scope",
+              "support": "No single implemented behavior supports D, M, direction, or adaptability coding."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "unknown",
+        "interaction_modalities": [],
+        "mediation": "unknown",
+        "target": "T-KNOWLEDGE"
+      },
+      "coordinate_basis": "unknown_classification_coordinate",
+      "coordinates": {
+        "x_delegation": -1.0,
+        "y_epistemic_mediation": -1.0,
+        "z": 0.0
+      },
+      "edge_id": 18,
+      "label": "19",
+      "mechanism_id": "domova-vrotsou-2023-reasoning",
+      "metadata": {
+        "description": "Conceptual family for automation applied to reasoning; retained pending system-level decomposition."
+      },
+      "node_type": "mechanism",
+      "paper_id": "domova-vrotsou-2023",
+      "region_name": "Reasoning automation family",
+      "stable_id": "domova-vrotsou-2023-reasoning",
+      "visual": {
+        "display_type": "VM-NONVISUAL_OR_UNSPECIFIED",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "human_to_system",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "3D-FDEB section",
+              "support": "The algorithm applies fixed clustering and bundling parameters rather than learning from users."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "System workflow",
+              "support": "Experts enter the immersive workflow and inspect requested structural views."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "3D-FDEB section",
+              "support": "The user selects the analysis while the system executes bundling."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Abstract",
+              "support": "DTBIA is explicitly an immersive virtual-reality analytics system."
+            }
+          ],
+          "interaction_modalities": [
+            {
+              "location": "Immersive navigation",
+              "support": "The workflow uses embodied immersive navigation and tracked interaction."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "3D-FDEB section",
+              "support": "Edge clustering and bundling restructure dense structural connections."
+            }
+          ],
+          "target": [
+            {
+              "location": "3D-FDEB section",
+              "support": "The algorithm acts on visual clarity and spatial organization."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [
+          "IM-TRACKED_CONTROLLER",
+          "IM-EMBODIED_LOCOMOTION"
+        ],
+        "mediation": "M1",
+        "target": "T-VIEW"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.0
+      },
+      "edge_id": 19,
+      "label": "20",
+      "mechanism_id": "dtbia-2025-edge-bundling",
+      "metadata": {
+        "description": "DTBIA applies 3D force-directed edge bundling to cluster similar DTI connections and reduce visual clutter."
+      },
+      "node_type": "mechanism",
+      "paper_id": "dtbia-2025",
+      "region_name": "3D force-directed edge bundling",
+      "stable_id": "dtbia-2025-edge-bundling",
+      "visual": {
+        "display_type": "VM-VR",
+        "glyph": "icosahedron",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "human_to_system",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Abstract",
+              "support": "The hierarchy responds to direct navigation rather than adapting or learning."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Abstract",
+              "support": "Experts navigate from regions to voxels and slices."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Abstract",
+              "support": "The human chooses navigation actions and the system executes them."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Abstract",
+              "support": "The hierarchy is presented in an immersive virtual-reality environment."
+            }
+          ],
+          "interaction_modalities": [
+            {
+              "location": "Immersive navigation",
+              "support": "Users navigate spatially through tracked immersive controls."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "The hierarchy structures spatiotemporal data across levels of detail."
+            }
+          ],
+          "target": [
+            {
+              "location": "Abstract",
+              "support": "The mechanism acts on spatial view organization and navigation."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [
+          "IM-TRACKED_CONTROLLER",
+          "IM-EMBODIED_LOCOMOTION"
+        ],
+        "mediation": "M1",
+        "target": "T-VIEW"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.0
+      },
+      "edge_id": 20,
+      "label": "21",
+      "mechanism_id": "dtbia-2025-hierarchical-navigation",
+      "metadata": {
+        "description": "DTBIA provides hierarchical exploration from brain regions to voxels and slice sections in an immersive environment."
+      },
+      "node_type": "mechanism",
+      "paper_id": "dtbia-2025",
+      "region_name": "Hierarchical immersive exploration",
+      "stable_id": "dtbia-2025-hierarchical-navigation",
+      "visual": {
+        "display_type": "VM-VR",
+        "glyph": "icosahedron",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "human_to_system",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Abstract",
+              "support": "Aggregation follows the database contribution workflow rather than adapting behavior."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Abstract",
+              "support": "Experts and distributed sources contribute curated labels to the database."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Abstract",
+              "support": "Humans curate labels and direct data contribution."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Abstract",
+              "support": "No single visualization environment is specified for this database mechanism."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "The database standardizes and aggregates labeled image evidence."
+            }
+          ],
+          "target": [
+            {
+              "location": "Abstract",
+              "support": "The mechanism acts on labeled image data and standardization."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [],
+        "mediation": "M1",
+        "target": "T-DATA"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.0
+      },
+      "edge_id": 21,
+      "label": "22",
+      "mechanism_id": "fathomnet-2022-label-aggregation",
+      "metadata": {
+        "description": "FathomNet standardizes and aggregates expertly curated labeled ocean imagery from distributed sources."
+      },
+      "node_type": "mechanism",
+      "paper_id": "fathomnet-2022",
+      "region_name": "Expert label aggregation and standardization",
+      "stable_id": "fathomnet-2022-label-aggregation",
+      "visual": {
+        "display_type": "VM-NONVISUAL_OR_UNSPECIFIED",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "system_to_human",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Model demonstration",
+              "support": "The deployed detector applies a trained model without described online adaptation."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Abstract",
+              "support": "The model produces detections that reduce human annotation effort."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Abstract",
+              "support": "The system predicts labels while humans retain curation responsibility."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Abstract",
+              "support": "No single analytic display environment is specified for model inference."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "The model assigns semantic classes to image regions."
+            }
+          ],
+          "target": [
+            {
+              "location": "Abstract",
+              "support": "The predictions create candidate image annotations."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D1",
+        "interaction_modalities": [],
+        "mediation": "M3",
+        "target": "T-DATA"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 1.0,
+        "y_epistemic_mediation": 3.0,
+        "z": 0.0
+      },
+      "edge_id": 22,
+      "label": "23",
+      "mechanism_id": "fathomnet-2022-model-assisted-annotation",
+      "metadata": {
+        "description": "Models trained on FathomNet produce semantic detections on institutional video to reduce annotation effort."
+      },
+      "node_type": "mechanism",
+      "paper_id": "fathomnet-2022",
+      "region_name": "Model-assisted image annotation",
+      "stable_id": "fathomnet-2022-model-assisted-annotation",
+      "visual": {
+        "display_type": "VM-NONVISUAL_OR_UNSPECIFIED",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A1",
+        "agency_direction": "system_to_human",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Abstract",
+              "support": "Tracking responds continuously to observed underwater concepts and vehicle context."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Abstract",
+              "support": "Automated tracking drives observation behavior when integrated with robotic vehicles."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Abstract",
+              "support": "The system initiates bounded local tracking actions within the observation objective."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Abstract",
+              "support": "The tracking mechanism has no specified analytic display environment."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "The tracker prioritizes and maintains attention on detected underwater concepts."
+            }
+          ],
+          "target": [
+            {
+              "location": "Abstract",
+              "support": "The mechanism changes the observation and tracking process."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D2",
+        "interaction_modalities": [],
+        "mediation": "M2",
+        "target": "T-WORKFLOW"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 2.0,
+        "y_epistemic_mediation": 2.0,
+        "z": 0.0
+      },
+      "edge_id": 23,
+      "label": "24",
+      "mechanism_id": "fathomnet-2022-robotic-tracking",
+      "metadata": {
+        "description": "Detected underwater concepts support automated tracking when models are integrated with robotic vehicles."
+      },
+      "node_type": "mechanism",
+      "paper_id": "fathomnet-2022",
+      "region_name": "Robotic concept tracking",
+      "stable_id": "fathomnet-2022-robotic-tracking",
+      "visual": {
+        "display_type": "VM-NONVISUAL_OR_UNSPECIFIED",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "bidirectional",
+        "classification_evidence": {
+          "agency_direction": [
+            {
+              "location": "Figure 1",
+              "support": "The exemplar is explicitly described as mixed-initiative topic-model refinement."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Figure 1",
+              "support": "The exemplar is encoded in a desktop parallel-coordinates view."
+            }
+          ],
+          "uncertainty": [
+            {
+              "location": "Paper scope",
+              "support": "The conceptual paper does not provide enough system evidence here for D, M, Target, or adaptability."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "unknown",
+        "interaction_modalities": [],
+        "mediation": "unknown",
+        "target": "unknown"
+      },
+      "coordinate_basis": "unknown_classification_coordinate",
+      "coordinates": {
+        "x_delegation": -1.0,
+        "y_epistemic_mediation": -1.0,
+        "z": 0.0
+      },
+      "edge_id": 24,
+      "label": "25",
+      "mechanism_id": "holter-elassady-2024-topic-model-refinement",
+      "metadata": {
+        "description": "A mixed-initiative topic-model refinement exemplar used to demonstrate the agency, interaction, and adaptation design space."
+      },
+      "node_type": "mechanism",
+      "paper_id": "holter-elassady-2024",
+      "region_name": "Topic-model refinement exemplar",
+      "stable_id": "holter-elassady-2024-topic-model-refinement",
+      "visual": {
+        "display_type": "VM-DESKTOP2D",
+        "glyph": "cube",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A1",
+        "agency_direction": "bidirectional",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Multiple Interaction Modalities",
+              "support": "Dialogue and dismissal behavior responds to confidence and user response."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Multiple Interaction Modalities",
+              "support": "The agent asks and the user accepts, rejects, invokes, or terminates service."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Multiple Interaction Modalities",
+              "support": "The system proposes service while the user retains the accept or reject decision."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Multiple Interaction Modalities",
+              "support": "The interaction is presented through a desktop interface and animated agent."
+            }
+          ],
+          "interaction_modalities": [
+            {
+              "location": "Multiple Interaction Modalities",
+              "support": "The paper explicitly describes speech plus mouse and keyboard operation."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Multiple Interaction Modalities",
+              "support": "This mechanism manages interaction rather than transforming analytic evidence."
+            }
+          ],
+          "target": [
+            {
+              "location": "Multiple Interaction Modalities",
+              "support": "The mechanism controls invocation and refinement within the workflow."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D1",
+        "interaction_modalities": [
+          "IM-POINTER_KEYBOARD",
+          "IM-SPEECH"
+        ],
+        "mediation": "M0",
+        "target": "T-WORKFLOW"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 1.0,
+        "y_epistemic_mediation": 0.0,
+        "z": 0.0
+      },
+      "edge_id": 25,
+      "label": "26",
+      "mechanism_id": "horvitz-1999-dialog-and-control",
+      "metadata": {
+        "description": "Lookout supports direct invocation, spoken dialogue, acceptance, rejection, and refinement of proposed service."
+      },
+      "node_type": "mechanism",
+      "paper_id": "horvitz-1999",
+      "region_name": "Mixed-initiative dialogue and control",
+      "stable_id": "horvitz-1999-dialog-and-control",
+      "visual": {
+        "display_type": "VM-DESKTOP2D",
+        "glyph": "cube",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A1",
+        "agency_direction": "bidirectional",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Decision Making Under Uncertainty",
+              "support": "Behavior changes with inferred user goals and message context."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Lookout testbed",
+              "support": "The system proposes editable appointment fields and the user refines or saves them."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Decision Making Under Uncertainty",
+              "support": "Lookout can choose a local scheduling action in automated-assistance mode."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Multiple Interaction Modalities",
+              "support": "Lookout is integrated with the desktop Outlook interface."
+            }
+          ],
+          "interaction_modalities": [
+            {
+              "location": "Multiple Interaction Modalities",
+              "support": "Users invoke and refine results with mouse and keyboard controls."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Value-Added Service",
+              "support": "The system interprets email text as date, time, and appointment content."
+            }
+          ],
+          "target": [
+            {
+              "location": "Value-Added Service",
+              "support": "The behavior constructs and advances a scheduling workflow."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D2",
+        "interaction_modalities": [
+          "IM-POINTER_KEYBOARD"
+        ],
+        "mediation": "M3",
+        "target": "T-WORKFLOW"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 2.0,
+        "y_epistemic_mediation": 3.0,
+        "z": 0.0
+      },
+      "edge_id": 26,
+      "label": "27",
+      "mechanism_id": "horvitz-1999-email-to-appointment",
+      "metadata": {
+        "description": "Lookout interprets a focused email and constructs an editable appointment or scoped calendar view."
+      },
+      "node_type": "mechanism",
+      "paper_id": "horvitz-1999",
+      "region_name": "Email-to-appointment assistance",
+      "stable_id": "horvitz-1999-email-to-appointment",
+      "visual": {
+        "display_type": "VM-DESKTOP2D",
+        "glyph": "cube",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A2",
+        "agency_direction": "system_to_human",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Decision Making Under Uncertainty",
+              "support": "A probabilistic classifier is trained by observing the user working with email."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Decision Making Under Uncertainty",
+              "support": "The system decides whether to wait, ask, or provide service."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Decision Making Under Uncertainty",
+              "support": "Lookout selects among bounded local actions without approval for each action."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Multiple Interaction Modalities",
+              "support": "The service appears in Outlook and the Windows system tray."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Decision Making Under Uncertainty",
+              "support": "The system prioritizes whether scheduling assistance should receive attention."
+            }
+          ],
+          "target": [
+            {
+              "location": "Decision Making Under Uncertainty",
+              "support": "The selected action changes the next step in the scheduling process."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D2",
+        "interaction_modalities": [],
+        "mediation": "M2",
+        "target": "T-WORKFLOW"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 2.0,
+        "y_epistemic_mediation": 2.0,
+        "z": 0.0
+      },
+      "edge_id": 27,
+      "label": "28",
+      "mechanism_id": "horvitz-1999-uncertainty-sensitive-action",
+      "metadata": {
+        "description": "Lookout uses inferred goal probability and action costs to wait, ask the user, or initiate scheduling help."
+      },
+      "node_type": "mechanism",
+      "paper_id": "horvitz-1999",
+      "region_name": "Uncertainty-sensitive action selection",
+      "stable_id": "horvitz-1999-uncertainty-sensitive-action",
+      "visual": {
+        "display_type": "VM-DESKTOP2D",
+        "glyph": "cube",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "human_to_system",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Abstract",
+              "support": "Database query behavior is described as user-requested rather than adaptive."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Abstract",
+              "support": "Users query built-in databases or supply their own networks."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Abstract",
+              "support": "The human chooses the query and the system executes it."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Abstract",
+              "support": "Generated networks are explored in CAVE, stereoscopic, or desktop 3D views."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "The mechanism assembles queried records into a network structure."
+            }
+          ],
+          "target": [
+            {
+              "location": "Abstract",
+              "support": "The mechanism acts on data access and network generation."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [],
+        "mediation": "M1",
+        "target": "T-DATA"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.0
+      },
+      "edge_id": 28,
+      "label": "29",
+      "mechanism_id": "icave-2017-database-network-generation",
+      "metadata": {
+        "description": "Users query multiple built-in databases to generate a network or load their own network data.",
+        "secondary_display_types": [
+          "VM-DESKTOP3D"
+        ]
+      },
+      "node_type": "mechanism",
+      "paper_id": "icave-2017",
+      "region_name": "Database-backed network generation",
+      "stable_id": "icave-2017-database-network-generation",
+      "visual": {
+        "display_type": "VM-CAVE",
+        "glyph": "octahedron",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "human_to_system",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Abstract",
+              "support": "The described algorithms execute selected layouts without user-specific adaptation."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "System description",
+              "support": "Users choose network representations and the system computes the view."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "System description",
+              "support": "The user selects the analytic operation and iCAVE executes it."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Abstract",
+              "support": "The paper explicitly supports immersive CAVE visualization, with desktop alternatives."
+            }
+          ],
+          "interaction_modalities": [
+            {
+              "location": "System interaction",
+              "support": "The immersive mode uses tracked controls for navigation and selection."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "Layout, clustering, and edge bundling restructure how network evidence is encountered."
+            }
+          ],
+          "target": [
+            {
+              "location": "Abstract",
+              "support": "The algorithms directly act on spatial layout and visual organization."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [
+          "IM-TRACKED_CONTROLLER"
+        ],
+        "mediation": "M1",
+        "target": "T-VIEW"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.0
+      },
+      "edge_id": 29,
+      "label": "30",
+      "mechanism_id": "icave-2017-layout-and-bundling",
+      "metadata": {
+        "description": "iCAVE computes 3D network layouts, clustering, and edge bundling for dense biomolecular networks.",
+        "secondary_display_types": [
+          "VM-DESKTOP3D"
+        ]
+      },
+      "node_type": "mechanism",
+      "paper_id": "icave-2017",
+      "region_name": "3D layout, clustering, and edge bundling",
+      "stable_id": "icave-2017-layout-and-bundling",
+      "visual": {
+        "display_type": "VM-CAVE",
+        "glyph": "octahedron",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "unknown",
+        "agency_direction": "bidirectional",
+        "classification_evidence": {
+          "agency_direction": [
+            {
+              "location": "Figure 1",
+              "support": "Human and artificial agents both perceive and act on a shared visual-analytics task."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Review scope",
+              "support": "The integrated taxonomy spans systems and has no single display environment."
+            }
+          ],
+          "uncertainty": [
+            {
+              "location": "Review scope",
+              "support": "The review-level construct does not justify a single D, M, Target, or adaptability code."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "unknown",
+        "interaction_modalities": [],
+        "mediation": "unknown",
+        "target": "unknown"
+      },
+      "coordinate_basis": "unknown_classification_coordinate",
+      "coordinates": {
+        "x_delegation": -1.0,
+        "y_epistemic_mediation": -1.0,
+        "z": 0.0
+      },
+      "edge_id": 30,
+      "label": "31",
+      "mechanism_id": "monadjemi-et-al-2026-shared-task-agent",
+      "metadata": {
+        "description": "Review-level construct in which human and artificial agents perceive a visual-analytics environment and act on a shared task."
+      },
+      "node_type": "mechanism",
+      "paper_id": "monadjemi-et-al-2026",
+      "region_name": "Shared-task human/artificial agent construct",
+      "stable_id": "monadjemi-et-al-2026-shared-task-agent",
+      "visual": {
+        "display_type": "VM-NONVISUAL_OR_UNSPECIFIED",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A1",
+        "agency_direction": "bidirectional",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Abstract and Figure 1",
+              "support": "Generated code changes with natural-language cohort definitions and iterative filtering."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Abstract",
+              "support": "Neurologists define the cohort and supervise LLM-generated outputs."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Abstract",
+              "support": "The human specifies a cohort subgoal and the LLM synthesizes executable operations to realize it."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Figure 1",
+              "support": "Cohort construction is integrated into a desktop visual-analytics interface."
+            }
+          ],
+          "interaction_modalities": [
+            {
+              "location": "Abstract",
+              "support": "Neurologists use natural-language interactions."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "Generated code structures metadata into an executable cohort selection."
+            }
+          ],
+          "target": [
+            {
+              "location": "Figure 1",
+              "support": "The mechanism acts directly on cohort data construction and filtering."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D3",
+        "interaction_modalities": [
+          "IM-TYPED_NATURAL_LANGUAGE"
+        ],
+        "mediation": "M1",
+        "target": "T-DATA"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 3.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.0
+      },
+      "edge_id": 31,
+      "label": "32",
+      "mechanism_id": "phenoflow-2025-cohort-code-synthesis",
+      "metadata": {
+        "description": "Neurologists define a cohort in natural language and the LLM synthesizes executable code from metadata."
+      },
+      "node_type": "mechanism",
+      "paper_id": "phenoflow-2025",
+      "region_name": "Natural-language cohort code synthesis",
+      "stable_id": "phenoflow-2025-cohort-code-synthesis",
+      "visual": {
+        "display_type": "VM-DESKTOP2D",
+        "glyph": "cube",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A1",
+        "agency_direction": "bidirectional",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Figure 1",
+              "support": "Explanations update for the generated cohort logic under inspection."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Abstract and Figure 1",
+              "support": "The LLM explains while neurologists inspect, debug, and supervise its behavior."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Figure 1",
+              "support": "The system presents an explanation and the human decides how to debug or revise."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Figure 1",
+              "support": "Plain-language explanations and small multiples appear in the Visual Inspection View."
+            }
+          ],
+          "interaction_modalities": [
+            {
+              "location": "Abstract",
+              "support": "Natural-language interaction is part of supervision."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Figure 1",
+              "support": "The explanation makes a semantic claim about the LLM data wrangler's behavior."
+            }
+          ],
+          "target": [
+            {
+              "location": "Figure 1",
+              "support": "The mechanism supports understanding and debugging model behavior."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D1",
+        "interaction_modalities": [
+          "IM-TYPED_NATURAL_LANGUAGE",
+          "IM-POINTER_KEYBOARD"
+        ],
+        "mediation": "M3",
+        "target": "T-KNOWLEDGE"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 1.0,
+        "y_epistemic_mediation": 3.0,
+        "z": 0.0
+      },
+      "edge_id": 32,
+      "label": "33",
+      "mechanism_id": "phenoflow-2025-explanation-debugging",
+      "metadata": {
+        "description": "The Visual Inspection View explains LLM behavior in plain language and relevant-field small multiples for supervision and debugging."
+      },
+      "node_type": "mechanism",
+      "paper_id": "phenoflow-2025",
+      "region_name": "Data-wrangler explanation and debugging",
+      "stable_id": "phenoflow-2025-explanation-debugging",
+      "visual": {
+        "display_type": "VM-DESKTOP2D",
+        "glyph": "cube",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "human_to_system",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Abstract",
+              "support": "Temporal folding is a defined visual transformation rather than learned adaptation."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Figure 1",
+              "support": "Neurologists select patients and inspect requested trajectory views."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Figure 1",
+              "support": "The human requests the view and the system executes the temporal transformation."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Figure 1",
+              "support": "Linear bars and slice-and-wrap graphics are presented in a desktop interface."
+            }
+          ],
+          "interaction_modalities": [
+            {
+              "location": "Figure 1",
+              "support": "The visual interface uses conventional graphical inspection controls."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "Temporal folding restructures irregular blood-pressure evidence to reveal patterns."
+            }
+          ],
+          "target": [
+            {
+              "location": "Abstract",
+              "support": "The mechanism acts on visual encoding of individual trajectories."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [
+          "IM-POINTER_KEYBOARD"
+        ],
+        "mediation": "M1",
+        "target": "T-VIEW"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 1.0,
+        "z": 0.0
+      },
+      "edge_id": 33,
+      "label": "34",
+      "mechanism_id": "phenoflow-2025-temporal-visualization",
+      "metadata": {
+        "description": "Temporal folding, linear bars, and slice-and-wrap views structure irregular blood-pressure trajectories for pattern inspection."
+      },
+      "node_type": "mechanism",
+      "paper_id": "phenoflow-2025",
+      "region_name": "Temporal folding and trajectory visualization",
+      "stable_id": "phenoflow-2025-temporal-visualization",
+      "visual": {
+        "display_type": "VM-DESKTOP2D",
+        "glyph": "cube",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "bidirectional",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Abstract",
+              "support": "Categorization is a fixed LLM subtask rather than an adaptive service."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Abstract",
+              "support": "Human checkpoints validate categorization outputs."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Abstract",
+              "support": "The workflow assigns a specific categorization operation to the LLM."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Workflow description",
+              "support": "No single display environment is specified for categorization."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "The LLM assigns semantic categories to standardized task descriptions."
+            }
+          ],
+          "target": [
+            {
+              "location": "Abstract",
+              "support": "The mechanism acts on interpretation and organization of analytic knowledge."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [],
+        "mediation": "M3",
+        "target": "T-KNOWLEDGE"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 3.0,
+        "z": 0.0
+      },
+      "edge_id": 34,
+      "label": "35",
+      "mechanism_id": "wang-et-al-2025-categorization",
+      "metadata": {
+        "description": "A targeted LLM subtask categorizes standardized visualization and task descriptions."
+      },
+      "node_type": "mechanism",
+      "paper_id": "wang-et-al-2025",
+      "region_name": "Visualization-usage categorization",
+      "stable_id": "wang-et-al-2025-categorization",
+      "visual": {
+        "display_type": "VM-NONVISUAL_OR_UNSPECIFIED",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "bidirectional",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Abstract",
+              "support": "Task summarization is one fixed subtask in the multi-step workflow."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Abstract",
+              "support": "Human checkpoints validate and refine LLM results."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Abstract",
+              "support": "The workflow assigns a specific summarization operation to the LLM."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Workflow description",
+              "support": "No single display environment is specified for summarization."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "The LLM produces semantic summaries of domain analysis tasks."
+            }
+          ],
+          "target": [
+            {
+              "location": "Abstract",
+              "support": "The mechanism acts on interpretation of analysis activity."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [],
+        "mediation": "M3",
+        "target": "T-KNOWLEDGE"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 3.0,
+        "z": 0.0
+      },
+      "edge_id": 35,
+      "label": "36",
+      "mechanism_id": "wang-et-al-2025-task-summarization",
+      "metadata": {
+        "description": "A targeted LLM subtask summarizes analysis tasks described in domain papers."
+      },
+      "node_type": "mechanism",
+      "paper_id": "wang-et-al-2025",
+      "region_name": "Domain-task summarization",
+      "stable_id": "wang-et-al-2025-task-summarization",
+      "visual": {
+        "display_type": "VM-NONVISUAL_OR_UNSPECIFIED",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    },
+    {
+      "classification": {
+        "adaptability": "A0",
+        "agency_direction": "bidirectional",
+        "classification_evidence": {
+          "adaptability": [
+            {
+              "location": "Abstract",
+              "support": "The targeted LLM subtask is part of a fixed multi-step workflow."
+            }
+          ],
+          "agency_direction": [
+            {
+              "location": "Abstract",
+              "support": "LLM outputs pass through checkpoints for human involvement and validation."
+            }
+          ],
+          "delegation": [
+            {
+              "location": "Abstract",
+              "support": "The workflow assigns the specific terminology-translation operation to the LLM."
+            }
+          ],
+          "display_type": [
+            {
+              "location": "Workflow description",
+              "support": "No single display environment is specified for the LLM translation mechanism."
+            }
+          ],
+          "mediation": [
+            {
+              "location": "Abstract",
+              "support": "The LLM creates semantic mappings from domain terms to standardized abstractions."
+            }
+          ],
+          "target": [
+            {
+              "location": "Abstract",
+              "support": "The translation mechanism acts on interpretation of domain terminology."
+            }
+          ]
+        },
+        "classification_status": "provisional",
+        "delegation": "D0",
+        "interaction_modalities": [],
+        "mediation": "M3",
+        "target": "T-KNOWLEDGE"
+      },
+      "coordinate_basis": "approved_classification_coordinate",
+      "coordinates": {
+        "x_delegation": 0.0,
+        "y_epistemic_mediation": 3.0,
+        "z": 0.0
+      },
+      "edge_id": 36,
+      "label": "37",
+      "mechanism_id": "wang-et-al-2025-terminology-translation",
+      "metadata": {
+        "description": "A targeted LLM subtask translates single-cell domain terminology into standardized data and task abstractions."
+      },
+      "node_type": "mechanism",
+      "paper_id": "wang-et-al-2025",
+      "region_name": "Domain-terminology translation",
+      "stable_id": "wang-et-al-2025-terminology-translation",
+      "visual": {
+        "display_type": "VM-NONVISUAL_OR_UNSPECIFIED",
+        "glyph": "sphere",
+        "glyph_aspect_x": 1.0,
+        "glyph_aspect_y": 1.0,
+        "glyph_aspect_z": 1.0,
+        "glyph_size": 1.0
+      }
+    }
+  ],
+  "relation_types": {
+    "citation": {
+      "default": 0.2,
+      "maximum": 0.3,
+      "minimum": 0.1
+    },
+    "paper_lineage_extension": {
+      "default": 0.5,
+      "maximum": 0.6,
+      "minimum": 0.4
+    },
+    "paper_mechanism_membership": {
+      "default": 0.9,
+      "maximum": 1.0,
+      "minimum": 0.8
+    },
+    "strongly_related_mechanisms": {
+      "default": 0.78,
+      "maximum": 0.85,
+      "minimum": 0.7
+    },
+    "weak_semantic_similarity": {
+      "default": 0.08,
+      "maximum": 0.15,
+      "minimum": 0.02
+    }
+  },
+  "relations": [
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          0,
+          11
+        ],
+        [
+          11,
+          0
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 0,
+      "original_source_stable_id": "aegis-2018",
+      "original_target_edge_id": 11,
+      "original_target_stable_id": "aegis-2018-focus-context",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          0,
+          12
+        ],
+        [
+          12,
+          0
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 0,
+      "original_source_stable_id": "aegis-2018",
+      "original_target_edge_id": 12,
+      "original_target_stable_id": "aegis-2018-simulation-pipeline",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          11,
+          12
+        ],
+        [
+          12,
+          11
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 11,
+      "original_source_stable_id": "aegis-2018-focus-context",
+      "original_target_edge_id": 12,
+      "original_target_stable_id": "aegis-2018-simulation-pipeline",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.72
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          1,
+          13
+        ],
+        [
+          13,
+          1
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 1,
+      "original_source_stable_id": "biowheel-2017",
+      "original_target_edge_id": 13,
+      "original_target_stable_id": "biowheel-2017-circular-encoding",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          1,
+          14
+        ],
+        [
+          14,
+          1
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 1,
+      "original_source_stable_id": "biowheel-2017",
+      "original_target_edge_id": 14,
+      "original_target_stable_id": "biowheel-2017-sorting-filtering",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          13,
+          11
+        ],
+        [
+          11,
+          13
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {
+        "curation_basis": "Both mechanisms reorganize complex biological evidence into interactive visual structure."
+      },
+      "original_source_edge_id": 13,
+      "original_source_stable_id": "biowheel-2017-circular-encoding",
+      "original_target_edge_id": 11,
+      "original_target_stable_id": "aegis-2018-focus-context",
+      "relation_type": "weak_semantic_similarity",
+      "weight": 0.08
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          14,
+          13
+        ],
+        [
+          13,
+          14
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 14,
+      "original_source_stable_id": "biowheel-2017-sorting-filtering",
+      "original_target_edge_id": 13,
+      "original_target_stable_id": "biowheel-2017-circular-encoding",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.78
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          2,
+          15
+        ],
+        [
+          15,
+          2
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 2,
+      "original_source_stable_id": "domova-vrotsou-2023",
+      "original_target_edge_id": 15,
+      "original_target_stable_id": "domova-vrotsou-2023-data-focusing",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          2,
+          16
+        ],
+        [
+          16,
+          2
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 2,
+      "original_source_stable_id": "domova-vrotsou-2023",
+      "original_target_edge_id": 16,
+      "original_target_stable_id": "domova-vrotsou-2023-data-mining",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          2,
+          17
+        ],
+        [
+          17,
+          2
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 2,
+      "original_source_stable_id": "domova-vrotsou-2023",
+      "original_target_edge_id": 17,
+      "original_target_stable_id": "domova-vrotsou-2023-data-preparation",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          2,
+          18
+        ],
+        [
+          18,
+          2
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 2,
+      "original_source_stable_id": "domova-vrotsou-2023",
+      "original_target_edge_id": 18,
+      "original_target_stable_id": "domova-vrotsou-2023-reasoning",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": true,
+      "emitted_symmetric_pairs": [
+        [
+          2,
+          8
+        ],
+        [
+          8,
+          2
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {
+        "direction_semantics": "earlier_framework_to_later_review"
+      },
+      "original_source_edge_id": 2,
+      "original_source_stable_id": "domova-vrotsou-2023",
+      "original_target_edge_id": 8,
+      "original_target_stable_id": "monadjemi-et-al-2026",
+      "relation_type": "paper_lineage_extension",
+      "weight": 0.5
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          15,
+          16
+        ],
+        [
+          16,
+          15
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 15,
+      "original_source_stable_id": "domova-vrotsou-2023-data-focusing",
+      "original_target_edge_id": 16,
+      "original_target_stable_id": "domova-vrotsou-2023-data-mining",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.74
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          16,
+          18
+        ],
+        [
+          18,
+          16
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 16,
+      "original_source_stable_id": "domova-vrotsou-2023-data-mining",
+      "original_target_edge_id": 18,
+      "original_target_stable_id": "domova-vrotsou-2023-reasoning",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.74
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          17,
+          15
+        ],
+        [
+          15,
+          17
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 17,
+      "original_source_stable_id": "domova-vrotsou-2023-data-preparation",
+      "original_target_edge_id": 15,
+      "original_target_stable_id": "domova-vrotsou-2023-data-focusing",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.74
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          3,
+          19
+        ],
+        [
+          19,
+          3
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 3,
+      "original_source_stable_id": "dtbia-2025",
+      "original_target_edge_id": 19,
+      "original_target_stable_id": "dtbia-2025-edge-bundling",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          3,
+          20
+        ],
+        [
+          20,
+          3
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 3,
+      "original_source_stable_id": "dtbia-2025",
+      "original_target_edge_id": 20,
+      "original_target_stable_id": "dtbia-2025-hierarchical-navigation",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          19,
+          20
+        ],
+        [
+          20,
+          19
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 19,
+      "original_source_stable_id": "dtbia-2025-edge-bundling",
+      "original_target_edge_id": 20,
+      "original_target_stable_id": "dtbia-2025-hierarchical-navigation",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.8
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          4,
+          21
+        ],
+        [
+          21,
+          4
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 4,
+      "original_source_stable_id": "fathomnet-2022",
+      "original_target_edge_id": 21,
+      "original_target_stable_id": "fathomnet-2022-label-aggregation",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          4,
+          22
+        ],
+        [
+          22,
+          4
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 4,
+      "original_source_stable_id": "fathomnet-2022",
+      "original_target_edge_id": 22,
+      "original_target_stable_id": "fathomnet-2022-model-assisted-annotation",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          4,
+          23
+        ],
+        [
+          23,
+          4
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 4,
+      "original_source_stable_id": "fathomnet-2022",
+      "original_target_edge_id": 23,
+      "original_target_stable_id": "fathomnet-2022-robotic-tracking",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          21,
+          22
+        ],
+        [
+          22,
+          21
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 21,
+      "original_source_stable_id": "fathomnet-2022-label-aggregation",
+      "original_target_edge_id": 22,
+      "original_target_stable_id": "fathomnet-2022-model-assisted-annotation",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.8
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          21,
+          36
+        ],
+        [
+          36,
+          21
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {
+        "curation_basis": "Both mechanisms standardize heterogeneous source material for downstream analysis."
+      },
+      "original_source_edge_id": 21,
+      "original_source_stable_id": "fathomnet-2022-label-aggregation",
+      "original_target_edge_id": 36,
+      "original_target_stable_id": "wang-et-al-2025-terminology-translation",
+      "relation_type": "weak_semantic_similarity",
+      "weight": 0.06
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          22,
+          23
+        ],
+        [
+          23,
+          22
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 22,
+      "original_source_stable_id": "fathomnet-2022-model-assisted-annotation",
+      "original_target_edge_id": 23,
+      "original_target_stable_id": "fathomnet-2022-robotic-tracking",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.76
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          5,
+          24
+        ],
+        [
+          24,
+          5
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 5,
+      "original_source_stable_id": "holter-elassady-2024",
+      "original_target_edge_id": 24,
+      "original_target_stable_id": "holter-elassady-2024-topic-model-refinement",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": true,
+      "emitted_symmetric_pairs": [
+        [
+          5,
+          6
+        ],
+        [
+          6,
+          5
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {
+        "direction_semantics": "citing_paper_to_cited_paper",
+        "evidence_basis": "Holter and El-Assady related-work discussion"
+      },
+      "original_source_edge_id": 5,
+      "original_source_stable_id": "holter-elassady-2024",
+      "original_target_edge_id": 6,
+      "original_target_stable_id": "horvitz-1999",
+      "relation_type": "citation",
+      "weight": 0.2
+    },
+    {
+      "directed": true,
+      "emitted_symmetric_pairs": [
+        [
+          5,
+          8
+        ],
+        [
+          8,
+          5
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {
+        "direction_semantics": "earlier_design_space_to_later_review"
+      },
+      "original_source_edge_id": 5,
+      "original_source_stable_id": "holter-elassady-2024",
+      "original_target_edge_id": 8,
+      "original_target_stable_id": "monadjemi-et-al-2026",
+      "relation_type": "paper_lineage_extension",
+      "weight": 0.5
+    },
+    {
+      "directed": true,
+      "emitted_symmetric_pairs": [
+        [
+          6,
+          2
+        ],
+        [
+          2,
+          6
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {
+        "direction_semantics": "earlier_framework_to_later_framework"
+      },
+      "original_source_edge_id": 6,
+      "original_source_stable_id": "horvitz-1999",
+      "original_target_edge_id": 2,
+      "original_target_stable_id": "domova-vrotsou-2023",
+      "relation_type": "paper_lineage_extension",
+      "weight": 0.5
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          6,
+          25
+        ],
+        [
+          25,
+          6
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 6,
+      "original_source_stable_id": "horvitz-1999",
+      "original_target_edge_id": 25,
+      "original_target_stable_id": "horvitz-1999-dialog-and-control",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          6,
+          26
+        ],
+        [
+          26,
+          6
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 6,
+      "original_source_stable_id": "horvitz-1999",
+      "original_target_edge_id": 26,
+      "original_target_stable_id": "horvitz-1999-email-to-appointment",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          6,
+          27
+        ],
+        [
+          27,
+          6
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 6,
+      "original_source_stable_id": "horvitz-1999",
+      "original_target_edge_id": 27,
+      "original_target_stable_id": "horvitz-1999-uncertainty-sensitive-action",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          26,
+          27
+        ],
+        [
+          27,
+          26
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 26,
+      "original_source_stable_id": "horvitz-1999-email-to-appointment",
+      "original_target_edge_id": 27,
+      "original_target_stable_id": "horvitz-1999-uncertainty-sensitive-action",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.8
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          27,
+          25
+        ],
+        [
+          25,
+          27
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 27,
+      "original_source_stable_id": "horvitz-1999-uncertainty-sensitive-action",
+      "original_target_edge_id": 25,
+      "original_target_stable_id": "horvitz-1999-dialog-and-control",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.78
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          7,
+          28
+        ],
+        [
+          28,
+          7
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 7,
+      "original_source_stable_id": "icave-2017",
+      "original_target_edge_id": 28,
+      "original_target_stable_id": "icave-2017-database-network-generation",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          7,
+          29
+        ],
+        [
+          29,
+          7
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 7,
+      "original_source_stable_id": "icave-2017",
+      "original_target_edge_id": 29,
+      "original_target_stable_id": "icave-2017-layout-and-bundling",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          29,
+          19
+        ],
+        [
+          19,
+          29
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {
+        "curation_basis": "Both mechanisms apply 3D edge organization to dense scientific networks."
+      },
+      "original_source_edge_id": 29,
+      "original_source_stable_id": "icave-2017-layout-and-bundling",
+      "original_target_edge_id": 19,
+      "original_target_stable_id": "dtbia-2025-edge-bundling",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.76
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          29,
+          28
+        ],
+        [
+          28,
+          29
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 29,
+      "original_source_stable_id": "icave-2017-layout-and-bundling",
+      "original_target_edge_id": 28,
+      "original_target_stable_id": "icave-2017-database-network-generation",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.72
+    },
+    {
+      "directed": true,
+      "emitted_symmetric_pairs": [
+        [
+          8,
+          6
+        ],
+        [
+          6,
+          8
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {
+        "direction_semantics": "citing_paper_to_cited_paper",
+        "evidence_basis": "Monadjemi et al. foundational-principles framing"
+      },
+      "original_source_edge_id": 8,
+      "original_source_stable_id": "monadjemi-et-al-2026",
+      "original_target_edge_id": 6,
+      "original_target_stable_id": "horvitz-1999",
+      "relation_type": "citation",
+      "weight": 0.2
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          8,
+          30
+        ],
+        [
+          30,
+          8
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 8,
+      "original_source_stable_id": "monadjemi-et-al-2026",
+      "original_target_edge_id": 30,
+      "original_target_stable_id": "monadjemi-et-al-2026-shared-task-agent",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          9,
+          31
+        ],
+        [
+          31,
+          9
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 9,
+      "original_source_stable_id": "phenoflow-2025",
+      "original_target_edge_id": 31,
+      "original_target_stable_id": "phenoflow-2025-cohort-code-synthesis",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          9,
+          32
+        ],
+        [
+          32,
+          9
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 9,
+      "original_source_stable_id": "phenoflow-2025",
+      "original_target_edge_id": 32,
+      "original_target_stable_id": "phenoflow-2025-explanation-debugging",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          9,
+          33
+        ],
+        [
+          33,
+          9
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 9,
+      "original_source_stable_id": "phenoflow-2025",
+      "original_target_edge_id": 33,
+      "original_target_stable_id": "phenoflow-2025-temporal-visualization",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          31,
+          32
+        ],
+        [
+          32,
+          31
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 31,
+      "original_source_stable_id": "phenoflow-2025-cohort-code-synthesis",
+      "original_target_edge_id": 32,
+      "original_target_stable_id": "phenoflow-2025-explanation-debugging",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.82
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          32,
+          33
+        ],
+        [
+          33,
+          32
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 32,
+      "original_source_stable_id": "phenoflow-2025-explanation-debugging",
+      "original_target_edge_id": 33,
+      "original_target_stable_id": "phenoflow-2025-temporal-visualization",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.74
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          10,
+          34
+        ],
+        [
+          34,
+          10
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 10,
+      "original_source_stable_id": "wang-et-al-2025",
+      "original_target_edge_id": 34,
+      "original_target_stable_id": "wang-et-al-2025-categorization",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          10,
+          35
+        ],
+        [
+          35,
+          10
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 10,
+      "original_source_stable_id": "wang-et-al-2025",
+      "original_target_edge_id": 35,
+      "original_target_stable_id": "wang-et-al-2025-task-summarization",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          10,
+          36
+        ],
+        [
+          36,
+          10
+        ]
+      ],
+      "generated_membership": true,
+      "metadata": {},
+      "original_source_edge_id": 10,
+      "original_source_stable_id": "wang-et-al-2025",
+      "original_target_edge_id": 36,
+      "original_target_stable_id": "wang-et-al-2025-terminology-translation",
+      "relation_type": "paper_mechanism_membership",
+      "weight": 0.9
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          35,
+          34
+        ],
+        [
+          34,
+          35
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 35,
+      "original_source_stable_id": "wang-et-al-2025-task-summarization",
+      "original_target_edge_id": 34,
+      "original_target_stable_id": "wang-et-al-2025-categorization",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.8
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          36,
+          31
+        ],
+        [
+          31,
+          36
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {
+        "curation_basis": "Both mechanisms translate human or domain language into structured computational representations with human validation."
+      },
+      "original_source_edge_id": 36,
+      "original_source_stable_id": "wang-et-al-2025-terminology-translation",
+      "original_target_edge_id": 31,
+      "original_target_stable_id": "phenoflow-2025-cohort-code-synthesis",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.72
+    },
+    {
+      "directed": false,
+      "emitted_symmetric_pairs": [
+        [
+          36,
+          35
+        ],
+        [
+          35,
+          36
+        ]
+      ],
+      "generated_membership": false,
+      "metadata": {},
+      "original_source_edge_id": 36,
+      "original_source_stable_id": "wang-et-al-2025-terminology-translation",
+      "original_target_edge_id": 35,
+      "original_target_stable_id": "wang-et-al-2025-task-summarization",
+      "relation_type": "strongly_related_mechanisms",
+      "weight": 0.8
+    }
+  ],
+  "renderer_compatibility": {
+    "anatomy_mirrors_target": true,
+    "edge_direction": "symmetric_pairs_for_visibility",
+    "hemisphere": {
+      "allowed_values": [
+        "left",
+        "right"
+      ],
+      "assignment": "alternating_topology_row_parity",
+      "scientific_meaning": false
+    },
+    "sparse_matrix_dimension": {
+      "guarantee": "maximum topology row index occurs in an emitted edge",
+      "node_count": 37
+    }
+  },
+  "schema_version": "h2h-cytocave-sidecar-v1",
+  "visual_mappings": {
+    "color": {
+      "default_field": "Target",
+      "lut_compatibility_field": "Anatomy",
+      "unknown_value": "unknown"
+    },
+    "coordinates": {
+      "coordinate_system": "H2HDelegationMediation",
+      "mechanism_x": "Delegation",
+      "mechanism_y": "Epistemic Mediation",
+      "mechanism_z": 0.0,
+      "paper_position": "centroid_of_member_mechanisms",
+      "paper_z_offset": 0.25,
+      "unknown_coordinate": -1.0
+    },
+    "future_aspect_ratio": {
+      "fields": [
+        "GlyphAspectX",
+        "GlyphAspectY",
+        "GlyphAspectZ"
+      ]
+    },
+    "shape": {
+      "default_field": "DisplayType",
+      "glyph_field": "Glyph",
+      "glyph_lookup": {
+        "VM-AR_MR": "tetrahedron",
+        "VM-CAVE": "octahedron",
+        "VM-DESKTOP2D": "cube",
+        "VM-DESKTOP3D": "dodecahedron",
+        "VM-LARGE_DISPLAY": "box",
+        "VM-MOBILE_TABLET": "cylinder",
+        "VM-NONVISUAL_OR_UNSPECIFIED": "sphere",
+        "VM-OTHER": "sphere",
+        "VM-PHYSICAL_HAPTIC": "torus",
+        "VM-VR": "icosahedron",
+        "paper": "sphere",
+        "unknown": "sphere"
+      }
+    },
+    "size": {
+      "default_field": "GlyphSize"
+    },
+    "supplemental_collaboration_fields": [
+      "AgencyDirection",
+      "Adaptability",
+      "InteractionModality",
+      "ClassificationStatus",
+      "ClassificationEvidence"
+    ]
+  }
+}
