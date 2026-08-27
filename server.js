@@ -62,6 +62,10 @@ const baseSessionState = {
     edgeValueMode: 'similarity',
     selectionMode: 'additive',
     highlightedCluster: null,
+    multiSelection: {
+      left: [],
+      right: []
+    },
     selectedNode: null,
     focusRequest: null,
     revealNodeRequest: null
@@ -110,6 +114,17 @@ function normalizeSessionState() {
   if (!Object.prototype.hasOwnProperty.call(sessionState.view, 'revealNodeRequest')) {
     sessionState.view.revealNodeRequest = null;
   }
+  if (!sessionState.view.multiSelection) {
+    sessionState.view.multiSelection = { left: [], right: [] };
+  }
+  sessionState.view.multiSelection.left = normalizeSelectionNodeIds(
+    sessionState.view.multiSelection.left || [],
+    'left'
+  );
+  sessionState.view.multiSelection.right = normalizeSelectionNodeIds(
+    sessionState.view.multiSelection.right || [],
+    'right'
+  );
   sessionState.view.glyphSizes = normalizeGlyphSizes(sessionState.view.glyphSizes);
 }
 
@@ -190,6 +205,34 @@ function normalizeNodeTarget(body = {}) {
   const nodeId = normalizeNodeId(body.nodeId ?? body.node ?? body.id);
   validateNodeTarget(nodeId, viewport);
   return { nodeId, viewport };
+}
+
+function normalizeSelectionNodeIds(value, viewport) {
+  if (!Array.isArray(value)) {
+    throw new Error('nodeIds must be an array');
+  }
+  const seen = new Set();
+  const normalized = [];
+  value.forEach((nodeIdValue) => {
+    const nodeId = normalizeNodeId(nodeIdValue);
+    validateNodeTarget(nodeId, viewport);
+    if (!seen.has(nodeId)) {
+      seen.add(nodeId);
+      normalized.push(nodeId);
+    }
+  });
+  return normalized;
+}
+
+function normalizeMultiSelection(body = {}) {
+  const viewport = normalizeViewport(body.viewport || body.side || 'left');
+  if (!Object.prototype.hasOwnProperty.call(body, 'nodeIds')) {
+    throw new Error('nodeIds must be an array');
+  }
+  return {
+    viewport,
+    nodeIds: normalizeSelectionNodeIds(body.nodeIds, viewport)
+  };
 }
 
 function normalizeOptionalBoolean(body, key, defaultValue) {
@@ -748,6 +791,23 @@ app.post('/view/glyph-size', (req, res) => {
       viewport: result.viewport,
       sizes: result.sizes,
       range: GLYPH_SIZE_RANGE
+    };
+  }, res);
+});
+
+app.post('/api/selection', (req, res) => {
+  handleRoute(() => {
+    const selection = normalizeMultiSelection(req.body || {});
+    const before = JSON.stringify(sessionState.view.multiSelection[selection.viewport] || []);
+    sessionState.view.multiSelection[selection.viewport] = selection.nodeIds;
+    const changed = before !== JSON.stringify(selection.nodeIds);
+    return {
+      state: stateWithRevision(),
+      changed,
+      selection: {
+        viewport: selection.viewport,
+        nodeIds: clone(selection.nodeIds)
+      }
     };
   }, res);
 });

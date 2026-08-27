@@ -148,6 +148,7 @@ test('REST session state exposes the primary k20/k40 comparison', async (t) => {
   assert.equal(response.body.view.colorBy.left, 'KMeans_k20_c16_s0_Clustering');
   assert.equal(response.body.view.colorBy.right, 'KMeans_k40_c16_s0_Clustering');
   assert.equal(response.body.view.selectionMode, 'additive');
+  assert.deepEqual(response.body.view.multiSelection, { left: [], right: [] });
   assert.equal(response.body.view.revealNodeRequest, null);
 });
 
@@ -288,6 +289,115 @@ test('node selection and focus requests update session state', async (t) => {
   assert.equal(focusOne.body.state.view.focusRequest.nodeId, nodeId);
   assert.notEqual(focusOne.body.state.view.focusRequest.requestId, focusTwo.body.state.view.focusRequest.requestId);
   assert.notEqual(focusOne.body.revision, focusTwo.body.revision);
+});
+
+test('multi-selection endpoint replaces left and right viewport selections', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const before = await request(server, 'GET', '/session/state');
+  const left = await request(server, 'POST', '/api/selection', {
+    viewport: 'left',
+    nodeIds: [0, '1', '02']
+  });
+  assert.equal(left.statusCode, 200);
+  assert.equal(left.body.changed, true);
+  assert.deepEqual(left.body.selection, {
+    viewport: 'left',
+    nodeIds: ['0', '1', '2']
+  });
+  assert.deepEqual(left.body.state.view.multiSelection.left, ['0', '1', '2']);
+  assert.deepEqual(left.body.state.view.multiSelection.right, []);
+  assert.notEqual(left.body.revision, before.body.revision);
+
+  const right = await request(server, 'POST', '/api/selection', {
+    viewport: 'right',
+    nodeIds: [3, 4]
+  });
+  assert.equal(right.statusCode, 200);
+  assert.deepEqual(right.body.state.view.multiSelection.left, ['0', '1', '2']);
+  assert.deepEqual(right.body.state.view.multiSelection.right, ['3', '4']);
+
+  const replaceLeft = await request(server, 'POST', '/api/selection', {
+    viewport: 'left',
+    nodeIds: [5, 5, '06']
+  });
+  assert.equal(replaceLeft.statusCode, 200);
+  assert.deepEqual(replaceLeft.body.state.view.multiSelection.left, ['5', '6']);
+  assert.deepEqual(replaceLeft.body.state.view.multiSelection.right, ['3', '4']);
+});
+
+test('multi-selection endpoint clears selection and is idempotent for repeated arrays', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const selected = await request(server, 'POST', '/api/selection', {
+    viewport: 'left',
+    nodeIds: [0, 1, 2]
+  });
+  assert.equal(selected.statusCode, 200);
+
+  const clear = await request(server, 'POST', '/api/selection', {
+    viewport: 'left',
+    nodeIds: []
+  });
+  assert.equal(clear.statusCode, 200);
+  assert.equal(clear.body.changed, true);
+  assert.deepEqual(clear.body.state.view.multiSelection.left, []);
+
+  const repeated = await request(server, 'POST', '/api/selection', {
+    viewport: 'left',
+    nodeIds: []
+  });
+  assert.equal(repeated.statusCode, 200);
+  assert.equal(repeated.body.changed, false);
+  assert.equal(repeated.body.revision, clear.body.revision);
+});
+
+test('multi-selection endpoint validates viewport and node ids without changing other state', async (t) => {
+  const server = await startServer();
+  t.after(() => server.close());
+
+  const before = await request(server, 'GET', '/session/state');
+  const selectedNode = await request(server, 'POST', '/view/select-node', {
+    viewport: 'left',
+    nodeId: '0'
+  });
+  assert.equal(selectedNode.statusCode, 200);
+
+  const multi = await request(server, 'POST', '/api/selection', {
+    viewport: 'left',
+    nodeIds: [1, 2]
+  });
+  assert.equal(multi.statusCode, 200);
+  assert.deepEqual(multi.body.state.view.selectedNode, { nodeId: '0', viewport: 'left' });
+  assert.deepEqual(multi.body.state.view.glyphSizes, before.body.view.glyphSizes);
+  assert.deepEqual(multi.body.state.view.colorBy, before.body.view.colorBy);
+  assert.deepEqual(multi.body.state.view.orientation, before.body.view.orientation);
+  assert.equal(multi.body.state.view.edgeValueMode, before.body.view.edgeValueMode);
+  assert.equal(multi.body.state.view.selectionMode, before.body.view.selectionMode);
+
+  const badViewport = await request(server, 'POST', '/api/selection', {
+    viewport: 'center',
+    nodeIds: [0]
+  });
+  assert.equal(badViewport.statusCode, 400);
+  assert.match(badViewport.body.error, /viewport must be left or right/);
+
+  const missingArray = await request(server, 'POST', '/api/selection', {
+    viewport: 'left'
+  });
+  assert.equal(missingArray.statusCode, 400);
+  assert.match(missingArray.body.error, /nodeIds must be an array/);
+
+  for (const nodeId of [-1, 1.5, 'abc', null, true, '999999999']) {
+    const badNode = await request(server, 'POST', '/api/selection', {
+      viewport: 'left',
+      nodeIds: [nodeId]
+    });
+    assert.equal(badNode.statusCode, 400);
+    assert.match(badNode.body.error, /nodeId|outside viewport left/);
+  }
 });
 
 test('reveal-node selects and focuses canonical node zero without mutating annotations', async (t) => {

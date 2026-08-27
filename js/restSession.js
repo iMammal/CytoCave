@@ -28,6 +28,7 @@ var lastSessionState = null;
 var lastSelectionMode = null;
 var lastEdgeValueMode = null;
 var lastGlyphSizesKey = null;
+var lastMultiSelectionKey = null;
 var lastOrientationKey = null;
 
 function sideName(side) {
@@ -401,6 +402,40 @@ function applyGlyphSizes(state) {
     lastGlyphSizesKey = glyphSizesKey;
 }
 
+function normalizeMultiSelectionForState(state) {
+    var selection = state && state.view && state.view.multiSelection ? state.view.multiSelection : {};
+    return {
+        left: Array.isArray(selection.left) ? selection.left.map(function (nodeId) { return String(nodeId); }) : [],
+        right: Array.isArray(selection.right) ? selection.right.map(function (nodeId) { return String(nodeId); }) : []
+    };
+}
+
+function applyMultiSelectionToViewport(side, nodeIds) {
+    var preview = previewFor(side);
+    if (!preview) return;
+    if (preview.clearSelectedNodesVisual) {
+        preview.clearSelectedNodesVisual();
+    } else if (preview.clrNodesSelected) {
+        preview.clrNodesSelected();
+    }
+    if (nodeIds.length && preview.setSelectedNodes) {
+        preview.setSelectedNodes(nodeIds);
+    }
+    if (preview.redrawEdges) {
+        preview.redrawEdges();
+    }
+}
+
+function applyMultiSelection(state) {
+    var selection = normalizeMultiSelectionForState(state);
+    var selectionKey = JSON.stringify(selection);
+    if (selectionKey === lastMultiSelectionKey) return;
+
+    applyMultiSelectionToViewport("left", selection.left);
+    applyMultiSelectionToViewport("right", selection.right);
+    lastMultiSelectionKey = selectionKey;
+}
+
 function applyAnnotations(state) {
     var annotations = state.annotations && state.annotations.byNode ? state.annotations.byNode : {};
     var selected = state.view && state.view.selectedNode;
@@ -487,6 +522,7 @@ async function applySessionState() {
         lastSelectedKey = null;
         lastAnnotationsKey = null;
         lastGlyphSizesKey = null;
+        lastMultiSelectionKey = null;
         lastOrientationKey = null;
         lastRevealNodeRequestId = null;
         return;
@@ -498,6 +534,7 @@ async function applySessionState() {
     applySelectionMode(state);
     applyEdgeValueMode(state);
     applyGlyphSizes(state);
+    applyMultiSelection(state);
     applySelection(state);
     applyAnnotations(state);
     applyFocusRequest(state);
@@ -644,6 +681,7 @@ function startRestSessionBridge() {
         setSessionEdgeValueMode,
         setSessionGlyphSize,
         applyGlyphSizes,
+        applyMultiSelection,
         applyRevealNodeRequest,
         applyOrientation
     };
